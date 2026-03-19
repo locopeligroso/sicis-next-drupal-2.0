@@ -1,0 +1,279 @@
+import { deslugify } from '@/domain/filters/registry';
+import { getRoutingRegistry } from './routing-registry';
+
+export interface SectionConfig {
+  productType: string;
+  filterField?: string;
+  filterValue?: string;
+  filterOperator?: '=' | 'STARTS_WITH' | 'CONTAINS';
+  filterField2?: string;
+  filterValue2?: string;
+}
+
+// Slug singoli per categoria tessuto — path reali da Drupal per ogni locale
+// IT: /arazzi, /coperte, /tappeti, /cuscini
+// EN: /tapestries, /bedcover, /carpets, /cushions
+// FR: /tapisseries, /couvertures, /tapis, /coussins
+// DE: /wandteppiche, /decken, /teppiche, /kissen
+// ES: /tapices, /mantas, /alfombras, /cojines
+// RU: /гобелены, /одеяла, /ковры, /подушки
+const TESSUTO_CATEGORIA_SLUGS: Record<string, string> = {
+  // IT
+  'arazzi': 'Arazzi', 'coperte': 'Coperte', 'tappeti': 'Tappeti', 'cuscini': 'Cuscini',
+  // EN
+  'tapestries': 'Arazzi', 'bedcover': 'Coperte', 'carpets': 'Tappeti', 'cushions': 'Cuscini',
+  // FR
+  'tapisseries': 'Arazzi', 'couvertures': 'Coperte', 'tapis': 'Tappeti', 'coussins': 'Cuscini',
+  // DE
+  'wandteppiche': 'Arazzi', 'decken': 'Coperte', 'teppiche': 'Tappeti', 'kissen': 'Cuscini',
+  // ES
+  'tapices': 'Arazzi', 'mantas': 'Coperte', 'alfombras': 'Tappeti', 'cojines': 'Cuscini',
+  // RU (decoded)
+  'гобелены': 'Arazzi', 'одеяла': 'Coperte', 'ковры': 'Tappeti', 'подушки': 'Cuscini',
+};
+
+// Slug listing tessili — path hub da Drupal per ogni locale (dopo strip prefisso)
+// IT: /prodotti-tessili  EN: /textiles  FR: /produits-textiles
+// DE: /textilien  ES: /textiles  RU: /текстильные-изделия
+const TESSILI_SLUGS = new Set([
+  'prodotti-tessili',          // IT hub
+  'textiles',                  // EN + ES hub
+  'produits-textiles',         // FR hub
+  'textilien',                 // DE hub
+  'текстильные-изделия',       // RU hub (decoded)
+  // Legacy aliases mantenuti per compatibilità
+  'tessili', 'tessuti', 'fabrics', 'tissus', 'stoffe', 'telas',
+]);
+
+// Slug listing mosaico per locale
+const MOSAICO_SLUGS = new Set(['mosaico', 'mosaic', 'mosaïque', 'mosaik']);
+
+// Slug listing vetrite per locale
+const VETRITE_SLUGS = new Set([
+  'lastre-vetro-vetrite', 'vetrite-glass-slabs', 'plaque-en-verre-vetrite',
+  'glasscheibe-vetrite', 'láminas-de-vidrio-vetrite', 'стеклянные-листы-vetrite',
+]);
+
+// Slug listing arredo per locale
+const ARREDO_SLUGS = new Set([
+  'arredo', 'furniture-and-accessories', 'ameublement',
+  'einrichtung', 'mueble', 'обстановка',
+]);
+
+// Slug listing pixall per locale
+const PIXALL_SLUGS = new Set(['pixall']);
+
+// Prefissi path tessile — path con sottocategoria da Drupal per ogni locale
+// IT: /prodotti-tessili/{cat}  EN: /textiles/{cat}  FR: /produits-textiles/{cat}
+// DE: /textilien/{cat}  ES: /textiles/{cat}  RU: /текстильные-изделия/{cat}
+const TESSILE_PREFIXES = new Set([
+  'prodotti-tessili',          // IT
+  'textiles',                  // EN + ES
+  'produits-textiles',         // FR
+  'textilien',                 // DE
+  'текстильные-изделия',       // RU (decoded)
+  // Legacy aliases mantenuti per compatibilità
+  'tessile', 'textile',
+]);
+
+// Prefissi path mosaico per locale
+const MOSAICO_PREFIXES = new Set([
+  'mosaico', 'mosaic', 'mosaïque', 'mosaik',
+]);
+
+// Prefissi path vetrite per locale
+const VETRITE_PREFIXES = new Set([
+  'lastre-vetro-vetrite', 'vetrite-glass-slabs', 'plaque-en-verre-vetrite',
+  'glasscheibe-vetrite', 'láminas-de-vidrio-vetrite',
+]);
+
+// Prefissi path arredo per locale
+const ARREDO_PREFIXES = new Set([
+  'arredo', 'furniture-and-accessories', 'ameublement', 'einrichtung', 'mueble',
+  'furniture', 'mobilier', 'moebel', 'mobiliario', 'мебель', 'обстановка',
+]);
+
+/**
+ * Resolves a URL slug array to a product section configuration.
+ *
+ * Determines which product type and optional filter values apply to a given
+ * URL path. Returns `null` for single-product detail pages (3+ segments) or
+ * unrecognised paths. Extracted from `fetch-products.ts:getSectionConfig()` —
+ * now lives in the domain layer for testability.
+ *
+ * @param slugs - URL path segments after the locale prefix
+ *                (e.g. `['mosaico', 'murano-smalto']` for `/it/mosaico/murano-smalto`)
+ * @param locale - Active locale code (e.g. `'it'`, `'en'`) — currently unused
+ *                 but kept for future locale-aware routing
+ * @returns `SectionConfig` with `productType` and optional filter fields,
+ *          or `null` if the path is a product detail page or unrecognised
+ * @example
+ * getSectionConfig(['mosaico'], 'it')
+ * // → { productType: 'prodotto_mosaico' }
+ *
+ * getSectionConfig(['mosaico', 'murano-smalto'], 'it')
+ * // → { productType: 'prodotto_mosaico', filterField: 'field_collezione.name', filterValue: 'Murano Smalto' }
+ *
+ * getSectionConfig(['mosaico', 'murano-smalto', 'sun-3'], 'it')
+ * // → null  (single product detail page)
+ */
+export function getSectionConfig(slugs: string[], locale: string): SectionConfig | null {
+  const [s1, s2, s3] = slugs;
+  if (!s1) return null;
+
+  // ── Tessuto ──────────────────────────────────────────────────────────────
+  if (TESSILI_SLUGS.has(s1) && !s2) {
+    return { productType: 'prodotto_tessuto' };
+  }
+  if (TESSUTO_CATEGORIA_SLUGS[s1] && !s2) {
+    return {
+      productType: 'prodotto_tessuto',
+      filterField: 'field_categoria.title',
+      filterValue: TESSUTO_CATEGORIA_SLUGS[s1],
+    };
+  }
+  if (TESSILE_PREFIXES.has(s1) && s2) {
+    // /tessile/tessuti, /tessile/arazzi, /tessile/tappeti, etc.
+    if (TESSUTO_CATEGORIA_SLUGS[s2] && !s3) {
+      return {
+        productType: 'prodotto_tessuto',
+        filterField: 'field_categoria.title',
+        filterValue: TESSUTO_CATEGORIA_SLUGS[s2],
+      };
+    }
+    if (!s3) return { productType: 'prodotto_tessuto' };
+    // /tessile/tappeti/agata-blue — prodotto singolo, non listing
+    return null;
+  }
+
+  // ── Mosaico ──────────────────────────────────────────────────────────────
+  if (MOSAICO_SLUGS.has(s1) || MOSAICO_PREFIXES.has(s1)) {
+    if (!s2) return { productType: 'prodotto_mosaico' };
+    if (!s3) {
+      const termName = deslugify(decodeURIComponent(s2));
+      // Collezioni con sottocollezioni (es. NeoColibrì → Barrels/Cubes/Domes)
+      // usano STARTS_WITH per includere tutti i prodotti figli
+      const hasSubCollections = termName.startsWith('NeoColibrì') || termName.startsWith('Neocolibrì');
+      return {
+        productType: 'prodotto_mosaico',
+        filterField: 'field_collezione.name',
+        filterValue: termName,
+        filterOperator: hasSubCollections ? 'STARTS_WITH' : '=',
+      };
+    }
+    // /mosaico/murano-smalto/sun-3 — prodotto singolo
+    return null;
+  }
+
+  // ── Vetrite ──────────────────────────────────────────────────────────────
+  if (VETRITE_SLUGS.has(s1) || VETRITE_PREFIXES.has(s1)) {
+    if (!s2) return { productType: 'prodotto_vetrite' };
+    if (!s3) {
+      return {
+        productType: 'prodotto_vetrite',
+        filterField: 'field_collezione.name',
+        filterValue: deslugify(decodeURIComponent(s2)),
+      };
+    }
+    return null;
+  }
+
+  // ── Arredo ───────────────────────────────────────────────────────────────
+  if (ARREDO_SLUGS.has(s1) || ARREDO_PREFIXES.has(s1)) {
+    if (!s2) return { productType: 'prodotto_arredo' };
+    if (s2 && s3) {
+      return {
+        productType: 'prodotto_arredo',
+        filterField: 'field_categoria.title',
+        filterValue: s3,
+      };
+    }
+    if (!s3) {
+      return {
+        productType: 'prodotto_arredo',
+        filterField: 'field_categoria.title',
+        filterValue: deslugify(decodeURIComponent(s2)),
+      };
+    }
+    return null;
+  }
+
+  // ── Pixall ───────────────────────────────────────────────────────────────
+  if (PIXALL_SLUGS.has(s1)) {
+    if (!s2) return { productType: 'prodotto_pixall' };
+    return null;
+  }
+
+  return null;
+}
+
+/**
+ * Async version that uses the menu-derived routing registry.
+ * Falls back to the hardcoded getSectionConfig if registry is unavailable.
+ *
+ * @param slugs - URL path segments after the locale prefix
+ * @param locale - Active locale code
+ * @returns SectionConfig or null (same contract as getSectionConfig)
+ */
+export async function getSectionConfigAsync(
+  slugs: string[],
+  locale: string,
+): Promise<SectionConfig | null> {
+  const registry = await getRoutingRegistry();
+  if (!registry) return getSectionConfig(slugs, locale);
+
+  const [s1, s2, s3] = slugs;
+  if (!s1) return null;
+
+  // Check if first segment is a listing hub
+  const productType = registry.slugToProductType.get(s1);
+  if (productType) {
+    if (!s2) return { productType };
+
+    // Check subcategory map (tessuto categories)
+    const subcat = registry.subcategoryMap.get(s2);
+    if (subcat && !s3) {
+      return {
+        productType: subcat.productType,
+        filterField: subcat.filterField,
+        filterValue: subcat.filterValue,
+      };
+    }
+
+    // Collection/category filter (e.g. /mosaico/murano-smalto)
+    if (!s3) {
+      const termName =
+        registry.slugToTermName.get(s2) ??
+        deslugify(decodeURIComponent(s2));
+      // Collezioni con sottocollezioni (es. NeoColibrì → Barrels/Cubes/Domes)
+      const hasSubCollections =
+        termName.startsWith('NeoColibrì') ||
+        termName.startsWith('Neocolibrì');
+      return {
+        productType,
+        filterField:
+          productType === 'prodotto_arredo'
+            ? 'field_categoria.title'
+            : 'field_collezione.name',
+        filterValue: termName,
+        filterOperator: hasSubCollections ? 'STARTS_WITH' : '=',
+      };
+    }
+
+    // 3+ segments = single product detail page
+    return null;
+  }
+
+  // Check subcategory as standalone slug (e.g. /arazzi, /coperte)
+  const subcat = registry.subcategoryMap.get(s1);
+  if (subcat && !s2) {
+    return {
+      productType: subcat.productType,
+      filterField: subcat.filterField,
+      filterValue: subcat.filterValue,
+    };
+  }
+
+  // Not found in registry — fall back to hardcoded
+  return getSectionConfig(slugs, locale);
+}

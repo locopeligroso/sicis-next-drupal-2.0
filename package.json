@@ -1,0 +1,37 @@
+{
+  "name": "sicis-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "drupal-jsonapi-params": "^3.0.1",
+    "next": "14.2.29",
+    "next-intl": "^3.26.5",
+    "nuqs": "^2.8.9",
+    "react": "^18",
+    "react-dom": "^18",
+    "server-only": "^0.0.1",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "@vitest/coverage-v8": "^4.1.0",
+    "@vitest/ui": "^4.1.0",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.29",
+    "happy-dom": "^20.8.4",
+    "postcss": "^8",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vitest": "^4.1.0"
+  }
+}

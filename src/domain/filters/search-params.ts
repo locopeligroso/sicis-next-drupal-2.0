@@ -1,0 +1,169 @@
+import {
+  createSearchParamsCache,
+  parseAsString,
+  parseAsInteger,
+  parseAsArrayOf,
+} from 'nuqs/server';
+import { FILTER_REGISTRY, deslugify } from './registry';
+import type { ActiveFilter, FilterGroupConfig } from './registry';
+
+/**
+ * nuqs server-side cache for filter search params.
+ * Used in Server Components (page.tsx) to parse URL state type-safely.
+ *
+ * Replaces manual searchParams parsing scattered across:
+ *   - parse-filters.ts
+ *   - page.tsx (sp object destructuring)
+ */
+export const filterSearchParamsCache = createSearchParamsCache({
+  // Path-based filters (single value — radio behaviour)
+  collection: parseAsString.withDefault(''),
+  category:   parseAsString.withDefault(''),
+
+  // Query-based filters (multi-value — checkbox behaviour)
+  color:   parseAsArrayOf(parseAsString).withDefault([]),
+  shape:   parseAsArrayOf(parseAsString).withDefault([]),
+  finish:  parseAsArrayOf(parseAsString).withDefault([]),
+  grout:   parseAsArrayOf(parseAsString).withDefault([]),
+  type:    parseAsArrayOf(parseAsString).withDefault([]),
+  texture: parseAsArrayOf(parseAsString).withDefault([]),
+  fabric:  parseAsArrayOf(parseAsString).withDefault([]),
+
+  // Sorting and pagination
+  sort: parseAsString.withDefault(''),
+  page: parseAsInteger.withDefault(1),
+});
+
+// ── Filter Definition type (replaces build-filters.ts:FilterDefinition) ──
+
+export interface FilterDefinition {
+  field: string;
+  value: string | string[];
+  operator: '=' | 'IN' | 'CONTAINS' | 'STARTS_WITH';
+}
+
+/**
+ * Converts FilterDefinition[] to JSON:API URLSearchParams.
+ * Migrated from src/lib/build-filters.ts — now in domain layer.
+ */
+export function buildJsonApiFilters(
+  filters: FilterDefinition[],
+  params: URLSearchParams,
+): void {
+  filters.forEach((filter, index) => {
+    const alias = `f${index}`;
+    params.set(`filter[${alias}][condition][path]`, filter.field);
+
+    if (filter.operator !== '=') {
+      params.set(`filter[${alias}][condition][operator]`, filter.operator);
+    }
+
+    if (Array.isArray(filter.value)) {
+      filter.value.forEach((v, vi) => {
+        params.set(`filter[${alias}][condition][value][${vi}]`, v);
+      });
+    } else {
+      params.set(`filter[${alias}][condition][value]`, filter.value);
+    }
+  });
+}
+
+export interface ParsedFilters {
+  contentType: string | null;
+  filterDefinitions: FilterDefinition[];
+  activeFilters: ActiveFilter[];
+}
+
+/**
+ * Parses active filters from URL slug segments + query params.
+ * Migrated from src/lib/parse-filters.ts — now in domain layer.
+ *
+ * Path filter examples:
+ *   /mosaico/murano-smalto → collection=murano-smalto
+ *   /mosaico/colori/grigio → color=grigio
+ *
+ * Query filter examples:
+ *   ?shape=hexagon&finish=glossy → shape=hexagon, finish=glossy
+ */
+export function parseFiltersFromUrl(
+  slug: string[],
+  searchParams: Record<string, string>,
+  locale: string,
+): ParsedFilters {
+  const filterDefinitions: FilterDefinition[] = [];
+  const activeFilters: ActiveFilter[] = [];
+  let contentType: string | null = null;
+
+  // Find matching product type config from first slug segment
+  for (const [ct, config] of Object.entries(FILTER_REGISTRY)) {
+    const basePath = config.basePaths[locale] ?? config.basePaths['it'];
+    const baseSegments = basePath.split('/');
+
+    // Check if slug starts with basePath segments
+    const matches = baseSegments.every((seg, i) => slug[i] === seg);
+    if (!matches) continue;
+
+    contentType = ct;
+    const afterBase = slug.slice(baseSegments.length);
+    const [pathSeg1, pathSeg2] = afterBase;
+
+    // Detect path-based filters
+    for (const filterConfig of Object.values(config.filters)) {
+      if (filterConfig.type !== 'path') continue;
+
+      if (filterConfig.pathPrefix) {
+        // Color-style: /mosaico/colori/{slug}
+        const prefix = filterConfig.pathPrefix[locale] ?? filterConfig.pathPrefix['it'];
+        if (pathSeg1 === prefix && pathSeg2) {
+          addFilter(filterConfig, pathSeg2, filterDefinitions, activeFilters);
+        }
+      } else {
+        // Collection-style: /mosaico/{slug} (only if not a color prefix)
+        const colorConfig = Object.values(config.filters).find(
+          (f) => f.type === 'path' && f.pathPrefix,
+        );
+        const colorPrefix =
+          colorConfig?.pathPrefix?.[locale] ?? colorConfig?.pathPrefix?.['it'];
+        if (pathSeg1 && pathSeg1 !== colorPrefix && !pathSeg2) {
+          addFilter(filterConfig, pathSeg1, filterDefinitions, activeFilters);
+        }
+      }
+    }
+
+    // Detect query-based filters
+    for (const filterConfig of Object.values(config.filters)) {
+      if (filterConfig.type !== 'query' || !filterConfig.queryKey) continue;
+      const value = searchParams[filterConfig.queryKey];
+      if (value) {
+        addFilter(filterConfig, value, filterDefinitions, activeFilters);
+      }
+    }
+
+    break;
+  }
+
+  return { contentType, filterDefinitions, activeFilters };
+}
+
+function addFilter(
+  config: FilterGroupConfig,
+  slugValue: string,
+  definitions: FilterDefinition[],
+  active: ActiveFilter[],
+): void {
+  const decoded = decodeURIComponent(slugValue);
+  const termName = deslugify(decoded);
+  // Operator defaults to '='. Overrides (e.g. STARTS_WITH for NeoColibrì subcollections)
+  // are applied by ProductListingAsync via sectionConfig.filterOperator — single source of truth.
+  definitions.push({
+    field: config.drupalField,
+    value: termName,
+    operator: '=',
+  });
+  active.push({
+    key: config.key,
+    value: decoded,
+    label: termName,
+    type: config.type,
+  });
+}

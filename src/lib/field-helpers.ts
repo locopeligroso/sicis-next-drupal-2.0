@@ -1,0 +1,53 @@
+/**
+ * Field access helpers for Drupal JSON:API deserialized data.
+ *
+ * Drupal JSON:API returns fields in different shapes depending on field type:
+ * - Plain text fields: plain string "value"
+ * - Formatted text fields: { value: string, format: string, processed: string }
+ * - Boolean fields: plain boolean
+ * - Decimal/integer fields: plain number or string
+ *
+ * These helpers handle all cases transparently.
+ */
+
+/**
+ * Extract a text value from a Drupal field that may be:
+ * - a plain string (plain text fields)
+ * - an object { value: string } (formatted text fields)
+ * - null/undefined
+ */
+export function getTextValue(field: unknown): string | undefined {
+  if (typeof field === 'string') return field || undefined;
+  if (field && typeof field === 'object') {
+    const obj = field as Record<string, unknown>;
+    if (typeof obj.value === 'string') return obj.value || undefined;
+  }
+  return undefined;
+}
+
+/**
+ * Extract processed HTML from a Drupal text field.
+ * Falls back to plain value if no processed version exists.
+ */
+export function getProcessedText(field: unknown): string | undefined {
+  if (typeof field === 'string') return field || undefined;
+  if (field && typeof field === 'object') {
+    const obj = field as Record<string, unknown>;
+    if (typeof obj.processed === 'string') return obj.processed || undefined;
+    if (typeof obj.value === 'string') return obj.value || undefined;
+  }
+  return undefined;
+}
+
+/**
+ * Extract a boolean value from a Drupal field.
+ * Handles both plain boolean and { value: boolean } shapes.
+ */
+export function getBoolValue(field: unknown): boolean {
+  if (typeof field === 'boolean') return field;
+  if (field && typeof field === 'object') {
+    const obj = field as Record<string, unknown>;
+    if (typeof obj.value === 'boolean') return obj.value;
+  }
+  return false;
+}

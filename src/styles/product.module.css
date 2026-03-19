@@ -1,0 +1,95 @@
+/* ── Stili condivisi per i componenti prodotto ─────────────────────────────── */
+
+/**
+ * Sezione con separatore superiore.
+ * Usato per separare visivamente le sezioni di dettaglio prodotto.
+ */
+.section {
+  padding-top: 1.5rem;
+  border-top: 0.0625rem solid #eee;
+  margin-bottom: 2rem;
+}
+
+/**
+ * Intestazione di sezione in stile label uppercase.
+ * Usato per h2 all'interno delle sezioni prodotto.
+ */
+.sectionHeading {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #888;
+  margin: 0 0 1rem;
+}
+
+/**
+ * Label di campo in stile uppercase ridotto.
+ * Usato sopra i valori di attributo (dimensioni, colori, ecc.).
+ */
+.label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #888;
+  margin: 0 0 0.25rem;
+}
+
+/**
+ * Griglia responsive per specifiche tecniche.
+ * Si adatta automaticamente al numero di colonne disponibili.
+ */
+.specsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: 1rem 1.5rem;
+}
+
+/**
+ * Breadcrumb di navigazione.
+ * Usato nei componenti prodotto con categoria parent.
+ */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #888;
+  margin-bottom: 1.5rem;
+}
+
+/**
+ * Riga di pill/badge in flex wrap.
+ * Usato per colori, finiture, forme, stucchi.
+ */
+.pillsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/**
+ * Lista documenti senza stile nativo.
+ * Usato per la sezione download documenti.
+ */
+.docList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/**
+ * Singolo item documento con layout flex.
+ * Contiene thumbnail, titolo e link download.
+ */
+.docItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  border: 0.0625rem solid #e0e0e0;
+}

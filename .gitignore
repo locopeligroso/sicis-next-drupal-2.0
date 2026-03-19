@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Next.js build output
+.next/
+
+# Environment variables
+.env.local
+.env*.local
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Git worktrees
+.worktrees/
+
+# TypeScript build info
+tsconfig.tsbuildinfo
+
+# Superpowers (local AI config)
+.superpowers/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Package lock (optional — uncomment to track)
+# package-lock.json
+
+# OS generated files
+Thumbs.db
