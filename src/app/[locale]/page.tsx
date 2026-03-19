@@ -1,6 +1,6 @@
 import { translatePath, fetchJsonApiResource } from '@/lib/get-resource-by-path';
 import { getIncludeFields } from '@/lib/node-resolver';
-import Page from '@/components/nodes/Page';
+import Page from '@/templates/nodes/Page';
 
 interface HomePageProps {
   params: Promise<{ locale: string }>;

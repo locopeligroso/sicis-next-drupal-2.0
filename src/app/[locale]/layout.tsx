@@ -1,12 +1,18 @@
 import type { Metadata } from 'next';
+import { Geist, Geist_Mono, Outfit } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { locales } from '@/i18n/request';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
+import Header from '@/components_legacy/Header';
+import Footer from '@/components_legacy/Footer';
 import { fetchMenu, transformMenuToNavItems } from '@/lib/fetch-menu';
+import { cn } from '@/lib/utils';
 import '@/styles/globals.css';
+
+const fontBody = Outfit({ subsets: ['latin'], variable: '--font-body' });
+const fontHeading = Geist({ subsets: ['latin'], variable: '--font-heading' });
+const fontCode = Geist_Mono({ subsets: ['latin'], variable: '--font-code' });
 
 export const metadata: Metadata = {
   title: { default: 'Sicis', template: '%s | Sicis' },
@@ -40,7 +46,15 @@ export default async function LocaleLayout({
   const footerMenuItems = transformMenuToNavItems(footerMenu, locale);
 
   return (
-    <html lang={locale}>
+    <html
+      lang={locale}
+      className={cn(
+        'antialiased',
+        fontBody.variable,
+        fontHeading.variable,
+        fontCode.variable
+      )}
+    >
       <body>
         <NextIntlClientProvider messages={messages}>
           <Header locale={locale} initialMenu={initialMenu} />

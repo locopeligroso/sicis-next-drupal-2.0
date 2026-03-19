@@ -5,42 +5,42 @@ import {
   fetchJsonApiResource,
 } from '@/lib/get-resource-by-path';
 import { getComponentName, getIncludeFields, getRevalidateTime } from '@/lib/node-resolver';
-import UnknownEntity from '@/components/UnknownEntity';
+import UnknownEntity from '@/components_legacy/UnknownEntity';
 import { getSectionConfigAsync, fetchProducts } from '@/lib/fetch-products';
 import { getRoutingRegistry } from '@/domain/routing/routing-registry';
-import ProductListing from '@/components/ProductListing';
+import ProductListing from '@/components_legacy/ProductListing';
 import { parseFiltersFromUrl } from '@/domain/filters/search-params';
 import { fetchAllFilterOptions } from '@/lib/fetch-filter-options';
-import FilterSidebar from '@/components/FilterSidebar';
+import FilterSidebar from '@/components_legacy/FilterSidebar';
 import { FILTER_REGISTRY } from '@/domain/filters/registry';
-import { ProductListingSkeleton } from '@/components/ui/ProductListingSkeleton';
-import { FilterSidebarSkeleton } from '@/components/ui/FilterSidebarSkeleton';
+import { ProductListingSkeleton } from '@/components_legacy/ProductListingSkeleton';
+import { FilterSidebarSkeleton } from '@/components_legacy/FilterSidebarSkeleton';
 
 // Node components
-import Page from '@/components/nodes/Page';
-import LandingPage from '@/components/nodes/LandingPage';
-import ProdottoMosaico from '@/components/nodes/ProdottoMosaico';
-import ProdottoArredo from '@/components/nodes/ProdottoArredo';
-import ProdottoPixall from '@/components/nodes/ProdottoPixall';
-import ProdottoTessuto from '@/components/nodes/ProdottoTessuto';
-import ProdottoVetrite from '@/components/nodes/ProdottoVetrite';
-import Articolo from '@/components/nodes/Articolo';
-import News from '@/components/nodes/News';
-import Tutorial from '@/components/nodes/Tutorial';
-import Progetto from '@/components/nodes/Progetto';
-import Showroom from '@/components/nodes/Showroom';
-import Ambiente from '@/components/nodes/Ambiente';
-import Categoria from '@/components/nodes/Categoria';
-import CategoriaBlog from '@/components/nodes/CategoriaBlog';
-import Documento from '@/components/nodes/Documento';
-import Tag from '@/components/nodes/Tag';
+import Page from '@/templates/nodes/Page';
+import LandingPage from '@/templates/nodes/LandingPage';
+import ProdottoMosaico from '@/templates/nodes/ProdottoMosaico';
+import ProdottoArredo from '@/templates/nodes/ProdottoArredo';
+import ProdottoPixall from '@/templates/nodes/ProdottoPixall';
+import ProdottoTessuto from '@/templates/nodes/ProdottoTessuto';
+import ProdottoVetrite from '@/templates/nodes/ProdottoVetrite';
+import Articolo from '@/templates/nodes/Articolo';
+import News from '@/templates/nodes/News';
+import Tutorial from '@/templates/nodes/Tutorial';
+import Progetto from '@/templates/nodes/Progetto';
+import Showroom from '@/templates/nodes/Showroom';
+import Ambiente from '@/templates/nodes/Ambiente';
+import Categoria from '@/templates/nodes/Categoria';
+import CategoriaBlog from '@/templates/nodes/CategoriaBlog';
+import Documento from '@/templates/nodes/Documento';
+import Tag from '@/templates/nodes/Tag';
 
 // Taxonomy components
-import MosaicoCollezione from '@/components/taxonomy/MosaicoCollezione';
-import MosaicoColore from '@/components/taxonomy/MosaicoColore';
-import VetriteCollezione from '@/components/taxonomy/VetriteCollezione';
-import VetriteColore from '@/components/taxonomy/VetriteColore';
-import TaxonomyTerm from '@/components/taxonomy/TaxonomyTerm';
+import MosaicoCollezione from '@/templates/taxonomy/MosaicoCollezione';
+import MosaicoColore from '@/templates/taxonomy/MosaicoColore';
+import VetriteCollezione from '@/templates/taxonomy/VetriteCollezione';
+import VetriteColore from '@/templates/taxonomy/VetriteColore';
+import TaxonomyTerm from '@/templates/taxonomy/TaxonomyTerm';
 
 /**
  * React.cache() deduplicates identical calls within the same request.
