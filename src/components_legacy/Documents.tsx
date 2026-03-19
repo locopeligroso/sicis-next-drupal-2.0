@@ -1,5 +1,15 @@
-import { getDrupalImageUrl } from '@/lib/image-helpers';
-import type { DocumentItem } from '@/types/drupal/base';
+import { getDrupalImageUrl } from '@/lib/drupal';
+interface DocumentItem {
+  id?: string;
+  field_titolo_main?: unknown;
+  title?: unknown;
+  field_tipologia_documento?: unknown;
+  field_collegamento_esterno?: unknown;
+  field_immagine?: unknown;
+  field_allegato?: {
+    entity?: { uri?: { value?: string } };
+  } | null;
+}
 
 interface DocumentsProps {
   documents: DocumentItem[];

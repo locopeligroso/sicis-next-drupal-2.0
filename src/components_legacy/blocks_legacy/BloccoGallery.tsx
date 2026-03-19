@@ -1,5 +1,4 @@
-import { getDrupalImageUrl } from '@/lib/image-helpers';
-import { fetchParagraph } from '@/lib/fetch-paragraph';
+import { getDrupalImageUrl, fetchParagraph } from '@/lib/drupal';
 
 export default async function BloccoGallery({ paragraph }: { paragraph: Record<string, unknown> }) {
   // Re-fetch paragraph with nested slides and their images

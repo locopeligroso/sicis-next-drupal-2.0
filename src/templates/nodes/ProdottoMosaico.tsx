@@ -3,9 +3,8 @@ import { getTranslations } from 'next-intl/server';
 import { getTextValue, getProcessedText, getBoolValue } from '@/lib/field-helpers';
 import { getColorSwatch, formatRetinatura } from '@/lib/product-helpers';
 import DrupalImage from '@/components_legacy/DrupalImage';
-import type { TermMosaicoCollezione } from '@/types/drupal/entities';
-import type { ProdottoMosaico as ProdottoMosaicoType } from '@/types/drupal/products/mosaico';
 import styles from '@/styles/product.module.css';
+import type { ProdottoMosaico as ProdottoMosaicoType } from '@/types/drupal/entities';
 
 export default async function ProdottoMosaico({ node }: { node: Record<string, unknown> }) {
   // Cast sicuro: il node-resolver passa Record<string,unknown>, ma il contenuto
@@ -22,7 +21,7 @@ export default async function ProdottoMosaico({ node }: { node: Record<string, u
   const prezzoUsa = typedNode.field_prezzo_usa ?? null;
   const prezzoOnDemand = typedNode.field_prezzo_on_demand ?? false;
   const noUsaStock = typedNode.field_no_usa_stock ?? false;
-  const collezioneData = typedNode.field_collezione as TermMosaicoCollezione | undefined | null;
+  const collezioneData = typedNode.field_collezione;
   const collezione = collezioneData?.name;
   const locale = typedNode.langcode ?? 'it';
   const forma = Array.isArray(typedNode.field_forma) ? typedNode.field_forma[0]?.name : undefined;
@@ -86,14 +85,14 @@ export default async function ProdottoMosaico({ node }: { node: Record<string, u
           )}
 
           {/* Collection image */}
-          {collezioneData.field_immagine && (
+          {collezioneData.field_immagine ? (
             <DrupalImage
               field={collezioneData.field_immagine}
               alt={collezione ?? ''}
               aspectRatio="16/9"
               style={{ marginBottom: '1.25rem', maxWidth: '24rem' }}
             />
-          )}
+          ) : null}
 
           {/* Dimensions grid */}
           {(collezioneData.field_dimensione_tessera_mm || collezioneData.field_dimensione_foglio_mm || collezioneData.field_spessore_mm) && (
@@ -131,7 +130,7 @@ export default async function ProdottoMosaico({ node }: { node: Record<string, u
 
           {/* Resistance badges */}
           {(() => {
-            const resistances: { key: keyof TermMosaicoCollezione; label: string }[] = [
+            const resistances: { key: string; label: string }[] = [
               { key: 'field_resistenza_gelo', label: t('frostResistance') },
               { key: 'field_resistenza_chimica', label: t('chemicalResistance') },
               { key: 'field_resistenza_luce', label: t('lightResistance') },

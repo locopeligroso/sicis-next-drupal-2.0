@@ -1,6 +1,5 @@
-import { getDrupalImageUrl } from '@/lib/image-helpers';
+import { getDrupalImageUrl, fetchParagraph } from '@/lib/drupal';
 import { getProcessedText } from '@/lib/field-helpers';
-import { fetchParagraph } from '@/lib/fetch-paragraph';
 import SliderClient, { type SlideData } from './SliderClient';
 
 export default async function BloccoSliderHome({ paragraph }: { paragraph: Record<string, unknown> }) {

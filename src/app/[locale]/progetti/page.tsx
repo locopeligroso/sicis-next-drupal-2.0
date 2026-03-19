@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { fetchProjects } from '@/lib/fetch-projects';
-import type { ProgettoCard } from '@/lib/fetch-projects';
+import { fetchProjects } from '@/lib/drupal';
+import type { ProgettoCard } from '@/lib/drupal';
 
 interface ProgettiPageProps {
   params: Promise<{ locale: string }>;

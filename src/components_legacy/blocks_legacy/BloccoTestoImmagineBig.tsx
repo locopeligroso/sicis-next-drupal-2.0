@@ -1,5 +1,5 @@
 import { getProcessedText } from '@/lib/field-helpers';
-import { getDrupalImageUrl } from '@/lib/image-helpers';
+import { getDrupalImageUrl } from '@/lib/drupal';
 
 export default function BloccoTestoImmagineBig({ paragraph }: { paragraph: Record<string, unknown> }) {
   // Development diagnostics — helps identify missing images in Drupal

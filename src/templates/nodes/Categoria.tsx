@@ -4,7 +4,7 @@ import {
   getCategoriaProductType,
   fetchProducts,
   type ProductCard,
-} from '@/lib/fetch-products';
+} from '@/lib/drupal';
 
 interface CategoriaProps {
   node: Record<string, unknown>;

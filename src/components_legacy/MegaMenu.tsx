@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import type { MenuItem } from '@/lib/fetch-menu';
+import type { MenuItem } from '@/lib/drupal';
 
 const MAX_LINKS_PER_COLUMN = 8;
 

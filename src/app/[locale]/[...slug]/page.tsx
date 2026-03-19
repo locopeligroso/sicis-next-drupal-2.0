@@ -3,14 +3,14 @@ import { notFound } from 'next/navigation';
 import {
   translatePath,
   fetchJsonApiResource,
-} from '@/lib/get-resource-by-path';
+} from '@/lib/drupal';
 import { getComponentName, getIncludeFields, getRevalidateTime } from '@/lib/node-resolver';
 import UnknownEntity from '@/components_legacy/UnknownEntity';
-import { getSectionConfigAsync, fetchProducts } from '@/lib/fetch-products';
+import { getSectionConfigAsync, fetchProducts } from '@/lib/drupal';
 import { getRoutingRegistry } from '@/domain/routing/routing-registry';
 import ProductListing from '@/components_legacy/ProductListing';
 import { parseFiltersFromUrl } from '@/domain/filters/search-params';
-import { fetchAllFilterOptions } from '@/lib/fetch-filter-options';
+import { fetchAllFilterOptions } from '@/lib/drupal';
 import FilterSidebar from '@/components_legacy/FilterSidebar';
 import { FILTER_REGISTRY } from '@/domain/filters/registry';
 import { ProductListingSkeleton } from '@/components_legacy/ProductListingSkeleton';

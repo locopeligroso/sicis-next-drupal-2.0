@@ -6,7 +6,7 @@ import { notFound } from 'next/navigation';
 import { locales } from '@/i18n/request';
 import Header from '@/components_legacy/Header';
 import Footer from '@/components_legacy/Footer';
-import { fetchMenu, transformMenuToNavItems } from '@/lib/fetch-menu';
+import { fetchMenu, transformMenuToNavItems } from '@/lib/drupal';
 import { cn } from '@/lib/utils';
 import { ThemeProvider } from '@/components/theme-provider';
 import { TooltipProvider } from '@/components/ui/tooltip';

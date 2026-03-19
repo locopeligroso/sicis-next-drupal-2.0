@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { fetchMenu, transformMenuToNavItems } from '@/lib/fetch-menu';
-import type { MenuItem } from '@/lib/fetch-menu';
+import { fetchMenu, transformMenuToNavItems } from '@/lib/drupal';
+import type { MenuItem } from '@/lib/drupal';
 import MegaMenu from '@/components_legacy/MegaMenu';
 import LanguageSwitcher from '@/components_legacy/LanguageSwitcher';
 

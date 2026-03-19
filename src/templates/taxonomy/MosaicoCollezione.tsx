@@ -1,5 +1,5 @@
-import { fetchProducts } from '@/lib/fetch-products';
-import { fetchAllFilterOptions } from '@/lib/fetch-filter-options';
+import { fetchProducts } from '@/lib/drupal';
+import { fetchAllFilterOptions } from '@/lib/drupal';
 import { parseFiltersFromUrl } from '@/domain/filters/search-params';
 import { FILTER_REGISTRY } from '@/domain/filters/registry';
 import ProductListing from '@/components_legacy/ProductListing';

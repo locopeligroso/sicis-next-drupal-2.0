@@ -12,7 +12,7 @@
  */
 
 import { cache } from 'react';
-import { DRUPAL_BASE_URL } from '@/config/drupal';
+import { DRUPAL_BASE_URL } from '@/lib/drupal';
 import { locales, defaultLocale } from '@/i18n/config';
 import type { Locale } from '@/i18n/config';
 

@@ -2,8 +2,8 @@ import { getTranslations } from 'next-intl/server';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { getColorSwatch, formatRetinatura } from '@/lib/product-helpers';
 import DrupalImage from '@/components_legacy/DrupalImage';
-import type { ProdottoPixall as ProdottoPixallType } from '@/types/drupal/products/pixall';
 import styles from '@/styles/product.module.css';
+import type { ProdottoPixall as ProdottoPixallType } from '@/types/drupal/entities';
 
 // ── Document item type ────────────────────────────────────────────────────────
 interface DocItem {
@@ -46,9 +46,9 @@ export default async function ProdottoPixall({ node }: { node: Record<string, un
     : null;
 
   // ── New attribute fields ─────────────────────────────────────────────────────
-  const retinatura = typedNode.field_retinatura ?? undefined;
+  const retinatura = (typedNode.field_retinatura ?? undefined) as string | undefined;
   const utilizzi = getProcessedText(typedNode.field_utilizzi);
-  const numeroModuli = typedNode.field_numero_moduli ?? undefined;
+  const numeroModuli = (typedNode.field_numero_moduli ?? undefined) as string | number | undefined;
 
   // ── Taxonomy arrays ──────────────────────────────────────────────────────────
   const colori = typedNode.field_colori ?? [];
@@ -206,7 +206,7 @@ export default async function ProdottoPixall({ node }: { node: Record<string, un
       )}
 
       {/* ── 5b. Schema moduli ────────────────────────────────────────────────── */}
-      {immagineModuli && (
+      {immagineModuli ? (
         <section className={styles.section} aria-labelledby="moduli-img-heading">
           <h2 id="moduli-img-heading" className={styles.sectionHeading}>
             {t('modulesSchema')}
@@ -218,7 +218,7 @@ export default async function ProdottoPixall({ node }: { node: Record<string, un
             style={{ maxWidth: '24rem' }}
           />
         </section>
-      )}
+      ) : null}
 
       {/* ── 5c. Utilizzi consigliati ──────────────────────────────────────────── */}
       {utilizzi && (

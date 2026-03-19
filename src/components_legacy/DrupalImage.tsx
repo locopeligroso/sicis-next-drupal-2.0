@@ -1,4 +1,4 @@
-import { getDrupalImageUrl } from '@/lib/image-helpers';
+import { getDrupalImageUrl } from '@/lib/drupal';
 
 interface DrupalImageProps {
   field: unknown;

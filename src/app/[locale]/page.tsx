@@ -1,4 +1,4 @@
-import { translatePath, fetchJsonApiResource } from '@/lib/get-resource-by-path';
+import { translatePath, fetchJsonApiResource } from '@/lib/drupal';
 import { getIncludeFields } from '@/lib/node-resolver';
 import Page from '@/templates/nodes/Page';
 

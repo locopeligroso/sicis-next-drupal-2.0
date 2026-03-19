@@ -2,9 +2,8 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import DrupalImage from '@/components_legacy/DrupalImage';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
-import type { NodeCategoria } from '@/types/drupal/entities';
-import type { ProdottoArredo as ProdottoArredoType } from '@/types/drupal/products/arredo';
 import styles from '@/styles/product.module.css';
+import type { ProdottoArredo as ProdottoArredoType } from '@/types/drupal/entities';
 
 // ── Document item type ────────────────────────────────────────────────────────
 interface DocItem {
@@ -62,7 +61,7 @@ export default async function ProdottoArredo({ node }: { node: Record<string, un
   const file3d = Array.isArray(ftpFiles) ? ftpFiles[0] : ftpFiles ?? null;
 
   // ── Categoria parent ──────────────────────────────────────────────────────
-  const categoriaData = typedNode.field_categoria as NodeCategoria | undefined | null;
+  const categoriaData = typedNode.field_categoria;
   const categoriaName = getTextValue(categoriaData?.field_titolo_main) || (categoriaData as Record<string, unknown> | undefined)?.title as string | undefined;
   const categoriaBody = getProcessedText(categoriaData?.field_testo_main);
   const categoriaAlias = (categoriaData as Record<string, unknown> | undefined)?.path as { alias?: string } | undefined;

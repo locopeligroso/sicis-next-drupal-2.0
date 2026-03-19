@@ -94,6 +94,7 @@ const INCLUDE_MAP: Record<string, string> = {
   // ── Products (NO field_blocchi) ──
   prodotto_mosaico:
     'field_immagine,field_immagine_campione,field_gallery,field_collezione,field_forma,field_finitura,field_colori,field_stucco,' +
+    'field_categoria,field_video,' +
     'field_collezione.field_immagine,' +
     'field_collezione.field_documenti,' +
     'field_collezione.field_documenti.field_immagine,' +
@@ -105,9 +106,10 @@ const INCLUDE_MAP: Record<string, string> = {
     'field_documenti.field_immagine,' +
     'field_documenti.field_allegato,' +
     'field_immagine_anteprima,' +
-    'field_gallery_intro',
+    'field_gallery_intro,' +
+    'field_scheda_tecnica,field_tessuti',
   prodotto_vetrite:
-    'field_immagine,field_gallery,field_collezione,field_colori,field_finiture,' +
+    'field_immagine,field_immagine_anteprima,field_gallery,field_collezione,field_colori,field_finiture,field_texture,' +
     'field_collezione.field_immagine,' +
     'field_collezione.field_documenti,' +
     'field_collezione.field_documenti.field_immagine,' +
@@ -126,7 +128,8 @@ const INCLUDE_MAP: Record<string, string> = {
     'field_immagine_moduli,' +
     'field_documenti,' +
     'field_documenti.field_immagine,' +
-    'field_documenti.field_allegato',
+    'field_documenti.field_allegato,' +
+    'field_gallery_intro',
 
   // ── Content with paragraphs only (no direct image) ──
   page: 'field_blocchi,field_blocchi.field_immagine',

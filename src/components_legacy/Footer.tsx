@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { MenuItem } from '@/lib/fetch-menu';
+import type { MenuItem } from '@/lib/drupal';
 import { locales } from '@/i18n/config';
 
 const PRODUCT_LINKS: Record<string, { label: string; href: string }[]> = {

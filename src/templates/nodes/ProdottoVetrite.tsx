@@ -3,9 +3,8 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import DrupalImage from '@/components_legacy/DrupalImage';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
-import type { TermVetriteCollezione } from '@/types/drupal/entities';
-import type { ProdottoVetrite as ProdottoVetriteType } from '@/types/drupal/products/vetrite';
 import styles from '@/styles/product.module.css';
+import type { ProdottoVetrite as ProdottoVetriteType } from '@/types/drupal/entities';
 
 // ── Document item type ────────────────────────────────────────────────────────
 interface DocItem {
@@ -50,7 +49,7 @@ export default async function ProdottoVetrite({ node }: { node: Record<string, u
   const locale = typedNode.langcode ?? 'it';
 
   // ── Collezione parent ─────────────────────────────────────────────────────
-  const collezioneData = typedNode.field_collezione as TermVetriteCollezione | undefined | null;
+  const collezioneData = typedNode.field_collezione;
   const collezione = collezioneData?.name;
 
   // ── Testo descrittivo con fallback alla collezione ────────────────────────
@@ -153,14 +152,14 @@ export default async function ProdottoVetrite({ node }: { node: Record<string, u
             )
           )}
 
-          {collezioneData.field_immagine && (
+          {collezioneData.field_immagine ? (
             <DrupalImage
               field={collezioneData.field_immagine}
               alt={collezione ?? ''}
               aspectRatio="16/9"
               style={{ marginBottom: '1.25rem', maxWidth: '24rem' }}
             />
-          )}
+          ) : null}
         </section>
       )}
 

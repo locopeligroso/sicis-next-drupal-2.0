@@ -1,5 +1,5 @@
 import { getProcessedText } from '@/lib/field-helpers';
-import { getDrupalImageUrl } from '@/lib/image-helpers';
+import { getDrupalImageUrl } from '@/lib/drupal';
 
 export default function BloccoVideo({ paragraph }: { paragraph: Record<string, unknown> }) {
   const title = getProcessedText(paragraph.field_titolo_formattato);
