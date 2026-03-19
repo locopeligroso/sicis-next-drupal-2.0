@@ -31,3 +31,6 @@ npm-debug.log*
 
 # OS generated files
 Thumbs.db
+
+*storybook.log
+storybook-static

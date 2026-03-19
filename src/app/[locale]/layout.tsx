@@ -8,6 +8,8 @@ import Header from '@/components_legacy/Header';
 import Footer from '@/components_legacy/Footer';
 import { fetchMenu, transformMenuToNavItems } from '@/lib/fetch-menu';
 import { cn } from '@/lib/utils';
+import { ThemeProvider } from '@/components/theme-provider';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import '@/styles/globals.css';
 
 const fontBody = Outfit({ subsets: ['latin'], variable: '--font-body' });
@@ -56,11 +58,15 @@ export default async function LocaleLayout({
       )}
     >
       <body>
-        <NextIntlClientProvider messages={messages}>
-          <Header locale={locale} initialMenu={initialMenu} />
-          <main style={{ minHeight: '60vh' }}>{children}</main>
-          <Footer locale={locale} initialMenu={footerMenuItems} />
-        </NextIntlClientProvider>
+        <ThemeProvider>
+          <TooltipProvider>
+            <NextIntlClientProvider messages={messages}>
+              <Header locale={locale} initialMenu={initialMenu} />
+              <main style={{ minHeight: '60vh' }}>{children}</main>
+              <Footer locale={locale} initialMenu={footerMenuItems} />
+            </NextIntlClientProvider>
+          </TooltipProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
