@@ -9,7 +9,7 @@ export default async function BloccoGalleryIntro({ paragraph }: { paragraph: Rec
 
   const title = getProcessedText(data.field_titolo_formattato);
   const body = getProcessedText(data.field_testo);
-  const items = (data.field_elementi as Record<string, unknown>[] | undefined) ?? [];
+  const items = (data.field_slide as Record<string, unknown>[] | undefined) ?? [];
 
   return (
     <section className="py-12 border-b border-gray-100">

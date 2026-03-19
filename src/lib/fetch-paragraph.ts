@@ -29,7 +29,7 @@ const PARAGRAPH_INCLUDE: Record<string, string> = {
   'paragraph--blocco_gallery':
     'field_slide,field_slide.field_immagine',
   'paragraph--blocco_gallery_intro':
-    'field_elementi,field_elementi.field_immagine',
+    'field_slide,field_slide.field_immagine',
   'paragraph--blocco_correlati':
     'field_elementi,field_elementi.field_immagine',
 };
