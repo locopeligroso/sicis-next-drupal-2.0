@@ -87,8 +87,6 @@ const LISTING_SLUG_OVERRIDES = new Set([
   'furniture', 'mobilier', 'moebel', // legacy
   // Pixall — collide con documento NID 2547
   'pixall',
-  // Progetti — collide con page NID 3526 in EN
-  'projects', 'progetti',
   // Tessili — slug singoli categoria tessuto (path reali Drupal)
   'arazzi', 'coperte', 'tappeti', 'cuscini',           // IT
   'tapestries', 'bedcover', 'carpets', 'cushions',      // EN
