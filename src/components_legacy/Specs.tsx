@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { sanitizeHtml } from '@/lib/sanitize';
 
 export interface SpecItem {
   label: string;
@@ -63,7 +64,7 @@ export function Specs({ items, title = 'Specifiche' }: SpecsProps) {
             {item.html ? (
               <dd
                 style={{ margin: 0, fontSize: '0.9rem' }}
-                dangerouslySetInnerHTML={{ __html: String(item.value) }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(String(item.value)) }}
               />
             ) : (
               <dd style={{ margin: 0, fontSize: '0.9rem' }}>

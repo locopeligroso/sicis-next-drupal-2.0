@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { sanitizeHtml } from '@/lib/sanitize';
 
 export interface SlideData {
   id: string;
@@ -66,7 +67,7 @@ export default function SliderClient({ slides, autoplayMs = 5000 }: SliderClient
             {slide.text && (
               <div
                 className="text-lg mb-2 [&_p]:m-0"
-                dangerouslySetInnerHTML={{ __html: slide.text }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(slide.text) }}
               />
             )}
             {slide.label && slide.link && (

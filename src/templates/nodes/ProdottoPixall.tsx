@@ -1,5 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
+import { sanitizeHtml } from '@/lib/sanitize';
 import { getColorSwatch, formatRetinatura } from '@/lib/product-helpers';
 import DrupalImage from '@/components_legacy/DrupalImage';
 import styles from '@/styles/product.module.css';
@@ -23,6 +24,7 @@ export default async function ProdottoPixall({ node }: { node: Record<string, un
   const typedNode = node as ProdottoPixallType;
   const t = await getTranslations('products');
   const tCommon = await getTranslations('common');
+  const locale = typedNode.langcode ?? 'it';
 
   // ── Text fields ──────────────────────────────────────────────────────────────
   const title = getTextValue(typedNode.field_titolo_main) || typedNode.title;
@@ -89,7 +91,7 @@ export default async function ProdottoPixall({ node }: { node: Record<string, un
       {body ? (
         <div
           style={{ lineHeight: 1.7, marginBottom: '2rem' }}
-          dangerouslySetInnerHTML={{ __html: body }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(body) }}
         />
       ) : null}
 
@@ -200,7 +202,7 @@ export default async function ProdottoPixall({ node }: { node: Record<string, un
           </h2>
           <div
             style={{ lineHeight: 1.7 }}
-            dangerouslySetInnerHTML={{ __html: composizione }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(composizione) }}
           />
         </section>
       )}
@@ -228,7 +230,7 @@ export default async function ProdottoPixall({ node }: { node: Record<string, un
           </h2>
           <div
             style={{ lineHeight: 1.7 }}
-            dangerouslySetInnerHTML={{ __html: utilizzi }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(utilizzi) }}
           />
         </section>
       )}
@@ -342,7 +344,7 @@ export default async function ProdottoPixall({ node }: { node: Record<string, un
           </h2>
           <div
             style={{ lineHeight: 1.7 }}
-            dangerouslySetInnerHTML={{ __html: manutenzione }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(manutenzione) }}
           />
         </section>
       )}

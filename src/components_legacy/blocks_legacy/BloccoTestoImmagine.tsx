@@ -1,4 +1,5 @@
 import { getProcessedText } from '@/lib/field-helpers';
+import { sanitizeHtml } from '@/lib/sanitize';
 import { getDrupalImageUrl } from '@/lib/drupal';
 
 export default function BloccoTestoImmagine({ paragraph }: { paragraph: Record<string, unknown> }) {
@@ -16,13 +17,13 @@ export default function BloccoTestoImmagine({ paragraph }: { paragraph: Record<s
           {title && (
             <h2
               className="text-2xl font-bold mb-4 leading-tight [&_p]:m-0"
-              dangerouslySetInnerHTML={{ __html: title }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(title) }}
             />
           )}
           {body && (
             <div
               className="text-gray-600 leading-relaxed [&_p]:mb-3 [&_p:last-child]:mb-0"
-              dangerouslySetInnerHTML={{ __html: body }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(body) }}
             />
           )}
         </div>

@@ -95,6 +95,10 @@ const INCLUDE_MAP: Record<string, string> = {
   prodotto_mosaico:
     'field_immagine,field_immagine_campione,field_gallery,field_collezione,field_forma,field_finitura,field_colori,field_stucco,' +
     'field_categoria,field_video,' +
+    'field_stucco.field_immagine,' +
+    'field_colori.field_immagine,' +
+    'field_forma.field_immagine,' +
+    'field_categoria.field_immagine,' +
     'field_collezione.field_immagine,' +
     'field_collezione.field_documenti,' +
     'field_collezione.field_documenti.field_immagine,' +

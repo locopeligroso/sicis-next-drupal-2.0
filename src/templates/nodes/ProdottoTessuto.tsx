@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import DrupalImage from '@/components_legacy/DrupalImage';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
+import { sanitizeHtml } from '@/lib/sanitize';
 import styles from '@/styles/product.module.css';
 import type { ProdottoTessuto as ProdottoTessutoType } from '@/types/drupal/entities';
 
@@ -157,7 +158,7 @@ export default async function ProdottoTessuto({ node }: { node: Record<string, u
       {composizione && (
         <section className={styles.section} aria-labelledby="composizione-heading">
           <h2 id="composizione-heading" className={styles.sectionHeading}>{t('composition')}</h2>
-          <div style={{ lineHeight: 1.7 }} dangerouslySetInnerHTML={{ __html: composizione }} />
+          <div style={{ lineHeight: 1.7 }} dangerouslySetInnerHTML={{ __html: sanitizeHtml(composizione) }} />
         </section>
       )}
 
@@ -169,19 +170,19 @@ export default async function ProdottoTessuto({ node }: { node: Record<string, u
             {altezzaCm && (
               <div>
                 <p className={styles.label}>{t('heightCm')}</p>
-                <div style={{ margin: 0, fontWeight: 500 }} dangerouslySetInnerHTML={{ __html: altezzaCm }} />
+                <div style={{ margin: 0, fontWeight: 500 }} dangerouslySetInnerHTML={{ __html: sanitizeHtml(String(altezzaCm)) }} />
               </div>
             )}
             {altezzaInch && (
               <div>
                 <p className={styles.label}>{t('heightInch')}</p>
-                <div style={{ margin: 0, fontWeight: 500 }} dangerouslySetInnerHTML={{ __html: altezzaInch }} />
+                <div style={{ margin: 0, fontWeight: 500 }} dangerouslySetInnerHTML={{ __html: sanitizeHtml(String(altezzaInch)) }} />
               </div>
             )}
             {peso && (
               <div>
                 <p className={styles.label}>{t('weightGm2')}</p>
-                <div style={{ margin: 0, fontWeight: 500 }} dangerouslySetInnerHTML={{ __html: peso }} />
+                <div style={{ margin: 0, fontWeight: 500 }} dangerouslySetInnerHTML={{ __html: sanitizeHtml(String(peso)) }} />
               </div>
             )}
             {utilizzo && (
@@ -217,7 +218,7 @@ export default async function ProdottoTessuto({ node }: { node: Record<string, u
             style={{ marginBottom: '0.75rem', maxWidth: '24rem' }}
           />
           {categoriaBody && (
-            <div style={{ lineHeight: 1.7, color: '#444' }} dangerouslySetInnerHTML={{ __html: categoriaBody }} />
+            <div style={{ lineHeight: 1.7, color: '#444' }} dangerouslySetInnerHTML={{ __html: sanitizeHtml(categoriaBody) }} />
           )}
         </section>
       )}
@@ -349,7 +350,7 @@ export default async function ProdottoTessuto({ node }: { node: Record<string, u
       {body && (
         <section className={styles.section} aria-labelledby="body-heading">
           <h2 id="body-heading" className={styles.sectionHeading}>{t('description')}</h2>
-          <div style={{ lineHeight: 1.7 }} dangerouslySetInnerHTML={{ __html: body }} />
+          <div style={{ lineHeight: 1.7 }} dangerouslySetInnerHTML={{ __html: sanitizeHtml(body) }} />
         </section>
       )}
 

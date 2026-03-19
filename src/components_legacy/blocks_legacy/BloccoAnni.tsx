@@ -1,4 +1,5 @@
 import { getProcessedText } from '@/lib/field-helpers';
+import { sanitizeHtml } from '@/lib/sanitize';
 
 export default function BloccoAnni({ paragraph }: { paragraph: Record<string, unknown> }) {
   const title = getProcessedText(paragraph.field_titolo_formattato);
@@ -10,7 +11,7 @@ export default function BloccoAnni({ paragraph }: { paragraph: Record<string, un
         {title && (
           <h2
             className="text-2xl font-bold mb-8 leading-tight [&_p]:m-0"
-            dangerouslySetInnerHTML={{ __html: title }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(title) }}
           />
         )}
         <div className="flex gap-8 overflow-x-auto pb-4">
@@ -22,7 +23,7 @@ export default function BloccoAnni({ paragraph }: { paragraph: Record<string, un
               <div key={i} className="min-w-[10rem] border-l-4 border-gray-200 pl-4 flex-shrink-0">
                 <p className="text-2xl font-bold text-gray-300 mb-1">{year}</p>
                 {text ? (
-                  <div className="text-sm text-gray-500" dangerouslySetInnerHTML={{ __html: text }} />
+                  <div className="text-sm text-gray-500" dangerouslySetInnerHTML={{ __html: sanitizeHtml(text) }} />
                 ) : (
                   <p className="text-sm text-gray-400">Evento {i + 1}</p>
                 )}

@@ -1,6 +1,7 @@
 import ParagraphResolver from '@/components_legacy/blocks_legacy/ParagraphResolver';
 import DrupalImage from '@/components_legacy/DrupalImage';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
+import { sanitizeHtml } from '@/lib/sanitize';
 
 export default function Articolo({ node }: { node: Record<string, unknown> }) {
   const title = getTextValue(node.field_titolo_main) || getTextValue(node.title);
@@ -19,7 +20,7 @@ export default function Articolo({ node }: { node: Record<string, unknown> }) {
       {body && (
         <div
           style={{ lineHeight: 1.7, marginBottom: '2rem' }}
-          dangerouslySetInnerHTML={{ __html: body }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(body) }}
         />
       )}
 

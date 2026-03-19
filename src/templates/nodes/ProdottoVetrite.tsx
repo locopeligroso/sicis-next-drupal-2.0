@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import DrupalImage from '@/components_legacy/DrupalImage';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
+import { sanitizeHtml } from '@/lib/sanitize';
 import styles from '@/styles/product.module.css';
 import type { ProdottoVetrite as ProdottoVetriteType } from '@/types/drupal/entities';
 
@@ -32,7 +33,7 @@ function HtmlBlock({ html, style }: { html: string; style?: CSSProperties }) {
   return (
     <div
       style={{ lineHeight: 1.7, ...style }}
-      dangerouslySetInnerHTML={{ __html: html }}
+      dangerouslySetInnerHTML={{ __html: sanitizeHtml(html) }}
     />
   );
 }

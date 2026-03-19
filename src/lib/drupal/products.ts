@@ -197,7 +197,7 @@ export const fetchProducts = cache(async (
     ]);
 
     if (!res.ok) {
-      console.error(`[fetchProducts] Failed: ${res.status} for ${url}`);
+      console.error(`[fetchProducts] HTTP ${res.status} for ${productType}`, { locale, limit, offset, filterField, filterValue, url: url.toString() });
       return { products: [], total: 0 };
     }
 
@@ -271,7 +271,7 @@ export const fetchProducts = cache(async (
       total: total || products.length,
     };
   } catch (err) {
-    console.error(`[fetchProducts] Error:`, err);
+    console.error(`[fetchProducts] Network error for ${productType}`, { locale, limit, offset, filterField, filterValue, error: err instanceof Error ? err.message : err });
     return { products: [], total: 0 };
   }
 });

@@ -61,6 +61,9 @@ export function deserializeResource(
             }
             return deserialized;
           }
+          if (depth === 0) {
+            console.warn(`[deserializer] Missing include: "${key}" references ${ref.type}:${ref.id} on ${resource.type}:${resource.id} — add to INCLUDE_MAP`);
+          }
           return { type: ref.type, id: ref.id, ...(ref.meta ? { meta: ref.meta } : {}) };
         });
       } else {
@@ -73,6 +76,9 @@ export function deserializeResource(
           }
           result[key] = deserialized;
         } else {
+          if (depth === 0) {
+            console.warn(`[deserializer] Missing include: "${key}" references ${ref.type}:${ref.id} on ${resource.type}:${resource.id} — add to INCLUDE_MAP`);
+          }
           result[key] = { type: ref.type, id: ref.id, ...(ref.meta ? { meta: ref.meta } : {}) };
         }
       }

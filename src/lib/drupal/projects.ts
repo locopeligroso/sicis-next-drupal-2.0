@@ -45,7 +45,7 @@ export const fetchProjects = cache(async (
     } as any);
 
     if (!res.ok) {
-      console.error(`[fetchProjects] Failed: ${res.status} for ${url}`);
+      console.error(`[fetchProjects] HTTP ${res.status}`, { locale, limit, offset, url: url.toString() });
       return { projects: [], total: 0 };
     }
 
@@ -89,7 +89,7 @@ export const fetchProjects = cache(async (
 
     return { projects, total };
   } catch (err) {
-    console.error(`[fetchProjects] Error:`, err);
+    console.error(`[fetchProjects] Network error`, { locale, limit, offset, error: err instanceof Error ? err.message : err });
     return { projects: [], total: 0 };
   }
 });

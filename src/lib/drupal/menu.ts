@@ -34,13 +34,13 @@ export const fetchMenu = cache(async (menuName: string, locale?: string): Promis
     });
 
     if (!res.ok) {
-      console.error(`[fetchMenu] Failed: ${res.status} for ${url}`);
+      console.error(`[fetchMenu] HTTP ${res.status} for "${menuName}"`, { locale, url });
       return null;
     }
 
     return res.json();
   } catch (error) {
-    console.error('[fetchMenu] Error:', error);
+    console.error(`[fetchMenu] Network error for "${menuName}"`, { locale, error: error instanceof Error ? error.message : error });
     return null;
   }
 });

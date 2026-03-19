@@ -1,4 +1,5 @@
 import { getProcessedText } from '@/lib/field-helpers';
+import { sanitizeHtml } from '@/lib/sanitize';
 
 export default function BloccoDocumenti({ paragraph }: { paragraph: Record<string, unknown> }) {
   const title = getProcessedText(paragraph.field_titolo_formattato);
@@ -10,7 +11,7 @@ export default function BloccoDocumenti({ paragraph }: { paragraph: Record<strin
         {title && (
           <h2
             className="text-2xl font-bold mb-6 leading-tight [&_p]:m-0"
-            dangerouslySetInnerHTML={{ __html: title }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(title) }}
           />
         )}
         <ul className="space-y-2 list-none p-0 m-0">

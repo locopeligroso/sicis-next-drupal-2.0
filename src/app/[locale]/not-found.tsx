@@ -1,8 +1,9 @@
 import Link from 'next/link';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, getLocale } from 'next-intl/server';
 
 export default async function NotFound() {
   const t = await getTranslations('common');
+  const locale = await getLocale();
   return (
     <main
       style={{
@@ -31,7 +32,7 @@ export default async function NotFound() {
         {t('notFound')}
       </p>
       <Link
-        href="/"
+        href={`/${locale}`}
         style={{
           display: 'inline-block',
           padding: '0.75rem 2rem',

@@ -61,9 +61,7 @@ export async function fetchParagraph(
     } as RequestInit);
 
     if (!res.ok) {
-      console.error(
-        `[fetchParagraph] ${res.status} for ${type}/${id}: ${res.statusText}`,
-      );
+      console.error(`[fetchParagraph] HTTP ${res.status} for ${type}/${id}`, { locale, include, statusText: res.statusText });
       return null;
     }
 
@@ -77,7 +75,7 @@ export async function fetchParagraph(
     const includedMap = buildIncludedMap(json.included);
     return deserializeResource(json.data, includedMap);
   } catch (err) {
-    console.error(`[fetchParagraph] Fetch failed for ${type}/${id}:`, err);
+    console.error(`[fetchParagraph] Network error for ${type}/${id}`, { locale, error: err instanceof Error ? err.message : err });
     return null;
   }
 }

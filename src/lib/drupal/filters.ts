@@ -30,7 +30,7 @@ export async function fetchFilterOptions(
     } as RequestInit);
 
     if (!res.ok) {
-      console.warn(`[fetchFilterOptions] Failed ${res.status} for ${taxonomyType} (${locale})`);
+      console.warn(`[fetchFilterOptions] HTTP ${res.status} for ${taxonomyType}`, { locale, url: url.toString() });
       return [];
     }
 
@@ -46,7 +46,7 @@ export async function fetchFilterOptions(
       } satisfies FilterOption;
     });
   } catch (err) {
-    console.error(`[fetchFilterOptions] Error for ${taxonomyType}:`, err);
+    console.error(`[fetchFilterOptions] Network error for ${taxonomyType}`, { locale, error: err instanceof Error ? err.message : err });
     return [];
   }
 }
@@ -81,9 +81,7 @@ export async function fetchArredoCategoryOptions(
     } as RequestInit);
 
     if (!res.ok) {
-      console.warn(
-        `[fetchArredoCategoryOptions] Failed ${res.status} for node/categoria (${locale})`
-      );
+      console.warn(`[fetchArredoCategoryOptions] HTTP ${res.status} for node/categoria`, { locale, url: url.toString() });
       return [];
     }
 
@@ -100,7 +98,7 @@ export async function fetchArredoCategoryOptions(
       } satisfies FilterOption;
     });
   } catch (err) {
-    console.error(`[fetchArredoCategoryOptions] Error for node/categoria:`, err);
+    console.error(`[fetchArredoCategoryOptions] Network error for node/categoria`, { locale, error: err instanceof Error ? err.message : err });
     return [];
   }
 }

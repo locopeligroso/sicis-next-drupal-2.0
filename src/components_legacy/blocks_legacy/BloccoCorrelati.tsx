@@ -1,4 +1,5 @@
 import { getProcessedText, getTextValue } from '@/lib/field-helpers';
+import { sanitizeHtml } from '@/lib/sanitize';
 import { getDrupalImageUrl, fetchParagraph } from '@/lib/drupal';
 
 export default async function BloccoCorrelati({ paragraph }: { paragraph: Record<string, unknown> }) {
@@ -18,7 +19,7 @@ export default async function BloccoCorrelati({ paragraph }: { paragraph: Record
         {title && (
           <h2
             className="text-2xl font-bold mb-8 leading-tight [&_p]:m-0"
-            dangerouslySetInnerHTML={{ __html: title }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(title) }}
           />
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">

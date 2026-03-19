@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import DrupalImage from '@/components_legacy/DrupalImage';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
+import { sanitizeHtml } from '@/lib/sanitize';
 import styles from '@/styles/product.module.css';
 import type { ProdottoArredo as ProdottoArredoType } from '@/types/drupal/entities';
 
@@ -124,14 +125,14 @@ export default async function ProdottoArredo({ node }: { node: Record<string, un
 
       {/* ── 3. Testo descrittivo ─────────────────────────────────────────────── */}
       {body && (
-        <div style={{ lineHeight: 1.7, marginBottom: '2rem' }} dangerouslySetInnerHTML={{ __html: body }} />
+        <div style={{ lineHeight: 1.7, marginBottom: '2rem' }} dangerouslySetInnerHTML={{ __html: sanitizeHtml(body) }} />
       )}
 
       {/* ── 4. Materiali costruttivi ─────────────────────────────────────────── */}
       {materiali && (
         <section className={styles.section} aria-labelledby="materiali-heading">
           <h2 id="materiali-heading" className={styles.sectionHeading}>{t('materials')}</h2>
-          <div style={{ lineHeight: 1.7 }} dangerouslySetInnerHTML={{ __html: materiali }} />
+          <div style={{ lineHeight: 1.7 }} dangerouslySetInnerHTML={{ __html: sanitizeHtml(materiali) }} />
         </section>
       )}
 
@@ -139,7 +140,7 @@ export default async function ProdottoArredo({ node }: { node: Record<string, un
       {specifiche && (
         <section className={styles.section} aria-labelledby="specifiche-heading">
           <h2 id="specifiche-heading" className={styles.sectionHeading}>{t('dimensionsAndSpecs')}</h2>
-          <div style={{ lineHeight: 1.7 }} dangerouslySetInnerHTML={{ __html: specifiche }} />
+          <div style={{ lineHeight: 1.7 }} dangerouslySetInnerHTML={{ __html: sanitizeHtml(specifiche) }} />
         </section>
       )}
 
@@ -200,7 +201,7 @@ export default async function ProdottoArredo({ node }: { node: Record<string, un
             style={{ maxWidth: '20rem', marginBottom: '0.75rem' }}
           />
           {categoriaBody && (
-            <div style={{ lineHeight: 1.7, color: '#555' }} dangerouslySetInnerHTML={{ __html: categoriaBody }} />
+            <div style={{ lineHeight: 1.7, color: '#555' }} dangerouslySetInnerHTML={{ __html: sanitizeHtml(categoriaBody) }} />
           )}
         </section>
       )}

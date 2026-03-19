@@ -1,4 +1,5 @@
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
+import { sanitizeHtml } from '@/lib/sanitize';
 
 interface UnknownEntityProps {
   node: Record<string, unknown>;
@@ -35,7 +36,7 @@ export default function UnknownEntity({ node }: UnknownEntityProps) {
       </h1>
       {body && (
         <div
-          dangerouslySetInnerHTML={{ __html: body }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(body) }}
           style={{ lineHeight: 1.7 }}
         />
       )}

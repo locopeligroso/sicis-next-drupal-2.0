@@ -1,4 +1,5 @@
 import { getProcessedText } from '@/lib/field-helpers';
+import { sanitizeHtml } from '@/lib/sanitize';
 import { getDrupalImageUrl } from '@/lib/drupal';
 
 export default function BloccoVideo({ paragraph }: { paragraph: Record<string, unknown> }) {
@@ -12,7 +13,7 @@ export default function BloccoVideo({ paragraph }: { paragraph: Record<string, u
         {title && (
           <h2
             className="text-2xl font-bold mb-6 leading-tight [&_p]:m-0"
-            dangerouslySetInnerHTML={{ __html: title }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(title) }}
           />
         )}
         <div className="aspect-video bg-gray-900 overflow-hidden">
