@@ -39,7 +39,27 @@ export function useFilterSync({
   const toggleFilter = useCallback(
     (key: string, value: string, type: 'path' | 'query', pathPrefix?: string) => {
       if (type === 'path') {
-        // Toggle path filter: navigate to new path or back to base
+        // Check if another P0 is already active via path
+        const otherPathActive = activeFilters.find(
+          f => f.type === 'path' && f.key !== key,
+        );
+
+        if (otherPathActive) {
+          // Second P0 → use query param instead of path navigation
+          const params = new URLSearchParams(searchParams.toString());
+          const queryKey = key;
+          if (params.get(queryKey) === value) {
+            params.delete(queryKey);
+          } else {
+            params.set(queryKey, value);
+          }
+          params.delete('page');
+          const currentPath = window.location.pathname;
+          router.push(`${currentPath}?${params.toString()}`);
+          return;
+        }
+
+        // First P0 → existing path navigation logic
         const currentActive = activeFilters.find(f => f.key === key);
         if (currentActive?.value === value) {
           // Deselect: go back to base path
