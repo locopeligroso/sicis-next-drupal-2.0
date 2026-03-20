@@ -125,9 +125,11 @@
     "heightCm": "Altura (cm)",
     "heightInch": "Altura (pulgadas)",
     "weightGm2": "Peso (g/m²)",
+    "knottingDensity": "Densidad de anudado",
     "dimensionsAndSpecs": "Dimensiones y especificaciones técnicas",
     "fabrics": "Tejidos",
-    "furniture": "Mobiliario"
+    "furniture": "Mobiliario",
+    "lighting": "Iluminación"
   },
   "filters": {
     "title": "Filtros",

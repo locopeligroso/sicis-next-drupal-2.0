@@ -125,9 +125,11 @@
     "heightCm": "Высота (см)",
     "heightInch": "Высота (дюймы)",
     "weightGm2": "Вес (г/м²)",
+    "knottingDensity": "Плотность узлов",
     "dimensionsAndSpecs": "Размеры и технические характеристики",
     "fabrics": "Ткани",
-    "furniture": "Мебель"
+    "furniture": "Мебель",
+    "lighting": "Освещение"
   },
   "filters": {
     "title": "Фильтры",

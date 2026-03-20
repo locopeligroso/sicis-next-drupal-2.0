@@ -1,23 +1,43 @@
+import { getTranslations } from 'next-intl/server';
 import DrupalImage from '@/components_legacy/DrupalImage';
-import ParagraphResolver from '@/components_legacy/blocks_legacy/ParagraphResolver';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { sanitizeHtml } from '@/lib/sanitize';
+import { getDrupalImageUrl } from '@/lib/drupal';
 
-export default function Documento({ node }: { node: Record<string, unknown> }) {
-  const title = getTextValue(node.field_titolo_main) || getTextValue(node.title);
+export default async function Documento({
+  node,
+}: {
+  node: Record<string, unknown>;
+}) {
+  const tCommon = await getTranslations('common');
+
+  const title =
+    getTextValue(node.field_titolo_main) || getTextValue(node.title);
   const body = getProcessedText(node.field_testo_main);
-  const paragraphs = (node.field_blocchi as Record<string, unknown>[] | undefined) ?? [];
+  const allegato = node.field_allegato as Record<string, unknown> | undefined;
+  const allegatoUrl = getDrupalImageUrl(allegato);
 
   return (
     <article style={{ maxWidth: '60rem', margin: '0 auto', padding: '2rem' }}>
-
       {title && (
-        <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '1.5rem', lineHeight: 1.2 }}>
+        <h1
+          style={{
+            fontSize: '2rem',
+            fontWeight: 700,
+            marginBottom: '1.5rem',
+            lineHeight: 1.2,
+          }}
+        >
           {title}
         </h1>
       )}
 
-      <DrupalImage field={node.field_immagine} alt={title ?? ''} aspectRatio="16/9" style={{ marginBottom: '2rem' }} />
+      <DrupalImage
+        field={node.field_immagine}
+        alt={title ?? ''}
+        aspectRatio="16/9"
+        style={{ marginBottom: '2rem' }}
+      />
 
       {body && (
         <div
@@ -26,9 +46,32 @@ export default function Documento({ node }: { node: Record<string, unknown> }) {
         />
       )}
 
-      {paragraphs.map((p, i) => (
-        <ParagraphResolver key={(p.id as string) ?? i} paragraph={p} />
-      ))}
+      {allegatoUrl && (
+        <div
+          style={{
+            marginTop: '2rem',
+            paddingTop: '1.5rem',
+            borderTop: '1px solid #eee',
+          }}
+        >
+          <a
+            href={allegatoUrl}
+            download
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '0.9375rem',
+              fontWeight: 600,
+              color: '#111',
+              textDecoration: 'underline',
+              textUnderlineOffset: 'var(--underline-offset, 3px)',
+            }}
+          >
+            {tCommon('download')}
+          </a>
+        </div>
+      )}
     </article>
   );
 }

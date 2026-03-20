@@ -1,4 +1,3 @@
-import ParagraphResolver from '@/components_legacy/blocks_legacy/ParagraphResolver';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { getDrupalImageUrl } from '@/lib/drupal';
@@ -7,8 +6,6 @@ export default function Showroom({ node }: { node: Record<string, unknown> }) {
   const title =
     getTextValue(node.field_titolo_main) || getTextValue(node.title);
   const body = getProcessedText(node.field_testo_main);
-  const paragraphs =
-    (node.field_blocchi as Record<string, unknown>[] | undefined) ?? [];
 
   // Showroom-specific fields
   const address = node.field_indirizzo as string | undefined;
@@ -220,10 +217,6 @@ export default function Showroom({ node }: { node: Record<string, unknown> }) {
           })}
         </div>
       )}
-
-      {paragraphs.map((p, i) => (
-        <ParagraphResolver key={(p.id as string) ?? i} paragraph={p} />
-      ))}
     </article>
   );
 }

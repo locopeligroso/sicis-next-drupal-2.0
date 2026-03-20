@@ -24,6 +24,13 @@ Single unified Drupal client split by responsibility:
 - `products.ts` — fetchProducts, getCategoriaProductType, slugToTermName
 - `filters.ts` — fetchFilterOptions, fetchAllFilterOptions
 - `projects.ts` — fetchProjects
+- `blog.ts` — fetchBlogPosts (articolo, news, tutorial merged)
+- `documents.ts` — fetchDocuments
+- `showrooms.ts` — fetchShowrooms
+- `environments.ts` — fetchEnvironments (ambiente nodes)
+- `pages-by-category.ts` — fetchPagesByCategory
+- `subcategories.ts` — fetchSubcategories
+- `types.ts` — JSON:API type definitions
 - `translated-path.ts` — getTranslatedPath
 - `index.ts` — barrel re-export (import from `@/lib/drupal`)
 
@@ -36,6 +43,16 @@ Server action wrapper: `src/lib/get-translated-path.ts` ('use server' for client
 
 ### INCLUDE_MAP
 Critical: if a relationship field is not in the INCLUDE_MAP, Drupal returns only `{ type, id }` without data. All nested images (stucco, colori, forma, categoria) must be explicitly included.
+
+Recent updates (2026-03-20 session):
+- `prodotto_arredo` and `prodotto_illuminazione`: added `field_finiture.field_immagine`
+- `mosaico_collezioni` and `vetrite_collezioni`: added `field_documenti` chain
+- `blocco_documenti` added to PARAGRAPH_INCLUDE
+- `showroom` and `documento`: do NOT have `field_blocchi` — Drupal returns 400 if included
+
+### Domain Layer
+- `src/lib/filters/` — `registry.ts` (FILTER_REGISTRY, 116 SLUG_OVERRIDES), `search-params.ts` (nuqs integration)
+- `src/lib/routing/` — `routing-registry.ts` (shadow mode), `section-config.ts`
 
 ### Components — Design System (`/ds` skill)
 
@@ -61,28 +78,36 @@ Critical: if a relationship field is not in the INCLUDE_MAP, Drupal returns only
 57 shadcn/ui primitives (base-vega preset, base-ui). NEVER modify directly.
 
 #### Legacy (`src/components_legacy/`)
-Header, Footer, MegaMenu, DrupalImage, LanguageSwitcher, paragraphs — to be replaced progressively.
+18 root components (Header, Footer, MegaMenu, DrupalImage, LanguageSwitcher, etc.) + 15 paragraph blocks in `blocks_legacy/` — to be replaced progressively.
 
 ### Templates
-- `src/templates/nodes/` — 17 node type templates
+- `src/templates/nodes/` — 18 node type templates (includes ProdottoIlluminazione)
 - `src/templates/taxonomy/` — 5 taxonomy templates
 - Templates receive `node` as `Record<string, unknown>`, cast to typed interface from `src/types/drupal/entities.ts`
 - ProdottoMosaico fully migrated to design system blocks (no legacy imports)
+- ProdottoVetrite, ProdottoArredo, ProdottoTessuto, ProdottoPixall, ProdottoIlluminazione: all legacy (DrupalImage + inline styles + product.module.css)
+- VetriteCollezione: hybrid — legacy structure + documents section uses Tailwind + getTranslations
 
 ### Types
-- `src/types/drupal/entities.ts` — Single file with EntityTypeName, base shapes, all 5 product interfaces + TermMosaicoCollezione, TermVetriteCollezione, NodeCategoria, DocumentItem
+- `src/types/drupal/entities.ts` — Single file with EntityTypeName, base shapes, 6 product interfaces (including ProdottoIlluminazione), 11 taxonomy types, 18 node types, TermMosaicoCollezione, TermVetriteCollezione, NodeCategoria, DocumentItem
 - No Zod schemas — pure TypeScript interfaces extending `Record<string, unknown>`
 
 ### Translations
-- `messages/{locale}.json` — All static frontend text via next-intl
-- Organized by section: common, nav, products, filters, errors, pagination
-- Some labels still hardcoded in English (to be migrated): "Maintenance and installation", "Get inspired through catalogs", "Scopri", attribute labels
+- `messages/{locale}.json` — 163 total keys across 6 sections (common, nav, products, filters, errors, pagination)
+- 2 keys (`resistant`, `absent`) exist only in IT — not yet translated to other locales
+- Some labels still hardcoded (to be migrated): "Maintenance and installation", "Get inspired through catalogs", "Scopri", "catalogo" (on ProdottoMosaico), attribute labels
+
+### Filter Registry
+- `src/lib/filters/registry.ts` — covers 6 product types: prodotto_mosaico, prodotto_vetrite, prodotto_arredo, prodotto_tessuto, prodotto_pixall, prodotto_illuminazione
+- prodotto_illuminazione registered with subcategory filter
+- 116 SLUG_OVERRIDES for term slug normalization
 
 ### Storybook
 - `.storybook/stories/primitives/` — 55 primitive stories
 - `.storybook/stories/composed/` — 9 composed stories (Typography, ResponsiveImage, ProductCarousel, ProductCta, ProductPricingCard, AttributeGrid, SwatchList, SpecsTable, DocumentCard)
 - `.storybook/stories/blocks/` — 5 block stories (ProductHero, ProductDetails, ProductSpecs, ProductResources, ProductGallery)
-- `.storybook/stories/design-tokens/` — Colors, Spacing, Typography catalog
+- `.storybook/stories/design-tokens/` — 3 stories (Colors, Spacing, Typography catalog)
+- Total: 87 stories across all directories
 - `.storybook/drafts/` — Empty (drafts deleted after extraction)
 
 ### Design Tokens (`src/styles/globals.css`)
@@ -109,18 +134,20 @@ Header, Footer, MegaMenu, DrupalImage, LanguageSwitcher, paragraphs — to be re
 
 ## Current State
 - **ProdottoMosaico**: fully migrated to design system (5 blocks, 9 composed, no legacy)
-- **Other 4 product templates**: still legacy, next to migrate
+- **Other 5 product templates** (Vetrite, Arredo, Tessuto, Pixall, Illuminazione): all legacy — next to migrate
+- **VetriteCollezione**: hybrid (legacy + Tailwind documents section)
 - **Header/Footer**: legacy, managed separately from product templates
 - **Animations**: removed for now, to be reimplemented with proper approach
 
 ## Next Steps
 - Apply ProdottoMosaico pattern to ProdottoVetrite template
-- Then: ProdottoArredo, ProdottoTessuto, ProdottoPixall
+- Then: ProdottoArredo, ProdottoTessuto, ProdottoPixall, ProdottoIlluminazione
 - Breadcrumb block (separate, above hero)
 - Contact form (Dialog/Sheet for CTA actions)
 - Alternative products carousel
 - Regional logic (EU vs US: pricing, CTAs, stock)
-- Translate hardcoded labels to messages/*.json
+- Translate hardcoded labels to messages/*.json (including "Get inspired through catalogs", "Scopri", "catalogo")
+- Sync missing translation keys (`resistant`, `absent`) to all 6 locales
 
 ## Agent Teams
 This project uses `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`. Whenever ci sono task indipendenti (es. modificare più template, esplorare più directory, eseguire check paralleli), lancia agenti in background (`run_in_background: true`) in un singolo messaggio anziché lavorare sequenzialmente. Usa foreground solo quando il risultato serve prima di procedere.

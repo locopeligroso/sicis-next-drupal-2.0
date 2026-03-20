@@ -125,9 +125,11 @@
     "heightCm": "Höhe (cm)",
     "heightInch": "Höhe (Zoll)",
     "weightGm2": "Gewicht (g/m²)",
+    "knottingDensity": "Knotendichte",
     "dimensionsAndSpecs": "Abmessungen und technische Daten",
     "fabrics": "Stoffe",
-    "furniture": "Einrichtung"
+    "furniture": "Einrichtung",
+    "lighting": "Beleuchtung"
   },
   "filters": {
     "title": "Filter",

@@ -40,3 +40,10 @@ Thumbs.db
 
 *storybook.log
 storybook-static
+
+# Claude Code
+.claude/
+reports/
+
+# Documentation (managed locally, not tracked)
+*.md

@@ -127,24 +127,30 @@ const INCLUDE_MAP: Record<string, string> = {
     'field_collezione.field_documenti.field_allegato',
   prodotto_illuminazione:
     'field_immagine,field_gallery,field_categoria,field_finiture,' +
+    'field_finiture.field_immagine,' +
     'field_categoria.field_immagine,' +
     'field_documenti,' +
     'field_documenti.field_immagine,' +
     'field_documenti.field_allegato,' +
     'field_immagine_anteprima,' +
     'field_gallery_intro,' +
-    'field_scheda_tecnica,field_tessuti',
+    'field_scheda_tecnica,field_tessuti,' +
+    'field_tessuti.field_immagine',
   prodotto_arredo:
     'field_immagine,field_gallery,field_categoria,field_finiture,' +
+    'field_finiture.field_immagine,' +
     'field_categoria.field_immagine,' +
     'field_documenti,' +
     'field_documenti.field_immagine,' +
     'field_documenti.field_allegato,' +
     'field_immagine_anteprima,' +
     'field_gallery_intro,' +
-    'field_scheda_tecnica,field_tessuti',
+    'field_scheda_tecnica,field_tessuti,' +
+    'field_tessuti.field_immagine',
   prodotto_vetrite:
     'field_immagine,field_immagine_anteprima,field_gallery,field_collezione,field_colori,field_finiture,field_texture,' +
+    'field_colori.field_immagine,' +
+    // field_finiture e field_texture NON hanno field_immagine su Drupal (verified via JSON:API 400)
     'field_collezione.field_immagine,' +
     'field_collezione.field_documenti,' +
     'field_collezione.field_documenti.field_immagine,' +
@@ -154,11 +160,15 @@ const INCLUDE_MAP: Record<string, string> = {
     'field_categoria.field_immagine,' +
     'field_documenti,' +
     'field_documenti.field_immagine,' +
+    'field_documenti.field_allegato,' +
     'field_indicazioni_manutenzione,' +
     'field_indicazioni_manutenzione.field_immagine,' +
     'field_gallery_intro',
   prodotto_pixall:
     'field_immagine,field_gallery,field_colori,field_forma,field_stucco,' +
+    'field_colori.field_immagine,' +
+    'field_forma.field_immagine,' +
+    'field_stucco.field_immagine,' +
     'field_immagine_anteprima,' +
     'field_immagine_moduli,' +
     'field_documenti,' +
@@ -187,9 +197,11 @@ const INCLUDE_MAP: Record<string, string> = {
     'field_immagine,field_blocchi,field_blocchi.field_immagine,field_categoria_progetto',
 
   // ── Taxonomy terms ──
-  mosaico_collezioni: 'field_immagine',
+  mosaico_collezioni:
+    'field_immagine,field_documenti,field_documenti.field_immagine,field_documenti.field_allegato',
   mosaico_colori: 'field_immagine',
-  vetrite_collezioni: 'field_immagine',
+  vetrite_collezioni:
+    'field_immagine,field_documenti,field_documenti.field_immagine,field_documenti.field_allegato',
   vetrite_colori: 'field_immagine',
 };
 

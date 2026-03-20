@@ -121,6 +121,7 @@ const VETRITE_PREFIXES = new Set([
   'plaque-en-verre-vetrite',
   'glasscheibe-vetrite',
   'láminas-de-vidrio-vetrite',
+  'стеклянные-листы-vetrite', // RU
 ]);
 
 // Prefissi path arredo per locale

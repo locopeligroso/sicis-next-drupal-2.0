@@ -127,9 +127,11 @@
     "heightCm": "Height (cm)",
     "heightInch": "Height (inch)",
     "weightGm2": "Weight (g/m²)",
+    "knottingDensity": "Knotting density",
     "dimensionsAndSpecs": "Dimensions and technical specs",
     "fabrics": "Fabrics",
-    "furniture": "Furniture"
+    "furniture": "Furniture",
+    "lighting": "Lighting"
   },
   "filters": {
     "title": "Filters",

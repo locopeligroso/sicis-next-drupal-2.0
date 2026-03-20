@@ -127,9 +127,11 @@
     "heightCm": "Altezza (cm)",
     "heightInch": "Altezza (inch)",
     "weightGm2": "Peso (g/m²)",
+    "knottingDensity": "Densità di annodatura",
     "dimensionsAndSpecs": "Dimensioni e specifiche tecniche",
     "fabrics": "Tessuti",
-    "furniture": "Arredo"
+    "furniture": "Arredo",
+    "lighting": "Illuminazione"
   },
   "filters": {
     "title": "Filtri",

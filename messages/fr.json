@@ -125,9 +125,11 @@
     "heightCm": "Hauteur (cm)",
     "heightInch": "Hauteur (pouces)",
     "weightGm2": "Poids (g/m²)",
+    "knottingDensity": "Densité de nouage",
     "dimensionsAndSpecs": "Dimensions et spécifications techniques",
     "fabrics": "Tissus",
-    "furniture": "Mobilier"
+    "furniture": "Mobilier",
+    "lighting": "Éclairage"
   },
   "filters": {
     "title": "Filtres",

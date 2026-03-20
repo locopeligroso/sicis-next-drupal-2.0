@@ -192,6 +192,11 @@ export interface ProdottoArredo extends DrupalEntity {
   field_prezzo_usa?: { value?: string } | null;
   field_collegamento_esterno?: string | DrupalLinkField | null;
   field_path_file_ftp?: string[] | string;
+  field_path_file_ftp_img_hd?: string[] | string;
+  field_componibile?: boolean;
+  field_more_varianti?: boolean;
+  field_next_art?: unknown;
+  field_no_form_scheda_tecnica?: boolean;
   field_immagine?: unknown;
   field_immagine_anteprima?: unknown;
   field_categoria?: NodeCategoria | null;
@@ -211,12 +216,13 @@ export interface ProdottoVetrite extends DrupalEntity {
   field_prezzo_usa?: { value?: string } | null;
   field_prezzo_on_demand?: boolean;
   field_no_usa_stock?: boolean;
+  field_campione?: boolean;
   field_immagine?: unknown;
   field_immagine_anteprima?: unknown;
   field_collezione?: TermVetriteCollezione | null;
-  field_colori?: Array<{ name?: string }>;
-  field_finiture?: Array<{ name?: string }>;
-  field_texture?: Array<{ name?: string }>;
+  field_colori?: Array<{ name?: string; field_immagine?: unknown }>;
+  field_finiture?: Array<{ name?: string }>; // vetrite_finiture has no field_immagine
+  field_texture?: Array<{ name?: string }>; // vetrite_textures has no field_immagine
   field_dimensioni_cm?: string | null;
   field_dimensioni_inch?: string | null;
   field_dimensione_pattern_cm?: string | null;
@@ -242,6 +248,12 @@ export interface ProdottoTessuto extends DrupalEntity {
   field_altezza_inch?: unknown;
   field_peso?: unknown;
   field_utilizzo?: string | null;
+  field_prezzo_eu?: string | null;
+  field_prezzo_usa?: string | null;
+  field_densita_annodatura?: string | null;
+  field_dimensioni_cm?: string | null;
+  field_dimensioni_inch?: string | null;
+  field_spessore?: string | null;
   field_immagine_anteprima?: unknown;
   field_categoria?: NodeCategoria | null;
   field_colori?: Array<{ name?: string }>;
@@ -251,6 +263,32 @@ export interface ProdottoTessuto extends DrupalEntity {
   field_gallery?: unknown[];
   field_gallery_intro?: unknown[];
   field_documenti?: DocumentItem[];
+}
+
+export interface ProdottoIlluminazione extends DrupalEntity {
+  type: 'node--prodotto_illuminazione';
+  field_titolo_main?: unknown;
+  field_testo_main?: DrupalTextField | null;
+  field_materiali?: DrupalTextField | null;
+  field_specifiche_tecniche?: DrupalTextField | null;
+  field_prezzo_eu?: { value?: string } | null;
+  field_prezzo_usa?: { value?: string } | null;
+  field_collegamento_esterno?: string | DrupalLinkField | null;
+  field_path_file_ftp?: string[] | string;
+  field_path_file_ftp_img_hd?: string[] | string;
+  field_componibile?: boolean;
+  field_more_varianti?: boolean;
+  field_next_art?: unknown;
+  field_no_form_scheda_tecnica?: boolean;
+  field_immagine?: unknown;
+  field_immagine_anteprima?: unknown;
+  field_categoria?: NodeCategoria | null;
+  field_finiture?: FinituraArredoItem[];
+  field_gallery?: unknown[];
+  field_gallery_intro?: unknown[];
+  field_documenti?: DocumentItem[];
+  field_scheda_tecnica?: unknown[];
+  field_tessuti?: unknown[];
 }
 
 export interface ProdottoPixall extends DrupalEntity {

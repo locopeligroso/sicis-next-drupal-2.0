@@ -12,14 +12,12 @@ import { buildIncludedMap, deserializeResource } from './deserializer';
 export const PARAGRAPH_INCLUDE: Record<string, string> = {
   'paragraph--blocco_slider_home':
     'field_elementi,field_elementi.field_immagine',
-  'paragraph--blocco_gallery':
-    'field_slide,field_slide.field_immagine',
-  'paragraph--blocco_gallery_intro':
-    'field_slide,field_slide.field_immagine',
-  'paragraph--blocco_correlati':
-    'field_elementi,field_elementi.field_immagine',
-  'paragraph--blocco_anni':
-    'field_anni,field_anni.field_immagine',
+  'paragraph--blocco_gallery': 'field_slide,field_slide.field_immagine',
+  'paragraph--blocco_gallery_intro': 'field_slide,field_slide.field_immagine',
+  'paragraph--blocco_correlati': 'field_elementi,field_elementi.field_immagine',
+  'paragraph--blocco_anni': 'field_anni,field_anni.field_immagine',
+  'paragraph--blocco_documenti':
+    'field_documenti,field_documenti.field_immagine,field_documenti.field_allegato',
 };
 
 /**
@@ -63,7 +61,11 @@ export async function fetchParagraph(
     } as RequestInit);
 
     if (!res.ok) {
-      console.error(`[fetchParagraph] HTTP ${res.status} for ${type}/${id}`, { locale, include, statusText: res.statusText });
+      console.error(`[fetchParagraph] HTTP ${res.status} for ${type}/${id}`, {
+        locale,
+        include,
+        statusText: res.statusText,
+      });
       return null;
     }
 
@@ -77,7 +79,10 @@ export async function fetchParagraph(
     const includedMap = buildIncludedMap(json.included);
     return deserializeResource(json.data, includedMap);
   } catch (err) {
-    console.error(`[fetchParagraph] Network error for ${type}/${id}`, { locale, error: err instanceof Error ? err.message : err });
+    console.error(`[fetchParagraph] Network error for ${type}/${id}`, {
+      locale,
+      error: err instanceof Error ? err.message : err,
+    });
     return null;
   }
 }

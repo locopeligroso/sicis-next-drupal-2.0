@@ -40,6 +40,10 @@ export function getCategoriaProductType(categoriaTitle: string): string | null {
     Fabrics: 'prodotto_tessuto',
     // Pixall
     Pixall: 'prodotto_pixall',
+    // Illuminazione
+    Illuminazione: 'prodotto_illuminazione',
+    Lighting: 'prodotto_illuminazione',
+    Beleuchtung: 'prodotto_illuminazione',
   };
   return map[categoriaTitle] ?? null;
 }
