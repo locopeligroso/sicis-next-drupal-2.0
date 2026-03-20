@@ -7,6 +7,7 @@ interface ProductCardProps {
   subtitle?: string | null
   imageUrl?: string | null
   href: string
+  aspectRatio?: string  // e.g. "1/1", "3/4" — defaults to "1/1"
   className?: string
 }
 
@@ -15,6 +16,7 @@ export function ProductCard({
   subtitle,
   imageUrl,
   href,
+  aspectRatio = "1/1",
   className,
 }: ProductCardProps) {
   return (
@@ -25,7 +27,7 @@ export function ProductCard({
         className,
       )}
     >
-      <div className="relative aspect-[3/4] overflow-hidden rounded-md bg-muted">
+      <div className="relative overflow-hidden rounded-md bg-muted" style={{ aspectRatio }}>
         {imageUrl ? (
           <img
             src={imageUrl}
