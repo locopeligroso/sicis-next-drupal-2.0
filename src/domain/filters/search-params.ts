@@ -72,6 +72,7 @@ export interface ParsedFilters {
   contentType: string | null;
   filterDefinitions: FilterDefinition[];
   activeFilters: ActiveFilter[];
+  sort?: string;
 }
 
 /**
@@ -93,6 +94,7 @@ export function parseFiltersFromUrl(
   const filterDefinitions: FilterDefinition[] = [];
   const activeFilters: ActiveFilter[] = [];
   let contentType: string | null = null;
+  const sort = searchParams['sort'] || undefined;
 
   // Find matching product type config from first slug segment
   for (const [ct, config] of Object.entries(FILTER_REGISTRY)) {
@@ -130,6 +132,22 @@ export function parseFiltersFromUrl(
       }
     }
 
+    // Detect second P0 via query param (when first P0 is already in the path)
+    for (const filterConfig of Object.values(config.filters)) {
+      if (filterConfig.type !== 'path') continue;
+      // Skip if already resolved from path
+      if (activeFilters.some(f => f.key === filterConfig.key)) continue;
+      // Check if present as query param
+      const queryKey = filterConfig.queryKey ?? filterConfig.key;
+      const queryValue = searchParams[queryKey];
+      if (queryValue) {
+        addFilter(filterConfig, queryValue, filterDefinitions, activeFilters);
+        // Override type to 'query' for the second P0
+        const lastAdded = activeFilters[activeFilters.length - 1];
+        lastAdded.type = 'query';
+      }
+    }
+
     // Detect query-based filters
     for (const filterConfig of Object.values(config.filters)) {
       if (filterConfig.type !== 'query' || !filterConfig.queryKey) continue;
@@ -142,7 +160,7 @@ export function parseFiltersFromUrl(
     break;
   }
 
-  return { contentType, filterDefinitions, activeFilters };
+  return { contentType, filterDefinitions, activeFilters, sort };
 }
 
 function addFilter(
