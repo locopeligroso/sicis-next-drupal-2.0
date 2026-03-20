@@ -273,11 +273,37 @@ export default async function Categoria({ node }: CategoriaProps) {
     );
   }
 
-  // ── Hub category (Illuminazione, etc.) ──
-  // Try subcategories first (node--categoria children), then pages
+  // ── Hub category with subcategories (e.g. Illuminazione → Lampadari, Lampade, etc.) ──
+  // Fetch child node--categoria entities, then fetch products for ALL subcategories
+  // and merge into a single listing. This mirrors the "Filter and Find" product listing.
   const { subcategories } = await fetchSubcategories(categoriaUuid, locale);
 
   if (subcategories.length > 0) {
+    // Fetch products for each subcategory in parallel
+    const subResults = await Promise.all(
+      subcategories.map((sub) =>
+        fetchProducts({
+          productType: 'prodotto_arredo',
+          locale,
+          limit: 48,
+          filterField: 'field_categoria.title',
+          filterValue: sub.title,
+        }),
+      ),
+    );
+    // Merge all products, deduplicate by id
+    const seen = new Set<string>();
+    const allProducts: ProductCard[] = [];
+    for (const result of subResults) {
+      for (const p of result.products) {
+        if (!seen.has(p.id)) {
+          seen.add(p.id);
+          allProducts.push(p);
+        }
+      }
+    }
+    const total = allProducts.length;
+
     return (
       <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '2rem' }}>
         <div
@@ -297,22 +323,40 @@ export default async function Categoria({ node }: CategoriaProps) {
           >
             {title}
           </h1>
-          <p style={{ margin: 0, fontSize: '0.875rem', color: '#888' }}>
-            {subcategories.length}{' '}
-            {subcategories.length === 1 ? 'categoria' : 'categorie'}
-          </p>
+          {total > 0 && (
+            <p style={{ margin: 0, fontSize: '0.875rem', color: '#888' }}>
+              {total} prodotti
+            </p>
+          )}
         </div>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(18rem, 1fr))',
-            gap: '1.5rem',
-          }}
-        >
-          {subcategories.map((sub: SubcategoryCard) => (
-            <PageCardItem key={sub.id} page={sub} locale={locale} />
-          ))}
-        </div>
+        {allProducts.length > 0 ? (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(14rem, 1fr))',
+              gap: '1.5rem',
+            }}
+          >
+            {allProducts.map((product) => (
+              <ProductCardItem
+                key={product.id}
+                product={product}
+                locale={locale}
+              />
+            ))}
+          </div>
+        ) : (
+          <div
+            style={{
+              padding: '4rem 2rem',
+              textAlign: 'center',
+              color: '#888',
+              border: '0.0625rem dashed #ddd',
+            }}
+          >
+            <p style={{ margin: 0 }}>Nessun prodotto trovato.</p>
+          </div>
+        )}
       </div>
     );
   }
