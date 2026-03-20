@@ -1,6 +1,12 @@
 # Dependencies
 node_modules/
 
+# Git worktrees
+.worktrees/
+
+# Superpowers brainstorm
+.superpowers/
+
 # Next.js build output
 .next/
 
