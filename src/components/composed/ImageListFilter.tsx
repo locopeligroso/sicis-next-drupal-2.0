@@ -44,7 +44,12 @@ export function ImageListFilter({
             ) : (
               <span className="size-8 shrink-0 rounded-sm bg-muted" />
             )}
-            <span>{option.label}</span>
+            <span>
+              {option.label}
+              {option.count != null && (
+                <span className="ml-1 text-muted-foreground">({option.count})</span>
+              )}
+            </span>
           </button>
         )
       })}
