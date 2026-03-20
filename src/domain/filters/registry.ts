@@ -56,10 +56,10 @@ export interface ProductTypeConfig {
 
 export const SLUG_OVERRIDES: Record<string, string> = {
   // Special characters (both slug and URL-decoded variants)
-  'colibri': 'Colibrì',
-  'colibrì': 'Colibrì',
-  'neocolibri': 'NeoColibrì',
-  'neocolibrì': 'NeoColibrì',
+  colibri: 'Colibrì',
+  colibrì: 'Colibrì',
+  neocolibri: 'NeoColibrì',
+  neocolibrì: 'NeoColibrì',
   'neocolibri-barrels': 'NeoColibrì - Barrels',
   'neocolibrì-barrels': 'NeoColibrì - Barrels',
   'neocolibri-cubes': 'NeoColibrì - Cubes',
@@ -109,10 +109,10 @@ export const SLUG_OVERRIDES: Record<string, string> = {
   'pixall-classic': 'Pixall Classic',
   'pixall-mosaic': 'Pixall Mosaic',
   // Tessuto categories
-  'arazzi': 'Arazzi',
-  'coperte': 'Coperte',
-  'tappeti': 'Tappeti',
-  'cuscini': 'Cuscini',
+  arazzi: 'Arazzi',
+  coperte: 'Coperte',
+  tappeti: 'Tappeti',
+  cuscini: 'Cuscini',
 };
 
 /**
@@ -136,9 +136,7 @@ export function deslugify(slug: string): string {
   // miss SLUG_OVERRIDES keys that are stored as NFC (U+00EC precomposed).
   const normalized = slug.normalize('NFC');
   if (SLUG_OVERRIDES[normalized]) return SLUG_OVERRIDES[normalized];
-  return normalized
-    .replace(/-/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return normalized.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 // ── Filter Registry ───────────────────────────────────────────────────────
@@ -147,12 +145,20 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
   prodotto_mosaico: {
     contentType: 'prodotto_mosaico',
     basePaths: {
-      it: 'mosaico', en: 'mosaic', fr: 'mosaïque',
-      de: 'mosaik', es: 'mosaico', ru: 'мозаика',
+      it: 'mosaico',
+      en: 'mosaic',
+      fr: 'mosaïque',
+      de: 'mosaik',
+      es: 'mosaico',
+      ru: 'мозаика',
     },
     includes: [
-      'field_categoria', 'field_collezione', 'field_colori',
-      'field_forma', 'field_finitura', 'field_immagine',
+      'field_categoria',
+      'field_collezione',
+      'field_colori',
+      'field_forma',
+      'field_finitura',
+      'field_immagine',
       'field_collezione.field_immagine',
     ],
     filters: {
@@ -169,7 +175,14 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
         key: 'color',
         drupalField: 'field_colori.name',
         type: 'path',
-        pathPrefix: { it: 'colori', en: 'colors', fr: 'couleurs', de: 'farben', es: 'colores', ru: 'цвета' },
+        pathPrefix: {
+          it: 'colori',
+          en: 'colors',
+          fr: 'couleurs',
+          de: 'farben',
+          es: 'colores',
+          ru: 'цвета',
+        },
         taxonomyType: 'taxonomy_term--mosaico_colori',
         displayAs: 'buttons',
         multiSelect: false,
@@ -210,11 +223,20 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
   prodotto_vetrite: {
     contentType: 'prodotto_vetrite',
     basePaths: {
-      it: 'lastre-vetro-vetrite', en: 'vetrite-glass-slabs',
-      fr: 'plaque-en-verre-vetrite', de: 'glasscheibe-vetrite',
-      es: 'láminas-de-vidrio-vetrite', ru: 'стеклянные-листы-vetrite',
+      it: 'lastre-vetro-vetrite',
+      en: 'vetrite-glass-slabs',
+      fr: 'plaque-en-verre-vetrite',
+      de: 'glasscheibe-vetrite',
+      es: 'láminas-de-vidrio-vetrite',
+      ru: 'стеклянные-листы-vetrite',
     },
-    includes: ['field_collezione', 'field_colori', 'field_finiture', 'field_texture', 'field_immagine'],
+    includes: [
+      'field_collezione',
+      'field_colori',
+      'field_finiture',
+      'field_texture',
+      'field_immagine',
+    ],
     filters: {
       collection: {
         key: 'collection',
@@ -229,7 +251,14 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
         key: 'color',
         drupalField: 'field_colori.name',
         type: 'path',
-        pathPrefix: { it: 'colori', en: 'colors', fr: 'couleurs', de: 'farben', es: 'colores', ru: 'цвета' },
+        pathPrefix: {
+          it: 'colori',
+          en: 'colors',
+          fr: 'couleurs',
+          de: 'farben',
+          es: 'colores',
+          ru: 'цвета',
+        },
         taxonomyType: 'taxonomy_term--vetrite_colori',
         displayAs: 'buttons',
         multiSelect: false,
@@ -259,11 +288,19 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
   prodotto_arredo: {
     contentType: 'prodotto_arredo',
     basePaths: {
-      it: 'arredo', en: 'furniture-and-accessories',
-      fr: 'ameublement', de: 'einrichtung',
-      es: 'mueble', ru: 'обстановка',
+      it: 'arredo',
+      en: 'furniture-and-accessories',
+      fr: 'ameublement',
+      de: 'einrichtung',
+      es: 'mueble',
+      ru: 'обстановка',
     },
-    includes: ['field_categoria', 'field_finiture', 'field_tessuti', 'field_immagine'],
+    includes: [
+      'field_categoria',
+      'field_finiture',
+      'field_tessuti',
+      'field_immagine',
+    ],
     filters: {
       subcategory: {
         key: 'subcategory',
@@ -309,8 +346,11 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
       ru: 'текстильные-изделия/ткани',
     },
     includes: [
-      'field_categoria', 'field_colori', 'field_finiture_tessuto',
-      'field_tipologia_tessuto', 'field_immagine',
+      'field_categoria',
+      'field_colori',
+      'field_finiture_tessuto',
+      'field_tipologia_tessuto',
+      'field_immagine',
     ],
     filters: {
       // category filter — was MISSING in old registry, causing tessili subcategory 404s
@@ -355,7 +395,14 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
 
   prodotto_pixall: {
     contentType: 'prodotto_pixall',
-    basePaths: { it: 'pixall', en: 'pixall', fr: 'pixall', de: 'pixall', es: 'pixall', ru: 'pixall' },
+    basePaths: {
+      it: 'pixall',
+      en: 'pixall',
+      fr: 'pixall',
+      de: 'pixall',
+      es: 'pixall',
+      ru: 'pixall',
+    },
     includes: ['field_colori', 'field_forma', 'field_stucco', 'field_immagine'],
     filters: {
       color: {
@@ -384,6 +431,30 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
         displayAs: 'checkboxes',
         multiSelect: true,
         priority: 'P2',
+      },
+    },
+  },
+
+  prodotto_illuminazione: {
+    contentType: 'prodotto_illuminazione',
+    basePaths: {
+      it: 'illuminazione',
+      en: 'lighting',
+      fr: 'eclairage',
+      de: 'beleuchtung',
+      es: 'iluminacion',
+      ru: 'освещение',
+    },
+    includes: ['field_categoria', 'field_finiture', 'field_immagine'],
+    filters: {
+      subcategory: {
+        key: 'subcategory',
+        drupalField: 'field_categoria.title',
+        type: 'path',
+        nodeType: 'node--categoria',
+        displayAs: 'buttons',
+        multiSelect: false,
+        priority: 'P0',
       },
     },
   },
@@ -426,7 +497,10 @@ export function translateBasePath(path: string, targetLocale: string): string {
 
   for (const config of Object.values(FILTER_REGISTRY)) {
     for (const sourceBasePath of Object.values(config.basePaths)) {
-      if (cleanPath === sourceBasePath || cleanPath.startsWith(sourceBasePath + '/')) {
+      if (
+        cleanPath === sourceBasePath ||
+        cleanPath.startsWith(sourceBasePath + '/')
+      ) {
         const targetBasePath = config.basePaths[targetLocale];
         if (!targetBasePath || sourceBasePath === targetBasePath) return path;
         const remainder = cleanPath.slice(sourceBasePath.length);
