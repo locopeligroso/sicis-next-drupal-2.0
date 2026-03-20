@@ -13,6 +13,7 @@ export interface ProductCard {
   id: string;
   type: string;
   title: string;
+  subtitle: string | null;
   imageUrl: string | null;
   price: string | null;
   priceOnDemand: boolean;
@@ -56,6 +57,8 @@ export interface FetchProductsOptions {
   filterOperator?: '=' | 'STARTS_WITH' | 'CONTAINS';
   /** Structured filter array — takes precedence over filterField/filterValue */
   filters?: FilterDefinition[];
+  /** JSON:API sort field, e.g. 'title' or '-title' for DESC */
+  sort?: string;
 }
 
 export interface ProductsResult {
@@ -158,11 +161,35 @@ export const fetchProducts = cache(
         ? 'field_immagine_anteprima'
         : 'field_immagine';
 
+    // Subtitle relationship field per product type:
+    //   mosaico/vetrite → field_collezione (taxonomy term → name)
+    //   arredo/tessuto/illuminazione → field_categoria (node → title)
+    //   pixall → none
+    const SUBTITLE_FIELD_MAP: Record<string, string> = {
+      prodotto_mosaico: 'field_collezione',
+      prodotto_vetrite: 'field_collezione',
+      prodotto_arredo: 'field_categoria',
+      prodotto_tessuto: 'field_categoria',
+      prodotto_illuminazione: 'field_categoria',
+    };
+    const subtitleField = SUBTITLE_FIELD_MAP[productType] ?? null;
+
+    const fields = [
+      'title',
+      'field_titolo_main',
+      imageField,
+      'field_prezzo_eu',
+      'field_prezzo_on_demand',
+      'path',
+      ...(subtitleField ? [subtitleField] : []),
+    ];
     url.searchParams.set(
       `fields[node--${productType}]`,
-      `title,field_titolo_main,${imageField},field_prezzo_eu,field_prezzo_on_demand,path`,
+      fields.join(','),
     );
-    url.searchParams.set('include', imageField);
+
+    const includes = [imageField, ...(subtitleField ? [subtitleField] : [])];
+    url.searchParams.set('include', includes.join(','));
 
     // Nuovi filtri strutturati (hanno precedenza su filterField/filterValue legacy)
     if (options.filters && options.filters.length > 0) {
@@ -179,6 +206,11 @@ export const fetchProducts = cache(
         url.searchParams.set('filter[f0][condition][operator]', operator);
         url.searchParams.set('filter[f0][condition][value]', termName);
       }
+    }
+
+    // Sort
+    if (options.sort) {
+      url.searchParams.set('sort', options.sort);
     }
 
     // Build a lightweight count URL (only IDs, max page size, no includes)
@@ -243,8 +275,9 @@ export const fetchProducts = cache(
         }
       }
 
-      // Build included file map: file uuid → absolute image URL
+      // Build included maps: file uuid → image URL, entity uuid → label
       const fileMap = new Map<string, string>();
+      const includedMap = new Map<string, Record<string, unknown>>();
       for (const item of json.included ?? []) {
         if (item.type === 'file--file') {
           const uriUrl = item.attributes?.uri?.url;
@@ -252,7 +285,15 @@ export const fetchProducts = cache(
             fileMap.set(item.id, `${DRUPAL_ORIGIN}${uriUrl}`);
           }
         }
+        // Store all included entities for subtitle lookup
+        includedMap.set(item.id, item);
       }
+
+      // Determine which attribute holds the subtitle label:
+      //   taxonomy terms use 'name', nodes use 'title'
+      const subtitleUsesName =
+        productType === 'prodotto_mosaico' ||
+        productType === 'prodotto_vetrite';
 
       const products: ProductCard[] = (json.data ?? []).map(
         (item: Record<string, unknown>) => {
@@ -268,6 +309,23 @@ export const fetchProducts = cache(
           const imageUrl = imgRel ? (fileMap.get(imgRel.id) ?? null) : null;
           const pathObj = attrs?.path as { alias?: string } | null;
 
+          // Extract subtitle from included relationship
+          let subtitle: string | null = null;
+          if (subtitleField) {
+            const subtitleRel = (
+              rels?.[subtitleField] as Record<string, unknown>
+            )?.data as { id: string } | null;
+            if (subtitleRel) {
+              const included = includedMap.get(subtitleRel.id);
+              if (included) {
+                const inclAttrs = included.attributes as Record<string, unknown>;
+                subtitle = subtitleUsesName
+                  ? ((inclAttrs?.name as string) ?? null)
+                  : ((inclAttrs?.title as string) ?? null);
+              }
+            }
+          }
+
           return {
             id: item.id as string,
             type: item.type as string,
@@ -275,6 +333,7 @@ export const fetchProducts = cache(
               (attrs?.field_titolo_main as string) ||
               (attrs?.title as string) ||
               '',
+            subtitle,
             imageUrl,
             price: (attrs?.field_prezzo_eu as string) ?? null,
             priceOnDemand: (attrs?.field_prezzo_on_demand as boolean) ?? false,

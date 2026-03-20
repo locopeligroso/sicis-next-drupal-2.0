@@ -1,4 +1,4 @@
-import { cache, Suspense } from 'react';
+import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { translatePath, fetchJsonApiResource } from '@/lib/drupal';
 import {
@@ -9,13 +9,16 @@ import {
 import UnknownEntity from '@/components_legacy/UnknownEntity';
 import { getSectionConfigAsync, fetchProducts } from '@/lib/drupal';
 import { getRoutingRegistry } from '@/domain/routing/routing-registry';
-import ProductListing from '@/components_legacy/ProductListing';
 import { parseFiltersFromUrl } from '@/domain/filters/search-params';
-import { fetchAllFilterOptions } from '@/lib/drupal';
-import FilterSidebar from '@/components_legacy/FilterSidebar';
+import {
+  fetchAllFilterOptions,
+  fetchFilterOptions,
+  fetchArredoCategoryOptions,
+  fetchFilterCounts,
+} from '@/lib/drupal';
 import { FILTER_REGISTRY } from '@/domain/filters/registry';
-import { ProductListingSkeleton } from '@/components_legacy/ProductListingSkeleton';
-import { FilterSidebarSkeleton } from '@/components_legacy/FilterSidebarSkeleton';
+import type { FilterOption } from '@/domain/filters/registry';
+import { ProductListingTemplate } from '@/templates/nodes/ProductListingTemplate';
 import ProjectListing from '@/components_legacy/ProjectListing';
 import EnvironmentListing from '@/components_legacy/EnvironmentListing';
 import BlogListing from '@/components_legacy/BlogListing';
@@ -184,155 +187,143 @@ const COMPONENT_MAP: Record<
 
 const PAGE_SIZE = 48;
 
-// ── Shared options type for async sub-components ───────────────────────────
-interface ListingOpts {
-  sectionConfig: {
-    productType: string;
-    filterField?: string;
-    filterValue?: string;
-    filterOperator?: '=' | 'STARTS_WITH' | 'CONTAINS';
-  };
+// ── Helper: renderizza listing prodotti con ProductListingTemplate ─────────
+// Replaces the old renderListingLayout (FilterSidebar + ProductListing grid).
+// Uses FILTER_REGISTRY to determine state (hub with category cards vs product grid)
+// and fetches data accordingly.
+async function renderProductListing({
+  productType,
+  title,
+  description,
+  slug,
+  searchParams: sp,
+  locale,
+}: {
+  productType: string;
+  title: string;
+  description?: string | null;
   slug: string[];
-  sp: Record<string, string | string[]> | undefined;
+  searchParams: Record<string, string | string[]> | undefined;
   locale: string;
-  currentPage: number;
-  offset: number;
-  title?: string;
-}
+}) {
+  const config = FILTER_REGISTRY[productType];
+  if (!config) return null;
 
-// ── Async Server Component: FilterSidebar with data fetching ───────────────
-// Wrapped in Suspense so it streams independently from ProductListingAsync.
-async function FilterSidebarAsync({ opts }: { opts: ListingOpts }) {
-  const { sectionConfig, slug, sp, locale } = opts;
-  const contentType = sectionConfig.productType;
-
-  const spRecord: Record<string, string> = {};
-  if (sp) {
-    Object.entries(sp).forEach(([k, v]) => {
-      if (k !== 'page') spRecord[k] = Array.isArray(v) ? v[0] : v;
-    });
-  }
-  const parsedFilters = parseFiltersFromUrl(slug, spRecord, locale);
-  // React.cache() deduplicates this call — ProductListingAsync calls it too
-  const filterOptions = await fetchAllFilterOptions(contentType, locale);
-
-  const registryConfig = FILTER_REGISTRY[contentType];
-  const availableFilters = registryConfig
-    ? Object.values(registryConfig.filters)
-    : [];
-
+  const { listing, filters } = config;
   const basePath = `/${locale}/${slug.join('/')}`;
 
-  return (
-    <FilterSidebar
-      availableFilters={availableFilters}
-      filterOptions={filterOptions}
-      activeFilters={parsedFilters.activeFilters}
-      locale={locale}
-      basePath={basePath}
-    />
-  );
-}
-
-// ── Async Server Component: ProductListing with data fetching ──────────────
-// Wrapped in Suspense so it streams independently from FilterSidebarAsync.
-async function ProductListingAsync({ opts }: { opts: ListingOpts }) {
-  const { sectionConfig, slug, sp, locale, currentPage, offset, title } = opts;
-  const contentType = sectionConfig.productType;
-
+  // Flatten searchParams to Record<string, string> for parseFiltersFromUrl
   const spRecord: Record<string, string> = {};
   if (sp) {
     Object.entries(sp).forEach(([k, v]) => {
       if (k !== 'page') spRecord[k] = Array.isArray(v) ? v[0] : v;
     });
   }
-  const parsedFilters = parseFiltersFromUrl(slug, spRecord, locale);
+  const parsed = parseFiltersFromUrl(slug, spRecord, locale);
 
-  // sectionConfig.filterOperator is the authoritative source for operator overrides
-  // (e.g. STARTS_WITH for NeoColibrì subcollections). Apply it to the matching
-  // filterDefinition so it reaches buildJsonApiFilters regardless of detection path.
-  // This bridges the routing layer (section-config) with the URL parser (search-params).
-  if (
-    sectionConfig.filterOperator &&
-    sectionConfig.filterOperator !== '=' &&
-    sectionConfig.filterField &&
-    parsedFilters.filterDefinitions.length > 0
-  ) {
-    for (const fd of parsedFilters.filterDefinitions) {
-      if (fd.field === sectionConfig.filterField) {
-        fd.operator = sectionConfig.filterOperator;
+  // Determine if any P0 filter is active (drives hub vs product grid state)
+  const p0Keys = Object.values(filters)
+    .filter((f) => f.priority === 'P0')
+    .map((f) => f.key);
+  const hasActiveP0 = parsed.activeFilters.some((f) =>
+    p0Keys.includes(f.key),
+  );
+
+  let products;
+  let total;
+  let filterOptions: Record<string, FilterOption[]>;
+
+  if (!hasActiveP0 && listing.categoryGroups.length > 0) {
+    // ── State 1: Hub mode — show category cards, no product grid ──────────
+    // Fetch only the filter options needed for category card groups + sidebar
+    const optionPromises: [string, Promise<FilterOption[]>][] = [];
+    for (const group of listing.categoryGroups) {
+      const filterConfig = filters[group.filterKey];
+      if (filterConfig?.taxonomyType) {
+        optionPromises.push([
+          group.filterKey,
+          fetchFilterOptions(filterConfig.taxonomyType, locale, {
+            includeImage: group.hasImage || group.hasColorSwatch,
+          }),
+        ]);
+      } else if (filterConfig?.nodeType === 'node--categoria') {
+        optionPromises.push([
+          group.filterKey,
+          fetchArredoCategoryOptions(locale, config.contentType),
+        ]);
+      }
+    }
+    const resolved = await Promise.all(
+      optionPromises.map(async ([key, promise]) => [key, await promise] as [string, FilterOption[]]),
+    );
+    filterOptions = Object.fromEntries(resolved);
+    products = undefined;
+    total = undefined;
+  } else {
+    // ── State 2: Product grid mode — fetch products + all filter options ───
+    const pageStr = Array.isArray(sp?.page) ? sp.page[0] : sp?.page;
+    const currentPage = Math.max(1, parseInt((pageStr as string) ?? '1', 10));
+    const offset = (currentPage - 1) * listing.pageSize;
+
+    const [productResult, allFilterOptions] = await Promise.all([
+      fetchProducts({
+        productType,
+        locale,
+        limit: listing.pageSize,
+        offset,
+        filters:
+          parsed.filterDefinitions.length > 0
+            ? parsed.filterDefinitions
+            : undefined,
+        sort: parsed.sort || undefined,
+      }),
+      fetchAllFilterOptions(productType, locale),
+    ]);
+    products = productResult.products;
+    total = productResult.total;
+    filterOptions = allFilterOptions;
+
+    // Fetch live counts for each filter group (relative to other active filters)
+    const countPromises = Object.entries(filters).map(
+      async ([key, filterConfig]) => {
+        const counts = await fetchFilterCounts(
+          productType,
+          parsed.filterDefinitions,
+          key,
+          filterConfig.drupalField,
+          locale,
+        );
+        return [key, counts] as [string, Record<string, number>];
+      },
+    );
+    const countResults = await Promise.all(countPromises);
+    for (const [key, counts] of countResults) {
+      const options = filterOptions[key];
+      if (options) {
+        for (const option of options) {
+          option.count = counts[option.label] ?? 0;
+        }
       }
     }
   }
 
-  const { products, total } = await fetchProducts({
-    productType: contentType,
-    locale,
-    limit: PAGE_SIZE,
-    offset,
-    filters:
-      parsedFilters.filterDefinitions.length > 0
-        ? parsedFilters.filterDefinitions
-        : undefined,
-    filterField:
-      parsedFilters.filterDefinitions.length === 0
-        ? sectionConfig.filterField
-        : undefined,
-    filterValue:
-      parsedFilters.filterDefinitions.length === 0
-        ? sectionConfig.filterValue
-        : undefined,
-    filterOperator:
-      parsedFilters.filterDefinitions.length === 0
-        ? sectionConfig.filterOperator
-        : undefined,
-  });
-
-  const activeQueryParams: Record<string, string | string[]> = {};
-  parsedFilters.activeFilters
-    .filter((f) => f.type === 'query')
-    .forEach((f) => {
-      activeQueryParams[f.key] = f.value;
-    });
-
-  const basePath = `/${locale}/${slug.join('/')}`;
-  const displayTitle = title ?? slug[slug.length - 1] ?? slug[0] ?? 'Prodotti';
-
   return (
-    <ProductListing
-      title={displayTitle}
+    <ProductListingTemplate
+      title={title}
+      description={description}
+      productType={productType}
+      listingConfig={listing}
+      filters={filters}
+      filterOptions={filterOptions}
+      activeFilters={parsed.activeFilters}
+      filterDefinitions={parsed.filterDefinitions}
+      hasActiveP0={hasActiveP0}
       products={products}
       total={total}
-      locale={locale}
-      currentPage={currentPage}
-      pageSize={PAGE_SIZE}
+      currentSort={parsed.sort}
       basePath={basePath}
-      activeQueryParams={activeQueryParams}
+      locale={locale}
     />
-  );
-}
-
-// ── Helper: renderizza listing prodotti con FilterSidebar ──────────────────
-// Usato in 3 punti: LISTING_SLUG_OVERRIDES, fallback getSectionConfig, e
-// intercettazione node--categoria (sotto-categorie arredo).
-// Suspense boundaries enable progressive streaming: sidebar and listing
-// render independently — each shows a shimmer skeleton while data loads.
-function renderListingLayout(opts: ListingOpts) {
-  return (
-    <>
-      <style>{`
-        .filter-page-grid { display: grid; grid-template-columns: 16.25rem 1fr; min-height: 100vh; align-items: start; }
-        @media (max-width: 48rem) { .filter-page-grid { grid-template-columns: 1fr; } }
-      `}</style>
-      <div className="filter-page-grid">
-        <Suspense fallback={<FilterSidebarSkeleton />}>
-          <FilterSidebarAsync opts={opts} />
-        </Suspense>
-        <Suspense fallback={<ProductListingSkeleton />}>
-          <ProductListingAsync opts={opts} />
-        </Suspense>
-      </div>
-    </>
   );
 }
 
@@ -387,14 +378,12 @@ export default async function SlugPage({
   if (singleSlug && isListingSlug) {
     const sectionConfig = await getSectionConfigAsync(slug, locale);
     if (sectionConfig) {
-      return renderListingLayout({
-        sectionConfig,
-        slug,
-        sp,
-        locale,
-        currentPage,
-        offset,
+      return renderProductListing({
+        productType: sectionConfig.productType,
         title: singleSlug,
+        slug,
+        searchParams: sp,
+        locale,
       });
     }
     notFound();
@@ -417,13 +406,12 @@ export default async function SlugPage({
   if (!resource) {
     const sectionConfig = await getSectionConfigAsync(slug, locale);
     if (sectionConfig) {
-      return renderListingLayout({
-        sectionConfig,
+      return renderProductListing({
+        productType: sectionConfig.productType,
+        title: slug[slug.length - 1] ?? slug[0] ?? 'Prodotti',
         slug,
-        sp,
+        searchParams: sp,
         locale,
-        currentPage,
-        offset,
       });
     }
     notFound();
@@ -450,14 +438,12 @@ export default async function SlugPage({
           ?.value ??
         (resolvedResource.title as string | undefined) ??
         slug[slug.length - 1];
-      return renderListingLayout({
-        sectionConfig,
-        slug,
-        sp,
-        locale,
-        currentPage,
-        offset,
+      return renderProductListing({
+        productType: sectionConfig.productType,
         title: nodeTitle,
+        slug,
+        searchParams: sp,
+        locale,
       });
     }
   }
@@ -474,20 +460,18 @@ export default async function SlugPage({
         (resolvedResource.title as string | undefined) ??
         slug[slug.length - 1];
 
-      // Product listing (with FilterSidebar)
+      // Product listing (with ProductListingTemplate)
       const PAGE_ID_TO_PRODUCT_TYPE: Record<string, string> = {
         tessile: 'prodotto_tessuto',
       };
       const productType = PAGE_ID_TO_PRODUCT_TYPE[pageId];
       if (productType) {
-        return renderListingLayout({
-          sectionConfig: { productType },
-          slug,
-          sp,
-          locale,
-          currentPage,
-          offset,
+        return renderProductListing({
+          productType,
           title: nodeTitle,
+          slug,
+          searchParams: sp,
+          locale,
         });
       }
 

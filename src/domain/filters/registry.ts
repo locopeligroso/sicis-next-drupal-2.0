@@ -21,6 +21,8 @@ export interface FilterOption {
   label: string;
   id?: string;
   count?: number;
+  imageUrl?: string;    // preview image for category cards
+  cssColor?: string;    // fallback CSS color for swatches
 }
 
 export interface ActiveFilter {
@@ -43,11 +45,32 @@ export interface FilterGroupConfig {
   priority: Priority;
 }
 
+export interface ListingConfig {
+  categoryCardRatio: string;
+  categoryGroups: CategoryGroupDef[];
+  sortOptions: SortOptionDef[];
+  pageSize: number;
+}
+
+export interface CategoryGroupDef {
+  filterKey: string;
+  labelKey: string;
+  hasImage: boolean;
+  hasColorSwatch: boolean;
+}
+
+export interface SortOptionDef {
+  labelKey: string;
+  field: string;
+  direction: 'ASC' | 'DESC';
+}
+
 export interface ProductTypeConfig {
   contentType: string;
   basePaths: Record<string, string>;
   includes: string[];
   filters: Record<string, FilterGroupConfig>;
+  listing: ListingConfig;
 }
 
 // ── Unified slug → term name map ──────────────────────────────────────────
@@ -218,6 +241,18 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
         priority: 'P2',
       },
     },
+    listing: {
+      categoryCardRatio: '1/1',
+      categoryGroups: [
+        { filterKey: 'color', labelKey: 'filters.colors', hasImage: false, hasColorSwatch: true },
+        { filterKey: 'collection', labelKey: 'filters.collections', hasImage: true, hasColorSwatch: false },
+      ],
+      sortOptions: [
+        { labelKey: 'sort.name', field: 'title', direction: 'ASC' },
+        { labelKey: 'sort.collection', field: 'field_collezione.name', direction: 'ASC' },
+      ],
+      pageSize: 48,
+    },
   },
 
   prodotto_vetrite: {
@@ -283,6 +318,18 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
         priority: 'P1',
       },
     },
+    listing: {
+      categoryCardRatio: '1/1',
+      categoryGroups: [
+        { filterKey: 'color', labelKey: 'filters.colors', hasImage: false, hasColorSwatch: true },
+        { filterKey: 'collection', labelKey: 'filters.collections', hasImage: true, hasColorSwatch: false },
+      ],
+      sortOptions: [
+        { labelKey: 'sort.name', field: 'title', direction: 'ASC' },
+        { labelKey: 'sort.collection', field: 'field_collezione.name', direction: 'ASC' },
+      ],
+      pageSize: 48,
+    },
   },
 
   prodotto_arredo: {
@@ -329,6 +376,17 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
         multiSelect: true,
         priority: 'P1',
       },
+    },
+    listing: {
+      categoryCardRatio: '4/3',
+      categoryGroups: [
+        { filterKey: 'subcategory', labelKey: 'filters.typologies', hasImage: true, hasColorSwatch: false },
+      ],
+      sortOptions: [
+        { labelKey: 'sort.name', field: 'title', direction: 'ASC' },
+        { labelKey: 'sort.typology', field: 'field_categoria.title', direction: 'ASC' },
+      ],
+      pageSize: 48,
     },
   },
 
@@ -391,6 +449,17 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
         priority: 'P1',
       },
     },
+    listing: {
+      categoryCardRatio: '4/3',
+      categoryGroups: [
+        { filterKey: 'category', labelKey: 'filters.categories', hasImage: true, hasColorSwatch: false },
+      ],
+      sortOptions: [
+        { labelKey: 'sort.name', field: 'title', direction: 'ASC' },
+        { labelKey: 'sort.category', field: 'field_categoria.title', direction: 'ASC' },
+      ],
+      pageSize: 48,
+    },
   },
 
   prodotto_pixall: {
@@ -433,6 +502,14 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
         priority: 'P2',
       },
     },
+    listing: {
+      categoryCardRatio: '1/1',
+      categoryGroups: [],
+      sortOptions: [
+        { labelKey: 'sort.name', field: 'title', direction: 'ASC' },
+      ],
+      pageSize: 48,
+    },
   },
 
   prodotto_illuminazione: {
@@ -456,6 +533,17 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
         multiSelect: false,
         priority: 'P0',
       },
+    },
+    listing: {
+      categoryCardRatio: '4/3',
+      categoryGroups: [
+        { filterKey: 'subcategory', labelKey: 'filters.subcategories', hasImage: true, hasColorSwatch: false },
+      ],
+      sortOptions: [
+        { labelKey: 'sort.name', field: 'title', direction: 'ASC' },
+        { labelKey: 'sort.subcategory', field: 'field_categoria.title', direction: 'ASC' },
+      ],
+      pageSize: 48,
     },
   },
 };

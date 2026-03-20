@@ -6,6 +6,10 @@ import { cache } from 'react';
 import { DRUPAL_BASE_URL } from './config';
 import type { FilterOption } from '@/domain/filters/registry';
 import { FILTER_REGISTRY } from '@/domain/filters/registry';
+import {
+  buildJsonApiFilters,
+  type FilterDefinition,
+} from '@/domain/filters/search-params';
 
 /**
  * Fetches all terms for a given taxonomy vocabulary in the given locale.
@@ -14,13 +18,21 @@ import { FILTER_REGISTRY } from '@/domain/filters/registry';
 export async function fetchFilterOptions(
   taxonomyType: string,
   locale: string,
+  options?: { includeImage?: boolean },
 ): Promise<FilterOption[]> {
   const localePrefix = locale ? `/${locale}` : '';
   const url = new URL(
     `${DRUPAL_BASE_URL}${localePrefix}/jsonapi/${taxonomyType.replace('--', '/')}`,
   );
   url.searchParams.set('page[limit]', '200');
-  url.searchParams.set(`fields[${taxonomyType}]`, 'name,path,weight');
+
+  if (options?.includeImage) {
+    url.searchParams.set(`fields[${taxonomyType}]`, 'name,path,weight,field_immagine');
+    url.searchParams.set('include', 'field_immagine');
+  } else {
+    url.searchParams.set(`fields[${taxonomyType}]`, 'name,path,weight');
+  }
+
   url.searchParams.set('sort', 'weight,name');
 
   try {
@@ -38,15 +50,50 @@ export async function fetchFilterOptions(
     }
 
     const json = await res.json();
+
+    // Build a lookup map from included entities (for image resolution)
+    const includedMap = new Map<string, Record<string, unknown>>();
+    if (options?.includeImage && Array.isArray(json.included)) {
+      for (const inc of json.included) {
+        const incObj = inc as Record<string, unknown>;
+        const key = `${incObj.type}--${incObj.id}`;
+        includedMap.set(key, incObj);
+      }
+    }
+
     return (json.data ?? []).map((item: Record<string, unknown>) => {
       const attrs = item.attributes as Record<string, unknown>;
       const name = (attrs?.name as string) ?? '';
       const pathObj = attrs?.path as { alias?: string } | null;
-      return {
+
+      const filterOption: FilterOption = {
         id: item.id as string,
         slug: pathToSlug(pathObj?.alias ?? name),
         label: name,
-      } satisfies FilterOption;
+      };
+
+      // Extract image URL from included data if requested
+      if (options?.includeImage) {
+        const relationships = item.relationships as Record<string, unknown> | undefined;
+        const fieldImmagine = relationships?.field_immagine as Record<string, unknown> | undefined;
+        const imageData = fieldImmagine?.data as Record<string, unknown> | undefined;
+        if (imageData?.type && imageData?.id) {
+          const imageKey = `${imageData.type}--${imageData.id}`;
+          const includedImage = includedMap.get(imageKey);
+          if (includedImage) {
+            const imageAttrs = includedImage.attributes as Record<string, unknown> | undefined;
+            const uri = imageAttrs?.uri as Record<string, unknown> | undefined;
+            const imageUrl = uri?.url as string | undefined;
+            if (imageUrl) {
+              filterOption.imageUrl = imageUrl.startsWith('/')
+                ? `${DRUPAL_BASE_URL}${imageUrl}`
+                : imageUrl;
+            }
+          }
+        }
+      }
+
+      return filterOption;
     });
   } catch (err) {
     console.error(`[fetchFilterOptions] Network error for ${taxonomyType}`, {
@@ -175,6 +222,134 @@ function titleToSlug(title: string): string {
     .toLowerCase()
     .replace(/\s+/g, '-')
     .replace(/[^a-z0-9-]/g, '');
+}
+
+/**
+ * Fetches product counts for each value of a given filter, relative to active filters.
+ *
+ * Approach: single fetch with client-side count.
+ * Fetches all product IDs matching the current active filters (excluding the target
+ * filter itself) with the target relationship included, then counts occurrences of
+ * each relationship value.
+ *
+ * This avoids N separate API calls while giving accurate counts that update as
+ * filters are applied.
+ *
+ * @param productType  - Drupal content type (e.g. 'prodotto_mosaico')
+ * @param activeFilters - Currently active filter definitions (from parseFiltersFromUrl)
+ * @param filterKey     - The filter key being counted (e.g. 'collection')
+ * @param drupalField   - Drupal field path (e.g. 'field_collezione.name')
+ * @param locale        - Current locale
+ * @returns Record mapping filter value labels to product counts
+ */
+export async function fetchFilterCounts(
+  productType: string,
+  activeFilters: FilterDefinition[],
+  filterKey: string,
+  drupalField: string,
+  locale: string,
+): Promise<Record<string, number>> {
+  const localePrefix = locale ? `/${locale}` : '';
+
+  // drupalField is like 'field_collezione.name' or 'field_categoria.title'
+  const [relationshipField, attributeName] = drupalField.split('.');
+
+  const url = new URL(
+    `${DRUPAL_BASE_URL}${localePrefix}/jsonapi/node/${productType}`,
+  );
+
+  // Request only the target relationship (lightweight payload)
+  url.searchParams.set(`fields[node--${productType}]`, relationshipField);
+  url.searchParams.set('include', relationshipField);
+  url.searchParams.set('page[limit]', '50');
+  url.searchParams.set('filter[status]', '1');
+
+  // Apply active filters EXCLUDING the one we're counting
+  // This gives "how many products match other filters" per value of this filter
+  const otherFilters = activeFilters.filter(
+    (f) => f.field !== drupalField,
+  );
+  if (otherFilters.length > 0) {
+    buildJsonApiFilters(otherFilters, url.searchParams);
+  }
+
+  const counts: Record<string, number> = {};
+
+  try {
+    let currentUrl: string | null = url.toString();
+
+    while (currentUrl) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const res: Response = await fetch(currentUrl, {
+        headers: { Accept: 'application/vnd.api+json' },
+        next: { revalidate: 60 },
+      } as any);
+
+      if (!res.ok) {
+        console.warn(
+          `[fetchFilterCounts] HTTP ${res.status} for ${productType}.${filterKey}`,
+          { locale, url: currentUrl },
+        );
+        return counts;
+      }
+
+      const json = await res.json() as Record<string, unknown>;
+
+      // Build included map: entity id → entity data
+      const includedMap = new Map<string, Record<string, unknown>>();
+      const includedArr = json.included as Record<string, unknown>[] | undefined;
+      for (const inc of includedArr ?? []) {
+        includedMap.set(inc.id as string, inc);
+      }
+
+      // For each product, extract the relationship value(s) and count
+      const dataArr = json.data as Record<string, unknown>[] | undefined;
+      for (const product of dataArr ?? []) {
+        const rels = product.relationships as
+          | Record<string, unknown>
+          | undefined;
+        const relData = rels?.[relationshipField] as
+          | Record<string, unknown>
+          | undefined;
+        const data = relData?.data;
+
+        if (!data) continue;
+
+        // Handle both single and multi-value relationships
+        const references = Array.isArray(data) ? data : [data];
+
+        for (const ref of references) {
+          const refObj = ref as { id?: string; type?: string };
+          if (!refObj.id) continue;
+
+          const included = includedMap.get(refObj.id);
+          if (!included) continue;
+
+          const attrs = included.attributes as
+            | Record<string, unknown>
+            | undefined;
+          // Use the specified attribute (name for taxonomy, title for nodes)
+          const label = (attrs?.[attributeName || 'name'] as string) ?? '';
+          if (label) {
+            counts[label] = (counts[label] ?? 0) + 1;
+          }
+        }
+      }
+
+      // Follow pagination
+      const links = json.links as Record<string, unknown> | undefined;
+      const nextLink = links?.next as { href?: string } | undefined;
+      currentUrl = nextLink?.href ?? null;
+    }
+
+    return counts;
+  } catch (err) {
+    console.error(
+      `[fetchFilterCounts] Network error for ${productType}.${filterKey}`,
+      { locale, error: err instanceof Error ? err.message : err },
+    );
+    return counts;
+  }
 }
 
 /**

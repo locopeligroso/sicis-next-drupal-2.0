@@ -1,4 +1,24 @@
 import type { EntityTypeName } from '@/types/drupal/entities';
+import { FILTER_REGISTRY } from '@/domain/filters/registry';
+import type { ListingConfig } from '@/domain/filters/registry';
+
+/**
+ * Returns the listing configuration from the filter registry for a given product type.
+ *
+ * Used by the catch-all route to determine page size, category groups, sort options
+ * and card aspect ratio for product listing pages.
+ *
+ * @param productType - Drupal content type machine name (e.g. `'prodotto_mosaico'`)
+ * @returns `ListingConfig` with pageSize, categoryGroups, sortOptions, categoryCardRatio,
+ *          or `null` if the product type is not registered.
+ * @example
+ * getListingConfig('prodotto_mosaico')?.pageSize // → 48
+ * getListingConfig('unknown')                     // → null
+ */
+export function getListingConfig(productType: string): ListingConfig | null {
+  const config = FILTER_REGISTRY[productType];
+  return config?.listing ?? null;
+}
 
 /**
  * Returns the ISR revalidation time in seconds for a given Drupal entity type.
