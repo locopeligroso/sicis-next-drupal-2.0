@@ -14,6 +14,7 @@ import {
   fetchAllFilterOptions,
   fetchFilterOptions,
   fetchArredoCategoryOptions,
+  fetchFilterCounts,
 } from '@/lib/drupal';
 import { FILTER_REGISTRY } from '@/domain/filters/registry';
 import type { FilterOption } from '@/domain/filters/registry';
@@ -281,6 +282,29 @@ async function renderProductListing({
     products = productResult.products;
     total = productResult.total;
     filterOptions = allFilterOptions;
+
+    // Fetch live counts for each filter group (relative to other active filters)
+    const countPromises = Object.entries(filters).map(
+      async ([key, filterConfig]) => {
+        const counts = await fetchFilterCounts(
+          productType,
+          parsed.filterDefinitions,
+          key,
+          filterConfig.drupalField,
+          locale,
+        );
+        return [key, counts] as [string, Record<string, number>];
+      },
+    );
+    const countResults = await Promise.all(countPromises);
+    for (const [key, counts] of countResults) {
+      const options = filterOptions[key];
+      if (options) {
+        for (const option of options) {
+          option.count = counts[option.label] ?? 0;
+        }
+      }
+    }
   }
 
   return (
