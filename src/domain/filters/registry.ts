@@ -382,7 +382,7 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
     },
     listing: {
       categoryCardRatio: '4/3',
-      productCardRatio: '1/1',
+      productCardRatio: '3/2',
       categoryGroups: [
         { filterKey: 'subcategory', labelKey: 'filters.typologies', hasImage: true, hasColorSwatch: false },
       ],
