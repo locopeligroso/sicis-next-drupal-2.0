@@ -320,28 +320,10 @@ async function renderProductListing({
     total = productResult.total;
     filterOptions = allFilterOptions;
 
-    // Fetch live counts for each filter group (relative to other active filters)
-    const countPromises = Object.entries(filters).map(
-      async ([key, filterConfig]) => {
-        const counts = await fetchFilterCounts(
-          productType,
-          parsed.filterDefinitions,
-          key,
-          filterConfig.drupalField,
-          locale,
-        );
-        return [key, counts] as [string, Record<string, number>];
-      },
-    );
-    const countResults = await Promise.all(countPromises);
-    for (const [key, counts] of countResults) {
-      const options = filterOptions[key];
-      if (options) {
-        for (const option of options) {
-          option.count = counts[option.label] ?? 0;
-        }
-      }
-    }
+    // TODO: Re-enable live counts when Drupal View endpoint is available.
+    // Currently disabled because counting requires paginating all products
+    // via JSON:API (27s+ per page on staging), making page loads too slow.
+    // See: docs/superpowers/specs/2026-03-20-unified-product-listing-design.md §3.2
   }
 
   return (
