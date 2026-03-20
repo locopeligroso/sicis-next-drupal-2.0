@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTheme } from 'next-themes';
 import { fetchMenu, transformMenuToNavItems } from '@/lib/drupal';
 import type { MenuItem } from '@/lib/drupal';
 import MegaMenu from '@/components_legacy/MegaMenu';
@@ -188,6 +189,9 @@ export default function Header({ locale, initialMenu }: HeaderProps) {
           })}
         </ul>
 
+        {/* Theme toggle (provisional) */}
+        <DarkModeToggle />
+
         {/* Language switcher — pushed to far right by flex: 1 on <ul> */}
         <LanguageSwitcher currentLocale={locale} />
 
@@ -204,5 +208,21 @@ export default function Header({ locale, initialMenu }: HeaderProps) {
           )}
       </nav>
     </header>
+  );
+}
+
+function DarkModeToggle() {
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+  return (
+    <button
+      onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+      style={{ fontSize: '1.25rem', background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem' }}
+      title={resolvedTheme === 'dark' ? 'Light mode' : 'Dark mode'}
+    >
+      {resolvedTheme === 'dark' ? '☀️' : '🌙'}
+    </button>
   );
 }

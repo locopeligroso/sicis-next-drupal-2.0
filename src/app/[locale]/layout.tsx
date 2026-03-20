@@ -50,6 +50,7 @@ export default async function LocaleLayout({
   return (
     <html
       lang={locale}
+      suppressHydrationWarning
       className={cn(
         'antialiased',
         fontBody.variable,
