@@ -1,11 +1,11 @@
 import { Typography } from "@/components/composed/Typography"
 
-export interface ListingHeaderProps {
+export interface SpecListingHeaderProps {
   title: string
   description?: string | null
 }
 
-export function ListingHeader({ title, description }: ListingHeaderProps) {
+export function SpecListingHeader({ title, description }: SpecListingHeaderProps) {
   return (
     <section className="max-w-7xl mx-auto px-(--spacing-page) py-(--spacing-section)">
       <div className="flex flex-col gap-2">

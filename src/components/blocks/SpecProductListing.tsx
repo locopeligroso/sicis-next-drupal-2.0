@@ -7,7 +7,7 @@ import type { ProductCard } from '@/lib/drupal/products'
 import type { SortOptionDef } from '@/domain/filters/registry'
 import type { FilterDefinition } from '@/domain/filters/search-params'
 
-interface ProductSectionProps {
+interface SpecProductListingProps {
   products: ProductCard[]
   total: number
   sortOptions: SortOptionDef[]
@@ -20,7 +20,7 @@ interface ProductSectionProps {
   productCardRatio?: string
 }
 
-export function ProductSection({
+export function SpecProductListing({
   products,
   total,
   sortOptions,
@@ -31,7 +31,7 @@ export function ProductSection({
   locale,
   basePath,
   productCardRatio,
-}: ProductSectionProps) {
+}: SpecProductListingProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
 

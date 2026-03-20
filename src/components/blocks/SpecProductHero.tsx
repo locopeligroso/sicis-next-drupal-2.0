@@ -9,7 +9,7 @@ import { ProductPricingCard } from "@/components/composed/ProductPricingCard"
 import { cn } from "@/lib/utils"
 import { ArrowRightIcon } from "lucide-react"
 
-export interface ProductHeroProps {
+export interface SpecProductHeroProps {
   title: string
   collection?: string
   collectionHref?: string
@@ -27,7 +27,7 @@ export interface ProductHeroProps {
   discoverLabel?: string
 }
 
-export function ProductHero({
+export function SpecProductHero({
   title,
   collection,
   collectionHref,
@@ -43,7 +43,7 @@ export function ProductHero({
   shippingTime,
   discoverUrl,
   discoverLabel = "Scopri cosa rende i nostri Mosaici Unici",
-}: ProductHeroProps) {
+}: SpecProductHeroProps) {
   const inFlowCtaRef = React.useRef<HTMLDivElement>(null)
   const [ctaVisible, setCtaVisible] = React.useState(false)
 

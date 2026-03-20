@@ -1,17 +1,17 @@
 import { Typography } from "@/components/composed/Typography"
 import { DocumentCard, type DocumentCardItem } from "@/components/composed/DocumentCard"
 
-export interface ProductResourcesProps {
+export interface SpecProductResourcesProps {
   title?: string
   documents?: DocumentCardItem[]
   downloadLabel?: string
 }
 
-export function ProductResources({
+export function SpecProductResources({
   title = "Get inspired through catalogs",
   documents = [],
   downloadLabel = "Download PDF",
-}: ProductResourcesProps) {
+}: SpecProductResourcesProps) {
   if (documents.length === 0) return null
 
   return (

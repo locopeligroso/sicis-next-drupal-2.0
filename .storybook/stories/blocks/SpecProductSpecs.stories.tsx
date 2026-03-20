@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from "@storybook/react"
-import { ProductSpecs } from "@/components/blocks/ProductSpecs"
+import type { Meta, StoryObj } from "@storybook/nextjs-vite"
+import { SpecProductSpecs } from "@/components/blocks/SpecProductSpecs"
 import type { SpecsRow } from "@/components/composed/SpecsTable"
 
 const MOCK_SPECS: SpecsRow[] = [
@@ -16,19 +16,20 @@ const MOCK_SPECS: SpecsRow[] = [
   { label: "Slip resistance (DIN51097)", value: "Resistant" },
 ]
 
-const meta: Meta<typeof ProductSpecs> = {
-  title: "Blocks/ProductSpecs",
-  component: ProductSpecs,
+const meta = {
+  title: "Blocks/SpecProductSpecs",
+  component: SpecProductSpecs,
   parameters: { layout: "fullscreen" },
-}
-export default meta
+} satisfies Meta<typeof SpecProductSpecs>
 
-type Story = StoryObj<typeof ProductSpecs>
+export default meta
+type Story = StoryObj<typeof meta>
 
 export const Playground: Story = {
-  render: () => (
-    <ProductSpecs
-      collectionName="Neocolibrì - barrels"
+  render: (args) => (
+    <SpecProductSpecs
+      {...args}
+      collectionName="Neocolibri - barrels"
       specs={MOCK_SPECS}
       assemblyValue="On fiber mesh"
       assemblyImageSrc="/images/Retinatura-mosaico-rete.jpg.webp"
@@ -38,11 +39,5 @@ export const Playground: Story = {
       maintenanceHtml="<p>Regular cleaning with specific detergents for glass surfaces is recommended.</p>"
       maintenanceGuideHref="#"
     />
-  ),
-}
-
-export const SpecsOnly: Story = {
-  render: () => (
-    <ProductSpecs specs={MOCK_SPECS} />
   ),
 }

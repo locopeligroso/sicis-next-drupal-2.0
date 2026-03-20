@@ -1,45 +1,33 @@
-import type { Meta, StoryObj } from "@storybook/react"
+import type { Meta, StoryObj } from "@storybook/nextjs-vite"
 import { ProductPricingCard } from "@/components/composed/ProductPricingCard"
 
-const meta: Meta<typeof ProductPricingCard> = {
+const meta = {
   title: "Composed/ProductPricingCard",
   component: ProductPricingCard,
   parameters: { layout: "centered" },
-}
+  argTypes: {
+    inStock: { control: "boolean" },
+    price: { control: "text" },
+  },
+} satisfies Meta<typeof ProductPricingCard>
+
 export default meta
 
-type Story = StoryObj<typeof ProductPricingCard>
+type Story = StoryObj<typeof meta>
 
-export const InStock: Story = {
-  render: () => (
+export const Playground: Story = {
+  args: {
+    price: "$155.00",
+    inStock: true,
+  },
+  render: (args) => (
     <div className="max-w-xs">
       <ProductPricingCard
-        price="$155.00"
+        {...args}
         priceUnit="/sqft"
-        inStock
         shippingWarehouse="North America Warehouse"
         shippingTime="2-3 weeks"
       />
-    </div>
-  ),
-}
-
-export const OutOfStockWithPrice: Story = {
-  render: () => (
-    <div className="max-w-xs">
-      <ProductPricingCard
-        price="$155.00"
-        priceUnit="/sqft"
-        inStock={false}
-      />
-    </div>
-  ),
-}
-
-export const OutOfStockNoPrice: Story = {
-  render: () => (
-    <div className="max-w-xs">
-      <ProductPricingCard inStock={false} />
     </div>
   ),
 }

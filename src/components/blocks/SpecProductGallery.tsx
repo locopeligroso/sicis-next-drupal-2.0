@@ -6,15 +6,15 @@ export interface ProductGalleryImage {
   alt: string
 }
 
-export interface ProductGalleryProps {
+export interface SpecProductGalleryProps {
   title?: string
   images: ProductGalleryImage[]
 }
 
-export function ProductGallery({
+export function SpecProductGallery({
   title,
   images,
-}: ProductGalleryProps) {
+}: SpecProductGalleryProps) {
   if (images.length === 0) return null
 
   return (

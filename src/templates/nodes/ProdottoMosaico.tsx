@@ -3,17 +3,17 @@ import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { getColorSwatch, formatRetinatura } from '@/lib/product-helpers';
 import { getDrupalImageUrl } from '@/lib/drupal';
-import { ProductHero } from '@/components/blocks/ProductHero';
-import { ProductDetails } from '@/components/blocks/ProductDetails';
-import { ProductSpecs } from '@/components/blocks/ProductSpecs';
-import { ProductResources } from '@/components/blocks/ProductResources';
-import { ProductGallery } from '@/components/blocks/ProductGallery';
+import { SpecProductHero } from '@/components/blocks/SpecProductHero';
+import { SpecProductDetails } from '@/components/blocks/SpecProductDetails';
+import { SpecProductSpecs } from '@/components/blocks/SpecProductSpecs';
+import { SpecProductResources } from '@/components/blocks/SpecProductResources';
+import { SpecProductGallery } from '@/components/blocks/SpecProductGallery';
 import type { ProductCarouselSlide } from '@/components/composed/ProductCarousel';
 import type { SwatchItem } from '@/components/composed/SwatchList';
 import type { AttributeItem } from '@/components/composed/AttributeGrid';
 import type { SpecsRow } from '@/components/composed/SpecsTable';
 import type { DocumentCardItem } from '@/components/composed/DocumentCard';
-import type { ProductGalleryImage } from '@/components/blocks/ProductGallery';
+import type { ProductGalleryImage } from '@/components/blocks/SpecProductGallery';
 import type { ProdottoMosaico as ProdottoMosaicoType } from '@/types/drupal/entities';
 
 export default async function ProdottoMosaico({ node }: { node: Record<string, unknown> }) {
@@ -44,7 +44,7 @@ export default async function ProdottoMosaico({ node }: { node: Record<string, u
   const stucchi = typedNode.field_stucco ?? [];
   const gallery = typedNode.field_gallery ?? [];
 
-  // ── Build slides for ProductHero carousel ──
+  // ── Build slides for SpecProductHero carousel ──
   const heroSlides: ProductCarouselSlide[] = [];
 
   // Gallery images
@@ -175,7 +175,7 @@ export default async function ProdottoMosaico({ node }: { node: Record<string, u
   return (
     <article className="flex flex-col gap-(--spacing-section) py-(--spacing-section)">
       {/* ── Hero Block ── */}
-      <ProductHero
+      <SpecProductHero
           title={title ?? typedNode.title ?? ''}
           collection={collezione}
           collectionHref={collectionHref}
@@ -191,12 +191,12 @@ export default async function ProdottoMosaico({ node }: { node: Record<string, u
         />
 
       {/* ── Details Block ── */}
-      <ProductDetails
+      <SpecProductDetails
         attributes={detailAttributes}
       />
 
       {/* ── Specs Block ── */}
-      <ProductSpecs
+      <SpecProductSpecs
         specs={specsRows}
         assemblyValue={collezioneData?.field_retinatura ? formatRetinatura(collezioneData.field_retinatura) : undefined}
         assemblyImageSrc={collezioneData?.field_retinatura ? '/images/Retinatura-mosaico-rete.jpg.webp' : undefined}
@@ -210,14 +210,14 @@ export default async function ProdottoMosaico({ node }: { node: Record<string, u
       />
 
       {/* ── Resources Block ── */}
-      <ProductResources
+      <SpecProductResources
         title="Get inspired through catalogs"
         documents={documentItems}
         downloadLabel="Scopri"
       />
 
       {/* ── Gallery Block ── */}
-      <ProductGallery
+      <SpecProductGallery
         images={galleryImages}
       />
     </article>

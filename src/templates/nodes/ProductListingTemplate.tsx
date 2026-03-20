@@ -1,7 +1,7 @@
-import { ListingHeader } from '@/components/blocks/ListingHeader';
-import { FilterSidebar } from '@/components/blocks/FilterSidebar';
-import { CategorySection } from '@/components/blocks/CategorySection';
-import { ProductSection } from '@/components/blocks/ProductSection';
+import { SpecListingHeader } from '@/components/blocks/SpecListingHeader';
+import { SpecFilterSidebar } from '@/components/blocks/SpecFilterSidebar';
+import { SpecCategory } from '@/components/blocks/SpecCategory';
+import { SpecProductListing } from '@/components/blocks/SpecProductListing';
 import type { ProductCard } from '@/lib/drupal/products';
 import type {
   ListingConfig,
@@ -51,10 +51,10 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
 
   return (
     <div>
-      <ListingHeader title={title} description={description} />
+      <SpecListingHeader title={title} description={description} />
       <div className="max-w-7xl mx-auto px-(--spacing-page) pb-(--spacing-section)">
         <div className="grid grid-cols-1 md:grid-cols-[16rem_1fr] gap-8">
-          <FilterSidebar
+          <SpecFilterSidebar
             filters={filters}
             filterOptions={filterOptions}
             activeFilters={activeFilters}
@@ -66,7 +66,7 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
           />
           <main>
             {showCategoryCards ? (
-              <CategorySection
+              <SpecCategory
                 categoryGroups={listingConfig.categoryGroups}
                 filterOptions={filterOptions}
                 filters={filters}
@@ -75,7 +75,7 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
                 locale={locale}
               />
             ) : (
-              <ProductSection
+              <SpecProductListing
                 products={products ?? []}
                 total={total ?? 0}
                 sortOptions={listingConfig.sortOptions}

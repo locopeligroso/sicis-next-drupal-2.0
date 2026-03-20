@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { WrenchIcon, FileTextIcon } from "lucide-react"
 
-export interface ProductSpecsProps {
+export interface SpecProductSpecsProps {
   title?: string
   collectionName?: string
   specs?: SpecsRow[]
@@ -21,7 +21,7 @@ export interface ProductSpecsProps {
   maintenanceGuideLabel?: string
 }
 
-export function ProductSpecs({
+export function SpecProductSpecs({
   title = "Technical sheet",
   collectionName,
   specs = [],
@@ -36,7 +36,7 @@ export function ProductSpecs({
   maintenanceHtml,
   maintenanceGuideHref,
   maintenanceGuideLabel = "View guide",
-}: ProductSpecsProps) {
+}: SpecProductSpecsProps) {
   const hasCards = assemblyValue || groutingValue || maintenanceHtml
   const hasContent = specs.length > 0 || hasCards
   if (!hasContent) return null

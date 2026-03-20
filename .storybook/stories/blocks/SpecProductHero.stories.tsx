@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from "@storybook/react"
-import { ProductHero } from "@/components/blocks/ProductHero"
+import type { Meta, StoryObj } from "@storybook/nextjs-vite"
+import { SpecProductHero } from "@/components/blocks/SpecProductHero"
 import type { ProductCarouselSlide } from "@/components/composed/ProductCarousel"
 
 const MOCK_SLIDES: ProductCarouselSlide[] = [
@@ -11,56 +11,38 @@ const MOCK_SLIDES: ProductCarouselSlide[] = [
   { type: "static", src: "/images/usa-mosaic-quality.jpg", alt: "Quality certification" },
 ]
 
-const meta: Meta<typeof ProductHero> = {
-  title: "Blocks/ProductHero",
-  component: ProductHero,
+const meta = {
+  title: "Blocks/SpecProductHero",
+  component: SpecProductHero,
   parameters: { layout: "fullscreen" },
-}
-export default meta
+  argTypes: {
+    hasSample: { control: "boolean" },
+    inStock: { control: "boolean" },
+    price: { control: "text" },
+  },
+} satisfies Meta<typeof SpecProductHero>
 
-type Story = StoryObj<typeof ProductHero>
+export default meta
+type Story = StoryObj<typeof meta>
 
 export const Playground: Story = {
-  render: () => (
-    <ProductHero
+  args: {
+    hasSample: true,
+    inStock: true,
+    price: "$155.00",
+  },
+  render: (args) => (
+    <SpecProductHero
+      {...args}
       title="550 Barrels"
-      collection="Neocolibrì - barrels"
+      collection="Neocolibri - barrels"
       collectionHref="/en/mosaic/neocolibri-barrels"
       description="Smalto glass mosaic in transparent, transparent iridescent and opaque. The mosaic chips are finished both sides, the shape is penny round with a smooth surface and straight edges. 6 mm nominal thickness."
       slides={MOCK_SLIDES}
-      hasSample
-      price="$155.00"
       priceUnit="/sqft"
-      inStock
       shippingWarehouse="North America Warehouse"
       shippingTime="2-3 weeks"
       discoverUrl="#"
-    />
-  ),
-}
-
-export const OutOfStockWithPrice: Story = {
-  render: () => (
-    <ProductHero
-      title="550 Barrels"
-      collection="Neocolibrì - barrels"
-      description="Smalto glass mosaic in transparent, transparent iridescent and opaque."
-      slides={MOCK_SLIDES.slice(0, 3)}
-      price="$155.00"
-      priceUnit="/sqft"
-      inStock={false}
-    />
-  ),
-}
-
-export const OutOfStockNoPrice: Story = {
-  render: () => (
-    <ProductHero
-      title="550 Barrels"
-      collection="Neocolibrì - barrels"
-      description="Smalto glass mosaic in transparent, transparent iridescent and opaque."
-      slides={MOCK_SLIDES.slice(0, 3)}
-      inStock={false}
     />
   ),
 }

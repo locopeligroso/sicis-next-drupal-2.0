@@ -188,7 +188,7 @@ const COMPONENT_MAP: Record<
 const PAGE_SIZE = 48;
 
 // ── Helper: renderizza listing prodotti con ProductListingTemplate ─────────
-// Replaces the old renderListingLayout (FilterSidebar + ProductListing grid).
+// Replaces the old renderListingLayout (SpecFilterSidebar + ProductListing grid).
 // Uses FILTER_REGISTRY to determine state (hub with category cards vs product grid)
 // and fetches data accordingly.
 async function renderProductListing({
@@ -466,7 +466,7 @@ export default async function SlugPage({
   // ── Subcategory listing interception (Option B2 — Apollo decision) ──────
   // When translatePath resolves a node--categoria that corresponds to a product
   // listing section (e.g. /arredo/poltrone → node--categoria "Poltrone"),
-  // render the listing layout with FilterSidebar instead of the generic Categoria
+  // render the listing layout with SpecFilterSidebar instead of the generic Categoria
   // component (which would show "Categoria non mappata").
   //
   // The guard is: type === 'node--categoria' AND getSectionConfig returns a config
@@ -493,7 +493,7 @@ export default async function SlugPage({
   // ── node--page with field_page_id → listing interception ──────────────────
   // Drupal uses node--page nodes as hub pages for listing sections.
   // field_page_id is set in Drupal and maps 1:1 to a content type.
-  // Product types render with FilterSidebar; content types render standalone.
+  // Product types render with SpecFilterSidebar; content types render standalone.
   if (type === 'node--page') {
     const pageId = resolvedResource.field_page_id as string | undefined;
     if (pageId) {
@@ -517,7 +517,7 @@ export default async function SlugPage({
         });
       }
 
-      // Content listing (without FilterSidebar) — maps field_page_id → fetcher + component
+      // Content listing (without SpecFilterSidebar) — maps field_page_id → fetcher + component
       const basePath = `/${locale}/${slug.join('/')}`;
       const PAGE_ID_TO_CONTENT_LISTING: Record<
         string,

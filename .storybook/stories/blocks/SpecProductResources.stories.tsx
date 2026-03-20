@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from "@storybook/react"
-import { ProductResources } from "@/components/blocks/ProductResources"
+import type { Meta, StoryObj } from "@storybook/nextjs-vite"
+import { SpecProductResources } from "@/components/blocks/SpecProductResources"
 import type { DocumentCardItem } from "@/components/composed/DocumentCard"
 
 const MOCK_DOCUMENTS: DocumentCardItem[] = [
@@ -10,19 +10,15 @@ const MOCK_DOCUMENTS: DocumentCardItem[] = [
   { title: "Bathing with SICIS", type: "Catalogue", imageSrc: "https://placehold.co/400x400/aaaaaa/666?text=Bathing", href: "#" },
 ]
 
-const meta: Meta<typeof ProductResources> = {
-  title: "Blocks/ProductResources",
-  component: ProductResources,
+const meta = {
+  title: "Blocks/SpecProductResources",
+  component: SpecProductResources,
   parameters: { layout: "fullscreen" },
-}
-export default meta
+} satisfies Meta<typeof SpecProductResources>
 
-type Story = StoryObj<typeof ProductResources>
+export default meta
+type Story = StoryObj<typeof meta>
 
 export const Playground: Story = {
-  render: () => <ProductResources documents={MOCK_DOCUMENTS} />,
-}
-
-export const FewDocuments: Story = {
-  render: () => <ProductResources documents={MOCK_DOCUMENTS.slice(0, 2)} />,
+  render: (args) => <SpecProductResources {...args} documents={MOCK_DOCUMENTS} />,
 }

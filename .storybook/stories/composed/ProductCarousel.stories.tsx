@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react"
+import type { Meta, StoryObj } from "@storybook/nextjs-vite"
 import { ProductCarousel, type ProductCarouselSlide } from "@/components/composed/ProductCarousel"
 
 const MOCK_SLIDES: ProductCarouselSlide[] = [
@@ -14,43 +14,28 @@ const MOCK_SLIDES: ProductCarouselSlide[] = [
   { type: "static", src: "/images/usa-mosaic-quality.jpg", alt: "Quality certification" },
 ]
 
-const meta: Meta<typeof ProductCarousel> = {
+const meta = {
   title: "Composed/ProductCarousel",
   component: ProductCarousel,
   parameters: {
     layout: "centered",
   },
-}
+  argTypes: {
+    ratio: { control: "number" },
+  },
+} satisfies Meta<typeof ProductCarousel>
+
 export default meta
 
-type Story = StoryObj<typeof ProductCarousel>
+type Story = StoryObj<typeof meta>
 
 export const Playground: Story = {
-  render: () => (
+  args: {
+    ratio: 4 / 3,
+  },
+  render: (args) => (
     <div className="w-full max-w-lg">
-      <ProductCarousel
-        slides={MOCK_SLIDES}
-        ratio={4 / 3}
-      />
-    </div>
-  ),
-}
-
-export const SquareRatio: Story = {
-  render: () => (
-    <div className="w-full max-w-lg">
-      <ProductCarousel
-        slides={MOCK_SLIDES.slice(0, 3)}
-        ratio={1}
-      />
-    </div>
-  ),
-}
-
-export const SingleSlide: Story = {
-  render: () => (
-    <div className="w-full max-w-lg">
-      <ProductCarousel slides={[MOCK_SLIDES[0]]} />
+      <ProductCarousel {...args} slides={MOCK_SLIDES} />
     </div>
   ),
 }

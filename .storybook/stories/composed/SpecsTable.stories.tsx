@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react"
+import type { Meta, StoryObj } from "@storybook/nextjs-vite"
 import { SpecsTable, type SpecsRow } from "@/components/composed/SpecsTable"
 
 const MOCK_ROWS: SpecsRow[] = [
@@ -15,19 +15,16 @@ const MOCK_ROWS: SpecsRow[] = [
   { label: "Slip resistance (DIN51097)", value: "Resistant" },
 ]
 
-const meta: Meta<typeof SpecsTable> = {
+const meta = {
   title: "Composed/SpecsTable",
   component: SpecsTable,
   parameters: { layout: "padded" },
-}
+} satisfies Meta<typeof SpecsTable>
+
 export default meta
 
-type Story = StoryObj<typeof SpecsTable>
+type Story = StoryObj<typeof meta>
 
 export const Playground: Story = {
-  render: () => <SpecsTable rows={MOCK_ROWS} />,
-}
-
-export const FewRows: Story = {
-  render: () => <SpecsTable rows={MOCK_ROWS.slice(0, 4)} />,
+  render: (args) => <SpecsTable {...args} rows={MOCK_ROWS} />,
 }

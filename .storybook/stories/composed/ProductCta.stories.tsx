@@ -1,27 +1,26 @@
-import type { Meta, StoryObj } from "@storybook/react"
+import type { Meta, StoryObj } from "@storybook/nextjs-vite"
 import { ProductCta } from "@/components/composed/ProductCta"
 
-const meta: Meta<typeof ProductCta> = {
+const meta = {
   title: "Composed/ProductCta",
   component: ProductCta,
   parameters: { layout: "centered" },
-}
+  argTypes: {
+    hasSample: { control: "boolean" },
+  },
+} satisfies Meta<typeof ProductCta>
+
 export default meta
 
-type Story = StoryObj<typeof ProductCta>
+type Story = StoryObj<typeof meta>
 
 export const Playground: Story = {
-  render: () => (
+  args: {
+    hasSample: true,
+  },
+  render: (args) => (
     <div className="w-full max-w-sm">
-      <ProductCta />
-    </div>
-  ),
-}
-
-export const NoSample: Story = {
-  render: () => (
-    <div className="w-full max-w-sm">
-      <ProductCta hasSample={false} />
+      <ProductCta {...args} />
     </div>
   ),
 }

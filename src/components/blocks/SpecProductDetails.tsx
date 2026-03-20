@@ -3,7 +3,7 @@ import { AttributeGrid, type AttributeItem } from "@/components/composed/Attribu
 import { SwatchList, type SwatchItem } from "@/components/composed/SwatchList"
 import { Badge } from "@/components/ui/badge"
 
-export interface ProductDetailsProps {
+export interface SpecProductDetailsProps {
   performsOn?: string[]
   performsOnLabel?: string
   attributes?: AttributeItem[]
@@ -13,7 +13,7 @@ export interface ProductDetailsProps {
   groutsLabel?: string
 }
 
-export function ProductDetails({
+export function SpecProductDetails({
   performsOn = [],
   performsOnLabel = "Performs best on",
   attributes = [],
@@ -21,7 +21,7 @@ export function ProductDetails({
   grouts = [],
   colorsLabel = "Colors",
   groutsLabel = "Grout",
-}: ProductDetailsProps) {
+}: SpecProductDetailsProps) {
   const hasContent = performsOn.length > 0 || attributes.length > 0 || colors.length > 0 || grouts.length > 0
   if (!hasContent) return null
 

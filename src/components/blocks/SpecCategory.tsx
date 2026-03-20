@@ -7,7 +7,7 @@ import type {
 } from "@/domain/filters/registry"
 import { CategoryCardGrid } from "@/components/composed/CategoryCardGrid"
 
-interface CategorySectionProps {
+interface SpecCategoryProps {
   categoryGroups: CategoryGroupDef[]
   filterOptions: Record<string, FilterOption[]>
   filters: Record<string, FilterGroupConfig>
@@ -16,14 +16,14 @@ interface CategorySectionProps {
   locale: string
 }
 
-export async function CategorySection({
+export async function SpecCategory({
   categoryGroups,
   filterOptions,
   filters,
   aspectRatio,
   basePath,
   locale,
-}: CategorySectionProps) {
+}: SpecCategoryProps) {
   const t = await getTranslations("filters")
 
   return (

@@ -67,12 +67,43 @@ Recent updates (2026-03-20 session):
 - `SpecsTable` — Grid layout (4 cols) for technical specs with label + value
 - `DocumentCard` — Catalog card with cover image, type overline, title, download link
 
-#### Blocks (`src/components/blocks/`)
-- `ProductHero` — Carousel + title + collection subtitle + description + CTAs + pricing card + discover link + sticky mobile CTA bar
-- `ProductDetails` — Attribute row (dimensions, shape, finishing)
-- `ProductSpecs` — Title + info cards (Assembly/Grouting/Maintenance) + technical sheet grid, on surface-1 background
-- `ProductResources` — Catalog document cards grid
-- `ProductGallery` — Image grid
+#### Blocks (`src/components/blocks/`) — Naming Convention
+
+Two prefixes distinguish block types:
+- **`Spec*`** — Template-specific blocks. Tied to a specific template (e.g. product page, listing page). The name says WHERE it's used.
+- **`Gen*`** — Generic/transversal blocks. Map 1:1 to Drupal paragraph types from `field_blocchi`. Can appear on any page. Name derived mechanically from Drupal machine name: `blocco_intro` → `GenIntro`, `blocco_video` → `GenVideo`.
+
+**Spec blocks (template-specific):**
+- `SpecProductHero` — Carousel + title + collection subtitle + description + CTAs + pricing card + discover link + sticky mobile CTA bar
+- `SpecProductDetails` — Attribute row (dimensions, shape, finishing)
+- `SpecProductSpecs` — Title + info cards (Assembly/Grouting/Maintenance) + technical sheet grid, on surface-1 background
+- `SpecProductResources` — Catalog document cards grid
+- `SpecProductGallery` — Image grid
+- `SpecCategory` — Category card grid section
+- `SpecListingHeader` — Listing page title + description
+- `SpecProductListing` — Product grid with toolbar + load more
+- `SpecFilterSidebar` — Desktop sidebar + mobile sheet for filters
+- `SpecFilterSidebarContent` — Filter groups with active filters
+
+**Gen blocks (paragraph-driven, to be built via /ds):**
+Mapping from Drupal paragraph types → Gen component names:
+- `blocco_intro` → `GenIntro` — title + body + optional image + optional link + layout variant
+- `blocco_quote` → `GenQuote` — quote text + optional link
+- `blocco_video` → `GenVideo` — video code + poster image
+- `blocco_testo_immagine` → `GenTestoImmagine` — title + text + image + layout (text_dx/text_sx)
+- `blocco_testo_immagine_big` → `GenTestoImmagineBig` — title + text + large image + layout (text-up/text-down)
+- `blocco_testo_immagine_blog` → `GenTestoImmagineBlog` — title + text + image + caption
+- `blocco_gallery` → `GenGallery` — title + image slides (via elemento_blocco_gallery children)
+- `blocco_gallery_intro` → `GenGalleryIntro` — title + text + link + image slides
+- `blocco_documenti` → `GenDocumenti` — title + document nodes list
+- `blocco_correlati` → `GenCorrelati` — related content items (via elemento_blocco_correlati children)
+- `blocco_newsletter` → `GenNewsletter` — newsletter signup (0 instances in current data)
+- `blocco_form_blog` → `GenFormBlog` — title (form block)
+- `blocco_slider_home` → `GenSliderHome` — hero slider with video + CTA slides (via elemento_blocco_slider_home children)
+- `blocco_anni` → `GenAnni` — timeline with year entries (via elemento_blocco_anni children)
+- `blocco_tutorial` → `GenTutorial` — title + tutorial node references
+
+Gen blocks are rendered via `ParagraphResolver` which maps `paragraph--{type}` → component. Templates append `field_blocchi` paragraphs after their Spec blocks.
 
 #### Primitives (`src/components/ui/`)
 57 shadcn/ui primitives (base-vega preset, base-ui). NEVER modify directly.
@@ -103,12 +134,14 @@ Recent updates (2026-03-20 session):
 - 116 SLUG_OVERRIDES for term slug normalization
 
 ### Storybook
-- `.storybook/stories/primitives/` — 55 primitive stories
-- `.storybook/stories/composed/` — 9 composed stories (Typography, ResponsiveImage, ProductCarousel, ProductCta, ProductPricingCard, AttributeGrid, SwatchList, SpecsTable, DocumentCard)
-- `.storybook/stories/blocks/` — 5 block stories (ProductHero, ProductDetails, ProductSpecs, ProductResources, ProductGallery)
+- `.storybook/stories/primitives/` — 57 primitive stories
+- `.storybook/stories/composed/` — 21 composed stories (all Composed components covered)
+- `.storybook/stories/blocks/` — 10 block stories (all Spec blocks covered)
 - `.storybook/stories/design-tokens/` — 3 stories (Colors, Spacing, Typography catalog)
-- Total: 87 stories across all directories
+- Total: 91 stories across all directories
 - `.storybook/drafts/` — Empty (drafts deleted after extraction)
+- Story rules: single `Playground` story per component with `argTypes` controls, import from `@storybook/nextjs-vite`, `satisfies Meta` pattern
+- `nextjs.appDirectory: true` + `nextjs.navigation` configured globally in `preview.ts` for App Router mock
 
 ### Design Tokens (`src/styles/globals.css`)
 - OkLch color space
@@ -128,18 +161,28 @@ Recent updates (2026-03-20 session):
 5. **Static images** in `public/images/` (flat structure): `usa-mosaic-quality.jpg`, `Retinatura-mosaico-rete.jpg.webp`
 6. **Deserializer preserves meta** — relationship meta (alt, width, height) flows through to templates
 7. **Blocks import only Composed, never Primitives** — enforced by /ds skill
+11. **Block naming convention** — `Spec*` = template-specific, `Gen*` = paragraph-driven transversal. Gen names derived mechanically from Drupal machine name: `blocco_{name}` → `Gen{PascalCase(name)}`
 8. **Primary-text token** for text on primary color — different from primary base, optimized per theme
 9. **Surface tokens** (1-5) for elevation instead of opacity hacks
 10. **Document filtering** — installation guides extracted from catalogs, linked in Maintenance card
 
 ## Current State
-- **ProdottoMosaico**: fully migrated to design system (5 blocks, 9 composed, no legacy)
+- **ProdottoMosaico**: fully migrated to design system (5 Spec blocks, 9 composed, no legacy)
 - **Other 5 product templates** (Vetrite, Arredo, Tessuto, Pixall, Illuminazione): all legacy — next to migrate
 - **VetriteCollezione**: hybrid (legacy + Tailwind documents section)
 - **Header/Footer**: legacy, managed separately from product templates
 - **Animations**: removed for now, to be reimplemented with proper approach
+- **Storybook**: all Composed and Spec blocks have stories, rules enforced (single Playground, controls, @storybook/nextjs-vite)
+- **Block naming**: Spec*/Gen* convention in place. All 10 Spec blocks renamed. Gen blocks not yet created.
+- **Gen blocks (paragraph-driven)**: 15 Drupal paragraph types identified, names mapped. None built yet — next major task.
+- **ParagraphResolver**: still points to legacy `blocks_legacy/` components. Will be updated to point to Gen blocks as they're built.
 
-## Next Steps
+## Next Steps — Immediate
+Build all 15 Gen blocks one by one using /ds workflow (Create-an-Element). Start with GenIntro.
+Order: GenIntro → GenQuote → GenVideo → GenTestoImmagine → GenTestoImmagineBig → GenTestoImmagineBlog → GenGallery → GenGalleryIntro → GenDocumenti → GenCorrelati → GenNewsletter → GenFormBlog → GenSliderHome → GenAnni → GenTutorial.
+After each Gen block: update ParagraphResolver to point to the new component.
+
+## Next Steps — After Gen Blocks
 - Apply ProdottoMosaico pattern to ProdottoVetrite template
 - Then: ProdottoArredo, ProdottoTessuto, ProdottoPixall, ProdottoIlluminazione
 - Breadcrumb block (separate, above hero)

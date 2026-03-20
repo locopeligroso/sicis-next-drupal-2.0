@@ -4,7 +4,7 @@ import {
   Typography,
   typographyStyles,
   type TextRole,
-} from "@/components/composed/typography"
+} from "@/components/composed/Typography"
 
 const allRoles = Object.keys(typographyStyles) as TextRole[]
 

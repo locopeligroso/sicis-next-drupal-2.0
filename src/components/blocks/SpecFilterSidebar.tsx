@@ -1,5 +1,5 @@
 import { MobileFilterTrigger } from '@/components/composed/MobileFilterTrigger';
-import { FilterSidebarContent } from './FilterSidebarContent';
+import { SpecFilterSidebarContent } from './SpecFilterSidebarContent';
 import type {
   FilterGroupConfig,
   FilterOption,
@@ -7,7 +7,7 @@ import type {
   ListingConfig,
 } from '@/domain/filters/registry';
 
-export interface FilterSidebarProps {
+export interface SpecFilterSidebarProps {
   filters: Record<string, FilterGroupConfig>;
   filterOptions: Record<string, FilterOption[]>;
   activeFilters: ActiveFilter[];
@@ -18,7 +18,7 @@ export interface FilterSidebarProps {
   totalCount?: number;
 }
 
-export function FilterSidebar({
+export function SpecFilterSidebar({
   filters,
   filterOptions,
   activeFilters,
@@ -27,9 +27,9 @@ export function FilterSidebar({
   basePath,
   locale,
   totalCount,
-}: FilterSidebarProps) {
+}: SpecFilterSidebarProps) {
   const content = (
-    <FilterSidebarContent
+    <SpecFilterSidebarContent
       filters={filters}
       filterOptions={filterOptions}
       activeFilters={activeFilters}

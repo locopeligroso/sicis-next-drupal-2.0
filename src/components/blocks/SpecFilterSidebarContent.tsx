@@ -17,7 +17,7 @@ import type {
   ListingConfig,
 } from '@/domain/filters/registry';
 
-export interface FilterSidebarContentProps {
+export interface SpecFilterSidebarContentProps {
   filters: Record<string, FilterGroupConfig>;
   filterOptions: Record<string, FilterOption[]>;
   activeFilters: ActiveFilterType[];
@@ -29,7 +29,7 @@ export interface FilterSidebarContentProps {
 
 const PRIORITY_ORDER: Record<string, number> = { P0: 0, P1: 1, P2: 2 };
 
-export function FilterSidebarContent({
+export function SpecFilterSidebarContent({
   filters,
   filterOptions,
   activeFilters,
@@ -37,7 +37,7 @@ export function FilterSidebarContent({
   listingConfig,
   basePath,
   locale,
-}: FilterSidebarContentProps) {
+}: SpecFilterSidebarContentProps) {
   const { toggleFilter, clearFilter, clearAll, isActive } = useFilterSync({
     basePath,
     locale,
