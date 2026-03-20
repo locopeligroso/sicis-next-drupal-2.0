@@ -210,16 +210,20 @@ async function renderProductListing({
   if (!config) return null;
 
   const { listing, filters } = config;
-  // Build basePath from the actual URL slug, not the registry basePath.
-  // The registry basePath may differ from the URL (e.g. registry says 'textiles/fabrics'
-  // but user is on '/en/textiles'). We take the slug segments that match the base,
-  // which is everything before the filter segments.
+  // Build basePath from the actual URL slug by matching leading segments against
+  // the registry basePath. Only include slug segments that match the registry base —
+  // filter segments (e.g. /textiles/bedcover) must not be included in basePath.
   const registryBaseSegments = (config.basePaths[locale] ?? config.basePaths['it']).split('/');
-  const baseSegmentCount = registryBaseSegments.length;
-  // Use the actual URL segments for the base (handles cases where URL differs from registry)
-  const actualBaseSegments = slug.slice(0, Math.min(baseSegmentCount, slug.length));
-  // If the URL has fewer segments than the registry base, use what we have
-  const basePath = `/${locale}/${actualBaseSegments.join('/')}`;
+  let matchCount = 0;
+  for (let i = 0; i < registryBaseSegments.length && i < slug.length; i++) {
+    if (slug[i] === registryBaseSegments[i]) {
+      matchCount++;
+    } else {
+      break;
+    }
+  }
+  // Use at least 1 segment (the product type slug)
+  const basePath = `/${locale}/${slug.slice(0, Math.max(1, matchCount)).join('/')}`;
 
   // Flatten searchParams to Record<string, string> for parseFiltersFromUrl
   const spRecord: Record<string, string> = {};
