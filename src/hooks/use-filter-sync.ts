@@ -70,7 +70,7 @@ export function useFilterSync({
           router.push(`${basePath}${prefix}/${value}?${searchParams.toString()}`);
         }
       } else {
-        // Toggle query param filter
+        // Toggle query param filter — keep current pathname (preserves active P0 in path)
         const params = new URLSearchParams(searchParams.toString());
         if (params.get(key) === value) {
           params.delete(key);
@@ -79,7 +79,9 @@ export function useFilterSync({
         }
         // Reset pagination when filter changes
         params.delete('page');
-        router.push(`${basePath}?${params.toString()}`);
+        const currentPath = window.location.pathname;
+        const qs = params.toString();
+        router.push(qs ? `${currentPath}?${qs}` : currentPath);
       }
     },
     [basePath, activeFilters, router, searchParams],
