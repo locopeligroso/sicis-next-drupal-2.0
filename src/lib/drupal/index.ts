@@ -12,6 +12,7 @@
  *   - products.ts           (product listing)
  *   - filters.ts            (taxonomy filter options)
  *   - projects.ts           (project listing)
+ *   - showrooms.ts          (showroom listing)
  *   - translated-path.ts    (cross-locale path resolution)
  *
  * Architecture decision: Apollo (2026-03-19)
@@ -30,4 +31,6 @@ export * from './projects';
 export * from './environments';
 export * from './blog';
 export * from './pages-by-category';
+export * from './showrooms';
+export * from './documents';
 export * from './translated-path';

@@ -18,6 +18,8 @@ export const PARAGRAPH_INCLUDE: Record<string, string> = {
     'field_slide,field_slide.field_immagine',
   'paragraph--blocco_correlati':
     'field_elementi,field_elementi.field_immagine',
+  'paragraph--blocco_anni':
+    'field_anni,field_anni.field_immagine',
 };
 
 /**

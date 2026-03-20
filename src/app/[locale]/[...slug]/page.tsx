@@ -18,7 +18,9 @@ import { FilterSidebarSkeleton } from '@/components_legacy/FilterSidebarSkeleton
 import ProjectListing from '@/components_legacy/ProjectListing';
 import EnvironmentListing from '@/components_legacy/EnvironmentListing';
 import BlogListing from '@/components_legacy/BlogListing';
-import { fetchProjects, fetchEnvironments, fetchBlogPosts } from '@/lib/drupal';
+import ShowroomListing from '@/components_legacy/ShowroomListing';
+import DocumentListing from '@/components_legacy/DocumentListing';
+import { fetchProjects, fetchEnvironments, fetchBlogPosts, fetchShowrooms, fetchDocuments } from '@/lib/drupal';
 
 // Node components
 import Page from '@/templates/nodes/Page';
@@ -451,6 +453,34 @@ export default async function SlugPage({ params, searchParams }: SlugPageProps) 
             <BlogListing
               title={nodeTitle}
               posts={posts}
+              total={total}
+              locale={locale}
+              currentPage={currentPage}
+              pageSize={PAGE_SIZE}
+              basePath={basePath}
+            />
+          );
+        },
+        'showroom': async () => {
+          const { showrooms, total } = await fetchShowrooms(locale, PAGE_SIZE, offset);
+          return (
+            <ShowroomListing
+              title={nodeTitle}
+              showrooms={showrooms}
+              total={total}
+              locale={locale}
+              currentPage={currentPage}
+              pageSize={PAGE_SIZE}
+              basePath={basePath}
+            />
+          );
+        },
+        'download_catalogues': async () => {
+          const { documents, total } = await fetchDocuments(locale, PAGE_SIZE, offset);
+          return (
+            <DocumentListing
+              title={nodeTitle}
+              documents={documents}
               total={total}
               locale={locale}
               currentPage={currentPage}

@@ -15,9 +15,10 @@ const securityHeaders = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https://www.sicis-stage.com https://www.sicis.com",
+      "img-src 'self' data: blob: http://192.168.86.201 https://www.sicis-stage.com https://www.sicis.com",
       "font-src 'self' data:",
-      "connect-src 'self' https://www.sicis-stage.com",
+      "connect-src 'self' http://192.168.86.201 https://www.sicis-stage.com",
+      "frame-src 'self' https://player.vimeo.com https://www.youtube.com",
       "frame-ancestors 'none'",
       "media-src 'self' https://www.sicis-stage.com",
     ].join('; '),
@@ -29,6 +30,7 @@ const nextConfig = {
   images: {
     remotePatterns: [
       { protocol: 'http', hostname: 'localhost' },
+      { protocol: 'http', hostname: '192.168.86.201' },
       { protocol: 'https', hostname: 'www.sicis-stage.com' },
       { protocol: 'https', hostname: 'sicis.com' },
     ],

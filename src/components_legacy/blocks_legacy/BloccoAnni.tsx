@@ -1,32 +1,89 @@
 import { getProcessedText } from '@/lib/field-helpers';
 import { sanitizeHtml } from '@/lib/sanitize';
+import { getDrupalImageUrl, fetchParagraph } from '@/lib/drupal';
 
-export default function BloccoAnni({ paragraph }: { paragraph: Record<string, unknown> }) {
-  const title = getProcessedText(paragraph.field_titolo_formattato);
-  const items = (paragraph.field_elementi as Record<string, unknown>[] | undefined) ?? [];
-  const count = items.length || 4;
+interface ElementoBloccoAnni {
+  field_anno?: string;
+  field_testo?: { processed?: string; value?: string };
+  field_immagine?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+export default async function BloccoAnni({ paragraph }: { paragraph: Record<string, unknown> }) {
+  // Secondary fetch to resolve nested field_anni elements with their images
+  const enriched =
+    paragraph.type && paragraph.id
+      ? await fetchParagraph(paragraph as { type: string; id: string; [key: string]: unknown })
+      : paragraph;
+  const data = enriched ?? paragraph;
+
+  const sectionTitle = getProcessedText(data.field_testo);
+  const yearStart = data.field_anno as string | undefined;
+  const yearEnd = data.field_anno_2 as string | undefined;
+  const items = (data.field_anni as ElementoBloccoAnni[] | undefined) ?? [];
+
   return (
-    <section className="py-12 border-b border-gray-100">
-      <div className="max-w-6xl mx-auto px-8">
-        {title && (
-          <h2
-            className="text-2xl font-bold mb-8 leading-tight [&_p]:m-0"
-            dangerouslySetInnerHTML={{ __html: sanitizeHtml(title) }}
-          />
+    <section style={{ padding: '3rem 0', borderBottom: '1px solid #eee' }}>
+      <div style={{ maxWidth: '72rem', margin: '0 auto', padding: '0 2rem' }}>
+        {/* Section header: year range + title */}
+        {(yearStart || sectionTitle) && (
+          <div style={{ marginBottom: '2rem' }}>
+            {yearStart && (
+              <div style={{ display: 'flex', gap: '0.5rem', fontSize: '1.25rem', fontWeight: 700, color: '#999', marginBottom: '0.5rem' }}>
+                <span>{yearStart}</span>
+                {yearEnd && <span>–</span>}
+                {yearEnd && <span>{yearEnd}</span>}
+              </div>
+            )}
+            {sectionTitle && (
+              <h2
+                style={{ fontSize: '1.5rem', fontWeight: 700, lineHeight: 1.3, margin: 0 }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(sectionTitle) }}
+              />
+            )}
+          </div>
         )}
-        <div className="flex gap-8 overflow-x-auto pb-4">
-          {Array.from({ length: count }).map((_, i) => {
-            const item = items[i] as Record<string, unknown> | undefined;
-            const year = item ? ((item.field_anno as string) || String(1970 + i * 5)) : String(1970 + i * 5);
-            const text = item ? ((item.field_testo as { processed?: string })?.processed || '') : '';
+
+        {/* Timeline items */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+          {items.map((item, i) => {
+            const year = item.field_anno || '';
+            const text = item.field_testo?.processed || item.field_testo?.value || '';
+            const imageUrl = getDrupalImageUrl(item.field_immagine);
+
             return (
-              <div key={i} className="min-w-[10rem] border-l-4 border-gray-200 pl-4 flex-shrink-0">
-                <p className="text-2xl font-bold text-gray-300 mb-1">{year}</p>
-                {text ? (
-                  <div className="text-sm text-gray-500" dangerouslySetInnerHTML={{ __html: sanitizeHtml(text) }} />
-                ) : (
-                  <p className="text-sm text-gray-400">Evento {i + 1}</p>
+              <div
+                key={i}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: imageUrl ? '1fr 1fr' : '1fr',
+                  gap: '2rem',
+                  alignItems: 'start',
+                }}
+              >
+                {imageUrl && (
+                  <div style={{ aspectRatio: '4/3', overflow: 'hidden', background: '#f5f5f5' }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={imageUrl}
+                      alt={year}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    />
+                  </div>
                 )}
+                <div>
+                  {year && (
+                    <p style={{ fontSize: '1.5rem', fontWeight: 700, color: '#ccc', margin: '0 0 0.5rem' }}>
+                      {year}
+                    </p>
+                  )}
+                  {text && (
+                    <div
+                      style={{ fontSize: '0.9375rem', lineHeight: 1.7, color: '#444' }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(text) }}
+                    />
+                  )}
+                </div>
               </div>
             );
           })}
