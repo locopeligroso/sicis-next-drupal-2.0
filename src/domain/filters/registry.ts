@@ -47,6 +47,7 @@ export interface FilterGroupConfig {
 
 export interface ListingConfig {
   categoryCardRatio: string;
+  productCardRatio: string;   // e.g. "1/1", "1/2"
   categoryGroups: CategoryGroupDef[];
   sortOptions: SortOptionDef[];
   pageSize: number;
@@ -243,6 +244,7 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
     },
     listing: {
       categoryCardRatio: '1/1',
+      productCardRatio: '1/1',
       categoryGroups: [
         { filterKey: 'color', labelKey: 'filters.colors', hasImage: false, hasColorSwatch: true },
         { filterKey: 'collection', labelKey: 'filters.collections', hasImage: true, hasColorSwatch: false },
@@ -320,6 +322,7 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
     },
     listing: {
       categoryCardRatio: '1/1',
+      productCardRatio: '1/2',
       categoryGroups: [
         { filterKey: 'color', labelKey: 'filters.colors', hasImage: false, hasColorSwatch: true },
         { filterKey: 'collection', labelKey: 'filters.collections', hasImage: true, hasColorSwatch: false },
@@ -379,6 +382,7 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
     },
     listing: {
       categoryCardRatio: '4/3',
+      productCardRatio: '1/1',
       categoryGroups: [
         { filterKey: 'subcategory', labelKey: 'filters.typologies', hasImage: true, hasColorSwatch: false },
       ],
@@ -451,6 +455,7 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
     },
     listing: {
       categoryCardRatio: '4/3',
+      productCardRatio: '1/1',
       categoryGroups: [
         { filterKey: 'category', labelKey: 'filters.categories', hasImage: true, hasColorSwatch: false },
       ],
@@ -504,6 +509,7 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
     },
     listing: {
       categoryCardRatio: '1/1',
+      productCardRatio: '1/1',
       categoryGroups: [],
       sortOptions: [
         { labelKey: 'sort.name', field: 'title', direction: 'ASC' },
@@ -536,6 +542,7 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
     },
     listing: {
       categoryCardRatio: '4/3',
+      productCardRatio: '1/1',
       categoryGroups: [
         { filterKey: 'subcategory', labelKey: 'filters.subcategories', hasImage: true, hasColorSwatch: false },
       ],

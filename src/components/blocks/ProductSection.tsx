@@ -17,6 +17,7 @@ interface ProductSectionProps {
   pageSize: number
   locale: string
   basePath: string
+  productCardRatio?: string
 }
 
 export function ProductSection({
@@ -29,6 +30,7 @@ export function ProductSection({
   pageSize,
   locale,
   basePath,
+  productCardRatio,
 }: ProductSectionProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -61,6 +63,7 @@ export function ProductSection({
         initialProducts={products}
         initialTotal={total}
         locale={locale}
+        productCardRatio={productCardRatio}
       />
     </div>
   )

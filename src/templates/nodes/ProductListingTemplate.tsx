@@ -85,6 +85,7 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
                 pageSize={listingConfig.pageSize}
                 locale={locale}
                 basePath={basePath}
+                productCardRatio={listingConfig.productCardRatio}
               />
             )}
           </main>

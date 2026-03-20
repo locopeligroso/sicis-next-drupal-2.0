@@ -4,10 +4,11 @@ import { cn } from "@/lib/utils"
 
 interface ProductGridProps {
   products: ProductCardData[]
+  productCardRatio?: string
   className?: string
 }
 
-export function ProductGrid({ products, className }: ProductGridProps) {
+export function ProductGrid({ products, productCardRatio, className }: ProductGridProps) {
   return (
     <div
       className={cn(
@@ -22,6 +23,7 @@ export function ProductGrid({ products, className }: ProductGridProps) {
           subtitle={product.subtitle}
           imageUrl={product.imageUrl}
           href={product.path ?? "#"}
+          aspectRatio={productCardRatio}
         />
       ))}
     </div>

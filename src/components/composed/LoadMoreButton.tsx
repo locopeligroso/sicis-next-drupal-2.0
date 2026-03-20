@@ -18,6 +18,7 @@ interface LoadMoreButtonProps {
   initialProducts: ProductCardData[]
   initialTotal: number
   locale: string
+  productCardRatio?: string
 }
 
 export function LoadMoreButton({
@@ -28,6 +29,7 @@ export function LoadMoreButton({
   initialProducts,
   initialTotal,
   locale,
+  productCardRatio,
 }: LoadMoreButtonProps) {
   const t = useTranslations('listing')
   const [products, setProducts] = useState(initialProducts)
@@ -66,7 +68,7 @@ export function LoadMoreButton({
 
   return (
     <>
-      <ProductGrid products={products} />
+      <ProductGrid products={products} productCardRatio={productCardRatio} />
       {hasMore && (
         <div className="flex justify-center py-8">
           <Button
