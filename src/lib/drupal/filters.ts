@@ -14,13 +14,21 @@ import { FILTER_REGISTRY } from '@/domain/filters/registry';
 export async function fetchFilterOptions(
   taxonomyType: string,
   locale: string,
+  options?: { includeImage?: boolean },
 ): Promise<FilterOption[]> {
   const localePrefix = locale ? `/${locale}` : '';
   const url = new URL(
     `${DRUPAL_BASE_URL}${localePrefix}/jsonapi/${taxonomyType.replace('--', '/')}`,
   );
   url.searchParams.set('page[limit]', '200');
-  url.searchParams.set(`fields[${taxonomyType}]`, 'name,path,weight');
+
+  if (options?.includeImage) {
+    url.searchParams.set(`fields[${taxonomyType}]`, 'name,path,weight,field_immagine');
+    url.searchParams.set('include', 'field_immagine');
+  } else {
+    url.searchParams.set(`fields[${taxonomyType}]`, 'name,path,weight');
+  }
+
   url.searchParams.set('sort', 'weight,name');
 
   try {
@@ -38,15 +46,50 @@ export async function fetchFilterOptions(
     }
 
     const json = await res.json();
+
+    // Build a lookup map from included entities (for image resolution)
+    const includedMap = new Map<string, Record<string, unknown>>();
+    if (options?.includeImage && Array.isArray(json.included)) {
+      for (const inc of json.included) {
+        const incObj = inc as Record<string, unknown>;
+        const key = `${incObj.type}--${incObj.id}`;
+        includedMap.set(key, incObj);
+      }
+    }
+
     return (json.data ?? []).map((item: Record<string, unknown>) => {
       const attrs = item.attributes as Record<string, unknown>;
       const name = (attrs?.name as string) ?? '';
       const pathObj = attrs?.path as { alias?: string } | null;
-      return {
+
+      const filterOption: FilterOption = {
         id: item.id as string,
         slug: pathToSlug(pathObj?.alias ?? name),
         label: name,
-      } satisfies FilterOption;
+      };
+
+      // Extract image URL from included data if requested
+      if (options?.includeImage) {
+        const relationships = item.relationships as Record<string, unknown> | undefined;
+        const fieldImmagine = relationships?.field_immagine as Record<string, unknown> | undefined;
+        const imageData = fieldImmagine?.data as Record<string, unknown> | undefined;
+        if (imageData?.type && imageData?.id) {
+          const imageKey = `${imageData.type}--${imageData.id}`;
+          const includedImage = includedMap.get(imageKey);
+          if (includedImage) {
+            const imageAttrs = includedImage.attributes as Record<string, unknown> | undefined;
+            const uri = imageAttrs?.uri as Record<string, unknown> | undefined;
+            const imageUrl = uri?.url as string | undefined;
+            if (imageUrl) {
+              filterOption.imageUrl = imageUrl.startsWith('/')
+                ? `${DRUPAL_BASE_URL}${imageUrl}`
+                : imageUrl;
+            }
+          }
+        }
+      }
+
+      return filterOption;
     });
   } catch (err) {
     console.error(`[fetchFilterOptions] Network error for ${taxonomyType}`, {

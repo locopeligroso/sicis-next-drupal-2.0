@@ -21,6 +21,8 @@ export interface FilterOption {
   label: string;
   id?: string;
   count?: number;
+  imageUrl?: string;    // preview image for category cards
+  cssColor?: string;    // fallback CSS color for swatches
 }
 
 export interface ActiveFilter {
