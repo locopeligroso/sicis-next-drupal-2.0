@@ -4,8 +4,10 @@ import {
   getCategoriaProductType,
   fetchProducts,
   fetchPagesByCategory,
+  fetchSubcategories,
   type ProductCard,
   type PageCard,
+  type SubcategoryCard,
 } from '@/lib/drupal';
 
 interface CategoriaProps {
@@ -267,6 +269,50 @@ export default async function Categoria({ node }: CategoriaProps) {
             Mostrando 24 di {total} prodotti
           </p>
         )}
+      </div>
+    );
+  }
+
+  // ── Hub category (Illuminazione, etc.) ──
+  // Try subcategories first (node--categoria children), then pages
+  const { subcategories } = await fetchSubcategories(categoriaUuid, locale);
+
+  if (subcategories.length > 0) {
+    return (
+      <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '2rem' }}>
+        <div
+          style={{
+            borderBottom: '0.0625rem solid #e0e0e0',
+            paddingBottom: '1.5rem',
+            marginBottom: '2rem',
+          }}
+        >
+          <h1
+            style={{
+              fontSize: '2rem',
+              fontWeight: 700,
+              margin: '0 0 0.5rem',
+              lineHeight: 1.2,
+            }}
+          >
+            {title}
+          </h1>
+          <p style={{ margin: 0, fontSize: '0.875rem', color: '#888' }}>
+            {subcategories.length}{' '}
+            {subcategories.length === 1 ? 'categoria' : 'categorie'}
+          </p>
+        </div>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(18rem, 1fr))',
+            gap: '1.5rem',
+          }}
+        >
+          {subcategories.map((sub: SubcategoryCard) => (
+            <PageCardItem key={sub.id} page={sub} locale={locale} />
+          ))}
+        </div>
       </div>
     );
   }

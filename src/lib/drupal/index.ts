@@ -33,4 +33,5 @@ export * from './blog';
 export * from './pages-by-category';
 export * from './showrooms';
 export * from './documents';
+export * from './subcategories';
 export * from './translated-path';
