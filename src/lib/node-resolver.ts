@@ -145,7 +145,7 @@ const INCLUDE_MAP: Record<string, string> = {
   tutorial: 'field_immagine,field_blocchi,field_blocchi.field_immagine',
   showroom: 'field_gallery',
   ambiente: 'field_immagine,field_blocchi,field_blocchi.field_immagine',
-  documento: 'field_immagine,field_blocchi,field_blocchi.field_immagine',
+  documento: 'field_immagine,field_allegato',
   tag: 'field_immagine,field_blocchi,field_blocchi.field_immagine',
   categoria_blog: 'field_immagine,field_blocchi,field_blocchi.field_immagine',
 
