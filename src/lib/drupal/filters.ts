@@ -198,15 +198,38 @@ export async function fetchArredoCategoryOptions(
         } as RequestInit);
         if (!nextRes.ok) break;
         const nextJson = await nextRes.json();
+        // Add to includedMap for image resolution
+        for (const inc of nextJson.included ?? []) {
+          includedMap.set(`${inc.type}--${inc.id}`, inc);
+        }
         for (const item of nextJson.included ?? []) {
           if (item.type === 'node--categoria' && !seen.has(item.id)) {
             seen.add(item.id);
             const attrs = item.attributes as Record<string, unknown>;
             const title = (attrs?.title as string) ?? '';
+
+            let imageUrl: string | undefined;
+            const relationships = item.relationships as Record<string, unknown> | undefined;
+            const fieldImmagine = relationships?.field_immagine as Record<string, unknown> | undefined;
+            const imageData = fieldImmagine?.data as Record<string, unknown> | undefined;
+            if (imageData?.type && imageData?.id) {
+              const imageKey = `${imageData.type}--${imageData.id}`;
+              const includedImage = includedMap.get(imageKey);
+              if (includedImage) {
+                const imageAttrs = includedImage.attributes as Record<string, unknown> | undefined;
+                const uri = imageAttrs?.uri as Record<string, unknown> | undefined;
+                const url = uri?.url as string | undefined;
+                if (url) {
+                  imageUrl = url.startsWith('/') ? `${DRUPAL_ORIGIN}${url}` : url;
+                }
+              }
+            }
+
             options.push({
               id: item.id as string,
               slug: titleToSlug(title),
               label: title,
+              imageUrl,
             });
           }
         }
