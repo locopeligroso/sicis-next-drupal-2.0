@@ -15,6 +15,10 @@ import FilterSidebar from '@/components_legacy/FilterSidebar';
 import { FILTER_REGISTRY } from '@/domain/filters/registry';
 import { ProductListingSkeleton } from '@/components_legacy/ProductListingSkeleton';
 import { FilterSidebarSkeleton } from '@/components_legacy/FilterSidebarSkeleton';
+import ProjectListing from '@/components_legacy/ProjectListing';
+import EnvironmentListing from '@/components_legacy/EnvironmentListing';
+import BlogListing from '@/components_legacy/BlogListing';
+import { fetchProjects, fetchEnvironments, fetchBlogPosts } from '@/lib/drupal';
 
 // Node components
 import Page from '@/templates/nodes/Page';
@@ -104,6 +108,7 @@ const LISTING_SLUG_OVERRIDES = new Set([
   // Legacy aliases tessili
   'tessili', 'tessuti', 'fabrics', 'tissus', 'stoffe', 'telas',
 ]);
+
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const COMPONENT_MAP: Record<string, React.ComponentType<{
@@ -293,6 +298,7 @@ interface SlugPageProps {
 
 export async function generateMetadata({ params }: SlugPageProps) {
   const { locale, slug } = await params;
+
   // Drupal aliases do NOT include locale prefix
   const drupalPath = `/${slug.join('/')}`;
 
@@ -383,26 +389,81 @@ export default async function SlugPage({ params, searchParams }: SlugPageProps) 
     }
   }
 
-  // ── node--page with field_page_id → product listing interception ──────────
-  // Drupal uses node--page nodes as hub pages for product sections.
-  // When field_page_id maps to a product type, render the listing layout.
-  // Example: /prodotti-tessili → node--page with field_page_id='tessile'
+  // ── node--page with field_page_id → listing interception ──────────────────
+  // Drupal uses node--page nodes as hub pages for listing sections.
+  // field_page_id is set in Drupal and maps 1:1 to a content type.
+  // Product types render with FilterSidebar; content types render standalone.
   if (type === 'node--page') {
     const pageId = resolvedResource.field_page_id as string | undefined;
-    const PAGE_ID_TO_PRODUCT_TYPE: Record<string, string> = {
-      'tessile': 'prodotto_tessuto',
-    };
-    const productType = pageId ? PAGE_ID_TO_PRODUCT_TYPE[pageId] : undefined;
-    if (productType) {
+    if (pageId) {
       const nodeTitle =
         (resolvedResource.field_titolo_main as string | undefined)
         ?? (resolvedResource.title as string | undefined)
         ?? slug[slug.length - 1];
-      return renderListingLayout({
-        sectionConfig: { productType },
-        slug, sp, locale, currentPage, offset,
-        title: nodeTitle,
-      });
+
+      // Product listing (with FilterSidebar)
+      const PAGE_ID_TO_PRODUCT_TYPE: Record<string, string> = {
+        'tessile': 'prodotto_tessuto',
+      };
+      const productType = PAGE_ID_TO_PRODUCT_TYPE[pageId];
+      if (productType) {
+        return renderListingLayout({
+          sectionConfig: { productType },
+          slug, sp, locale, currentPage, offset,
+          title: nodeTitle,
+        });
+      }
+
+      // Content listing (without FilterSidebar) — maps field_page_id → fetcher + component
+      const basePath = `/${locale}/${slug.join('/')}`;
+      const PAGE_ID_TO_CONTENT_LISTING: Record<string, () => Promise<React.ReactElement>> = {
+        'progetti': async () => {
+          const { projects, total } = await fetchProjects(locale, PAGE_SIZE, offset);
+          return (
+            <ProjectListing
+              title={nodeTitle}
+              projects={projects}
+              total={total}
+              locale={locale}
+              currentPage={currentPage}
+              pageSize={PAGE_SIZE}
+              basePath={basePath}
+            />
+          );
+        },
+        'environments': async () => {
+          const { environments, total } = await fetchEnvironments(locale, PAGE_SIZE, offset);
+          return (
+            <EnvironmentListing
+              title={nodeTitle}
+              environments={environments}
+              total={total}
+              locale={locale}
+              currentPage={currentPage}
+              pageSize={PAGE_SIZE}
+              basePath={basePath}
+            />
+          );
+        },
+        'blog': async () => {
+          const { posts, total } = await fetchBlogPosts(locale, PAGE_SIZE, offset);
+          return (
+            <BlogListing
+              title={nodeTitle}
+              posts={posts}
+              total={total}
+              locale={locale}
+              currentPage={currentPage}
+              pageSize={PAGE_SIZE}
+              basePath={basePath}
+            />
+          );
+        },
+      };
+      const contentRenderer = PAGE_ID_TO_CONTENT_LISTING[pageId];
+      if (contentRenderer) {
+        return contentRenderer();
+      }
     }
   }
 

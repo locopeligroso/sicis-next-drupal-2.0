@@ -30,6 +30,11 @@
     "showroom": "Шоурум",
     "blog": "Блог"
   },
+  "projects": {
+    "title": "Проекты",
+    "count": "{count, plural, one {# проект} few {# проекта} other {# проектов}}",
+    "noResults": "Нет доступных проектов."
+  },
   "products": {
     "price": "Цена",
     "priceOnDemand": "Цена по запросу",

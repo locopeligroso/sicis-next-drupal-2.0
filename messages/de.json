@@ -30,6 +30,11 @@
     "showroom": "Showroom",
     "blog": "Blog"
   },
+  "projects": {
+    "title": "Projekte",
+    "count": "{count, plural, one {# Projekt} other {# Projekte}}",
+    "noResults": "Keine Projekte verfügbar."
+  },
   "products": {
     "price": "Preis",
     "priceOnDemand": "Preis auf Anfrage",

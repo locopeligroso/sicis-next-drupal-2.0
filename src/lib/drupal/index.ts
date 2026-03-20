@@ -27,4 +27,7 @@ export * from './paragraphs';
 export * from './products';
 export * from './filters';
 export * from './projects';
+export * from './environments';
+export * from './blog';
+export * from './pages-by-category';
 export * from './translated-path';

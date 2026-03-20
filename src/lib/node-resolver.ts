@@ -149,8 +149,8 @@ const INCLUDE_MAP: Record<string, string> = {
   tag: 'field_immagine,field_blocchi,field_blocchi.field_immagine',
   categoria_blog: 'field_immagine,field_blocchi,field_blocchi.field_immagine',
 
-  // ── Content with field_immagine + gallery + paragraphs ──
-  progetto: 'field_immagine',
+  // ── Progetto (field_immagine + paragraphs + category) ──
+  progetto: 'field_immagine,field_blocchi,field_blocchi.field_immagine,field_categoria_progetto',
 
   // ── Taxonomy terms ──
   mosaico_collezioni: 'field_immagine',
