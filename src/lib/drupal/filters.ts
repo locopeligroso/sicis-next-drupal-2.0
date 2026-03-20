@@ -126,8 +126,8 @@ export async function fetchArredoCategoryOptions(
   );
   url.searchParams.set('page[limit]', '50');
   url.searchParams.set(`fields[node--${contentType}]`, 'title');
-  url.searchParams.set('include', 'field_categoria');
-  url.searchParams.set('fields[node--categoria]', 'title,path');
+  url.searchParams.set('include', 'field_categoria,field_categoria.field_immagine');
+  url.searchParams.set('fields[node--categoria]', 'title,path,field_immagine');
   url.searchParams.set('filter[status]', '1');
 
   try {
@@ -146,6 +146,12 @@ export async function fetchArredoCategoryOptions(
 
     const json = await res.json();
 
+    // Build included map for image resolution
+    const includedMap = new Map<string, Record<string, unknown>>();
+    for (const inc of json.included ?? []) {
+      includedMap.set(`${inc.type}--${inc.id}`, inc);
+    }
+
     // Extract unique categories from included data
     const seen = new Set<string>();
     const options: FilterOption[] = [];
@@ -154,10 +160,30 @@ export async function fetchArredoCategoryOptions(
         seen.add(item.id);
         const attrs = item.attributes as Record<string, unknown>;
         const title = (attrs?.title as string) ?? '';
+
+        // Resolve image from field_immagine relationship
+        let imageUrl: string | undefined;
+        const relationships = item.relationships as Record<string, unknown> | undefined;
+        const fieldImmagine = relationships?.field_immagine as Record<string, unknown> | undefined;
+        const imageData = fieldImmagine?.data as Record<string, unknown> | undefined;
+        if (imageData?.type && imageData?.id) {
+          const imageKey = `${imageData.type}--${imageData.id}`;
+          const includedImage = includedMap.get(imageKey);
+          if (includedImage) {
+            const imageAttrs = includedImage.attributes as Record<string, unknown> | undefined;
+            const uri = imageAttrs?.uri as Record<string, unknown> | undefined;
+            const url = uri?.url as string | undefined;
+            if (url) {
+              imageUrl = url.startsWith('/') ? `${DRUPAL_ORIGIN}${url}` : url;
+            }
+          }
+        }
+
         options.push({
           id: item.id as string,
           slug: titleToSlug(title),
           label: title,
+          imageUrl,
         });
       }
     }
