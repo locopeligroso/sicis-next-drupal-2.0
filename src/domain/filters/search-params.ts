@@ -96,17 +96,21 @@ export function parseFiltersFromUrl(
   let contentType: string | null = null;
   const sort = searchParams['sort'] || undefined;
 
-  // Find matching product type config from first slug segment
+  // Find matching product type config from slug segments
   for (const [ct, config] of Object.entries(FILTER_REGISTRY)) {
     const basePath = config.basePaths[locale] ?? config.basePaths['it'];
     const baseSegments = basePath.split('/');
 
-    // Check if slug starts with basePath segments
-    const matches = baseSegments.every((seg, i) => slug[i] === seg);
-    if (!matches) continue;
+    // Check if slug starts with basePath segments (full match)
+    const fullMatch = baseSegments.every((seg, i) => slug[i] === seg);
+    // Also try partial match: first segment matches but second doesn't
+    // (handles /en/textiles/bedcover where registry says textiles/fabrics)
+    const partialMatch = !fullMatch && baseSegments.length > 1 && slug[0] === baseSegments[0];
+    if (!fullMatch && !partialMatch) continue;
 
     contentType = ct;
-    const afterBase = slug.slice(baseSegments.length);
+    const matchedSegments = fullMatch ? baseSegments.length : 1;
+    const afterBase = slug.slice(matchedSegments);
     const [pathSeg1, pathSeg2] = afterBase;
 
     // Detect path-based filters
