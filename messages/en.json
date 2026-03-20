@@ -158,7 +158,28 @@
     "nextPage": "Next page",
     "prevPage": "Previous page",
     "openFilters": "Open filters",
-    "closeFilters": "Close filters"
+    "closeFilters": "Close filters",
+    "colors": "Colors",
+    "collections": "Collections",
+    "typologies": "Typologies",
+    "categories": "Categories",
+    "additionalFilters": "Additional filters",
+    "showResults": "Show {count} products",
+    "activeCount": "Filters ({count})"
+  },
+  "sort": {
+    "label": "Sort by",
+    "name": "Name",
+    "collection": "Collection",
+    "typology": "Typology",
+    "category": "Category",
+    "color": "Color",
+    "subcategory": "Subcategory"
+  },
+  "listing": {
+    "productCount": "{count} products",
+    "loadMore": "Load {count} more",
+    "noResults": "No products found"
   },
   "errors": {
     "notFound": "Page not found",

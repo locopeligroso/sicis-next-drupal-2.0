@@ -156,7 +156,28 @@
     "nextPage": "Следующая страница",
     "prevPage": "Предыдущая страница",
     "openFilters": "Открыть фильтры",
-    "closeFilters": "Закрыть фильтры"
+    "closeFilters": "Закрыть фильтры",
+    "colors": "Цвета",
+    "collections": "Коллекции",
+    "typologies": "Типологии",
+    "categories": "Категории",
+    "additionalFilters": "Дополнительные фильтры",
+    "showResults": "Показать {count} товаров",
+    "activeCount": "Фильтры ({count})"
+  },
+  "sort": {
+    "label": "Сортировать по",
+    "name": "Название",
+    "collection": "Коллекция",
+    "typology": "Типология",
+    "category": "Категория",
+    "color": "Цвет",
+    "subcategory": "Подкатегория"
+  },
+  "listing": {
+    "productCount": "{count} товаров",
+    "loadMore": "Загрузить ещё {count}",
+    "noResults": "Товары не найдены"
   },
   "errors": {
     "notFound": "Страница не найдена",
