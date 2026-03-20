@@ -17,7 +17,7 @@ export async function fetchFilterOptions(
 ): Promise<FilterOption[]> {
   const localePrefix = locale ? `/${locale}` : '';
   const url = new URL(
-    `${DRUPAL_BASE_URL}${localePrefix}/jsonapi/${taxonomyType.replace('--', '/')}`
+    `${DRUPAL_BASE_URL}${localePrefix}/jsonapi/${taxonomyType.replace('--', '/')}`,
   );
   url.searchParams.set('page[limit]', '200');
   url.searchParams.set(`fields[${taxonomyType}]`, 'name,path,weight');
@@ -30,7 +30,10 @@ export async function fetchFilterOptions(
     } as RequestInit);
 
     if (!res.ok) {
-      console.warn(`[fetchFilterOptions] HTTP ${res.status} for ${taxonomyType}`, { locale, url: url.toString() });
+      console.warn(
+        `[fetchFilterOptions] HTTP ${res.status} for ${taxonomyType}`,
+        { locale, url: url.toString() },
+      );
       return [];
     }
 
@@ -46,33 +49,39 @@ export async function fetchFilterOptions(
       } satisfies FilterOption;
     });
   } catch (err) {
-    console.error(`[fetchFilterOptions] Network error for ${taxonomyType}`, { locale, error: err instanceof Error ? err.message : err });
+    console.error(`[fetchFilterOptions] Network error for ${taxonomyType}`, {
+      locale,
+      error: err instanceof Error ? err.message : err,
+    });
     return [];
   }
 }
 
 /**
- * Fetches `node/categoria` nodes used as `field_categoria` in `prodotto_arredo`.
+ * Fetches `node/categoria` nodes used as `field_categoria` on product types.
  *
- * `prodotto_arredo.field_categoria` is an entity_reference to `node--categoria`
- * (not a taxonomy term), so `fetchFilterOptions` cannot be used.
- * The JSON:API filter for arredo products uses `field_categoria.title`, so the
- * `slug` is derived from the node title (slugified) to match how `slugToTermName`
- * reconstructs the term name from a URL slug.
+ * Filters categories by extracting distinct field_categoria values from actual
+ * products of the given contentType. This ensures each product type shows only
+ * its own categories (e.g. Illuminazione shows Lampadari/Lampade, Arredo shows
+ * Divani/Poltrone/Tavoli).
  *
  * Returns FilterOption[] sorted alphabetically by title.
  */
 export async function fetchArredoCategoryOptions(
   locale: string,
+  contentType = 'prodotto_arredo',
 ): Promise<FilterOption[]> {
   const localePrefix = locale ? `/${locale}` : '';
+
+  // Fetch products with field_categoria included to extract unique categories
   const url = new URL(
-    `${DRUPAL_BASE_URL}${localePrefix}/jsonapi/node/categoria`
+    `${DRUPAL_BASE_URL}${localePrefix}/jsonapi/node/${contentType}`,
   );
-  url.searchParams.set('page[limit]', '200');
+  url.searchParams.set('page[limit]', '50');
+  url.searchParams.set(`fields[node--${contentType}]`, 'title');
+  url.searchParams.set('include', 'field_categoria');
   url.searchParams.set('fields[node--categoria]', 'title,path');
   url.searchParams.set('filter[status]', '1');
-  url.searchParams.set('sort', 'title');
 
   try {
     const res = await fetch(url.toString(), {
@@ -81,24 +90,65 @@ export async function fetchArredoCategoryOptions(
     } as RequestInit);
 
     if (!res.ok) {
-      console.warn(`[fetchArredoCategoryOptions] HTTP ${res.status} for node/categoria`, { locale, url: url.toString() });
+      console.warn(
+        `[fetchArredoCategoryOptions] HTTP ${res.status} for ${contentType}`,
+        { locale, url: url.toString() },
+      );
       return [];
     }
 
     const json = await res.json();
-    return (json.data ?? []).map((item: Record<string, unknown>) => {
-      const attrs = item.attributes as Record<string, unknown>;
-      const title = (attrs?.title as string) ?? '';
-      return {
-        id: item.id as string,
-        // slug is derived from the title so it round-trips through slugToTermName:
-        // slug → title capitalised matches field_categoria.title
-        slug: titleToSlug(title),
-        label: title,
-      } satisfies FilterOption;
-    });
+
+    // Extract unique categories from included data
+    const seen = new Set<string>();
+    const options: FilterOption[] = [];
+    for (const item of json.included ?? []) {
+      if (item.type === 'node--categoria' && !seen.has(item.id)) {
+        seen.add(item.id);
+        const attrs = item.attributes as Record<string, unknown>;
+        const title = (attrs?.title as string) ?? '';
+        options.push({
+          id: item.id as string,
+          slug: titleToSlug(title),
+          label: title,
+        });
+      }
+    }
+
+    // If we got paginated results, fetch more pages to collect all categories
+    let nextHref: string | null = json.links?.next?.href ?? null;
+    while (nextHref) {
+      try {
+        const nextRes = await fetch(nextHref, {
+          headers: { Accept: 'application/vnd.api+json' },
+          next: { revalidate: 3600 },
+        } as RequestInit);
+        if (!nextRes.ok) break;
+        const nextJson = await nextRes.json();
+        for (const item of nextJson.included ?? []) {
+          if (item.type === 'node--categoria' && !seen.has(item.id)) {
+            seen.add(item.id);
+            const attrs = item.attributes as Record<string, unknown>;
+            const title = (attrs?.title as string) ?? '';
+            options.push({
+              id: item.id as string,
+              slug: titleToSlug(title),
+              label: title,
+            });
+          }
+        }
+        nextHref = nextJson.links?.next?.href ?? null;
+      } catch {
+        break;
+      }
+    }
+
+    return options.sort((a, b) => a.label.localeCompare(b.label));
   } catch (err) {
-    console.error(`[fetchArredoCategoryOptions] Network error for node/categoria`, { locale, error: err instanceof Error ? err.message : err });
+    console.error(
+      `[fetchArredoCategoryOptions] Network error for ${contentType}`,
+      { locale, error: err instanceof Error ? err.message : err },
+    );
     return [];
   }
 }
@@ -137,25 +187,27 @@ function titleToSlug(title: string): string {
  *
  * Returns Record<filterKey, FilterOption[]>
  */
-export const fetchAllFilterOptions = cache(async (
-  contentType: string,
-  locale: string,
-): Promise<Record<string, FilterOption[]>> => {
-  const config = FILTER_REGISTRY[contentType];
-  if (!config) return {};
+export const fetchAllFilterOptions = cache(
+  async (
+    contentType: string,
+    locale: string,
+  ): Promise<Record<string, FilterOption[]>> => {
+    const config = FILTER_REGISTRY[contentType];
+    if (!config) return {};
 
-  const entries = await Promise.all(
-    Object.entries(config.filters).map(async ([filterKey, filterConfig]) => {
-      let options: FilterOption[] = [];
-      if (filterConfig.taxonomyType) {
-        options = await fetchFilterOptions(filterConfig.taxonomyType, locale);
-      } else if (filterConfig.nodeType === 'node--categoria') {
-        options = await fetchArredoCategoryOptions(locale);
-      }
-      // filters without taxonomyType or nodeType (e.g. grout) → []
-      return [filterKey, options] as [string, FilterOption[]];
-    }),
-  );
+    const entries = await Promise.all(
+      Object.entries(config.filters).map(async ([filterKey, filterConfig]) => {
+        let options: FilterOption[] = [];
+        if (filterConfig.taxonomyType) {
+          options = await fetchFilterOptions(filterConfig.taxonomyType, locale);
+        } else if (filterConfig.nodeType === 'node--categoria') {
+          options = await fetchArredoCategoryOptions(locale, contentType);
+        }
+        // filters without taxonomyType or nodeType (e.g. grout) → []
+        return [filterKey, options] as [string, FilterOption[]];
+      }),
+    );
 
-  return Object.fromEntries(entries);
-});
+    return Object.fromEntries(entries);
+  },
+);
