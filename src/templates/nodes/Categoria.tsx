@@ -5,10 +5,13 @@ import {
   fetchProducts,
   fetchPagesByCategory,
   fetchSubcategories,
+  getDrupalImageUrl,
   type ProductCard,
   type PageCard,
   type SubcategoryCard,
 } from '@/lib/drupal';
+import DrupalImage from '@/components_legacy/DrupalImage';
+import ParagraphResolver from '@/components_legacy/blocks_legacy/ParagraphResolver';
 
 interface CategoriaProps {
   node: Record<string, unknown>;
@@ -194,9 +197,8 @@ export default async function Categoria({ node }: CategoriaProps) {
     getTextValue(node.field_titolo_main) || getTextValue(node.title) || '';
   const locale = (node.langcode as string) || 'it';
   const categoriaUuid = node.id as string;
-  console.log(
-    `[Categoria] title="${title}" uuid="${categoriaUuid}" type="${node.type}" keys=${Object.keys(node).join(',')}`,
-  );
+  const paragraphs =
+    (node.field_blocchi as Record<string, unknown>[] | undefined) ?? [];
 
   const productType = getCategoriaProductType(title);
 
@@ -401,17 +403,17 @@ export default async function Categoria({ node }: CategoriaProps) {
           ))}
         </div>
       ) : (
-        <div
-          style={{
-            padding: '4rem 2rem',
-            textAlign: 'center',
-            color: '#888',
-            border: '0.0625rem dashed #ddd',
-          }}
-        >
-          <p style={{ margin: 0 }}>
-            Nessun contenuto trovato per questa categoria.
-          </p>
+        // ── CMS content fallback: render node image + paragraphs ──
+        <div>
+          <DrupalImage
+            field={node.field_immagine}
+            alt={title}
+            aspectRatio="16/9"
+            style={{ marginBottom: '2rem' }}
+          />
+          {paragraphs.map((p, i) => (
+            <ParagraphResolver key={(p.id as string) ?? i} paragraph={p} />
+          ))}
         </div>
       )}
     </div>

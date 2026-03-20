@@ -158,7 +158,8 @@ const INCLUDE_MAP: Record<string, string> = {
   ambiente: 'field_immagine,field_blocchi,field_blocchi.field_immagine',
   documento: 'field_immagine,field_allegato',
   tag: 'field_immagine,field_blocchi,field_blocchi.field_immagine',
-  categoria: 'field_immagine,field_categoria',
+  categoria:
+    'field_immagine,field_categoria,field_blocchi,field_blocchi.field_immagine',
   categoria_blog: 'field_immagine,field_blocchi,field_blocchi.field_immagine',
 
   // ── Progetto (field_immagine + paragraphs + category) ──
