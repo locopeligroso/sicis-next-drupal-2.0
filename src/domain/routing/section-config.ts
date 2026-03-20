@@ -210,6 +210,15 @@ export function getSectionConfig(
         filterOperator: hasSubCollections ? 'STARTS_WITH' : '=',
       };
     }
+    // /mosaico/colori/{slug} — color filter listing (3 segments)
+    const mosaicoColorPrefixes = ['colori', 'colors', 'couleurs', 'farben', 'colores', 'цвета'];
+    if (s3 && mosaicoColorPrefixes.includes(s2)) {
+      return {
+        productType: 'prodotto_mosaico',
+        filterField: 'field_colori.name',
+        filterValue: deslugify(decodeURIComponent(s3)),
+      };
+    }
     // /mosaico/murano-smalto/sun-3 — prodotto singolo
     return null;
   }
@@ -222,6 +231,15 @@ export function getSectionConfig(
         productType: 'prodotto_vetrite',
         filterField: 'field_collezione.name',
         filterValue: deslugify(decodeURIComponent(s2)),
+      };
+    }
+    // /vetrite/colori/{slug} — color filter listing (3 segments)
+    const vetriteColorPrefixes = ['colori', 'colors', 'couleurs', 'farben', 'colores', 'цвета'];
+    if (s3 && vetriteColorPrefixes.includes(s2)) {
+      return {
+        productType: 'prodotto_vetrite',
+        filterField: 'field_colori.name',
+        filterValue: deslugify(decodeURIComponent(s3)),
       };
     }
     return null;
@@ -319,6 +337,20 @@ export async function getSectionConfigAsync(
         filterValue: termName,
         filterOperator: hasSubCollections ? 'STARTS_WITH' : '=',
       };
+    }
+
+    // /mosaico/colori/{slug} or /vetrite/colori/{slug} — color filter listing (3 segments)
+    if (s3) {
+      const colorPrefixes = ['colori', 'colors', 'couleurs', 'farben', 'colores', 'цвета'];
+      if (colorPrefixes.includes(s2)) {
+        const termName =
+          registry.slugToTermName.get(s3) ?? deslugify(decodeURIComponent(s3));
+        return {
+          productType,
+          filterField: 'field_colori.name',
+          filterValue: termName,
+        };
+      }
     }
 
     // 3+ segments = single product detail page

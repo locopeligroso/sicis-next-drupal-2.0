@@ -1,5 +1,4 @@
 import Link from "next/link"
-import Image from "next/image"
 import { Typography } from "@/components/composed/Typography"
 import { cn } from "@/lib/utils"
 
@@ -28,12 +27,10 @@ export function ProductCard({
     >
       <div className="relative aspect-[3/4] overflow-hidden rounded-md bg-muted">
         {imageUrl ? (
-          <Image
+          <img
             src={imageUrl}
             alt={title}
-            fill
-            className="object-cover transition-opacity duration-300 group-hover:opacity-80"
-            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="absolute inset-0 size-full object-cover transition-opacity duration-300 group-hover:opacity-80"
           />
         ) : null}
       </div>

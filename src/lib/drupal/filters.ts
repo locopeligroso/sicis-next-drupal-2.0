@@ -3,7 +3,7 @@
 // ════════════════════════════════════════════════════════════════════════════
 
 import { cache } from 'react';
-import { DRUPAL_BASE_URL } from './config';
+import { DRUPAL_BASE_URL, DRUPAL_ORIGIN } from './config';
 import type { FilterOption } from '@/domain/filters/registry';
 import { FILTER_REGISTRY } from '@/domain/filters/registry';
 import {
@@ -86,7 +86,7 @@ export async function fetchFilterOptions(
             const imageUrl = uri?.url as string | undefined;
             if (imageUrl) {
               filterOption.imageUrl = imageUrl.startsWith('/')
-                ? `${DRUPAL_BASE_URL}${imageUrl}`
+                ? `${DRUPAL_ORIGIN}${imageUrl}`
                 : imageUrl;
             }
           }
@@ -373,8 +373,17 @@ export const fetchAllFilterOptions = cache(
     const entries = await Promise.all(
       Object.entries(config.filters).map(async ([filterKey, filterConfig]) => {
         let options: FilterOption[] = [];
+        // Check if this filter needs images (from listing categoryGroups config)
+        const categoryGroup = config.listing?.categoryGroups.find(
+          (g) => g.filterKey === filterKey,
+        );
+        const includeImage = categoryGroup
+          ? categoryGroup.hasImage || categoryGroup.hasColorSwatch
+          : false;
         if (filterConfig.taxonomyType) {
-          options = await fetchFilterOptions(filterConfig.taxonomyType, locale);
+          options = await fetchFilterOptions(filterConfig.taxonomyType, locale, {
+            includeImage,
+          });
         } else if (filterConfig.nodeType === 'node--categoria') {
           options = await fetchArredoCategoryOptions(locale, contentType);
         }

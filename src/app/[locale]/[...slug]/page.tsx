@@ -210,7 +210,8 @@ async function renderProductListing({
   if (!config) return null;
 
   const { listing, filters } = config;
-  const basePath = `/${locale}/${slug.join('/')}`;
+  const baseSlug = config.basePaths[locale] ?? config.basePaths['it'];
+  const basePath = `/${locale}/${baseSlug}`;
 
   // Flatten searchParams to Record<string, string> for parseFiltersFromUrl
   const spRecord: Record<string, string> = {};
@@ -387,6 +388,29 @@ export default async function SlugPage({
       });
     }
     notFound();
+  }
+
+  // ── Multi-slug listing interception ──────────────────────────────────────
+  // When the URL has 2+ segments (e.g. /mosaico/murano-smalto, /mosaico/colori/rosso),
+  // check if it's a product listing with an active P0 filter. If so, render
+  // with the new ProductListingTemplate instead of falling through to Drupal
+  // node resolution (which would render old taxonomy templates).
+  if (slug.length > 1) {
+    const sectionConfig = await getSectionConfigAsync(slug, locale);
+    if (sectionConfig) {
+      // Check if this is a product detail page (3+ segments after base for some types)
+      // by verifying getSectionConfig returns a productType (it returns null for detail pages)
+      const parsed = parseFiltersFromUrl(slug, sp as Record<string, string> ?? {}, locale);
+      if (parsed.activeFilters.length > 0) {
+        return renderProductListing({
+          productType: sectionConfig.productType,
+          title: slug[0],
+          slug,
+          searchParams: sp,
+          locale,
+        });
+      }
+    }
   }
 
   let resource: Record<string, unknown> | null = null;

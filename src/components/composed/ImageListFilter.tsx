@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import { cn } from "@/lib/utils"
 
 interface ImageListFilterProps {
@@ -34,11 +33,9 @@ export function ImageListFilter({
             )}
           >
             {option.imageUrl ? (
-              <Image
+              <img
                 src={option.imageUrl}
                 alt={option.label}
-                width={32}
-                height={32}
                 className="size-8 shrink-0 rounded-sm object-cover"
               />
             ) : (
