@@ -124,6 +124,55 @@ function MegaMenuColumn({
   );
 }
 
+/**
+ * Flat list layout: when all items are leaf nodes (no children),
+ * render as a multi-column grid of links instead of individual column headers.
+ */
+function MegaMenuFlatList({
+  items,
+  onClose,
+}: {
+  items: MenuItem[];
+  onClose: () => void;
+}) {
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+  return (
+    <ul
+      style={{
+        listStyle: 'none',
+        margin: 0,
+        padding: 0,
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(12rem, 1fr))',
+        gap: '0.25rem 2rem',
+      }}
+    >
+      {items.map((item) => (
+        <li key={item.id}>
+          <Link
+            href={item.url || '#'}
+            onClick={onClose}
+            onMouseEnter={() => setHoveredId(item.id)}
+            onMouseLeave={() => setHoveredId(null)}
+            style={{
+              fontSize: '0.8rem',
+              color: hoveredId === item.id ? '#000' : '#444',
+              textDecoration: 'none',
+              padding: '0.4rem 0',
+              paddingLeft: hoveredId === item.id ? '0.3rem' : '0',
+              display: 'block',
+              transition: 'color 0.12s, padding-left 0.12s',
+            }}
+          >
+            {item.title}
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export default function MegaMenu({
   items,
   onClose,
@@ -135,8 +184,10 @@ export default function MegaMenu({
 
   if (items.length === 0) return null;
 
+  // Detect flat list: all items are leaf nodes (no children)
+  const isFlat = items.every((item) => item.children.length === 0);
+
   return (
-    // Fix A — nav is full-width, content is max-width constrained
     <nav
       aria-label={t('megaMenu')}
       onMouseEnter={onMouseEnter}
@@ -153,33 +204,37 @@ export default function MegaMenu({
         zIndex: 99,
       }}
     >
-      {/* Fix A — inner wrapper constrains content width */}
-      <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '1.75rem 2rem' }}>
-        <ul
-          style={{
-            listStyle: 'none',
-            margin: 0,
-            padding: 0,
-            display: 'flex',
-            gap: 0,
-          }}
-        >
-          {items.map((col, idx) => (
-            // Fix A — column separators via borderRight
-            <li
-              key={col.id}
-              style={{
-                flex: '0 0 auto',
-                paddingRight: '2.5rem',
-                marginRight: '2.5rem',
-                borderRight:
-                  idx < items.length - 1 ? '0.0625rem solid #f0f0f0' : 'none',
-              }}
-            >
-              <MegaMenuColumn item={col} onClose={onClose} />
-            </li>
-          ))}
-        </ul>
+      <div
+        style={{ maxWidth: '80rem', margin: '0 auto', padding: '1.75rem 2rem' }}
+      >
+        {isFlat ? (
+          <MegaMenuFlatList items={items} onClose={onClose} />
+        ) : (
+          <ul
+            style={{
+              listStyle: 'none',
+              margin: 0,
+              padding: 0,
+              display: 'flex',
+              gap: 0,
+            }}
+          >
+            {items.map((col, idx) => (
+              <li
+                key={col.id}
+                style={{
+                  flex: '0 0 auto',
+                  paddingRight: '2.5rem',
+                  marginRight: '2.5rem',
+                  borderRight:
+                    idx < items.length - 1 ? '0.0625rem solid #f0f0f0' : 'none',
+                }}
+              >
+                <MegaMenuColumn item={col} onClose={onClose} />
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </nav>
   );
