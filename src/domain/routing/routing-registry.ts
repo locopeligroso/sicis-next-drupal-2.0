@@ -79,9 +79,7 @@ const DRUPAL_BASE_PATH = (() => {
 })();
 
 /** Locale pattern for stripping locale prefix from paths */
-const LOCALE_PATTERN = new RegExp(
-  `^/(${locales.join('|')})(/|$)`,
-);
+const LOCALE_PATTERN = new RegExp(`^/(${locales.join('|')})(/|$)`);
 
 /**
  * Normalises a raw Drupal menu URL to a clean path segment.
@@ -177,9 +175,7 @@ async function fetchMenuForLocale(
  * Recursively searches menu items for the "Filter and Find" section.
  * Matches by title containing "filter" (case-insensitive).
  */
-function findFilterAndFindSection(
-  items: MenuApiItem[],
-): MenuApiItem | null {
+function findFilterAndFindSection(items: MenuApiItem[]): MenuApiItem | null {
   for (const item of items) {
     if (item.title.toLowerCase().includes('filter')) {
       return item;
@@ -228,9 +224,7 @@ export async function buildRoutingRegistry(): Promise<RoutingRegistry> {
     if (result.status === 'fulfilled' && result.value) {
       menuByLocale[locales[i]] = result.value;
     } else {
-      console.warn(
-        `[RoutingRegistry] No menu data for locale "${locales[i]}"`,
-      );
+      console.warn(`[RoutingRegistry] No menu data for locale "${locales[i]}"`);
     }
   }
 
@@ -303,10 +297,25 @@ export async function buildRoutingRegistry(): Promise<RoutingRegistry> {
       continue;
     }
 
-    // Skip "Illuminazione" — it's a sub-section of Arredo, not a separate
-    // product type. Its first segment "arredo" already maps to prodotto_arredo.
-    if (itSlug !== firstSegment && firstSegment === 'arredo') {
-      // This is arredo/illuminazione or similar sub-path. Skip as a top-level hub.
+    // Sub-paths under a product hub (e.g. arredo/illuminazione) are subcategory
+    // listings, not separate product types. Register the last segment in
+    // slugToTermName for cross-locale resolution, then skip hub registration.
+    if (itSlug !== firstSegment && productType) {
+      const subSegments = itSlug.split('/');
+      const lastSegment = subSegments[subSegments.length - 1];
+      slugToTermName.set(lastSegment, hubItem.title);
+
+      // Cross-reference for other locales
+      for (const locale of locales) {
+        if (locale === defaultLocale) continue;
+        const localeItem = uuidMaps[locale]?.get(hubItem.id);
+        if (!localeItem) continue;
+        const localeSlug = normalizeMenuUrl(localeItem.url, locale);
+        if (!localeSlug) continue;
+        const localeSegments = localeSlug.split('/');
+        const localeLastSegment = localeSegments[localeSegments.length - 1];
+        slugToTermName.set(localeLastSegment, hubItem.title);
+      }
       continue;
     }
 

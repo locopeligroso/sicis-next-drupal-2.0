@@ -19,9 +19,7 @@ function ProductCardItem({
   product: ProductCard;
   locale: string;
 }) {
-  const href = product.path
-    ? `/${locale}${product.path}`
-    : `/${locale}`;
+  const href = product.path ? `/${locale}${product.path}` : `/${locale}`;
 
   return (
     <Link
@@ -90,7 +88,14 @@ function ProductCardItem({
           {product.title}
         </p>
         {product.priceOnDemand ? (
-          <p style={{ margin: 0, fontSize: '0.75rem', color: '#888', fontStyle: 'italic' }}>
+          <p
+            style={{
+              margin: 0,
+              fontSize: '0.75rem',
+              color: '#888',
+              fontStyle: 'italic',
+            }}
+          >
             Su richiesta
           </p>
         ) : product.price ? (
@@ -103,13 +108,7 @@ function ProductCardItem({
   );
 }
 
-function PageCardItem({
-  page,
-  locale,
-}: {
-  page: PageCard;
-  locale: string;
-}) {
+function PageCardItem({ page, locale }: { page: PageCard; locale: string }) {
   const href = page.path ? `/${locale}${page.path}` : null;
 
   const card = (
@@ -176,7 +175,10 @@ function PageCardItem({
 
   if (href) {
     return (
-      <Link href={href} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+      <Link
+        href={href}
+        style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
+      >
         {card}
       </Link>
     );
@@ -186,7 +188,8 @@ function PageCardItem({
 }
 
 export default async function Categoria({ node }: CategoriaProps) {
-  const title = getTextValue(node.field_titolo_main) || getTextValue(node.title) || '';
+  const title =
+    getTextValue(node.field_titolo_main) || getTextValue(node.title) || '';
   const locale = (node.langcode as string) || 'it';
   const categoriaUuid = node.id as string;
 
@@ -194,7 +197,11 @@ export default async function Categoria({ node }: CategoriaProps) {
 
   // ── Product category (Mosaico, Vetrite, Arredo, etc.) ──
   if (productType) {
-    const { products, total } = await fetchProducts({ productType, locale, limit: 24 });
+    const { products, total } = await fetchProducts({
+      productType,
+      locale,
+      limit: 24,
+    });
     return (
       <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '2rem' }}>
         <div
@@ -204,7 +211,14 @@ export default async function Categoria({ node }: CategoriaProps) {
             marginBottom: '2rem',
           }}
         >
-          <h1 style={{ fontSize: '2rem', fontWeight: 700, margin: '0 0 0.5rem', lineHeight: 1.2 }}>
+          <h1
+            style={{
+              fontSize: '2rem',
+              fontWeight: 700,
+              margin: '0 0 0.5rem',
+              lineHeight: 1.2,
+            }}
+          >
             {title}
           </h1>
           {total > 0 && (
@@ -222,16 +236,34 @@ export default async function Categoria({ node }: CategoriaProps) {
             }}
           >
             {products.map((product) => (
-              <ProductCardItem key={product.id} product={product} locale={locale} />
+              <ProductCardItem
+                key={product.id}
+                product={product}
+                locale={locale}
+              />
             ))}
           </div>
         ) : (
-          <div style={{ padding: '4rem 2rem', textAlign: 'center', color: '#888', border: '0.0625rem dashed #ddd' }}>
+          <div
+            style={{
+              padding: '4rem 2rem',
+              textAlign: 'center',
+              color: '#888',
+              border: '0.0625rem dashed #ddd',
+            }}
+          >
             <p style={{ margin: 0 }}>Nessun prodotto trovato.</p>
           </div>
         )}
         {total > 24 && (
-          <p style={{ textAlign: 'center', marginTop: '2rem', fontSize: '0.875rem', color: '#888' }}>
+          <p
+            style={{
+              textAlign: 'center',
+              marginTop: '2rem',
+              fontSize: '0.875rem',
+              color: '#888',
+            }}
+          >
             Mostrando 24 di {total} prodotti
           </p>
         )}
@@ -241,7 +273,11 @@ export default async function Categoria({ node }: CategoriaProps) {
 
   // ── Content category (Mosaico Artistico, Mosaico in Marmo, etc.) ──
   // Fetch node--page entities that have field_categoria pointing to this categoria
-  const { pages, total } = await fetchPagesByCategory(categoriaUuid, locale, 48);
+  const { pages, total } = await fetchPagesByCategory(
+    categoriaUuid,
+    locale,
+    48,
+  );
 
   return (
     <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '2rem' }}>
@@ -252,7 +288,14 @@ export default async function Categoria({ node }: CategoriaProps) {
           marginBottom: '2rem',
         }}
       >
-        <h1 style={{ fontSize: '2rem', fontWeight: 700, margin: '0 0 0.5rem', lineHeight: 1.2 }}>
+        <h1
+          style={{
+            fontSize: '2rem',
+            fontWeight: 700,
+            margin: '0 0 0.5rem',
+            lineHeight: 1.2,
+          }}
+        >
           {title}
         </h1>
         {total > 0 && (
@@ -274,8 +317,17 @@ export default async function Categoria({ node }: CategoriaProps) {
           ))}
         </div>
       ) : (
-        <div style={{ padding: '4rem 2rem', textAlign: 'center', color: '#888', border: '0.0625rem dashed #ddd' }}>
-          <p style={{ margin: 0 }}>Nessun contenuto trovato per questa categoria.</p>
+        <div
+          style={{
+            padding: '4rem 2rem',
+            textAlign: 'center',
+            color: '#888',
+            border: '0.0625rem dashed #ddd',
+          }}
+        >
+          <p style={{ margin: 0 }}>
+            Nessun contenuto trovato per questa categoria.
+          </p>
         </div>
       )}
     </div>
