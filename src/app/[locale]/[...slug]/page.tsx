@@ -258,6 +258,30 @@ async function renderProductListing({
       optionPromises.map(async ([key, promise]) => [key, await promise] as [string, FilterOption[]]),
     );
     filterOptions = Object.fromEntries(resolved);
+
+    // Fetch counts for each P0 group (no active filters = total products per option)
+    const countPromises = listing.categoryGroups.map(async (group) => {
+      const filterConfig = filters[group.filterKey];
+      if (!filterConfig) return [group.filterKey, {} as Record<string, number>] as const;
+      const counts = await fetchFilterCounts(
+        productType,
+        [],  // no active filters in state 1
+        group.filterKey,
+        filterConfig.drupalField,
+        locale,
+      );
+      return [group.filterKey, counts] as const;
+    });
+    const countResults = await Promise.all(countPromises);
+    for (const [key, counts] of countResults) {
+      const options = filterOptions[key];
+      if (options) {
+        for (const option of options) {
+          option.count = counts[option.label] ?? 0;
+        }
+      }
+    }
+
     products = undefined;
     total = undefined;
   } else {
