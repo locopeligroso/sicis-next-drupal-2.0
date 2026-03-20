@@ -8,6 +8,7 @@ interface ColorSwatchFilterProps {
     label: string
     imageUrl?: string | null
     cssColor?: string | null
+    count?: number
   }[]
   activeValue?: string
   onChange: (slug: string) => void
@@ -32,15 +33,19 @@ export function ColorSwatchFilter({
             ? { backgroundColor: option.cssColor }
             : {}
 
+        const isDisabled = !isActive && option.count === 0
+
         return (
-          <div key={option.slug} className="flex flex-col items-center gap-1">
+          <div key={option.slug} className={cn("flex flex-col items-center gap-1", isDisabled && "opacity-40")}>
             <button
               type="button"
-              onClick={() => onChange(option.slug)}
+              onClick={() => !isDisabled && onChange(option.slug)}
+              disabled={isDisabled}
               className={cn(
                 "size-8 rounded-full border border-border transition-shadow",
                 !option.imageUrl && !option.cssColor && "bg-muted",
-                isActive && "ring-2 ring-primary ring-offset-2"
+                isActive && "ring-2 ring-primary ring-offset-2",
+                isDisabled && "cursor-not-allowed grayscale"
               )}
               style={backgroundStyle}
               aria-label={option.label}

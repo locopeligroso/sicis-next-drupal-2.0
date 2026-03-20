@@ -53,6 +53,7 @@ export function ProductSection({
         onSortChange={handleSortChange}
       />
       <LoadMoreButton
+        key={`${JSON.stringify(activeFilters)}-${currentSort}-${total}`}
         productType={productType}
         activeFilters={activeFilters}
         sort={currentSort}

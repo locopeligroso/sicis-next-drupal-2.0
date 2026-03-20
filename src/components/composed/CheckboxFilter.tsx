@@ -2,6 +2,7 @@
 
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
+import { cn } from "@/lib/utils"
 
 interface CheckboxFilterProps {
   options: { slug: string; label: string; count?: number }[]
@@ -16,23 +17,32 @@ export function CheckboxFilter({
 }: CheckboxFilterProps) {
   return (
     <div className="flex flex-col gap-2">
-      {options.map((option) => (
-        <div key={option.slug} className="flex items-center gap-2">
-          <Checkbox
-            id={`filter-${option.slug}`}
-            checked={activeValues.includes(option.slug)}
-            onCheckedChange={() => onChange(option.slug)}
-          />
-          <Label htmlFor={`filter-${option.slug}`} className="cursor-pointer">
-            {option.label}
-            {option.count != null && (
-              <span className="text-muted-foreground">
-                ({option.count})
-              </span>
-            )}
-          </Label>
-        </div>
-      ))}
+      {options.map((option) => {
+        const isActive = activeValues.includes(option.slug)
+        const isDisabled = !isActive && option.count === 0
+
+        return (
+          <div key={option.slug} className={cn("flex items-center gap-2", isDisabled && "opacity-40")}>
+            <Checkbox
+              id={`filter-${option.slug}`}
+              checked={isActive}
+              onCheckedChange={() => !isDisabled && onChange(option.slug)}
+              disabled={isDisabled}
+            />
+            <Label
+              htmlFor={`filter-${option.slug}`}
+              className={isDisabled ? "cursor-not-allowed" : "cursor-pointer"}
+            >
+              {option.label}
+              {option.count != null && (
+                <span className="text-muted-foreground">
+                  {" "}({option.count})
+                </span>
+              )}
+            </Label>
+          </div>
+        )
+      })}
     </div>
   )
 }
