@@ -210,8 +210,16 @@ async function renderProductListing({
   if (!config) return null;
 
   const { listing, filters } = config;
-  const baseSlug = config.basePaths[locale] ?? config.basePaths['it'];
-  const basePath = `/${locale}/${baseSlug}`;
+  // Build basePath from the actual URL slug, not the registry basePath.
+  // The registry basePath may differ from the URL (e.g. registry says 'textiles/fabrics'
+  // but user is on '/en/textiles'). We take the slug segments that match the base,
+  // which is everything before the filter segments.
+  const registryBaseSegments = (config.basePaths[locale] ?? config.basePaths['it']).split('/');
+  const baseSegmentCount = registryBaseSegments.length;
+  // Use the actual URL segments for the base (handles cases where URL differs from registry)
+  const actualBaseSegments = slug.slice(0, Math.min(baseSegmentCount, slug.length));
+  // If the URL has fewer segments than the registry base, use what we have
+  const basePath = `/${locale}/${actualBaseSegments.join('/')}`;
 
   // Flatten searchParams to Record<string, string> for parseFiltersFromUrl
   const spRecord: Record<string, string> = {};
