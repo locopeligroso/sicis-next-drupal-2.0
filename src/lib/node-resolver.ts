@@ -143,14 +143,15 @@ const INCLUDE_MAP: Record<string, string> = {
   articolo: 'field_immagine,field_blocchi,field_blocchi.field_immagine',
   news: 'field_immagine,field_blocchi,field_blocchi.field_immagine',
   tutorial: 'field_immagine,field_blocchi,field_blocchi.field_immagine',
-  showroom: 'field_immagine,field_blocchi,field_blocchi.field_immagine',
+  showroom: 'field_gallery',
   ambiente: 'field_immagine,field_blocchi,field_blocchi.field_immagine',
   documento: 'field_immagine,field_blocchi,field_blocchi.field_immagine',
   tag: 'field_immagine,field_blocchi,field_blocchi.field_immagine',
   categoria_blog: 'field_immagine,field_blocchi,field_blocchi.field_immagine',
 
   // ── Progetto (field_immagine + paragraphs + category) ──
-  progetto: 'field_immagine,field_blocchi,field_blocchi.field_immagine,field_categoria_progetto',
+  progetto:
+    'field_immagine,field_blocchi,field_blocchi.field_immagine,field_categoria_progetto',
 
   // ── Taxonomy terms ──
   mosaico_collezioni: 'field_immagine',
