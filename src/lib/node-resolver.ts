@@ -24,6 +24,7 @@ export function getRevalidateTime(type: EntityTypeName): number {
     case 'node--prodotto_pixall':
     case 'node--prodotto_tessuto':
     case 'node--prodotto_vetrite':
+    case 'node--prodotto_illuminazione':
       return 60;
     case 'node--articolo':
     case 'node--news':
@@ -58,6 +59,7 @@ export function getComponentName(type: EntityTypeName): string {
     'node--landing_page': 'LandingPage',
     'node--prodotto_mosaico': 'ProdottoMosaico',
     'node--prodotto_arredo': 'ProdottoArredo',
+    'node--prodotto_illuminazione': 'ProdottoIlluminazione',
     'node--prodotto_pixall': 'ProdottoPixall',
     'node--prodotto_tessuto': 'ProdottoTessuto',
     'node--prodotto_vetrite': 'ProdottoVetrite',
@@ -103,6 +105,15 @@ const INCLUDE_MAP: Record<string, string> = {
     'field_collezione.field_documenti,' +
     'field_collezione.field_documenti.field_immagine,' +
     'field_collezione.field_documenti.field_allegato',
+  prodotto_illuminazione:
+    'field_immagine,field_gallery,field_categoria,field_finiture,' +
+    'field_categoria.field_immagine,' +
+    'field_documenti,' +
+    'field_documenti.field_immagine,' +
+    'field_documenti.field_allegato,' +
+    'field_immagine_anteprima,' +
+    'field_gallery_intro,' +
+    'field_scheda_tecnica,field_tessuti',
   prodotto_arredo:
     'field_immagine,field_gallery,field_categoria,field_finiture,' +
     'field_categoria.field_immagine,' +
@@ -147,6 +158,7 @@ const INCLUDE_MAP: Record<string, string> = {
   ambiente: 'field_immagine,field_blocchi,field_blocchi.field_immagine',
   documento: 'field_immagine,field_allegato',
   tag: 'field_immagine,field_blocchi,field_blocchi.field_immagine',
+  categoria: 'field_immagine,field_categoria',
   categoria_blog: 'field_immagine,field_blocchi,field_blocchi.field_immagine',
 
   // ── Progetto (field_immagine + paragraphs + category) ──

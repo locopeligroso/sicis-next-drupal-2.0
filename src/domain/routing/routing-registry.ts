@@ -63,6 +63,7 @@ const PRODUCT_TYPE_ANCHORS: Record<string, string> = {
   mosaico: 'prodotto_mosaico',
   'lastre-vetro-vetrite': 'prodotto_vetrite',
   arredo: 'prodotto_arredo',
+  illuminazione: 'prodotto_illuminazione',
   'prodotti-tessili': 'prodotto_tessuto',
   pixall: 'prodotto_pixall',
 };

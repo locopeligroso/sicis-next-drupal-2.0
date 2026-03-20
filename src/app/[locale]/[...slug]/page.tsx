@@ -1,10 +1,11 @@
 import { cache, Suspense } from 'react';
 import { notFound } from 'next/navigation';
+import { translatePath, fetchJsonApiResource } from '@/lib/drupal';
 import {
-  translatePath,
-  fetchJsonApiResource,
-} from '@/lib/drupal';
-import { getComponentName, getIncludeFields, getRevalidateTime } from '@/lib/node-resolver';
+  getComponentName,
+  getIncludeFields,
+  getRevalidateTime,
+} from '@/lib/node-resolver';
 import UnknownEntity from '@/components_legacy/UnknownEntity';
 import { getSectionConfigAsync, fetchProducts } from '@/lib/drupal';
 import { getRoutingRegistry } from '@/domain/routing/routing-registry';
@@ -20,13 +21,20 @@ import EnvironmentListing from '@/components_legacy/EnvironmentListing';
 import BlogListing from '@/components_legacy/BlogListing';
 import ShowroomListing from '@/components_legacy/ShowroomListing';
 import DocumentListing from '@/components_legacy/DocumentListing';
-import { fetchProjects, fetchEnvironments, fetchBlogPosts, fetchShowrooms, fetchDocuments } from '@/lib/drupal';
+import {
+  fetchProjects,
+  fetchEnvironments,
+  fetchBlogPosts,
+  fetchShowrooms,
+  fetchDocuments,
+} from '@/lib/drupal';
 
 // Node components
 import Page from '@/templates/nodes/Page';
 import LandingPage from '@/templates/nodes/LandingPage';
 import ProdottoMosaico from '@/templates/nodes/ProdottoMosaico';
 import ProdottoArredo from '@/templates/nodes/ProdottoArredo';
+import ProdottoIlluminazione from '@/templates/nodes/ProdottoIlluminazione';
 import ProdottoPixall from '@/templates/nodes/ProdottoPixall';
 import ProdottoTessuto from '@/templates/nodes/ProdottoTessuto';
 import ProdottoVetrite from '@/templates/nodes/ProdottoVetrite';
@@ -58,7 +66,8 @@ const getPageData = cache(async (locale: string, drupalPath: string) => {
   if (!translated) return null;
 
   const bundle = translated.entity.bundle;
-  const entityType = `${translated.entity.type}--${bundle}` as `${string}--${string}`;
+  const entityType =
+    `${translated.entity.type}--${bundle}` as `${string}--${string}`;
   const include = getIncludeFields(bundle);
   const revalidate = getRevalidateTime(entityType);
 
@@ -70,60 +79,89 @@ const getPageData = cache(async (locale: string, drupalPath: string) => {
   return resource;
 });
 
-
-
 // Fallback: used when registry is null (Drupal menu unavailable).
 // Slug che devono bypassare translatePath perché Drupal ha nodi (categoria_blog,
 // documento, page) con lo stesso alias che verrebbero renderizzati al posto del
 // listing prodotti corretto. getSectionConfig gestisce il productType.
 const LISTING_SLUG_OVERRIDES = new Set([
   // Mosaico — collide con categoria_blog in IT e ES
-  'mosaico',   // IT + ES
-  'mosaic',    // EN
-  'mosaïque',  // FR
-  'mosaik',    // DE
-  'мозаика',   // RU
+  'mosaico', // IT + ES
+  'mosaic', // EN
+  'mosaïque', // FR
+  'mosaik', // DE
+  'мозаика', // RU
   // Arredo
-  'arredo',                    // IT
+  'arredo', // IT
   'furniture-and-accessories', // EN
-  'ameublement',               // FR
-  'einrichtung',               // DE
-  'mueble',                    // ES
-  'обстановка',                // RU
-  'furniture', 'mobilier', 'moebel', // legacy
+  'ameublement', // FR
+  'einrichtung', // DE
+  'mueble', // ES
+  'обстановка', // RU
+  'furniture',
+  'mobilier',
+  'moebel', // legacy
+  // Illuminazione
+  'illuminazione', // IT
+  'lighting', // EN
   // Pixall — collide con documento NID 2547
   'pixall',
   // Vetrite — slug localizzati (le pagine dedicate hanno priorità sul catch-all)
-  'lastre-vetro-vetrite',          // IT
-  'vetrite-glass-slabs',           // EN
-  'plaque-en-verre-vetrite',       // FR
-  'glasscheibe-vetrite',           // DE
-  'láminas-de-vidrio-vetrite',     // ES
-  'стеклянные-листы-vetrite',      // RU
+  'lastre-vetro-vetrite', // IT
+  'vetrite-glass-slabs', // EN
+  'plaque-en-verre-vetrite', // FR
+  'glasscheibe-vetrite', // DE
+  'láminas-de-vidrio-vetrite', // ES
+  'стеклянные-листы-vetrite', // RU
   // Tessili — slug singoli categoria tessuto (path reali Drupal)
-  'arazzi', 'coperte', 'tappeti', 'cuscini',           // IT
-  'tapestries', 'bedcover', 'carpets', 'cushions',      // EN
-  'tapisseries', 'couvertures', 'tapis', 'coussins',    // FR
-  'wandteppiche', 'decken', 'teppiche', 'kissen',       // DE
-  'tapices', 'mantas', 'alfombras', 'cojines',          // ES
-  'гобелены', 'одеяла', 'ковры', 'подушки',            // RU
+  'arazzi',
+  'coperte',
+  'tappeti',
+  'cuscini', // IT
+  'tapestries',
+  'bedcover',
+  'carpets',
+  'cushions', // EN
+  'tapisseries',
+  'couvertures',
+  'tapis',
+  'coussins', // FR
+  'wandteppiche',
+  'decken',
+  'teppiche',
+  'kissen', // DE
+  'tapices',
+  'mantas',
+  'alfombras',
+  'cojines', // ES
+  'гобелены',
+  'одеяла',
+  'ковры',
+  'подушки', // RU
   // Legacy aliases tessili
-  'tessili', 'tessuti', 'fabrics', 'tissus', 'stoffe', 'telas',
+  'tessili',
+  'tessuti',
+  'fabrics',
+  'tissus',
+  'stoffe',
+  'telas',
 ]);
 
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const COMPONENT_MAP: Record<string, React.ComponentType<{
-  node: any;
-  currentPage?: number;
-  pageSize?: number;
-  basePath?: string;
-  searchParams?: Record<string, string | string[]>;
-}>> = {
+const COMPONENT_MAP: Record<
+  string,
+  React.ComponentType<{
+    node: any;
+    currentPage?: number;
+    pageSize?: number;
+    basePath?: string;
+    searchParams?: Record<string, string | string[]>;
+  }>
+> = {
   Page,
   LandingPage,
   ProdottoMosaico,
   ProdottoArredo,
+  ProdottoIlluminazione,
   ProdottoPixall,
   ProdottoTessuto,
   ProdottoVetrite,
@@ -148,7 +186,12 @@ const PAGE_SIZE = 48;
 
 // ── Shared options type for async sub-components ───────────────────────────
 interface ListingOpts {
-  sectionConfig: { productType: string; filterField?: string; filterValue?: string; filterOperator?: '=' | 'STARTS_WITH' | 'CONTAINS' };
+  sectionConfig: {
+    productType: string;
+    filterField?: string;
+    filterValue?: string;
+    filterOperator?: '=' | 'STARTS_WITH' | 'CONTAINS';
+  };
   slug: string[];
   sp: Record<string, string | string[]> | undefined;
   locale: string;
@@ -309,13 +352,18 @@ export async function generateMetadata({ params }: SlugPageProps) {
     // the same args, this returns the cached result (no extra network request).
     const resource = await getPageData(locale, drupalPath);
     const title = resource?.field_titolo_main as string | undefined;
-    return { title: title ?? (resource as { title?: string })?.title ?? 'Sicis' };
+    return {
+      title: title ?? (resource as { title?: string })?.title ?? 'Sicis',
+    };
   } catch {
     return { title: 'Sicis' };
   }
 }
 
-export default async function SlugPage({ params, searchParams }: SlugPageProps) {
+export default async function SlugPage({
+  params,
+  searchParams,
+}: SlugPageProps) {
   const { locale, slug } = await params;
   const sp = await searchParams;
   const pageStr = Array.isArray(sp?.page) ? sp.page[0] : sp?.page;
@@ -333,12 +381,19 @@ export default async function SlugPage({ params, searchParams }: SlugPageProps) 
 
   // Bypass translatePath per slug che devono essere listing prodotti ma hanno nodi Drupal
   // con lo stesso alias (categoria_blog, documento, page) che verrebbero renderizzati al posto.
-  const isListingSlug = registry?.listingSlugs.has(singleSlug!) ?? LISTING_SLUG_OVERRIDES.has(singleSlug!);
+  const isListingSlug =
+    registry?.listingSlugs.has(singleSlug!) ??
+    LISTING_SLUG_OVERRIDES.has(singleSlug!);
   if (singleSlug && isListingSlug) {
     const sectionConfig = await getSectionConfigAsync(slug, locale);
     if (sectionConfig) {
       return renderListingLayout({
-        sectionConfig, slug, sp, locale, currentPage, offset,
+        sectionConfig,
+        slug,
+        sp,
+        locale,
+        currentPage,
+        offset,
         title: singleSlug,
       });
     }
@@ -352,14 +407,24 @@ export default async function SlugPage({ params, searchParams }: SlugPageProps) 
     // with the same args, so this returns the cached result (no extra network request).
     resource = await getPageData(locale, drupalPath);
   } catch (error) {
-    console.error(`[SlugPage] Failed to fetch resource for path: ${path}`, error);
+    console.error(
+      `[SlugPage] Failed to fetch resource for path: ${path}`,
+      error,
+    );
   }
 
   // Fallback: if no Drupal node found, try as a section listing page
   if (!resource) {
     const sectionConfig = await getSectionConfigAsync(slug, locale);
     if (sectionConfig) {
-      return renderListingLayout({ sectionConfig, slug, sp, locale, currentPage, offset });
+      return renderListingLayout({
+        sectionConfig,
+        slug,
+        sp,
+        locale,
+        currentPage,
+        offset,
+      });
     }
     notFound();
   }
@@ -381,11 +446,17 @@ export default async function SlugPage({ params, searchParams }: SlugPageProps) 
     if (sectionConfig && sectionConfig.filterField) {
       // Use the CMS node title for the page heading (preserves SEO data from Drupal)
       const nodeTitle =
-        (resolvedResource.field_titolo_main as { value?: string } | undefined)?.value
-        ?? (resolvedResource.title as string | undefined)
-        ?? slug[slug.length - 1];
+        (resolvedResource.field_titolo_main as { value?: string } | undefined)
+          ?.value ??
+        (resolvedResource.title as string | undefined) ??
+        slug[slug.length - 1];
       return renderListingLayout({
-        sectionConfig, slug, sp, locale, currentPage, offset,
+        sectionConfig,
+        slug,
+        sp,
+        locale,
+        currentPage,
+        offset,
         title: nodeTitle,
       });
     }
@@ -399,28 +470,39 @@ export default async function SlugPage({ params, searchParams }: SlugPageProps) 
     const pageId = resolvedResource.field_page_id as string | undefined;
     if (pageId) {
       const nodeTitle =
-        (resolvedResource.field_titolo_main as string | undefined)
-        ?? (resolvedResource.title as string | undefined)
-        ?? slug[slug.length - 1];
+        (resolvedResource.field_titolo_main as string | undefined) ??
+        (resolvedResource.title as string | undefined) ??
+        slug[slug.length - 1];
 
       // Product listing (with FilterSidebar)
       const PAGE_ID_TO_PRODUCT_TYPE: Record<string, string> = {
-        'tessile': 'prodotto_tessuto',
+        tessile: 'prodotto_tessuto',
       };
       const productType = PAGE_ID_TO_PRODUCT_TYPE[pageId];
       if (productType) {
         return renderListingLayout({
           sectionConfig: { productType },
-          slug, sp, locale, currentPage, offset,
+          slug,
+          sp,
+          locale,
+          currentPage,
+          offset,
           title: nodeTitle,
         });
       }
 
       // Content listing (without FilterSidebar) — maps field_page_id → fetcher + component
       const basePath = `/${locale}/${slug.join('/')}`;
-      const PAGE_ID_TO_CONTENT_LISTING: Record<string, () => Promise<React.ReactElement>> = {
-        'progetti': async () => {
-          const { projects, total } = await fetchProjects(locale, PAGE_SIZE, offset);
+      const PAGE_ID_TO_CONTENT_LISTING: Record<
+        string,
+        () => Promise<React.ReactElement>
+      > = {
+        progetti: async () => {
+          const { projects, total } = await fetchProjects(
+            locale,
+            PAGE_SIZE,
+            offset,
+          );
           return (
             <ProjectListing
               title={nodeTitle}
@@ -433,8 +515,12 @@ export default async function SlugPage({ params, searchParams }: SlugPageProps) 
             />
           );
         },
-        'environments': async () => {
-          const { environments, total } = await fetchEnvironments(locale, PAGE_SIZE, offset);
+        environments: async () => {
+          const { environments, total } = await fetchEnvironments(
+            locale,
+            PAGE_SIZE,
+            offset,
+          );
           return (
             <EnvironmentListing
               title={nodeTitle}
@@ -447,8 +533,12 @@ export default async function SlugPage({ params, searchParams }: SlugPageProps) 
             />
           );
         },
-        'blog': async () => {
-          const { posts, total } = await fetchBlogPosts(locale, PAGE_SIZE, offset);
+        blog: async () => {
+          const { posts, total } = await fetchBlogPosts(
+            locale,
+            PAGE_SIZE,
+            offset,
+          );
           return (
             <BlogListing
               title={nodeTitle}
@@ -461,8 +551,12 @@ export default async function SlugPage({ params, searchParams }: SlugPageProps) 
             />
           );
         },
-        'showroom': async () => {
-          const { showrooms, total } = await fetchShowrooms(locale, PAGE_SIZE, offset);
+        showroom: async () => {
+          const { showrooms, total } = await fetchShowrooms(
+            locale,
+            PAGE_SIZE,
+            offset,
+          );
           return (
             <ShowroomListing
               title={nodeTitle}
@@ -475,8 +569,12 @@ export default async function SlugPage({ params, searchParams }: SlugPageProps) 
             />
           );
         },
-        'download_catalogues': async () => {
-          const { documents, total } = await fetchDocuments(locale, PAGE_SIZE, offset);
+        download_catalogues: async () => {
+          const { documents, total } = await fetchDocuments(
+            locale,
+            PAGE_SIZE,
+            offset,
+          );
           return (
             <DocumentListing
               title={nodeTitle}
@@ -499,9 +597,10 @@ export default async function SlugPage({ params, searchParams }: SlugPageProps) 
 
   const componentName = getComponentName(type);
   // For unmapped taxonomy terms, use generic TaxonomyTerm instead of UnknownEntity
-  const resolvedName = componentName === 'UnknownEntity' && type.startsWith('taxonomy_term--')
-    ? 'TaxonomyTerm'
-    : componentName;
+  const resolvedName =
+    componentName === 'UnknownEntity' && type.startsWith('taxonomy_term--')
+      ? 'TaxonomyTerm'
+      : componentName;
   const Component = COMPONENT_MAP[resolvedName];
 
   if (!Component) {

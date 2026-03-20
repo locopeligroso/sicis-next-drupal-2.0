@@ -12,6 +12,7 @@ export type NodeTypeName =
   | 'node--landing_page'
   | 'node--prodotto_mosaico'
   | 'node--prodotto_arredo'
+  | 'node--prodotto_illuminazione'
   | 'node--prodotto_pixall'
   | 'node--prodotto_tessuto'
   | 'node--prodotto_vetrite'
@@ -39,7 +40,10 @@ export type TaxonomyTypeName =
   | 'taxonomy_term--tessuto_tipologie'
   | 'taxonomy_term--tessuto_manutenzione';
 
-export type EntityTypeName = NodeTypeName | TaxonomyTypeName | (string & Record<never, never>);
+export type EntityTypeName =
+  | NodeTypeName
+  | TaxonomyTypeName
+  | (string & Record<never, never>);
 
 // ─── Shared field shapes ──────────────────────────────────────────────────
 

@@ -43,21 +43,30 @@ export const fetchSubcategories = cache(
     url.searchParams.set('sort', 'title');
 
     try {
+      console.log(`[fetchSubcategories] Fetching: ${url.toString()}`);
       const res = await fetch(url.toString(), {
         headers: { Accept: 'application/vnd.api+json' },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         next: { revalidate: 300 },
       } as any);
 
+      console.log(
+        `[fetchSubcategories] Response: ${res.status} ${res.statusText}`,
+      );
       if (!res.ok) {
+        const body = await res.text().catch(() => '');
         console.error(`[fetchSubcategories] HTTP ${res.status}`, {
           parentUuid,
           locale,
+          body: body.substring(0, 200),
         });
         return { subcategories: [], total: 0 };
       }
 
       const json = await res.json();
+      console.log(
+        `[fetchSubcategories] Results: ${(json.data ?? []).length} items for parent ${parentUuid}`,
+      );
 
       const fileMap = new Map<string, string>();
       for (const item of json.included ?? []) {

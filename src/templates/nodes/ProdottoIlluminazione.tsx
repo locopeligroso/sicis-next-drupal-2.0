@@ -1,0 +1,482 @@
+import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import DrupalImage from '@/components_legacy/DrupalImage';
+import { getTextValue, getProcessedText } from '@/lib/field-helpers';
+import { sanitizeHtml } from '@/lib/sanitize';
+import styles from '@/styles/product.module.css';
+import type { ProdottoArredo as ProdottoIlluminazioneType } from '@/types/drupal/entities';
+
+// ── Document item type ────────────────────────────────────────────────────────
+interface DocItem {
+  id?: string;
+  field_titolo_main?: unknown;
+  title?: unknown;
+  field_tipologia_documento?: unknown;
+  field_collegamento_esterno?: unknown;
+  field_immagine?: unknown;
+  field_allegato?: { entity?: { uri?: { value?: string } } };
+}
+
+// ── Finitura type ─────────────────────────────────────────────────────────────
+interface FinituraItem {
+  id?: string;
+  name?: string;
+  field_etichetta?: unknown;
+  field_testo?: unknown;
+  field_immagine?: unknown;
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+export default async function ProdottoIlluminazione({
+  node,
+}: {
+  node: Record<string, unknown>;
+}) {
+  // Cast sicuro: il node-resolver passa Record<string,unknown>, ma il contenuto
+  // è sempre un ProdottoIlluminazione deserializzato da Drupal JSON:API
+  const typedNode = node as ProdottoIlluminazioneType;
+  const t = await getTranslations('products');
+  const tCommon = await getTranslations('common');
+  const tNav = await getTranslations('nav');
+
+  const title = getTextValue(typedNode.field_titolo_main) || typedNode.title;
+  const body = getProcessedText(typedNode.field_testo_main);
+  const materiali = getProcessedText(typedNode.field_materiali);
+  const specifiche = getProcessedText(typedNode.field_specifiche_tecniche);
+  const locale = typedNode.langcode ?? 'it';
+
+  // ── Pricing ───────────────────────────────────────────────────────────────
+  // field_prezzo_eu/usa in Arredo è { value: string } | null | undefined
+  const prezzoEu = typedNode.field_prezzo_eu?.value ?? null;
+  const prezzoUsa = typedNode.field_prezzo_usa?.value ?? null;
+  const prezzoOnDemand = false; // Arredo non ha field_prezzo_on_demand nel schema
+
+  // ── External link ─────────────────────────────────────────────────────────
+  const extLinkRaw = typedNode.field_collegamento_esterno;
+  const extLink =
+    typeof extLinkRaw === 'string'
+      ? extLinkRaw
+      : extLinkRaw && typeof extLinkRaw === 'object'
+        ? ((extLinkRaw as { uri?: string }).uri ?? null)
+        : null;
+
+  // ── 3D file ───────────────────────────────────────────────────────────────
+  // field_path_file_ftp non è nel schema Arredo — accesso sicuro via cast
+  const ftpFiles = (typedNode as Record<string, unknown>)
+    .field_path_file_ftp as string[] | string | undefined;
+  const file3d = Array.isArray(ftpFiles) ? ftpFiles[0] : (ftpFiles ?? null);
+
+  // ── Categoria parent ──────────────────────────────────────────────────────
+  const categoriaData = typedNode.field_categoria;
+  const categoriaName =
+    getTextValue(categoriaData?.field_titolo_main) ||
+    ((categoriaData as Record<string, unknown> | undefined)?.title as
+      | string
+      | undefined);
+  const categoriaBody = getProcessedText(categoriaData?.field_testo_main);
+  const categoriaAlias = (categoriaData as Record<string, unknown> | undefined)
+    ?.path as { alias?: string } | undefined;
+  const categoriaPath = categoriaAlias?.alias;
+
+  // ── Media ─────────────────────────────────────────────────────────────────
+  const gallery = typedNode.field_gallery ?? [];
+  const galleryIntro = typedNode.field_gallery_intro ?? [];
+
+  // ── Finiture ──────────────────────────────────────────────────────────────
+  const finiture = (typedNode.field_finiture ?? []) as FinituraItem[];
+
+  // ── Documents ─────────────────────────────────────────────────────────────
+  const documenti = (typedNode.field_documenti ?? []) as DocItem[];
+
+  return (
+    <article style={{ maxWidth: '60rem', margin: '0 auto', padding: '2rem' }}>
+      {/* ── Breadcrumb ──────────────────────────────────────────────────────── */}
+      <nav aria-label="Breadcrumb" style={{ marginBottom: '1.5rem' }}>
+        <ol
+          style={{
+            listStyle: 'none',
+            padding: 0,
+            margin: 0,
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '0.25rem',
+            fontSize: '0.8125rem',
+            color: '#888',
+          }}
+        >
+          <li>
+            <Link
+              href={`/${locale}/arredo`}
+              style={{ color: '#888', textDecoration: 'none' }}
+            >
+              {t('furniture')}
+            </Link>
+          </li>
+          {categoriaName && (
+            <>
+              <li aria-hidden="true">/</li>
+              <li>
+                {categoriaPath ? (
+                  <Link
+                    href={`/${locale}${categoriaPath}`}
+                    style={{ color: '#888', textDecoration: 'none' }}
+                  >
+                    {categoriaName}
+                  </Link>
+                ) : (
+                  <span>{categoriaName}</span>
+                )}
+              </li>
+            </>
+          )}
+          {title && (
+            <>
+              <li aria-hidden="true">/</li>
+              <li aria-current="page" style={{ color: '#333' }}>
+                {title}
+              </li>
+            </>
+          )}
+        </ol>
+      </nav>
+
+      {/* ── 1. Title ─────────────────────────────────────────────────────────── */}
+      {title && (
+        <h1
+          style={{
+            fontSize: '2rem',
+            fontWeight: 700,
+            marginBottom: '1.5rem',
+            lineHeight: 1.2,
+          }}
+        >
+          {title}
+        </h1>
+      )}
+
+      {/* ── 2. Main image ────────────────────────────────────────────────────── */}
+      <DrupalImage
+        field={typedNode.field_immagine}
+        alt={title ?? ''}
+        aspectRatio="4/3"
+        style={{ marginBottom: '2rem' }}
+      />
+
+      {/* ── 3. Testo descrittivo ─────────────────────────────────────────────── */}
+      {body && (
+        <div
+          style={{ lineHeight: 1.7, marginBottom: '2rem' }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(body) }}
+        />
+      )}
+
+      {/* ── 4. Materiali costruttivi ─────────────────────────────────────────── */}
+      {materiali && (
+        <section className={styles.section} aria-labelledby="materiali-heading">
+          <h2 id="materiali-heading" className={styles.sectionHeading}>
+            {t('materials')}
+          </h2>
+          <div
+            style={{ lineHeight: 1.7 }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(materiali) }}
+          />
+        </section>
+      )}
+
+      {/* ── 5. Specifiche tecniche / Dimensioni ──────────────────────────────── */}
+      {specifiche && (
+        <section
+          className={styles.section}
+          aria-labelledby="specifiche-heading"
+        >
+          <h2 id="specifiche-heading" className={styles.sectionHeading}>
+            {t('dimensionsAndSpecs')}
+          </h2>
+          <div
+            style={{ lineHeight: 1.7 }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(specifiche) }}
+          />
+        </section>
+      )}
+
+      {/* ── 6. Finiture ──────────────────────────────────────────────────────── */}
+      {finiture.length > 0 && (
+        <section className={styles.section} aria-labelledby="finiture-heading">
+          <h2 id="finiture-heading" className={styles.sectionHeading}>
+            {t('colorsAndFinishes')}
+          </h2>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(12rem, 1fr))',
+              gap: '1rem',
+            }}
+          >
+            {finiture.map((f, i) => {
+              const etichetta = getTextValue(f.field_etichetta);
+              const testo = getTextValue(f.field_testo);
+              return (
+                <div
+                  key={f.id ?? i}
+                  style={{
+                    padding: '0.75rem',
+                    border: '0.0625rem solid #e0e0e0',
+                  }}
+                >
+                  {!!f.field_immagine && (
+                    <DrupalImage
+                      field={f.field_immagine}
+                      alt={etichetta || f.name || ''}
+                      aspectRatio="1"
+                      style={{ marginBottom: '0.5rem' }}
+                    />
+                  )}
+                  <p
+                    style={{
+                      margin: '0 0 0.125rem',
+                      fontWeight: 600,
+                      fontSize: '0.9375rem',
+                    }}
+                  >
+                    {etichetta || f.name}
+                  </p>
+                  {testo && (
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: '0.8125rem',
+                        color: '#666',
+                      }}
+                    >
+                      {testo}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* ── 7. Prezzi ────────────────────────────────────────────────────────── */}
+      {(prezzoEu || prezzoUsa || prezzoOnDemand) && (
+        <section className={styles.section} aria-labelledby="prezzo-heading">
+          <h2 id="prezzo-heading" className={styles.sectionHeading}>
+            {t('price')}
+          </h2>
+          {prezzoOnDemand ? (
+            <p style={{ fontStyle: 'italic', color: '#666', margin: 0 }}>
+              {t('priceOnDemand')}
+            </p>
+          ) : (
+            <div
+              style={{ display: 'flex', gap: '2rem', alignItems: 'baseline' }}
+            >
+              {prezzoEu && (
+                <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>
+                  {Number(prezzoEu).toLocaleString('it-IT')}€
+                </p>
+              )}
+              {prezzoUsa && (
+                <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>
+                  {Number(prezzoUsa).toLocaleString('en-US')}$
+                </p>
+              )}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* ── 8. Categoria parent ──────────────────────────────────────────────── */}
+      {categoriaData && (
+        <section className={styles.section} aria-labelledby="categoria-heading">
+          <h2 id="categoria-heading" className={styles.sectionHeading}>
+            {t('category')}
+          </h2>
+          {categoriaName &&
+            (categoriaPath ? (
+              <Link
+                href={`/${locale}${categoriaPath}`}
+                style={{
+                  fontWeight: 600,
+                  fontSize: '1.125rem',
+                  color: '#111',
+                  textDecoration: 'none',
+                  display: 'block',
+                  marginBottom: '0.5rem',
+                }}
+              >
+                {categoriaName}
+              </Link>
+            ) : (
+              <p
+                style={{
+                  fontWeight: 600,
+                  fontSize: '1.125rem',
+                  margin: '0 0 0.5rem',
+                }}
+              >
+                {categoriaName}
+              </p>
+            ))}
+          <DrupalImage
+            field={(categoriaData as Record<string, unknown>).field_immagine}
+            alt={categoriaName ?? ''}
+            aspectRatio="16/9"
+            style={{ maxWidth: '20rem', marginBottom: '0.75rem' }}
+          />
+          {categoriaBody && (
+            <div
+              style={{ lineHeight: 1.7, color: '#555' }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(categoriaBody) }}
+            />
+          )}
+        </section>
+      )}
+
+      {/* ── 9. Gallery ───────────────────────────────────────────────────────── */}
+      {(gallery.length > 0 || galleryIntro.length > 0) && (
+        <section className={styles.section} aria-labelledby="gallery-heading">
+          <h2 id="gallery-heading" className={styles.sectionHeading}>
+            {t('gallery')}
+          </h2>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(10rem, 1fr))',
+              gap: '1rem',
+            }}
+          >
+            {[...galleryIntro, ...gallery].map((img, i) => (
+              <DrupalImage
+                key={i}
+                field={img}
+                alt={`${title ?? ''} ${i + 1}`}
+                aspectRatio="1"
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── 10. Documenti download ───────────────────────────────────────────── */}
+      {documenti.length > 0 && (
+        <section className={styles.section} aria-labelledby="documenti-heading">
+          <h2 id="documenti-heading" className={styles.sectionHeading}>
+            {t('documents')}
+          </h2>
+          <ul className={styles.docList}>
+            {documenti.map((doc, i) => {
+              const docTitolo =
+                getTextValue(doc.field_titolo_main) || getTextValue(doc.title);
+              const docTipologia = getTextValue(doc.field_tipologia_documento);
+              const extLinkRaw2 = doc.field_collegamento_esterno;
+              const docLink =
+                typeof extLinkRaw2 === 'string'
+                  ? extLinkRaw2
+                  : extLinkRaw2 && typeof extLinkRaw2 === 'object'
+                    ? ((extLinkRaw2 as { uri?: string }).uri ?? null)
+                    : null;
+              const allegato = doc.field_allegato?.entity?.uri?.value ?? null;
+              const href = docLink || allegato;
+              return (
+                <li key={doc.id ?? i} className={styles.docItem}>
+                  {!!doc.field_immagine && (
+                    <DrupalImage
+                      field={doc.field_immagine}
+                      alt={docTitolo ?? ''}
+                      aspectRatio="1"
+                      style={{ width: '3rem', flexShrink: 0 }}
+                    />
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {docTipologia && (
+                      <p
+                        className={styles.label}
+                        style={{ margin: '0 0 0.125rem' }}
+                      >
+                        {docTipologia}
+                      </p>
+                    )}
+                    {docTitolo && (
+                      <p
+                        style={{
+                          margin: 0,
+                          fontWeight: 500,
+                          fontSize: '0.9375rem',
+                        }}
+                      >
+                        {docTitolo}
+                      </p>
+                    )}
+                  </div>
+                  {href && (
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`${tCommon('download')} ${docTitolo ?? 'documento'}`}
+                      style={{
+                        fontSize: '0.8125rem',
+                        color: '#333',
+                        textDecoration: 'underline',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {tCommon('download')}
+                    </a>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
+      {/* ── 11. File 3D + link esterno ───────────────────────────────────────── */}
+      {(file3d || extLink) && (
+        <section
+          className={styles.section}
+          style={{ marginBottom: 0 }}
+          aria-labelledby="extra-heading"
+        >
+          <h2 id="extra-heading" className={styles.sectionHeading}>
+            {t('linksAndResources')}
+          </h2>
+          <div
+            style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
+          >
+            {file3d && (
+              <a
+                href={`/sites/default/files/${file3d}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  fontSize: '0.875rem',
+                  color: '#333',
+                  textDecoration: 'underline',
+                }}
+              >
+                {t('download3dFile')}
+              </a>
+            )}
+            {extLink && (
+              <a
+                href={extLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  fontSize: '0.875rem',
+                  color: '#333',
+                  textDecoration: 'underline',
+                }}
+              >
+                {t('viewOn1stDibs')}
+              </a>
+            )}
+          </div>
+        </section>
+      )}
+    </article>
+  );
+}

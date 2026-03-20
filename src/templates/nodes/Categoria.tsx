@@ -194,6 +194,9 @@ export default async function Categoria({ node }: CategoriaProps) {
     getTextValue(node.field_titolo_main) || getTextValue(node.title) || '';
   const locale = (node.langcode as string) || 'it';
   const categoriaUuid = node.id as string;
+  console.log(
+    `[Categoria] title="${title}" uuid="${categoriaUuid}" type="${node.type}" keys=${Object.keys(node).join(',')}`,
+  );
 
   const productType = getCategoriaProductType(title);
 
@@ -279,30 +282,21 @@ export default async function Categoria({ node }: CategoriaProps) {
   const { subcategories } = await fetchSubcategories(categoriaUuid, locale);
 
   if (subcategories.length > 0) {
-    // Fetch products for each subcategory in parallel
-    const subResults = await Promise.all(
-      subcategories.map((sub) =>
-        fetchProducts({
-          productType: 'prodotto_arredo',
-          locale,
-          limit: 48,
-          filterField: 'field_categoria.title',
-          filterValue: sub.title,
-        }),
-      ),
-    );
-    // Merge all products, deduplicate by id
-    const seen = new Set<string>();
-    const allProducts: ProductCard[] = [];
-    for (const result of subResults) {
-      for (const p of result.products) {
-        if (!seen.has(p.id)) {
-          seen.add(p.id);
-          allProducts.push(p);
-        }
-      }
-    }
-    const total = allProducts.length;
+    // Fetch all prodotto_arredo whose field_categoria points to any subcategory
+    // or to the parent categoria itself. Uses IN operator with array of UUIDs.
+    const allCatUuids = [categoriaUuid, ...subcategories.map((s) => s.id)];
+    const { products: allProducts, total } = await fetchProducts({
+      productType: 'prodotto_arredo',
+      locale,
+      limit: 48,
+      filters: [
+        {
+          field: 'field_categoria.id',
+          value: allCatUuids,
+          operator: 'IN',
+        },
+      ],
+    });
 
     return (
       <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '2rem' }}>
