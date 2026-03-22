@@ -3,14 +3,17 @@ import { GenIntro } from '@/components/blocks/GenIntro';
 import { GenQuote } from '@/components/blocks/GenQuote';
 import { GenVideo } from '@/components/blocks/GenVideo';
 import { GenTestoImmagine } from '@/components/blocks/GenTestoImmagine';
+import { GenGallery } from '@/components/blocks/GenGallery';
+import type { GenGallerySlide } from '@/components/blocks/GenGallery';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { getDrupalImageUrl } from '@/lib/drupal/image';
+import { fetchParagraph, needsSecondaryFetch } from '@/lib/drupal/paragraphs';
 
 // ── Legacy blocks ───────────────────────────────────────────────────────────
 import BloccoSliderHome from './BloccoSliderHome';
+// BloccoGallery removed — replaced by GenGallery
 import BloccoTestoImmagineBig from './BloccoTestoImmagineBig';
 import BloccoTestoImmagineBlog from './BloccoTestoImmagineBlog';
-import BloccoGallery from './BloccoGallery';
 import BloccoGalleryIntro from './BloccoGalleryIntro';
 import BloccoVideo from './BloccoVideo';
 import BloccoCorrelati from './BloccoCorrelati';
@@ -27,7 +30,6 @@ const LEGACY_MAP: Record<string, ParagraphComponent> = {
   'paragraph--blocco_slider_home': BloccoSliderHome,
   'paragraph--blocco_testo_immagine_big': BloccoTestoImmagineBig,
   'paragraph--blocco_testo_immagine_blog': BloccoTestoImmagineBlog,
-  'paragraph--blocco_gallery': BloccoGallery,
   'paragraph--blocco_gallery_intro': BloccoGalleryIntro,
   'paragraph--blocco_video': BloccoVideo,
   'paragraph--blocco_correlati': BloccoCorrelati,
@@ -105,6 +107,31 @@ function adaptGenTestoImmagine(p: Record<string, unknown>) {
   );
 }
 
+function adaptGenGallery(p: Record<string, unknown>) {
+  const slideData = (p.field_slide as Array<Record<string, unknown>> | undefined) ?? [];
+  const slides: GenGallerySlide[] = slideData
+    .map((slide) => {
+      const src = getDrupalImageUrl(slide.field_immagine);
+      if (!src) return null;
+      const meta = (slide.field_immagine as Record<string, unknown> | undefined)?.meta as Record<string, unknown> | undefined;
+      const alt = (meta?.alt as string) ?? '';
+      const width = meta?.width as number | undefined;
+      const height = meta?.height as number | undefined;
+      // Use alt text as caption, fallback to filename from URL
+      const filename = src.split('/').pop()?.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ') ?? '';
+      const caption = alt || filename || null;
+      return { src, alt: alt || filename, caption, width, height };
+    })
+    .filter((s) => s !== null) as GenGallerySlide[];
+
+  if (slides.length === 0) return null;
+
+  const titleRaw = getProcessedText(p.field_titolo_formattato);
+  const title = titleRaw ? titleRaw.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() : null;
+
+  return <GenGallery slides={slides} title={title} />;
+}
+
 function adaptGenQuote(p: Record<string, unknown>) {
   const text = getProcessedText(p.field_testo);
   if (!text) return null;
@@ -123,14 +150,20 @@ interface ParagraphResolverProps {
   paragraph: Record<string, unknown>;
 }
 
-export default function ParagraphResolver({ paragraph }: ParagraphResolverProps) {
+export default async function ParagraphResolver({ paragraph }: ParagraphResolverProps) {
   const type = paragraph.type as string;
 
+  // Secondary fetch for paragraphs with nested data (gallery slides, etc.)
+  const resolved = needsSecondaryFetch(type)
+    ? (await fetchParagraph(paragraph as { type: string; id: string; [key: string]: unknown }) ?? paragraph)
+    : paragraph;
+
   // Gen blocks (DS)
-  if (type === 'paragraph--blocco_intro') return adaptGenIntro(paragraph);
-  if (type === 'paragraph--blocco_quote') return adaptGenQuote(paragraph);
-  if (type === 'paragraph--blocco_video') return adaptGenVideo(paragraph);
-  if (type === 'paragraph--blocco_testo_immagine') return adaptGenTestoImmagine(paragraph);
+  if (type === 'paragraph--blocco_intro') return adaptGenIntro(resolved);
+  if (type === 'paragraph--blocco_quote') return adaptGenQuote(resolved);
+  if (type === 'paragraph--blocco_video') return adaptGenVideo(resolved);
+  if (type === 'paragraph--blocco_testo_immagine') return adaptGenTestoImmagine(resolved);
+  if (type === 'paragraph--blocco_gallery') return adaptGenGallery(resolved);
 
   // Legacy blocks
   const Component = LEGACY_MAP[type];
