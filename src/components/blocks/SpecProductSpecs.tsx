@@ -43,7 +43,7 @@ export function SpecProductSpecs({
 
   return (
     <section className="bg-surface-1 py-(--spacing-section)">
-      <div className="max-w-7xl mx-auto px-(--spacing-page) flex flex-col gap-(--spacing-content)">
+      <div className="max-w-main mx-auto px-(--spacing-page) flex flex-col gap-(--spacing-content)">
         {/* Title */}
         <div className="flex flex-col gap-1">
           <Typography textRole="h2">{title}</Typography>

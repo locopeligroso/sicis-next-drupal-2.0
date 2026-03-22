@@ -55,7 +55,7 @@ export function GalleryCarousel({ slides, slideClassName, className, header }: G
     <div className={cn('relative flex flex-col gap-(--spacing-content)', className)}>
       {/* Header row: title + arrows */}
       {header && (
-        <div className="flex items-center justify-between max-w-7xl mx-auto w-full px-(--spacing-page)">
+        <div className="flex items-center justify-between max-w-main mx-auto w-full px-(--spacing-page)">
           {header}
           <div className="flex gap-(--spacing-element)">
             <Button
@@ -86,13 +86,13 @@ export function GalleryCarousel({ slides, slideClassName, className, header }: G
         className="flex overflow-x-scroll [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [-webkit-overflow-scrolling:touch]"
         style={{
           scrollSnapType: 'x mandatory',
-          scrollPadding: '0 max(var(--spacing-page), calc((100vw - var(--container-7xl)) / 2 + var(--spacing-page)))',
+          scrollPadding: '0 max(var(--spacing-page), calc((100vw - var(--container-main)) / 2 + var(--spacing-page)))',
         }}
       >
-        {/* Track — padding aligns slides to max-w-7xl container edge */}
+        {/* Track — padding aligns slides to max-w-main container edge */}
         <div
           className="flex gap-(--spacing-element) min-w-fit"
-          style={{ padding: '0 max(var(--spacing-page), calc((100vw - var(--container-7xl)) / 2 + var(--spacing-page)))' }}
+          style={{ padding: '0 max(var(--spacing-page), calc((100vw - var(--container-main)) / 2 + var(--spacing-page)))' }}
         >
           {slides.map((slide, i) => (
             <div

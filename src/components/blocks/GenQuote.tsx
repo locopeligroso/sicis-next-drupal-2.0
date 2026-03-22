@@ -17,7 +17,7 @@ export function GenQuote({
   className,
 }: GenQuoteProps) {
   return (
-    <section className={cn('max-w-7xl mx-auto px-(--spacing-page)', className)}>
+    <section className={cn('max-w-main mx-auto px-(--spacing-page)', className)}>
       <figure className="flex flex-col gap-(--spacing-element) border-l-4 border-primary pl-(--spacing-content)">
         <Typography textRole="blockquote" as="blockquote">
           <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(text) }} />

@@ -27,7 +27,7 @@ export function GenTestoImmagineBig({
   return (
     <section className={cn('flex flex-col gap-(--spacing-content)', className)}>
       {hasText && (
-        <div className="max-w-7xl mx-auto w-full px-(--spacing-page) grid grid-cols-1 md:grid-cols-2 gap-(--spacing-content)">
+        <div className="max-w-main mx-auto w-full px-(--spacing-page) grid grid-cols-1 md:grid-cols-2 gap-(--spacing-content)">
           {title ? (
             <Typography textRole="h2" as="h2">
               {title}

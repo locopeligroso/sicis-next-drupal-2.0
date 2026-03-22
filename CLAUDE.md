@@ -154,6 +154,7 @@ Gen blocks are rendered via `ParagraphResolver` which maps `paragraph--{type}` �
 - **Colors**: primary scale (100, 200, base, 400, 500) + primary-text (optimized for readability in both themes)
 - **Surfaces**: surface-1 through surface-5 for chromatic elevation
 - **Spacing**: responsive semantic tokens `--spacing-page`, `--spacing-section`, `--spacing-section-lg`, `--spacing-content`, `--spacing-element` (scale on 3 breakpoints)
+- **Container**: `--container-main: var(--container-7xl)` in `@theme` — all blocks use `max-w-main` instead of `max-w-7xl`
 - **Typography**: `--underline-offset` for consistent link underlines
 - **Fonts**: Outfit (body), Geist (heading), Geist Mono (code)
 - **Breakpoints**: base (mobile), md (768px), lg (1024px)
@@ -180,15 +181,15 @@ Gen blocks are rendered via `ParagraphResolver` which maps `paragraph--{type}` �
 - **Animations**: removed for now, to be reimplemented with proper approach
 - **Storybook**: all Composed and Spec blocks have stories, rules enforced (single Playground, controls, @storybook/nextjs-vite)
 - **Block naming**: Spec*/Gen* convention in place. All 10 Spec blocks renamed.
-- **Gen blocks built**: GenIntro, GenQuote, GenVideo (VimeoPlayer composed), GenTestoImmagine (portrait/landscape adaptive with muted bands), GenGallery (responsive slide sizing validated)
-- **Gen blocks remaining**: GenTestoImmagineBig, GenTestoImmagineBlog, GenGalleryIntro, GenDocumenti, GenCorrelati, GenNewsletter, GenFormBlog, GenSliderHome, GenAnni, GenTutorial
-- **New Composed components**: ArrowLink (inline link + arrow), VimeoPlayer (Vimeo SDK + custom controls + poster click-to-play), GalleryCarousel (CSS scroll-snap carousel with slideClassName prop — sizing delegated to consumer), GenTestoImmagineBody (text block with title + body + link)
-- **ParagraphResolver**: async, uses fetchParagraph for secondary fetches. GenIntro, GenQuote, GenVideo, GenTestoImmagine, GenGallery wired with adapters. Rest still legacy.
-- **Templates updated**: Page, News, Ambiente — removed legacy containers, added flex/gap spacing + ParagraphResolver
+- **Gen blocks built**: GenIntro, GenQuote, GenVideo (VimeoPlayer composed), GenTestoImmagine (portrait/landscape adaptive with muted bands), GenGallery (header with title+arrows, responsive slide sizing), GenTestoImmagineBig (title+body two-col header, full-bleed image), GenTestoImmagineBlog (centered prose column, optional image)
+- **Gen blocks remaining**: GenGalleryIntro, GenDocumenti, GenCorrelati, GenNewsletter, GenFormBlog, GenSliderHome, GenAnni, GenTutorial
+- **New Composed components**: ArrowLink (inline link + arrow), VimeoPlayer (Vimeo SDK + custom controls + poster click-to-play), GalleryCarousel (CSS scroll-snap carousel with header prop for title+arrows — sizing delegated to consumer via slideClassName), GenTestoImmagineBody (text block with title + body + link)
+- **ParagraphResolver**: async, uses fetchParagraph for secondary fetches. GenIntro, GenQuote, GenVideo, GenTestoImmagine, GenGallery, GenTestoImmagineBig, GenTestoImmagineBlog wired with adapters. Rest still legacy.
+- **Templates updated**: Page, News, Ambiente, Articolo — removed legacy containers, added flex/gap spacing + ParagraphResolver
 
 ## Next Steps — Immediate
-1. **GalleryCarousel desktop drag**: mouse drag scrolling for desktop (touch works natively)
-2. Continue remaining Gen blocks: GenTestoImmagineBig → GenTestoImmagineBlog → GenGalleryIntro → GenDocumenti → GenCorrelati → GenNewsletter → GenFormBlog → GenSliderHome → GenAnni → GenTutorial
+1. Continue remaining Gen blocks: GenGalleryIntro → GenDocumenti → GenCorrelati → GenNewsletter → GenFormBlog → GenSliderHome → GenAnni → GenTutorial
+2. Investigate horizontal scroll overflow on pages (not caused by carousel — unknown source)
 
 ## Next Steps — After Gen Blocks
 - Apply ProdottoMosaico pattern to ProdottoVetrite template

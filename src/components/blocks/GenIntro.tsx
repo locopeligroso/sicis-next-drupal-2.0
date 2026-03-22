@@ -35,7 +35,7 @@ export function GenIntro({
         />
       </div>
 
-      <div className="max-w-7xl mx-auto px-(--spacing-page) w-full flex flex-col gap-(--spacing-element)">
+      <div className="max-w-main mx-auto px-(--spacing-page) w-full flex flex-col gap-(--spacing-element)">
         <Typography textRole="overline" as="span" className="text-muted-foreground">
           {subtitle}
         </Typography>

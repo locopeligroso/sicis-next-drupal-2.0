@@ -7,7 +7,7 @@ export interface SpecListingHeaderProps {
 
 export function SpecListingHeader({ title, description }: SpecListingHeaderProps) {
   return (
-    <section className="max-w-7xl mx-auto px-(--spacing-page) py-(--spacing-section)">
+    <section className="max-w-main mx-auto px-(--spacing-page) py-(--spacing-section)">
       <div className="flex flex-col gap-2">
         <Typography textRole="h1" as="h1">
           {title}

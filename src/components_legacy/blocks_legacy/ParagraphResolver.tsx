@@ -6,6 +6,7 @@ import { GenTestoImmagine } from '@/components/blocks/GenTestoImmagine';
 import { GenGallery } from '@/components/blocks/GenGallery';
 import type { GenGallerySlide } from '@/components/blocks/GenGallery';
 import { GenTestoImmagineBig } from '@/components/blocks/GenTestoImmagineBig';
+import { GenTestoImmagineBlog } from '@/components/blocks/GenTestoImmagineBlog';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { getDrupalImageUrl } from '@/lib/drupal/image';
 import { fetchParagraph, needsSecondaryFetch } from '@/lib/drupal/paragraphs';
@@ -14,7 +15,7 @@ import { fetchParagraph, needsSecondaryFetch } from '@/lib/drupal/paragraphs';
 import BloccoSliderHome from './BloccoSliderHome';
 // BloccoGallery removed — replaced by GenGallery
 // BloccoTestoImmagineBig removed — replaced by GenTestoImmagineBig
-import BloccoTestoImmagineBlog from './BloccoTestoImmagineBlog';
+// BloccoTestoImmagineBlog removed — replaced by GenTestoImmagineBlog
 import BloccoGalleryIntro from './BloccoGalleryIntro';
 import BloccoVideo from './BloccoVideo';
 import BloccoCorrelati from './BloccoCorrelati';
@@ -29,7 +30,7 @@ type ParagraphComponent = (props: { paragraph: Record<string, unknown> }) => any
 
 const LEGACY_MAP: Record<string, ParagraphComponent> = {
   'paragraph--blocco_slider_home': BloccoSliderHome,
-  'paragraph--blocco_testo_immagine_blog': BloccoTestoImmagineBlog,
+  // blocco_testo_immagine_blog removed — replaced by GenTestoImmagineBlog
   'paragraph--blocco_gallery_intro': BloccoGalleryIntro,
   'paragraph--blocco_video': BloccoVideo,
   'paragraph--blocco_correlati': BloccoCorrelati,
@@ -159,6 +160,26 @@ function adaptGenTestoImmagineBig(p: Record<string, unknown>) {
   );
 }
 
+function adaptGenTestoImmagineBlog(p: Record<string, unknown>) {
+  const bodyHtml = getProcessedText(p.field_testo);
+  if (!bodyHtml) return null;
+
+  const titleRaw = getProcessedText(p.field_titolo_formattato);
+  const title = titleRaw ? titleRaw.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() : null;
+  const imageSrc = getDrupalImageUrl(p.field_immagine);
+  const imgMeta = (p.field_immagine as Record<string, unknown> | undefined)?.meta as Record<string, unknown> | undefined;
+  const imageAlt = (imgMeta?.alt as string) ?? '';
+
+  return (
+    <GenTestoImmagineBlog
+      bodyHtml={bodyHtml}
+      title={title}
+      imageSrc={imageSrc}
+      imageAlt={imageAlt}
+    />
+  );
+}
+
 function adaptGenQuote(p: Record<string, unknown>) {
   const text = getProcessedText(p.field_testo);
   if (!text) return null;
@@ -192,6 +213,7 @@ export default async function ParagraphResolver({ paragraph }: ParagraphResolver
   if (type === 'paragraph--blocco_testo_immagine') return adaptGenTestoImmagine(resolved);
   if (type === 'paragraph--blocco_gallery') return adaptGenGallery(resolved);
   if (type === 'paragraph--blocco_testo_immagine_big') return adaptGenTestoImmagineBig(resolved);
+  if (type === 'paragraph--blocco_testo_immagine_blog') return adaptGenTestoImmagineBlog(resolved);
 
   // Legacy blocks
   const Component = LEGACY_MAP[type];

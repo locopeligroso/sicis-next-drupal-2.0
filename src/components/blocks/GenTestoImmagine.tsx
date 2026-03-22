@@ -41,14 +41,14 @@ export function GenTestoImmagine({
     return (
       <section className={cn('relative overflow-hidden flex flex-col gap-(--spacing-content)', className)}>
           <div className={cn(
-          'max-w-7xl mx-auto px-(--spacing-page) w-full',
+          'max-w-main mx-auto px-(--spacing-page) w-full',
           !mutedFromRight && 'flex justify-end',
         )}>
           <div className="md:max-w-lg">
             {textBlock}
           </div>
         </div>
-        <div className="relative max-w-7xl mx-auto px-(--spacing-page) w-full">
+        <div className="relative max-w-main mx-auto px-(--spacing-page) w-full">
           <div className={cn(
             'absolute bg-muted -top-8 bottom-8 w-screen',
             mutedFromRight
@@ -83,7 +83,7 @@ export function GenTestoImmagine({
             : 'left-0 rounded-r-2xl',
         )} />
 
-        <div className="relative max-w-7xl mx-auto">
+        <div className="relative max-w-main mx-auto">
           <div className={cn(
             'flex flex-col gap-(--spacing-content)',
             'md:flex-row md:items-center md:gap-(--spacing-content) md:px-(--spacing-page)',

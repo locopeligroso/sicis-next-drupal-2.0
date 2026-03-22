@@ -123,6 +123,10 @@
     --sidebar-ring: oklch(0.556 0 0);
 }
 
+@theme {
+    --container-main: var(--container-7xl);
+}
+
 @theme inline {
     --font-sans: var(--font-body);
     --font-body: var(--font-body);

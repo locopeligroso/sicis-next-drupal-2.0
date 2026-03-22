@@ -18,7 +18,7 @@ export function SpecProductGallery({
   if (images.length === 0) return null
 
   return (
-    <section className="max-w-7xl mx-auto px-(--spacing-page)">
+    <section className="max-w-main mx-auto px-(--spacing-page)">
       {title && <Typography textRole="h2" className="mb-(--spacing-element)">{title}</Typography>}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         {images.map((img, i) => (

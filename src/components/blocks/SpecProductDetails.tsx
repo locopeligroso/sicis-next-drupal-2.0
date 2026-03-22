@@ -26,7 +26,7 @@ export function SpecProductDetails({
   if (!hasContent) return null
 
   return (
-    <section className="max-w-7xl mx-auto px-(--spacing-page)">
+    <section className="max-w-main mx-auto px-(--spacing-page)">
       <div className="flex flex-col gap-(--spacing-element)">
         {/* Performs best on */}
         {performsOn.length > 0 && (

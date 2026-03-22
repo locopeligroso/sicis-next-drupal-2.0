@@ -74,7 +74,7 @@ export function SpecProductHero({
 
   return (
     <>
-      <section className="max-w-7xl mx-auto px-(--spacing-page)">
+      <section className="max-w-main mx-auto px-(--spacing-page)">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-(--spacing-content) md:gap-(--spacing-section)">
           {/* Title + Collection — first on mobile */}
           <div className="flex flex-col gap-1 md:hidden">

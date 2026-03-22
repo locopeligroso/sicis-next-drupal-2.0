@@ -15,7 +15,7 @@ export function GenVideo({
   className,
 }: GenVideoProps) {
   return (
-    <section className={cn('max-w-7xl mx-auto px-(--spacing-page)', className)}>
+    <section className={cn('max-w-main mx-auto px-(--spacing-page)', className)}>
       <VimeoPlayer
         videoCode={videoCode}
         posterSrc={posterSrc}
