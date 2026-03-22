@@ -1,14 +1,9 @@
 import { Typography } from '@/components/composed/Typography';
 import { GalleryCarousel } from '@/components/composed/GalleryCarousel';
+import type { GalleryCarouselSlide } from '@/components/composed/GalleryCarousel';
 import { cn } from '@/lib/utils';
 
-export interface GenGallerySlide {
-  src: string;
-  alt: string;
-  caption?: string | null;
-  width?: number;
-  height?: number;
-}
+export type GenGallerySlide = GalleryCarouselSlide;
 
 export interface GenGalleryProps {
   slides: GenGallerySlide[];
@@ -16,6 +11,7 @@ export interface GenGalleryProps {
   className?: string;
 }
 
+// TODO: da revisionare — dipende da GalleryCarousel (in revisione)
 export function GenGallery({
   slides,
   title,

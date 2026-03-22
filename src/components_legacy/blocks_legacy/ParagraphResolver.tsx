@@ -113,7 +113,8 @@ function adaptGenGallery(p: Record<string, unknown>) {
     .map((slide) => {
       const src = getDrupalImageUrl(slide.field_immagine);
       if (!src) return null;
-      const meta = (slide.field_immagine as Record<string, unknown> | undefined)?.meta as Record<string, unknown> | undefined;
+      const img = slide.field_immagine as Record<string, unknown> | undefined;
+      const meta = img?.meta as Record<string, unknown> | undefined;
       const alt = (meta?.alt as string) ?? '';
       const width = meta?.width as number | undefined;
       const height = meta?.height as number | undefined;
