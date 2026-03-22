@@ -18,9 +18,10 @@ interface GalleryCarouselProps {
   slides: GalleryCarouselSlide[];
   slideClassName?: string;
   className?: string;
+  header?: React.ReactNode;
 }
 
-export function GalleryCarousel({ slides, slideClassName, className }: GalleryCarouselProps) {
+export function GalleryCarousel({ slides, slideClassName, className, header }: GalleryCarouselProps) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -51,9 +52,34 @@ export function GalleryCarousel({ slides, slideClassName, className }: GalleryCa
   }
 
   return (
-    <div
-      className={cn('relative', className)}
-    >
+    <div className={cn('relative flex flex-col gap-(--spacing-content)', className)}>
+      {/* Header row: title + arrows */}
+      {header && (
+        <div className="flex items-center justify-between max-w-7xl mx-auto w-full px-(--spacing-page)">
+          {header}
+          <div className="flex gap-(--spacing-element)">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => scrollBySlide(-1)}
+              disabled={!canScrollLeft}
+              aria-label="Previous slide"
+            >
+              <ChevronLeftIcon />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => scrollBySlide(1)}
+              disabled={!canScrollRight}
+              aria-label="Next slide"
+            >
+              <ChevronRightIcon />
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Scroll container */}
       <div
         ref={scrollerRef}
@@ -99,28 +125,6 @@ export function GalleryCarousel({ slides, slideClassName, className }: GalleryCa
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Arrow buttons */}
-      <div className="flex justify-center gap-(--spacing-element) mt-(--spacing-content)">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => scrollBySlide(-1)}
-          disabled={!canScrollLeft}
-          aria-label="Previous slide"
-        >
-          <ChevronLeftIcon />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => scrollBySlide(1)}
-          disabled={!canScrollRight}
-          aria-label="Next slide"
-        >
-          <ChevronRightIcon />
-        </Button>
       </div>
     </div>
   );
