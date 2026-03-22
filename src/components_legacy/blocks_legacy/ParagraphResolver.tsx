@@ -5,6 +5,7 @@ import { GenVideo } from '@/components/blocks/GenVideo';
 import { GenTestoImmagine } from '@/components/blocks/GenTestoImmagine';
 import { GenGallery } from '@/components/blocks/GenGallery';
 import type { GenGallerySlide } from '@/components/blocks/GenGallery';
+import { GenTestoImmagineBig } from '@/components/blocks/GenTestoImmagineBig';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { getDrupalImageUrl } from '@/lib/drupal/image';
 import { fetchParagraph, needsSecondaryFetch } from '@/lib/drupal/paragraphs';
@@ -12,7 +13,7 @@ import { fetchParagraph, needsSecondaryFetch } from '@/lib/drupal/paragraphs';
 // ── Legacy blocks ───────────────────────────────────────────────────────────
 import BloccoSliderHome from './BloccoSliderHome';
 // BloccoGallery removed — replaced by GenGallery
-import BloccoTestoImmagineBig from './BloccoTestoImmagineBig';
+// BloccoTestoImmagineBig removed — replaced by GenTestoImmagineBig
 import BloccoTestoImmagineBlog from './BloccoTestoImmagineBlog';
 import BloccoGalleryIntro from './BloccoGalleryIntro';
 import BloccoVideo from './BloccoVideo';
@@ -28,7 +29,6 @@ type ParagraphComponent = (props: { paragraph: Record<string, unknown> }) => any
 
 const LEGACY_MAP: Record<string, ParagraphComponent> = {
   'paragraph--blocco_slider_home': BloccoSliderHome,
-  'paragraph--blocco_testo_immagine_big': BloccoTestoImmagineBig,
   'paragraph--blocco_testo_immagine_blog': BloccoTestoImmagineBlog,
   'paragraph--blocco_gallery_intro': BloccoGalleryIntro,
   'paragraph--blocco_video': BloccoVideo,
@@ -133,6 +133,32 @@ function adaptGenGallery(p: Record<string, unknown>) {
   return <GenGallery slides={slides} title={title} />;
 }
 
+function adaptGenTestoImmagineBig(p: Record<string, unknown>) {
+  const imageSrc = getDrupalImageUrl(p.field_immagine);
+  if (!imageSrc) return null;
+
+  const imgMeta = (p.field_immagine as Record<string, unknown> | undefined)?.meta as Record<string, unknown> | undefined;
+  const imageAlt = (imgMeta?.alt as string) ?? '';
+  const titleRaw = getProcessedText(p.field_titolo_formattato);
+  const title = titleRaw ? titleRaw.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() : null;
+  const bodyHtml = getProcessedText(p.field_testo);
+  const linkHref = getTextValue(p.field_collegamento_esterno)
+    ?? (p.field_collegamento_interno as Record<string, unknown> | undefined)?.path as string
+    ?? null;
+  const linkLabel = getTextValue(p.field_label_collegamento) ?? null;
+
+  return (
+    <GenTestoImmagineBig
+      imageSrc={imageSrc}
+      imageAlt={imageAlt}
+      title={title}
+      bodyHtml={bodyHtml}
+      linkHref={linkHref}
+      linkLabel={linkLabel}
+    />
+  );
+}
+
 function adaptGenQuote(p: Record<string, unknown>) {
   const text = getProcessedText(p.field_testo);
   if (!text) return null;
@@ -165,6 +191,7 @@ export default async function ParagraphResolver({ paragraph }: ParagraphResolver
   if (type === 'paragraph--blocco_video') return adaptGenVideo(resolved);
   if (type === 'paragraph--blocco_testo_immagine') return adaptGenTestoImmagine(resolved);
   if (type === 'paragraph--blocco_gallery') return adaptGenGallery(resolved);
+  if (type === 'paragraph--blocco_testo_immagine_big') return adaptGenTestoImmagineBig(resolved);
 
   // Legacy blocks
   const Component = LEGACY_MAP[type];
