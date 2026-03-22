@@ -11,7 +11,6 @@ export interface GenGalleryProps {
   className?: string;
 }
 
-// TODO: da revisionare — dipende da GalleryCarousel (in revisione)
 export function GenGallery({
   slides,
   title,
@@ -26,7 +25,10 @@ export function GenGallery({
           {title || 'Gallery'}
         </Typography>
       </div>
-      <GalleryCarousel slides={slides} />
+      <GalleryCarousel
+        slides={slides}
+        slideClassName="w-[85vw] aspect-[3/4] sm:w-[70vw] sm:aspect-square md:w-auto md:aspect-[var(--slide-ratio)] md:h-92 lg:h-128 xl:h-144 2xl:h-156"
+      />
     </section>
   );
 }

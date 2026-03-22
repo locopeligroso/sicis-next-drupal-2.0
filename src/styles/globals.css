@@ -51,7 +51,7 @@
 
     --underline-offset: 4px;
 
-    --spacing-page: 1.5rem;
+    --spacing-page: 3rem;
     --spacing-section: 3rem;
     --spacing-section-lg: 4rem;
     --spacing-content: 1.5rem;
@@ -60,7 +60,7 @@
 
 @media (min-width: 768px) {
     :root {
-        --spacing-page: 1.75rem;
+        --spacing-page: 3.5rem;
         --spacing-section: 4rem;
         --spacing-section-lg: 5rem;
         --spacing-content: 2rem;
@@ -70,7 +70,7 @@
 
 @media (min-width: 1024px) {
     :root {
-        --spacing-page: 2rem;
+        --spacing-page: 4rem;
         --spacing-section: 5rem;
         --spacing-section-lg: 6rem;
         --spacing-content: 2.5rem;

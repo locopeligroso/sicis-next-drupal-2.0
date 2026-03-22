@@ -16,11 +16,11 @@ export interface GalleryCarouselSlide {
 
 interface GalleryCarouselProps {
   slides: GalleryCarouselSlide[];
+  slideClassName?: string;
   className?: string;
 }
 
-// TODO: da revisionare — sizing slide (mobile square vs md/lg ratio), gutter calc, altezze breakpoint
-export function GalleryCarousel({ slides, className }: GalleryCarouselProps) {
+export function GalleryCarousel({ slides, slideClassName, className }: GalleryCarouselProps) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -52,7 +52,7 @@ export function GalleryCarousel({ slides, className }: GalleryCarouselProps) {
 
   return (
     <div
-      className={cn('relative md:[--gallery-slide-h:32rem] lg:[--gallery-slide-h:40rem]', className)}
+      className={cn('relative', className)}
     >
       {/* Scroll container */}
       <div
@@ -73,22 +73,19 @@ export function GalleryCarousel({ slides, className }: GalleryCarouselProps) {
               key={i}
               data-gallery-slide
               className={cn(
-                'shrink-0 size-80 md:size-auto',
+                'shrink-0',
                 i === slides.length - 1
                   ? '[scroll-snap-align:start_end]'
                   : 'snap-start',
               )}
-              style={slide.width && slide.height
-                ? { '--slide-ratio': slide.width / slide.height } as React.CSSProperties
-                : undefined
-              }
             >
-              <div className="rounded-xl overflow-hidden size-full md:size-auto md:w-[calc(var(--gallery-slide-h)*var(--slide-ratio,1.33))] md:h-[var(--gallery-slide-h)]">
+              <div
+                className={cn('rounded-xl overflow-hidden', slideClassName)}
+                style={slide.width && slide.height ? { '--slide-ratio': `${slide.width / slide.height}` } as React.CSSProperties : undefined}
+              >
                 <img
                   src={slide.src}
                   alt={slide.alt}
-                  width={slide.width}
-                  height={slide.height}
                   className="size-full object-cover"
                 />
               </div>
