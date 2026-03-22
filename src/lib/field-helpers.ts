@@ -17,12 +17,15 @@
  * - null/undefined
  */
 export function getTextValue(field: unknown): string | undefined {
-  if (typeof field === 'string') return field || undefined;
-  if (field && typeof field === 'object') {
+  let raw: string | undefined;
+  if (typeof field === 'string') raw = field;
+  else if (field && typeof field === 'object') {
     const obj = field as Record<string, unknown>;
-    if (typeof obj.value === 'string') return obj.value || undefined;
+    if (typeof obj.value === 'string') raw = obj.value;
   }
-  return undefined;
+  if (!raw) return undefined;
+  // Strip HTML tags and trim whitespace (Drupal wraps titles in <p> tags)
+  return raw.replace(/<[^>]*>/g, '').trim() || undefined;
 }
 
 /**

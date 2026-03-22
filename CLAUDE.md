@@ -71,7 +71,7 @@ Recent updates (2026-03-20 session):
 - `AttributeGrid` — Row of label/value pairs with vertical separators
 - `SwatchList` — Color/grout swatches with image or CSS color fallback
 - `SpecsTable` — Grid layout (4 cols) for technical specs with label + value
-- `DocumentCard` — Catalog card with cover image, type overline, title, download link
+- `DocumentCard` — Catalog card with cover image, type overline, title, auto label+icon from URL (PDF/video/catalog/fallback), vertical/horizontal layout variant
 
 #### Blocks (`src/components/blocks/`) — Naming Convention
 
@@ -181,14 +181,14 @@ Gen blocks are rendered via `ParagraphResolver` which maps `paragraph--{type}` �
 - **Animations**: removed for now, to be reimplemented with proper approach
 - **Storybook**: all Composed and Spec blocks have stories, rules enforced (single Playground, controls, @storybook/nextjs-vite)
 - **Block naming**: Spec*/Gen* convention in place. All 10 Spec blocks renamed.
-- **Gen blocks built**: GenIntro, GenQuote, GenVideo (VimeoPlayer composed), GenTestoImmagine (portrait/landscape adaptive with muted bands), GenGallery (header with title+arrows, responsive slide sizing), GenTestoImmagineBig (title+body two-col header, full-bleed image), GenTestoImmagineBlog (centered prose column, optional image)
-- **Gen blocks remaining**: GenGalleryIntro, GenDocumenti, GenCorrelati, GenNewsletter, GenFormBlog, GenSliderHome, GenAnni, GenTutorial
+- **Gen blocks built**: GenIntro, GenQuote, GenVideo (VimeoPlayer composed), GenTestoImmagine (portrait/landscape adaptive with muted bands), GenGallery (header with title+arrows, responsive slide sizing), GenTestoImmagineBig (title+body two-col header, full-bleed image), GenTestoImmagineBlog (centered prose column, optional image), GenGalleryIntro (intro h1+overline+body as GalleryCarousel header, reuses GalleryCarousel composed), GenDocumenti (h3 title + adaptive layout: 1-2 docs horizontal, 3+ grid vertical, reuses DocumentCard composed with layout variant)
+- **Gen blocks remaining**: GenCorrelati, GenNewsletter, GenFormBlog, GenSliderHome, GenAnni, GenTutorial
 - **New Composed components**: ArrowLink (inline link + arrow), VimeoPlayer (Vimeo SDK + custom controls + poster click-to-play), GalleryCarousel (CSS scroll-snap carousel with header prop for title+arrows — sizing delegated to consumer via slideClassName), GenTestoImmagineBody (text block with title + body + link)
-- **ParagraphResolver**: async, uses fetchParagraph for secondary fetches. GenIntro, GenQuote, GenVideo, GenTestoImmagine, GenGallery, GenTestoImmagineBig, GenTestoImmagineBlog wired with adapters. Rest still legacy.
+- **ParagraphResolver**: async, uses fetchParagraph for secondary fetches. GenIntro, GenQuote, GenVideo, GenTestoImmagine, GenGallery, GenTestoImmagineBig, GenTestoImmagineBlog, GenGalleryIntro, GenDocumenti wired with adapters. Rest still legacy.
 - **Templates updated**: Page, News, Ambiente, Articolo — removed legacy containers, added flex/gap spacing + ParagraphResolver
 
 ## Next Steps — Immediate
-1. Continue remaining Gen blocks: GenGalleryIntro → GenDocumenti → GenCorrelati → GenNewsletter → GenFormBlog → GenSliderHome → GenAnni → GenTutorial
+1. Continue remaining Gen blocks: GenDocumenti → GenCorrelati → GenNewsletter → GenFormBlog → GenSliderHome → GenAnni → GenTutorial
 2. Investigate horizontal scroll overflow on pages (not caused by carousel — unknown source)
 
 ## Next Steps — After Gen Blocks

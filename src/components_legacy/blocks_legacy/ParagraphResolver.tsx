@@ -7,6 +7,10 @@ import { GenGallery } from '@/components/blocks/GenGallery';
 import type { GenGallerySlide } from '@/components/blocks/GenGallery';
 import { GenTestoImmagineBig } from '@/components/blocks/GenTestoImmagineBig';
 import { GenTestoImmagineBlog } from '@/components/blocks/GenTestoImmagineBlog';
+import { GenGalleryIntro } from '@/components/blocks/GenGalleryIntro';
+import type { GenGalleryIntroSlide } from '@/components/blocks/GenGalleryIntro';
+import { GenDocumenti } from '@/components/blocks/GenDocumenti';
+import type { GenDocumentiItem } from '@/components/blocks/GenDocumenti';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { getDrupalImageUrl } from '@/lib/drupal/image';
 import { fetchParagraph, needsSecondaryFetch } from '@/lib/drupal/paragraphs';
@@ -16,10 +20,10 @@ import BloccoSliderHome from './BloccoSliderHome';
 // BloccoGallery removed — replaced by GenGallery
 // BloccoTestoImmagineBig removed — replaced by GenTestoImmagineBig
 // BloccoTestoImmagineBlog removed — replaced by GenTestoImmagineBlog
-import BloccoGalleryIntro from './BloccoGalleryIntro';
+// BloccoGalleryIntro removed — replaced by GenGalleryIntro
 import BloccoVideo from './BloccoVideo';
 import BloccoCorrelati from './BloccoCorrelati';
-import BloccoDocumenti from './BloccoDocumenti';
+// BloccoDocumenti removed — replaced by GenDocumenti
 import BloccoNewsletter from './BloccoNewsletter';
 import BloccoFormBlog from './BloccoFormBlog';
 import BloccoAnni from './BloccoAnni';
@@ -31,10 +35,10 @@ type ParagraphComponent = (props: { paragraph: Record<string, unknown> }) => any
 const LEGACY_MAP: Record<string, ParagraphComponent> = {
   'paragraph--blocco_slider_home': BloccoSliderHome,
   // blocco_testo_immagine_blog removed — replaced by GenTestoImmagineBlog
-  'paragraph--blocco_gallery_intro': BloccoGalleryIntro,
+  // blocco_gallery_intro removed — replaced by GenGalleryIntro
   'paragraph--blocco_video': BloccoVideo,
   'paragraph--blocco_correlati': BloccoCorrelati,
-  'paragraph--blocco_documenti': BloccoDocumenti,
+  // blocco_documenti removed — replaced by GenDocumenti
   'paragraph--blocco_newsletter': BloccoNewsletter,
   'paragraph--blocco_form_blog': BloccoFormBlog,
   'paragraph--blocco_anni': BloccoAnni,
@@ -180,6 +184,59 @@ function adaptGenTestoImmagineBlog(p: Record<string, unknown>) {
   );
 }
 
+function adaptGenGalleryIntro(p: Record<string, unknown>) {
+  const title = getTextValue(p.field_titolo_formattato);
+  const bodyHtml = getProcessedText(p.field_testo);
+  if (!title || !bodyHtml) return null;
+
+  // TODO: overline hardcoded — Drupal field_sopratitolo_approfondiment never populated, needs content entry
+  const overline = getTextValue(p.field_sopratitolo_approfondiment) ?? 'Lorem ipsum dolor sit';
+  const slideData = (p.field_slide as Array<Record<string, unknown>> | undefined) ?? [];
+  const slides: GenGalleryIntroSlide[] = slideData
+    .map((slide) => {
+      const src = getDrupalImageUrl(slide.field_immagine);
+      if (!src) return null;
+      const img = slide.field_immagine as Record<string, unknown> | undefined;
+      const meta = img?.meta as Record<string, unknown> | undefined;
+      const alt = (meta?.alt as string) ?? '';
+      const width = meta?.width as number | undefined;
+      const height = meta?.height as number | undefined;
+      return { src, alt, width, height };
+    })
+    .filter((s) => s !== null) as GenGalleryIntroSlide[];
+
+  if (slides.length === 0) return null;
+
+  return (
+    <GenGalleryIntro
+      title={title}
+      bodyHtml={bodyHtml}
+      slides={slides}
+      overline={overline}
+    />
+  );
+}
+
+function adaptGenDocumenti(p: Record<string, unknown>) {
+  const title = getTextValue(p.field_titolo_formattato) ?? null;
+  const docNodes = (p.field_documenti as Array<Record<string, unknown>> | undefined) ?? [];
+
+  const documents: GenDocumentiItem[] = docNodes
+    .map((doc) => {
+      const docTitle = (doc.title as string) ?? '';
+      if (!docTitle) return null;
+      const imageSrc = getDrupalImageUrl(doc.field_immagine);
+      const type = (doc.field_tipologia_documento as string) ?? undefined;
+      const href = (doc.field_collegamento_esterno as string) ?? null;
+      return { title: docTitle, type, imageSrc, href };
+    })
+    .filter((d) => d !== null) as GenDocumentiItem[];
+
+  if (documents.length === 0) return null;
+
+  return <GenDocumenti documents={documents} title={title} />;
+}
+
 function adaptGenQuote(p: Record<string, unknown>) {
   const text = getProcessedText(p.field_testo);
   if (!text) return null;
@@ -214,6 +271,8 @@ export default async function ParagraphResolver({ paragraph }: ParagraphResolver
   if (type === 'paragraph--blocco_gallery') return adaptGenGallery(resolved);
   if (type === 'paragraph--blocco_testo_immagine_big') return adaptGenTestoImmagineBig(resolved);
   if (type === 'paragraph--blocco_testo_immagine_blog') return adaptGenTestoImmagineBlog(resolved);
+  if (type === 'paragraph--blocco_gallery_intro') return adaptGenGalleryIntro(resolved);
+  if (type === 'paragraph--blocco_documenti') return adaptGenDocumenti(resolved);
 
   // Legacy blocks
   const Component = LEGACY_MAP[type];

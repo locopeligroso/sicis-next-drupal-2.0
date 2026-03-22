@@ -8,7 +8,7 @@ export default function Page({ node }: { node: Record<string, unknown> }) {
   const paragraphs = (node.field_blocchi as Record<string, unknown>[] | undefined) ?? [];
 
   return (
-    <article>
+    <article className="flex flex-col gap-(--spacing-section) py-(--spacing-section)">
       {title && (
         <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '1.5rem', lineHeight: 1.2 }}>
           {title}

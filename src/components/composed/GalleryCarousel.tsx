@@ -55,7 +55,7 @@ export function GalleryCarousel({ slides, slideClassName, className, header }: G
     <div className={cn('relative flex flex-col gap-(--spacing-content)', className)}>
       {/* Header row: title + arrows */}
       {header && (
-        <div className="flex items-center justify-between max-w-main mx-auto w-full px-(--spacing-page)">
+        <div className="flex items-end justify-between max-w-main mx-auto w-full px-(--spacing-page)">
           {header}
           <div className="flex gap-(--spacing-element)">
             <Button
