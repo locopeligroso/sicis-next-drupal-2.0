@@ -6,8 +6,8 @@ import { Typography } from "@/components/composed/Typography"
 import { ProductCarousel, type ProductCarouselSlide } from "@/components/composed/ProductCarousel"
 import { ProductCta } from "@/components/composed/ProductCta"
 import { ProductPricingCard } from "@/components/composed/ProductPricingCard"
+import { ArrowLink } from "@/components/composed/ArrowLink"
 import { cn } from "@/lib/utils"
-import { ArrowRightIcon } from "lucide-react"
 
 export interface SpecProductHeroProps {
   title: string
@@ -121,17 +121,13 @@ export function SpecProductHero({
 
             {/* Discover link */}
             {discoverUrl && (
-              <a
+              <ArrowLink
                 href={discoverUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex items-center gap-2 text-primary-text hover:underline decoration-primary-text underline-offset-(--underline-offset)"
-              >
-                <Typography textRole="body-sm" as="span" className="text-primary-text">
-                  {discoverLabel}
-                </Typography>
-                <ArrowRightIcon className="size-4 transition-transform group-hover:translate-x-0.5" />
-              </a>
+                label={discoverLabel}
+                external
+                textRole="body-sm"
+                className="text-primary-text decoration-primary-text"
+              />
             )}
           </div>
         </div>

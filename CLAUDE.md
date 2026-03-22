@@ -41,6 +41,12 @@ Server action wrapper: `src/lib/get-translated-path.ts` ('use server' for client
 - `node-resolver.ts` maps bundle → component name + INCLUDE_MAP for JSON:API includes
 - Templates in `src/templates/nodes/` and `src/templates/taxonomy/`
 
+### Dev Preview Routes
+- `src/app/dev/layout.tsx` — Dev-only layout with fonts + tokens + theme, no Header/Footer/i18n. Guarded by `NODE_ENV !== 'development'`.
+- Convention: draft pages go in `src/app/dev/preview/[name]/page.tsx` (e.g. `gen-intro/page.tsx`). Each page has its own `NODE_ENV` guard.
+- Used by /ds workflow Get-a-Draft. Delete the preview page after extracting the component.
+- URL: `localhost:3000/dev/preview/[name]`
+
 ### INCLUDE_MAP
 Critical: if a relationship field is not in the INCLUDE_MAP, Drupal returns only `{ type, id }` without data. All nested images (stucco, colori, forma, categoria) must be explicitly included.
 

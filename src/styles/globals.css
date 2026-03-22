@@ -183,6 +183,7 @@
     --spacing-section-lg: var(--spacing-section-lg);
     --spacing-content: var(--spacing-content);
     --spacing-element: var(--spacing-element);
+
 }
 
 @layer base {

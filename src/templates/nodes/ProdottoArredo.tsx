@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import DrupalImage from '@/components_legacy/DrupalImage';
+import ParagraphResolver from '@/components_legacy/blocks_legacy/ParagraphResolver';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { getDrupalImageUrl } from '@/lib/drupal/image';
 import { DRUPAL_BASE_URL } from '@/lib/drupal/config';
@@ -660,6 +661,11 @@ export default async function ProdottoArredo({
           </div>
         </section>
       )}
+
+      {/* ── Paragraph blocks (Gen) ─────────────────────────────────────────── */}
+      {((typedNode.field_blocchi as Record<string, unknown>[] | undefined) ?? []).map((p, i) => (
+        <ParagraphResolver key={(p.id as string) ?? i} paragraph={p} />
+      ))}
     </article>
   );
 }
