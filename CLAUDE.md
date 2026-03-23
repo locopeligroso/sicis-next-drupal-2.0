@@ -39,7 +39,7 @@ Single unified Drupal client split by responsibility:
 - `index.ts` — barrel re-export (import from `@/lib/drupal`)
 
 ### Domain Layer
-- `src/domain/filters/` — `registry.ts` (FILTER_REGISTRY, 51 SLUG_OVERRIDES), `search-params.ts` (nuqs integration)
+- `src/domain/filters/` — `registry.ts` (FILTER_REGISTRY, SLUG_OVERRIDES), `search-params.ts` (nuqs integration)
 - `src/domain/routing/` — `routing-registry.ts` (shadow mode), `section-config.ts`
 
 ### Routing
@@ -97,16 +97,16 @@ Rules:
 
 ## Components — Design System (`/ds` skill)
 
-### Composed (`src/components/composed/`) — 31 components
+### Composed (`src/components/composed/`)
 
-| Group | Components | Count |
-|-------|-----------|-------|
-| Product | Typography, ResponsiveImage, ProductCarousel, ProductCta, ProductPricingCard, AttributeGrid, SwatchList, SpecsTable, DocumentCard | 9 |
-| Listing & Filters | ProductCard, ProductGrid, CategoryCard, CategoryCardGrid, ListingToolbar, ActiveFilters, FilterGroup, LoadMoreButton | 8 |
-| Filter Types | CheckboxFilter, ColorSwatchFilter, ImageListFilter | 3 |
-| Navigation & Layout | MegaMenuExplore, MegaMenuFilterFind, MegaMenuProjects, MegaMenuInfo, NavDarkModeToggle, NavLanguageSwitcher | 6 |
-| Content & Media | ArrowLink, VimeoPlayer, GalleryCarousel | 3 |
-| Utility | MobileFilterTrigger, GenTestoImmagineBody | 2 |
+| Group | Components |
+|-------|-----------|
+| Product | Typography, ResponsiveImage, ProductCarousel, ProductCta, ProductPricingCard, AttributeGrid, SwatchList, SpecsTable, DocumentCard |
+| Listing & Filters | ProductCard, ProductGrid, CategoryCard, CategoryCardGrid, ListingToolbar, ActiveFilters, FilterGroup, LoadMoreButton |
+| Filter Types | CheckboxFilter, ColorSwatchFilter, ImageListFilter |
+| Navigation & Layout | MegaMenuExplore, MegaMenuFilterFind, MegaMenuProjects, MegaMenuInfo, NavDarkModeToggle, NavLanguageSwitcher |
+| Content & Media | ArrowLink, VimeoPlayer, GalleryCarousel |
+| Utility | MobileFilterTrigger, GenTestoImmagineBody |
 
 **Component notes for non-obvious entries:**
 
@@ -117,13 +117,13 @@ Rules:
 
 ---
 
-### Blocks (`src/components/blocks/`) — 19 blocks (10 Spec + 9 Gen)
+### Blocks (`src/components/blocks/`)
 
 **Naming convention:**
 - `Spec*` — Product and listing page blocks, tightly coupled to specific data shapes (product fields, filter registries). Used directly in templates.
 - `Gen*` — General-purpose paragraph blocks driven by Drupal `paragraph--blocco_*` data. Wired through `ParagraphResolver` and reusable across all content types.
 
-**Spec blocks (10):**
+**Spec blocks:**
 
 | Block | Purpose |
 |-------|---------|
@@ -138,7 +138,7 @@ Rules:
 | `SpecListingHeader` | Listing page header — category title, description, result count, sort controls |
 | `SpecCategory` | Category hub card (image + title + product count) |
 
-**Gen blocks built (9) — `blocco_*` → `Gen*` mapping:**
+**Gen blocks built — `blocco_*` → `Gen*` mapping:**
 
 | Drupal paragraph type | Gen block |
 |-----------------------|-----------|
@@ -152,7 +152,7 @@ Rules:
 | `paragraph--blocco_gallery_intro` | `GenGalleryIntro` |
 | `paragraph--blocco_documenti` | `GenDocumenti` |
 
-**Gen blocks remaining — still using legacy `Blocco*` fallback (6):**
+**Gen blocks remaining — still using legacy `Blocco*` fallback:**
 
 `GenCorrelati`, `GenNewsletter`, `GenFormBlog`, `GenSliderHome`, `GenAnni`, `GenTutorial`
 
@@ -174,11 +174,11 @@ Async server component. Maps incoming `paragraph--{type}` data to either a DS `G
 **Templates using ParagraphResolver:**
 Page, LandingPage, Articolo, News, Tutorial, Ambiente, Progetto, CategoriaBlog, Tag, ProdottoArredo, Categoria
 
-**Current wiring status:** 9 Gen adapters active; BloccoSliderHome, BloccoVideo, BloccoCorrelati, BloccoNewsletter, BloccoFormBlog, BloccoAnni, BloccoTutorial remain in `LEGACY_MAP`.
+**Current wiring status:** Gen adapters active for all built Gen blocks; BloccoSliderHome, BloccoVideo, BloccoCorrelati, BloccoNewsletter, BloccoFormBlog, BloccoAnni, BloccoTutorial remain in `LEGACY_MAP`.
 
 ---
 
-### Primitives (`src/components/ui/`) — 57
+### Primitives (`src/components/ui/`)
 
 shadcn/ui primitives (base-vega preset, base-ui). NEVER modify directly.
 
@@ -196,7 +196,7 @@ shadcn/ui primitives (base-vega preset, base-ui). NEVER modify directly.
 
 ### Legacy (`src/components_legacy/`)
 
-**Root components (18):**
+**Root components:**
 Header, Footer, MegaMenu, DrupalImage, LanguageSwitcher, ColorSwatches, FilterSidebar, FilterSidebarSkeleton, ProductListing, ProductListingSkeleton, Documents, Specs, UnknownEntity, ProjectListing, EnvironmentListing, BlogListing, ShowroomListing, DocumentListing
 
 Notes:
@@ -204,8 +204,8 @@ Notes:
 - Footer still actively used (not yet migrated)
 - DrupalImage still used in all legacy product templates
 
-**`blocks_legacy/` (17):**
-15 `Blocco*` paragraph components + `SliderClient` (client-side carousel used by BloccoSliderHome) + `ParagraphResolver`
+**`blocks_legacy/`:**
+`Blocco*` paragraph components + `SliderClient` (client-side carousel used by BloccoSliderHome) + `ParagraphResolver`
 
 | Component | Status |
 |-----------|--------|
@@ -227,7 +227,7 @@ Notes:
 
 ## Templates — Migration Matrix
 
-### Node Templates (`src/templates/nodes/`) — 19 templates
+### Node Templates (`src/templates/nodes/`)
 
 | Template | Drupal Type | Status | Uses ParagraphResolver | Notes |
 |---|---|---|---|---|
@@ -259,7 +259,7 @@ Only `ProdottoMosaico` and `ProductListingTemplate` use the design system (Spec*
 
 ---
 
-### Taxonomy Templates (`src/templates/taxonomy/`) — 5 templates
+### Taxonomy Templates (`src/templates/taxonomy/`)
 
 | Template | Drupal Type | Status | Notes |
 |---|---|---|---|
@@ -274,8 +274,8 @@ Only `ProdottoMosaico` and `ProductListingTemplate` use the design system (Spec*
 ## Types
 
 - `src/types/drupal/entities.ts` — Single source of truth for all entity shapes
-- `NodeTypeName` — union of 18 node types (page, landing_page, 5 prodotto_*, articolo, news, tutorial, progetto, showroom, ambiente, categoria, categoria_blog, documento, tag)
-- `TaxonomyTypeName` — union of 11 taxonomy types (mosaico_collezioni, mosaico_colori, vetrite_collezioni, vetrite_colori, vetrite_finiture, vetrite_textures, arredo_finiture, tessuto_colori, tessuto_finiture, tessuto_tipologie, tessuto_manutenzione)
+- `NodeTypeName` — union of all node types (page, landing_page, prodotto_*, articolo, news, tutorial, progetto, showroom, ambiente, categoria, categoria_blog, documento, tag)
+- `TaxonomyTypeName` — union of all taxonomy types (mosaico_collezioni, mosaico_colori, vetrite_collezioni, vetrite_colori, vetrite_finiture, vetrite_textures, arredo_finiture, tessuto_colori, tessuto_finiture, tessuto_tipologie, tessuto_manutenzione)
 - `EntityTypeName` — `NodeTypeName | TaxonomyTypeName | (string & Record<never, never>)` (open union for unknown types)
 - Shared field shapes: `DrupalTextField`, `DrupalPath`, `DrupalLinkField`, `DrupalEntity` (base for all)
 - Typed product interfaces: `ProdottoMosaico`, `ProdottoVetrite`, `ProdottoArredo`, `ProdottoTessuto`, `ProdottoPixall`, `ProdottoIlluminazione`
@@ -287,20 +287,8 @@ Only `ProdottoMosaico` and `ProductListingTemplate` use the design system (Spec*
 
 ## Translations
 
-- `messages/{locale}.json` — 9 sections across 6 locales (IT, EN, FR, DE, ES, RU)
-- IT locale has ~213 keys total
-
-| Section | Key count | Notes |
-|---|---|---|
-| common | 12 | Shared UI labels |
-| nav | 51 | MegaMenu labels and descriptions |
-| projects | 3 | Projects listing page |
-| products | 97 | All product detail field labels |
-| filters | 27 | Filter UI, sort options, pagination labels |
-| sort | 7 | Sort option labels |
-| listing | 3 | Product listing toolbar |
-| errors | 8 | Error pages |
-| pagination | 5 | Pagination controls |
+- `messages/{locale}.json` — 6 locales (IT, EN, FR, DE, ES, RU)
+- Sections: common, nav, projects, products, filters, sort, listing, errors, pagination
 
 **Missing translations:** `resistant` and `absent` (under `products`) exist only in IT and EN — missing from DE, FR, ES, RU.
 
@@ -336,7 +324,7 @@ Zero React/Next.js dependencies — 100% unit-testable.
 
 **Key exports:**
 - `FILTER_REGISTRY` — `Record<string, ProductTypeConfig>` — full config per product type
-- `SLUG_OVERRIDES` — `Record<string, string>` — 58 explicit slug-to-term-name mappings for accented characters, slashes, and capitalisation exceptions
+- `SLUG_OVERRIDES` — `Record<string, string>` — explicit slug-to-term-name mappings for accented characters, slashes, and capitalisation exceptions
 - `deslugify(slug)` — converts URL slug to Drupal term name; NFC-normalised; falls back to title-case
 - `getFilterConfig(contentType)` — returns `ProductTypeConfig | null`
 - `translateBasePath(path, targetLocale)` — translates listing base path across locales
@@ -352,13 +340,12 @@ Framework: `@storybook/nextjs-vite`. All stories use `satisfies Meta` pattern wi
 
 `preview.ts` configuration: `nextjs.appDirectory: true` + `nextjs.navigation` mocks.
 
-| Directory | Count | Components |
-|---|---|---|
-| `.storybook/stories/primitives/` | 57 | 57 shadcn/ui primitives |
-| `.storybook/stories/composed/` | 23 | Typography, ResponsiveImage, ProductCarousel, ProductCta, ProductPricingCard, AttributeGrid, SwatchList, SpecsTable, DocumentCard, ActiveFilters, ArrowLink, CategoryCard, CategoryCardGrid, CheckboxFilter, ColorSwatchFilter, FilterGroup, GalleryCarousel, ImageListFilter, ListingToolbar, LoadMoreButton, MobileFilterTrigger, ProductCard, ProductGrid |
-| `.storybook/stories/blocks/` | 12 | SpecProductHero, SpecProductDetails, SpecProductSpecs, SpecProductResources, SpecProductGallery, SpecCategory, SpecFilterSidebar, SpecFilterSidebarContent, SpecListingHeader, SpecProductListing, GenGallery, GenIntro |
-| `.storybook/stories/design-tokens/` | 3 | Colors, Spacing, Typography catalog |
-| **Total** | **95** | |
+| Directory | Coverage |
+|---|---|
+| `.storybook/stories/primitives/` | All shadcn/ui primitives |
+| `.storybook/stories/composed/` | All DS composed components with stories |
+| `.storybook/stories/blocks/` | All Spec blocks + select Gen blocks |
+| `.storybook/stories/design-tokens/` | Colors, Spacing, Typography catalog |
 
 `.storybook/drafts/` — empty (all draft stories deleted after extraction).
 
@@ -400,7 +387,7 @@ Source: `src/styles/globals.css`
 
 ## Drupal Schema Reference
 
-### Content Types — 18 bundles
+### Content Types
 
 | Category | Bundles |
 |----------|---------|
@@ -408,7 +395,7 @@ Source: `src/styles/globals.css`
 | Content (8) | `page`, `landing_page`, `articolo`, `news`, `tutorial`, `progetto`, `ambiente`, `showroom` |
 | Metadata (4) | `categoria`, `categoria_blog`, `documento`, `tag` |
 
-### Taxonomy Vocabularies — 11
+### Taxonomy Vocabularies
 
 | Product | Vocabularies |
 |---------|-------------|
@@ -417,7 +404,7 @@ Source: `src/styles/globals.css`
 | Arredo | `arredo_finiture` |
 | Tessuto | `tessuto_colori`, `tessuto_finiture`, `tessuto_tipologie`, `tessuto_manutenzione` |
 
-### Paragraph Types — 15
+### Paragraph Types
 
 `blocco_intro`, `blocco_quote`, `blocco_video`, `blocco_testo_immagine`, `blocco_testo_immagine_big`, `blocco_testo_immagine_blog`, `blocco_gallery`, `blocco_gallery_intro`, `blocco_documenti`, `blocco_correlati`, `blocco_newsletter`, `blocco_form_blog`, `blocco_slider_home`, `blocco_anni`, `blocco_tutorial`
 
@@ -434,12 +421,9 @@ Source: `src/styles/globals.css`
 
 ### Component Coverage
 
-- **UI primitives**: 57 (shadcn/ui, never modify directly)
-- **Composed**: 31
-- **Blocks**: 19 total — 10 Spec + 9 Gen built
-- **Gen blocks built (9/15)**: GenIntro, GenQuote, GenVideo, GenTestoImmagine, GenTestoImmagineBig, GenTestoImmagineBlog, GenGallery, GenGalleryIntro, GenDocumenti
-- **Gen blocks remaining (6)**: GenCorrelati, GenNewsletter, GenFormBlog, GenSliderHome, GenAnni, GenTutorial
-- **ParagraphResolver**: 9 Gen adapters wired; remaining paragraph types fall back to legacy `Blocco*` components
+- **Gen blocks built**: GenIntro, GenQuote, GenVideo, GenTestoImmagine, GenTestoImmagineBig, GenTestoImmagineBlog, GenGallery, GenGalleryIntro, GenDocumenti
+- **Gen blocks remaining**: GenCorrelati, GenNewsletter, GenFormBlog, GenSliderHome, GenAnni, GenTutorial
+- **ParagraphResolver**: Gen adapters wired for all built blocks; remaining paragraph types fall back to legacy `Blocco*` components
 
 ### Layout
 
@@ -450,8 +434,7 @@ Source: `src/styles/globals.css`
 
 ### Storybook
 
-- 95 stories total across primitives, composed, blocks, design tokens
-- All DS composed and Spec blocks covered
+- All DS composed and Spec blocks have stories
 
 ### Known Gaps
 
