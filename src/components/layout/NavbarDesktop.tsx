@@ -11,6 +11,7 @@ import { NavLanguageSwitcher } from '@/components/composed/NavLanguageSwitcher';
 import { MegaMenuInfo } from '@/components/composed/MegaMenuInfo';
 import { MegaMenuExplore } from '@/components/composed/MegaMenuExplore';
 import { MegaMenuFilterFind } from '@/components/composed/MegaMenuFilterFind';
+import { MegaMenuProjects } from '@/components/composed/MegaMenuProjects';
 import { cn } from '@/lib/utils';
 
 interface NavbarDesktopProps {
@@ -207,14 +208,10 @@ export function NavbarDesktop({
                 {openMenu === 'filterFind' && (
                   <MegaMenuFilterFind menu={menu.filterFind} />
                 )}
+                {openMenu === 'projects' && (
+                  <MegaMenuProjects menu={menu.projects} />
+                )}
                 {openMenu === 'info' && <MegaMenuInfo menu={menu.info} />}
-                {openMenu !== 'explore' &&
-                  openMenu !== 'filterFind' &&
-                  openMenu !== 'info' && (
-                    <div className="p-10 text-sm text-muted-foreground">
-                      Mega-menu: {openMenu}
-                    </div>
-                  )}
               </div>
             )}
           </div>
