@@ -104,7 +104,7 @@ export function SpecFilterSidebarContent({
                 </Typography>
               </div>
             )}
-            <FilterGroup label={groupLabel} priority={group.priority}>
+            <FilterGroup label={groupLabel}>
               {categoryGroup?.hasColorSwatch ? (
                 <ColorSwatchFilter
                   options={options}

@@ -5,14 +5,19 @@ import { cn } from "@/lib/utils"
 interface ProductGridProps {
   products: ProductCardData[]
   productCardRatio?: string
+  columns?: 4 | 5
   className?: string
 }
 
-export function ProductGrid({ products, productCardRatio, className }: ProductGridProps) {
+export function ProductGrid({ products, productCardRatio, columns = 4, className }: ProductGridProps) {
+  const gridCols = columns === 5
+    ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-5'
+    : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
+
   return (
     <div
       className={cn(
-        "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6",
+        "grid", gridCols, "gap-4 md:gap-6",
         className,
       )}
     >
