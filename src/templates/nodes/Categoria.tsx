@@ -8,10 +8,10 @@ import {
 import {
   fetchPagesByCategory,
   fetchSubcategories,
-  getDrupalImageUrl,
   type PageCard,
   type SubcategoryCard,
-} from '@/lib/drupal';
+} from '@/lib/api/categories';
+import { getDrupalImageUrl } from '@/lib/drupal';
 import DrupalImage from '@/components_legacy/DrupalImage';
 import ParagraphResolver from '@/components_legacy/blocks_legacy/ParagraphResolver';
 
