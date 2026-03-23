@@ -421,7 +421,7 @@ La logica di routing (LISTING_SLUG_OVERRIDES, `getSectionConfigAsync`, routing r
 | `src/lib/drupal/deserializer.test.ts` | Test del deserializer obsoleto |
 | `src/lib/drupal/image.ts` | Drupal ritorna URL assoluti |
 | `src/lib/drupal/paragraphs.ts` | Secondary fetches eliminati |
-| `src/lib/drupal/products.ts` | -> `src/lib/api/products.ts` |
+| `src/lib/drupal/products.ts` | -> `src/lib/api/products.ts`. Le funzioni pure `getCategoriaProductType()` e `slugToTermName()` migrano nel nuovo file. `SLUG_TO_TERM` map eliminato (slug resolution lato Drupal). |
 | `src/lib/drupal/filters.ts` | -> `src/lib/api/filters.ts` |
 | `src/lib/drupal/blog.ts` | -> `src/lib/api/listings.ts` |
 | `src/lib/drupal/projects.ts` | -> `src/lib/api/listings.ts` |
@@ -437,7 +437,7 @@ La logica di routing (LISTING_SLUG_OVERRIDES, `getSectionConfigAsync`, routing r
 
 | File | Cosa rimuovere | Cosa resta |
 |------|----------------|------------|
-| `src/lib/node-resolver.ts` | `INCLUDE_MAP`, `getIncludeFields()` | `getComponentName()` (dispatch template), `getRevalidateTime()` (ISR TTL) |
+| `src/lib/node-resolver.ts` | `INCLUDE_MAP`, `getIncludeFields()` | `getComponentName()` (dispatch template), `getRevalidateTime()` (ISR TTL), `getListingConfig()` (usa FILTER_REGISTRY) |
 | `src/lib/drupal/image.ts` | Logica `DRUPAL_ORIGIN` prefix | `getDrupalImageUrl()` semplificato: estrae solo `uri.url` (gia assoluto da C1) |
 | `src/domain/filters/search-params.ts` | `buildJsonApiFilters()` (dead code con Views REST) | `parseFiltersFromUrl()`, `parseAsString`, `parseAsArrayOf` (nuqs) |
 
@@ -445,7 +445,7 @@ La logica di routing (LISTING_SLUG_OVERRIDES, `getSectionConfigAsync`, routing r
 
 | File/Area | Motivo |
 |-----------|--------|
-| `src/lib/drupal/config.ts` | DRUPAL_BASE_URL e DRUPAL_ORIGIN servono ancora |
+| `src/lib/drupal/config.ts` | DRUPAL_BASE_URL serve per API base. DRUPAL_ORIGIN verificare se ancora necessario post-migrazione (unico consumer era getDrupalImageUrl) |
 | `src/lib/drupal/menu.ts` | Usa `/api/menu/` (non JSON:API) |
 | `src/domain/routing/` | Routing registry usa menu API |
 | `src/domain/filters/registry.ts` | FILTER_REGISTRY, deslugify -- logica pura |
@@ -455,7 +455,7 @@ La logica di routing (LISTING_SLUG_OVERRIDES, `getSectionConfigAsync`, routing r
 | `src/lib/actions/load-more-products.ts` | Cambia solo l'import |
 | `src/lib/get-translated-path.ts` | Cambia solo l'import |
 | `src/lib/field-helpers.ts` | Helper puri per estrazione campi (getTextValue, getBoolValue, etc.) |
-| `src/lib/product-helpers.ts` | Helper puri (color swatch, retinatura). `getCategoriaProductType()` e `slugToTermName()` migrati in `src/lib/api/products.ts` |
+| `src/lib/product-helpers.ts` | Helper puri (COLOR_MAP, getColorSwatch, formatRetinatura). Nessuna dipendenza API |
 | `src/lib/sanitize.ts`, `src/lib/utils.ts` | Utility pure, nessuna dipendenza API |
 
 ### Caching e revalidation
