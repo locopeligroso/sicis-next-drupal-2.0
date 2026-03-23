@@ -14,12 +14,14 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 interface MobileFilterTriggerProps {
   activeFilterCount: number
   totalCount?: number
+  label?: string
   children: React.ReactNode
 }
 
 export function MobileFilterTrigger({
   activeFilterCount,
   totalCount,
+  label,
   children,
 }: MobileFilterTriggerProps) {
   const [open, setOpen] = useState(false)
@@ -35,7 +37,7 @@ export function MobileFilterTrigger({
         <SlidersHorizontal data-icon="inline-start" className="size-4" />
         {activeFilterCount > 0
           ? t('activeCount', { count: activeFilterCount })
-          : t('title')}
+          : label ?? t('title')}
       </Button>
 
       {/* Sheet drawer from left */}
