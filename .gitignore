@@ -47,3 +47,9 @@ reports/
 
 # Documentation (managed locally, not tracked)
 *.md
+
+# Screenshot analysis files
+prodotto-mosaico-black-full.png
+prodotto-mosaico-sun3-fullpage.png
+vetrite-arabie-product-page.png
+vetrite-art-full.png

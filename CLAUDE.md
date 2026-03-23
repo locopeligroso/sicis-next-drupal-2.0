@@ -11,6 +11,10 @@ Decoupled Next.js 16 frontend for Sicis (luxury mosaic brand) backed by headless
 - `npx tsc --noEmit` — TypeScript check
 - `npx vitest run` — Run tests
 
+## Tech Stack
+
+Next 16.1.7 | React 19.2.4 | Tailwind 4.2.2 | Storybook 10.3.1 | next-intl | nuqs | embla-carousel
+
 ## Architecture
 
 ### Data Layer (`src/lib/drupal/`)
@@ -34,12 +38,56 @@ Single unified Drupal client split by responsibility:
 - `translated-path.ts` — getTranslatedPath
 - `index.ts` — barrel re-export (import from `@/lib/drupal`)
 
-Server action wrapper: `src/lib/get-translated-path.ts` ('use server' for client components).
+### Domain Layer
+- `src/domain/filters/` — `registry.ts` (FILTER_REGISTRY, 51 SLUG_OVERRIDES), `search-params.ts` (nuqs integration)
+- `src/domain/routing/` — `routing-registry.ts` (shadow mode), `section-config.ts`
 
 ### Routing
-- Catch-all `[locale]/[...slug]` resolves paths via Drupal decoupled_router
-- `node-resolver.ts` maps bundle → component name + INCLUDE_MAP for JSON:API includes
-- Templates in `src/templates/nodes/` and `src/templates/taxonomy/`
+
+Entry point: `src/app/[locale]/[...slug]/page.tsx`
+
+**Stage 1 — LISTING_SLUG_OVERRIDES**
+Set of hardcoded product slugs (mosaico, mosaic, arredo, furniture-and-accessories, pixall, illuminazione, vetrite variants, tessile variants, etc.) that bypass `translatePath`. These slugs have Drupal nodes (categoria_blog, documento, page) with the same alias that would be rendered instead of the correct product listing. `getSectionConfigAsync` resolves the `productType` → `renderProductListing()`.
+
+**Stage 2 — Multi-slug interception**
+URLs with 2+ segments (e.g. `/mosaico/murano-smalto`). `getSectionConfigAsync` runs first; if a config is found and `parseFiltersFromUrl` detects at least one active filter → `renderProductListing()` with filter active.
+
+**Stage 3 — Drupal translatePath**
+`translatePath` resolves the path via `decoupled_router` to a JSON:API node. Resource is fetched with `fetchJsonApiResource` using the bundle's INCLUDE_MAP. Rendered via `COMPONENT_MAP[componentName]`.
+
+**Interception: node--categoria**
+If `translatePath` resolves to `node--categoria` AND `getSectionConfigAsync` returns a config with `filterField` set → the node is a subcategory listing, not a hub category. Renders via `renderProductListing()` using the Drupal node title for the heading.
+
+**Interception: node--page with field_page_id**
+Drupal uses `node--page` nodes as hub pages for listing sections. `field_page_id` maps to a content type:
+- `tessile` → `prodotto_tessuto` → `renderProductListing()`
+- `progetti`, `environments`, `blog`, `showroom`, `download_catalogues` → fetcher + legacy listing component
+
+#### Revalidation Strategy
+
+| Entity Type | TTL | Source |
+|---|---|---|
+| Products (all 6 types) | 60 s | `node-resolver.ts` |
+| Editorial (articolo, news, tutorial) | 300 s | `node-resolver.ts` |
+| Static pages (page, landing_page) | 600 s | `node-resolver.ts` |
+| Taxonomy terms | 3600 s | `node-resolver.ts` |
+| Menus | 600 s | `menu.ts` |
+| Paths (translatePath) | 3600 s | `core.ts` |
+
+#### Server Actions
+
+- `src/lib/actions/load-more-products.ts` — `loadMoreProducts` (product pagination via "Load More" button)
+- `src/lib/get-translated-path.ts` — `getTranslatedPath` (`'use server'` wrapper for cross-locale path resolution in client components)
+
+### INCLUDE_MAP
+
+Rules:
+- If a relationship field is not in the INCLUDE_MAP, Drupal returns only `{ type, id }` without data
+- All nested images (stucco, colori, forma, categoria) must be explicitly included
+- `showroom` and `documento`: do NOT have `field_blocchi` — Drupal returns 400 if included
+- `prodotto_arredo` and `prodotto_illuminazione`: `field_finiture.field_immagine` included
+- `mosaico_collezioni` and `vetrite_collezioni`: `field_documenti` chain included
+- `blocco_documenti` included in PARAGRAPH_INCLUDE
 
 ### Dev Preview Routes
 - `src/app/dev/layout.tsx` — Dev-only layout with fonts + tokens + theme, no Header/Footer/i18n. Guarded by `NODE_ENV !== 'development'`.
@@ -47,125 +95,297 @@ Server action wrapper: `src/lib/get-translated-path.ts` ('use server' for client
 - Used by /ds workflow Get-a-Draft. Delete the preview page after extracting the component.
 - URL: `localhost:3000/dev/preview/[name]`
 
-### INCLUDE_MAP
-Critical: if a relationship field is not in the INCLUDE_MAP, Drupal returns only `{ type, id }` without data. All nested images (stucco, colori, forma, categoria) must be explicitly included.
+## Components — Design System (`/ds` skill)
 
-Recent updates (2026-03-20 session):
-- `prodotto_arredo` and `prodotto_illuminazione`: added `field_finiture.field_immagine`
-- `mosaico_collezioni` and `vetrite_collezioni`: added `field_documenti` chain
-- `blocco_documenti` added to PARAGRAPH_INCLUDE
-- `showroom` and `documento`: do NOT have `field_blocchi` — Drupal returns 400 if included
+### Composed (`src/components/composed/`) — 31 components
 
-### Domain Layer
-- `src/lib/filters/` — `registry.ts` (FILTER_REGISTRY, 116 SLUG_OVERRIDES), `search-params.ts` (nuqs integration)
-- `src/lib/routing/` — `routing-registry.ts` (shadow mode), `section-config.ts`
+| Group | Components | Count |
+|-------|-----------|-------|
+| Product | Typography, ResponsiveImage, ProductCarousel, ProductCta, ProductPricingCard, AttributeGrid, SwatchList, SpecsTable, DocumentCard | 9 |
+| Listing & Filters | ProductCard, ProductGrid, CategoryCard, CategoryCardGrid, ListingToolbar, ActiveFilters, FilterGroup, LoadMoreButton | 8 |
+| Filter Types | CheckboxFilter, ColorSwatchFilter, ImageListFilter | 3 |
+| Navigation & Layout | MegaMenuExplore, MegaMenuFilterFind, MegaMenuProjects, MegaMenuInfo, NavDarkModeToggle, NavLanguageSwitcher | 6 |
+| Content & Media | ArrowLink, VimeoPlayer, GalleryCarousel | 3 |
+| Utility | MobileFilterTrigger, GenTestoImmagineBody | 2 |
 
-### Components — Design System (`/ds` skill)
+**Component notes for non-obvious entries:**
 
-#### Composed (`src/components/composed/`)
-- `Typography` — Text roles (display, h1-h4, subtitle, body, overline, caption, etc.)
-- `ResponsiveImage` — AspectRatio + img, configurable ratio
-- `ProductCarousel` — Carousel with thumbnails navigation, supports image/video/static slides
-- `ProductCta` — Request Sample + Get a Quote buttons
-- `ProductPricingCard` — Card with price (Starting at), stock badge, shipping info
-- `AttributeGrid` — Row of label/value pairs with vertical separators
-- `SwatchList` — Color/grout swatches with image or CSS color fallback
-- `SpecsTable` — Grid layout (4 cols) for technical specs with label + value
-- `DocumentCard` — Catalog card with cover image, type overline, title, auto label+icon from URL (PDF/video/catalog/fallback), vertical/horizontal layout variant
+- **VimeoPlayer** — Client component wrapping `@vimeo/player` SDK. Renders a poster image overlay on load; on play, shows the Vimeo iframe with custom controls (play/pause, seek slider, volume, fullscreen). Native Vimeo controls are disabled (`controls=0`).
+- **GalleryCarousel** — Horizontal scroll carousel with snap alignment, prev/next arrow buttons, and an optional `header` slot (title + nav arrows rendered edge-aligned with the page container). Used by `GenGallery` and `GenGalleryIntro`.
+- **MobileFilterTrigger** — Fixed floating action button (below `md` breakpoint) that opens a left-side Sheet drawer containing the filter tree (`children`). Displays active filter count and result count in the footer close button.
+- **GenTestoImmagineBody** — Shared text column sub-component used inside `GenTestoImmagine` and `GenTestoImmagineBig`. Renders an optional H2 title, sanitized HTML body, and an optional `ArrowLink`.
 
-#### Blocks (`src/components/blocks/`) — Naming Convention
+---
 
-Two prefixes distinguish block types:
-- **`Spec*`** — Template-specific blocks. Tied to a specific template (e.g. product page, listing page). The name says WHERE it's used.
-- **`Gen*`** — Generic/transversal blocks. Map 1:1 to Drupal paragraph types from `field_blocchi`. Can appear on any page. Name derived mechanically from Drupal machine name: `blocco_intro` → `GenIntro`, `blocco_video` → `GenVideo`.
+### Blocks (`src/components/blocks/`) — 19 blocks (10 Spec + 9 Gen)
 
-**Spec blocks (template-specific):**
-- `SpecProductHero` — Carousel + title + collection subtitle + description + CTAs + pricing card + discover link + sticky mobile CTA bar
-- `SpecProductDetails` — Attribute row (dimensions, shape, finishing)
-- `SpecProductSpecs` — Title + info cards (Assembly/Grouting/Maintenance) + technical sheet grid, on surface-1 background
-- `SpecProductResources` — Catalog document cards grid
-- `SpecProductGallery` — Image grid
-- `SpecCategory` — Category card grid section
-- `SpecListingHeader` — Listing page title + description
-- `SpecProductListing` — Product grid with toolbar + load more
-- `SpecFilterSidebar` — Desktop sidebar + mobile sheet for filters
-- `SpecFilterSidebarContent` — Filter groups with active filters
+**Naming convention:**
+- `Spec*` — Product and listing page blocks, tightly coupled to specific data shapes (product fields, filter registries). Used directly in templates.
+- `Gen*` — General-purpose paragraph blocks driven by Drupal `paragraph--blocco_*` data. Wired through `ParagraphResolver` and reusable across all content types.
 
-**Gen blocks (paragraph-driven, to be built via /ds):**
-Mapping from Drupal paragraph types → Gen component names:
-- `blocco_intro` → `GenIntro` — title + body + optional image + optional link + layout variant
-- `blocco_quote` → `GenQuote` — quote text + optional link
-- `blocco_video` → `GenVideo` — video code + poster image
-- `blocco_testo_immagine` → `GenTestoImmagine` — title + text + image + layout (text_dx/text_sx/text_up). text_dx/text_sx → portrait 2:3 with muted bands. text_up → landscape 3:2 with offset muted
-- `blocco_testo_immagine_big` → `GenTestoImmagineBig` — title + text + large image + layout (text-up/text-down)
-- `blocco_testo_immagine_blog` → `GenTestoImmagineBlog` — title + text + image + caption
-- `blocco_gallery` → `GenGallery` — title + image slides (via elemento_blocco_gallery children)
-- `blocco_gallery_intro` → `GenGalleryIntro` — title + text + link + image slides
-- `blocco_documenti` → `GenDocumenti` — title + document nodes list
-- `blocco_correlati` → `GenCorrelati` — related content items (via elemento_blocco_correlati children)
-- `blocco_newsletter` → `GenNewsletter` — newsletter signup (0 instances in current data)
-- `blocco_form_blog` → `GenFormBlog` — title (form block)
-- `blocco_slider_home` → `GenSliderHome` — hero slider with video + CTA slides (via elemento_blocco_slider_home children)
-- `blocco_anni` → `GenAnni` — timeline with year entries (via elemento_blocco_anni children)
-- `blocco_tutorial` → `GenTutorial` — title + tutorial node references
+**Spec blocks (10):**
 
-Gen blocks are rendered via `ParagraphResolver` which maps `paragraph--{type}` → component. Templates append `field_blocchi` paragraphs after their Spec blocks.
+| Block | Purpose |
+|-------|---------|
+| `SpecProductHero` | Carousel + title + collection subtitle + description + CTAs + pricing card + discover link + sticky mobile CTA bar |
+| `SpecProductDetails` | Attribute row (dimensions, shape, finishing) |
+| `SpecProductSpecs` | Info cards (Assembly/Grouting/Maintenance) + technical sheet grid on `surface-1` background |
+| `SpecProductResources` | Catalog document cards grid |
+| `SpecProductGallery` | Image grid |
+| `SpecProductListing` | Product grid with filter state integration |
+| `SpecFilterSidebar` | Desktop filter panel (Sheet wrapper) |
+| `SpecFilterSidebarContent` | Client component rendering filter groups (CheckboxFilter, ColorSwatchFilter, ImageListFilter) from `FilterGroupConfig[]` |
+| `SpecListingHeader` | Listing page header — category title, description, result count, sort controls |
+| `SpecCategory` | Category hub card (image + title + product count) |
 
-#### Primitives (`src/components/ui/`)
-57 shadcn/ui primitives (base-vega preset, base-ui). NEVER modify directly.
+**Gen blocks built (9) — `blocco_*` → `Gen*` mapping:**
 
-#### Layout (`src/components/layout/`)
-- `Navbar` — floating glassmorphism shell, scroll hide/show, responsive desktop/mobile switch
-- `NavbarDesktop` — desktop bar: logo + 4 nav items (label+desc) + search + dark mode + language switcher + mega-menu panel animation
-- `NavbarMobile` — mobile: hamburger + fullscreen dark overlay + push sub-navigation + language switcher
+| Drupal paragraph type | Gen block |
+|-----------------------|-----------|
+| `paragraph--blocco_intro` | `GenIntro` |
+| `paragraph--blocco_quote` | `GenQuote` |
+| `paragraph--blocco_video` | `GenVideo` |
+| `paragraph--blocco_testo_immagine` | `GenTestoImmagine` |
+| `paragraph--blocco_testo_immagine_big` | `GenTestoImmagineBig` |
+| `paragraph--blocco_testo_immagine_blog` | `GenTestoImmagineBlog` |
+| `paragraph--blocco_gallery` | `GenGallery` |
+| `paragraph--blocco_gallery_intro` | `GenGalleryIntro` |
+| `paragraph--blocco_documenti` | `GenDocumenti` |
 
-#### Legacy (`src/components_legacy/`)
-Header, MegaMenu, LanguageSwitcher replaced by layout components above (legacy files kept for reference). Footer still legacy. DrupalImage etc. + 15 paragraph blocks in `blocks_legacy/` — to be replaced progressively.
+**Gen blocks remaining — still using legacy `Blocco*` fallback (6):**
 
-### Templates
-- `src/templates/nodes/` — 18 node type templates (includes ProdottoIlluminazione)
-- `src/templates/taxonomy/` — 5 taxonomy templates
-- Templates receive `node` as `Record<string, unknown>`, cast to typed interface from `src/types/drupal/entities.ts`
-- ProdottoMosaico fully migrated to design system blocks (no legacy imports)
-- ProdottoVetrite, ProdottoArredo, ProdottoTessuto, ProdottoPixall, ProdottoIlluminazione: all legacy (DrupalImage + inline styles + product.module.css)
-- VetriteCollezione: hybrid — legacy structure + documents section uses Tailwind + getTranslations
+`GenCorrelati`, `GenNewsletter`, `GenFormBlog`, `GenSliderHome`, `GenAnni`, `GenTutorial`
 
-### Types
-- `src/types/drupal/entities.ts` — Single file with EntityTypeName, base shapes, 6 product interfaces (including ProdottoIlluminazione), 11 taxonomy types, 18 node types, TermMosaicoCollezione, TermVetriteCollezione, NodeCategoria, DocumentItem
-- No Zod schemas — pure TypeScript interfaces extending `Record<string, unknown>`
+---
 
-### Translations
-- `messages/{locale}.json` — 163 total keys across 6 sections (common, nav, products, filters, errors, pagination)
-- 2 keys (`resistant`, `absent`) exist only in IT — not yet translated to other locales
-- Some labels still hardcoded (to be migrated): "Maintenance and installation", "Get inspired through catalogs", "Scopri", "catalogo" (on ProdottoMosaico), attribute labels
+#### ParagraphResolver
 
-### Filter Registry
-- `src/lib/filters/registry.ts` — covers 6 product types: prodotto_mosaico, prodotto_vetrite, prodotto_arredo, prodotto_tessuto, prodotto_pixall, prodotto_illuminazione
-- prodotto_illuminazione registered with subcategory filter
-- 116 SLUG_OVERRIDES for term slug normalization
+**Location:** `src/components_legacy/blocks_legacy/ParagraphResolver.tsx`
 
-### Storybook
-- `.storybook/stories/primitives/` — 57 primitive stories
-- `.storybook/stories/composed/` — 21 composed stories (all Composed components covered)
-- `.storybook/stories/blocks/` — 10 block stories (all Spec blocks covered)
-- `.storybook/stories/design-tokens/` — 3 stories (Colors, Spacing, Typography catalog)
-- Total: 91 stories across all directories
-- `.storybook/drafts/` — Empty (drafts deleted after extraction)
-- Story rules: single `Playground` story per component with `argTypes` controls, import from `@storybook/nextjs-vite`, `satisfies Meta` pattern
-- `nextjs.appDirectory: true` + `nextjs.navigation` configured globally in `preview.ts` for App Router mock
+Async server component. Maps incoming `paragraph--{type}` data to either a DS `Gen*` block or a legacy `Blocco*` fallback component.
 
-### Design Tokens (`src/styles/globals.css`)
-- OkLch color space
-- **Colors**: primary scale (100, 200, base, 400, 500) + primary-text (optimized for readability in both themes)
-- **Surfaces**: surface-1 through surface-5 for chromatic elevation
-- **Spacing**: responsive semantic tokens `--spacing-page`, `--spacing-section`, `--spacing-section-lg`, `--spacing-content`, `--spacing-element` (scale on 3 breakpoints)
-- **Container**: `--container-main: var(--container-7xl)` in `@theme` — all blocks use `max-w-main` instead of `max-w-7xl`
-- **Typography**: `--underline-offset` for consistent link underlines
-- **Fonts**: Outfit (body), Geist (heading), Geist Mono (code)
-- **Breakpoints**: base (mobile), md (768px), lg (1024px)
-- **Theme**: light default, dark mode via next-themes (toggle in header)
+**Dispatch flow:**
+1. Checks if the paragraph type requires a secondary Drupal fetch via `needsSecondaryFetch(type)` (used for paragraphs with nested children, e.g. gallery slides).
+2. If yes, calls `fetchParagraph()` to hydrate nested data before rendering.
+3. Attempts Gen adapter functions (`adaptGenIntro`, `adaptGenVideo`, etc.) in order of type match.
+4. Falls back to `LEGACY_MAP[type]` for types not yet migrated.
+5. In development, renders a yellow dashed warning box for unknown paragraph types; in production, returns `null`.
+
+**Templates using ParagraphResolver:**
+Page, LandingPage, Articolo, News, Tutorial, Ambiente, Progetto, CategoriaBlog, Tag, ProdottoArredo, Categoria
+
+**Current wiring status:** 9 Gen adapters active; BloccoSliderHome, BloccoVideo, BloccoCorrelati, BloccoNewsletter, BloccoFormBlog, BloccoAnni, BloccoTutorial remain in `LEGACY_MAP`.
+
+---
+
+### Primitives (`src/components/ui/`) — 57
+
+shadcn/ui primitives (base-vega preset, base-ui). NEVER modify directly.
+
+---
+
+### Layout (`src/components/layout/`)
+
+| Component | Purpose |
+|-----------|---------|
+| `Navbar` | Client wrapper — manages `openMenu` state and scroll-direction visibility, renders `NavbarDesktop` and `NavbarMobile` |
+| `NavbarDesktop` | Full desktop navigation bar with mega-menu panels |
+| `NavbarMobile` | Mobile hamburger navigation with sheet drawer |
+
+---
+
+### Legacy (`src/components_legacy/`)
+
+**Root components (18):**
+Header, Footer, MegaMenu, DrupalImage, LanguageSwitcher, ColorSwatches, FilterSidebar, FilterSidebarSkeleton, ProductListing, ProductListingSkeleton, Documents, Specs, UnknownEntity, ProjectListing, EnvironmentListing, BlogListing, ShowroomListing, DocumentListing
+
+Notes:
+- Header, MegaMenu, LanguageSwitcher superseded by `src/components/layout/` — kept for reference only
+- Footer still actively used (not yet migrated)
+- DrupalImage still used in all legacy product templates
+
+**`blocks_legacy/` (17):**
+15 `Blocco*` paragraph components + `SliderClient` (client-side carousel used by BloccoSliderHome) + `ParagraphResolver`
+
+| Component | Status |
+|-----------|--------|
+| BloccoGallery | Replaced by `GenGallery` |
+| BloccoTestoImmagineBig | Replaced by `GenTestoImmagineBig` |
+| BloccoTestoImmagineBlog | Replaced by `GenTestoImmagineBlog` |
+| BloccoGalleryIntro | Replaced by `GenGalleryIntro` |
+| BloccoDocumenti | Replaced by `GenDocumenti` |
+| BloccoQuote | Replaced by `GenQuote` (via BloccoIntro path) |
+| BloccoIntro | Replaced by `GenIntro` |
+| BloccoSliderHome | Active in LEGACY_MAP |
+| BloccoVideo | Active in LEGACY_MAP (BloccoVideo path; GenVideo wired separately) |
+| BloccoCorrelati | Active in LEGACY_MAP |
+| BloccoNewsletter | Active in LEGACY_MAP |
+| BloccoFormBlog | Active in LEGACY_MAP |
+| BloccoAnni | Active in LEGACY_MAP |
+| BloccoTutorial | Active in LEGACY_MAP |
+| SliderClient | Used by BloccoSliderHome |
+
+## Templates — Migration Matrix
+
+### Node Templates (`src/templates/nodes/`) — 19 templates
+
+| Template | Drupal Type | Status | Uses ParagraphResolver | Notes |
+|---|---|---|---|---|
+| ProdottoMosaico | node--prodotto_mosaico | DS | No | 5 blocks (Spec*), 9 composed; collection-level fallback for body/specs |
+| ProductListingTemplate | (unified listing) | DS | No | Hub mode (SpecCategory) + Grid mode (SpecProductListing); accepts all 6 product types |
+| Page | node--page | Minimal DS | Yes | title + body + ParagraphResolver |
+| LandingPage | node--landing_page | Minimal DS | Yes | ParagraphResolver only, no title/body |
+| ProdottoVetrite | node--prodotto_vetrite | Legacy | No | DrupalImage + product.module.css; inline styles throughout |
+| ProdottoArredo | node--prodotto_arredo | Legacy | Yes | DrupalImage + product.module.css; async tessuti secondary fetch |
+| ProdottoTessuto | node--prodotto_tessuto | Legacy | No | DrupalImage + product.module.css |
+| ProdottoPixall | node--prodotto_pixall | Legacy | No | DrupalImage + product.module.css |
+| ProdottoIlluminazione | node--prodotto_illuminazione | Legacy | No | DrupalImage + product.module.css; async secondary fetch |
+| Articolo | node--articolo | Legacy+Para | Yes | title + DrupalImage + body + ParagraphResolver |
+| News | node--news | Legacy+Para | Yes | title + DrupalImage + body + ParagraphResolver |
+| Tutorial | node--tutorial | Legacy+Para | Yes | title + DrupalImage + body + ParagraphResolver |
+| Ambiente | node--ambiente | Legacy+Para | Yes | title + DrupalImage + body + ParagraphResolver |
+| Progetto | node--progetto | Legacy+Para | Yes | + field_categoria_progetto link |
+| Showroom | node--showroom | Legacy | No | NO field_blocchi — Drupal returns 400 if included |
+| Documento | node--documento | Legacy | No | NO field_blocchi — Drupal returns 400 if included |
+| Categoria | node--categoria | Legacy | Yes | 3-branch: products / subcategories / pages; getCategoriaProductType() |
+| CategoriaBlog | node--categoria_blog | Legacy+Para | Yes | |
+| Tag | node--tag | Legacy+Para | Yes | |
+
+**Status key:** DS = design system blocks (Spec*/Gen* composed components, Tailwind only). Legacy = DrupalImage + `product.module.css` + inline styles. Minimal DS = Tailwind layout, legacy ParagraphResolver inside. Legacy+Para = legacy render with ParagraphResolver for `field_blocchi`. Hybrid = legacy structure + Tailwind sections.
+
+**Common rule:** All templates receive `node` as `Record<string, unknown>`, cast to a typed interface from `src/types/drupal/entities.ts`.
+
+Only `ProdottoMosaico` and `ProductListingTemplate` use the design system (Spec* blocks, no legacy imports).
+
+---
+
+### Taxonomy Templates (`src/templates/taxonomy/`) — 5 templates
+
+| Template | Drupal Type | Status | Notes |
+|---|---|---|---|
+| MosaicoCollezione | taxonomy_term--mosaico_collezioni | Legacy listing | Legacy FilterSidebar + legacy ProductListing |
+| MosaicoColore | taxonomy_term--mosaico_colori | Legacy listing | Legacy FilterSidebar + legacy ProductListing |
+| VetriteCollezione | taxonomy_term--vetrite_collezioni | Hybrid | Legacy listing + FilterSidebar + Tailwind documents section + getTranslations |
+| VetriteColore | taxonomy_term--vetrite_colori | Legacy listing | Legacy FilterSidebar + legacy ProductListing |
+| TaxonomyTerm | (generic fallback) | Wireframe | name + description only |
+
+---
+
+## Types
+
+- `src/types/drupal/entities.ts` — Single source of truth for all entity shapes
+- `NodeTypeName` — union of 18 node types (page, landing_page, 5 prodotto_*, articolo, news, tutorial, progetto, showroom, ambiente, categoria, categoria_blog, documento, tag)
+- `TaxonomyTypeName` — union of 11 taxonomy types (mosaico_collezioni, mosaico_colori, vetrite_collezioni, vetrite_colori, vetrite_finiture, vetrite_textures, arredo_finiture, tessuto_colori, tessuto_finiture, tessuto_tipologie, tessuto_manutenzione)
+- `EntityTypeName` — `NodeTypeName | TaxonomyTypeName | (string & Record<never, never>)` (open union for unknown types)
+- Shared field shapes: `DrupalTextField`, `DrupalPath`, `DrupalLinkField`, `DrupalEntity` (base for all)
+- Typed product interfaces: `ProdottoMosaico`, `ProdottoVetrite`, `ProdottoArredo`, `ProdottoTessuto`, `ProdottoPixall`, `ProdottoIlluminazione`
+- Taxonomy term interfaces: `TermMosaicoCollezione`, `TermVetriteCollezione`
+- Node interfaces: `NodeCategoria`, `DocumentItem`
+- No Zod — pure TypeScript interfaces extending `Record<string, unknown>`; optional chaining used throughout templates
+
+---
+
+## Translations
+
+- `messages/{locale}.json` — 9 sections across 6 locales (IT, EN, FR, DE, ES, RU)
+- IT locale has ~213 keys total
+
+| Section | Key count | Notes |
+|---|---|---|
+| common | 12 | Shared UI labels |
+| nav | 51 | MegaMenu labels and descriptions |
+| projects | 3 | Projects listing page |
+| products | 97 | All product detail field labels |
+| filters | 27 | Filter UI, sort options, pagination labels |
+| sort | 7 | Sort option labels |
+| listing | 3 | Product listing toolbar |
+| errors | 8 | Error pages |
+| pagination | 5 | Pagination controls |
+
+**Missing translations:** `resistant` and `absent` (under `products`) exist only in IT and EN — missing from DE, FR, ES, RU.
+
+**Hardcoded labels to migrate** (not yet in messages/\*.json):
+- `"Maintenance and installation"` — ProdottoMosaico `SpecProductSpecs`
+- `"Get inspired through catalogs"` — ProdottoMosaico `SpecProductResources`
+- `"Scopri"` / `"catalogo"` — ProdottoMosaico download label
+- Attribute labels in detail blocks (Sheet size, Chip size, Thickness, Shape, Finishing)
+
+---
+
+## Filter Registry
+
+Path: `src/domain/filters/registry.ts`
+
+Zero React/Next.js dependencies — 100% unit-testable.
+
+### 6 product types — filter priority levels
+
+| Product Type | P0 (Hub cards, path-based) | P1 (Sidebar, query-param) | P2 (Advanced) | Product card ratio |
+|---|---|---|---|---|
+| prodotto_mosaico | collection, color | shape, finish | grout | 1/1 |
+| prodotto_vetrite | collection, color | finish, texture | — | 1/2 |
+| prodotto_arredo | subcategory | finish, fabric | — | 3/2 |
+| prodotto_tessuto | category | type, color, finish | — | 1/1 |
+| prodotto_pixall | — | color, shape | grout | 1/1 |
+| prodotto_illuminazione | subcategory | — | — | 1/1 |
+
+**Priority semantics:**
+- **P0** — hub category cards; single-select; path-based routing (e.g. `/mosaico/murano-smalto`)
+- **P1** — sidebar checkboxes or dropdowns; multi-select; query-param (e.g. `?shape=hexagon&finish=polished`)
+- **P2** — advanced panel; collapsed by default
+
+**Key exports:**
+- `FILTER_REGISTRY` — `Record<string, ProductTypeConfig>` — full config per product type
+- `SLUG_OVERRIDES` — `Record<string, string>` — 58 explicit slug-to-term-name mappings for accented characters, slashes, and capitalisation exceptions
+- `deslugify(slug)` — converts URL slug to Drupal term name; NFC-normalised; falls back to title-case
+- `getFilterConfig(contentType)` — returns `ProductTypeConfig | null`
+- `translateBasePath(path, targetLocale)` — translates listing base path across locales
+- `ListingConfig` — `categoryCardRatio`, `productCardRatio`, `categoryGroups`, `sortOptions`, `pageSize`
+
+**nuqs integration:** `src/domain/filters/search-params.ts` — `parseAsString`, `parseAsArrayOf`; `FilterDefinition` type used by `ProductListingTemplate` for active filter state.
+
+---
+
+## Storybook
+
+Framework: `@storybook/nextjs-vite`. All stories use `satisfies Meta` pattern with a single `Playground` story per component and `argTypes` controls.
+
+`preview.ts` configuration: `nextjs.appDirectory: true` + `nextjs.navigation` mocks.
+
+| Directory | Count | Components |
+|---|---|---|
+| `.storybook/stories/primitives/` | 57 | 57 shadcn/ui primitives |
+| `.storybook/stories/composed/` | 23 | Typography, ResponsiveImage, ProductCarousel, ProductCta, ProductPricingCard, AttributeGrid, SwatchList, SpecsTable, DocumentCard, ActiveFilters, ArrowLink, CategoryCard, CategoryCardGrid, CheckboxFilter, ColorSwatchFilter, FilterGroup, GalleryCarousel, ImageListFilter, ListingToolbar, LoadMoreButton, MobileFilterTrigger, ProductCard, ProductGrid |
+| `.storybook/stories/blocks/` | 12 | SpecProductHero, SpecProductDetails, SpecProductSpecs, SpecProductResources, SpecProductGallery, SpecCategory, SpecFilterSidebar, SpecFilterSidebarContent, SpecListingHeader, SpecProductListing, GenGallery, GenIntro |
+| `.storybook/stories/design-tokens/` | 3 | Colors, Spacing, Typography catalog |
+| **Total** | **95** | |
+
+`.storybook/drafts/` — empty (all draft stories deleted after extraction).
+
+---
+
+## Design Tokens
+
+Source: `src/styles/globals.css`
+
+**Color space:** OkLch throughout.
+
+| Token group | Tokens | Notes |
+|---|---|---|
+| Primary scale | `--color-primary-100` through `--color-primary-500` + `--color-primary` (base) | Used for brand accents |
+| Primary text | `--color-primary-text` | Optimised for text on primary color; differs from primary base in dark mode |
+| Surfaces | `--color-surface-1` through `--color-surface-5` | Chromatic elevation (replaces opacity hacks) |
+| Container | `--container-main: var(--container-7xl)` | All blocks use `max-w-main` instead of `max-w-7xl` |
+| Spacing — semantic | `--spacing-page`, `--spacing-section`, `--spacing-section-lg`, `--spacing-content`, `--spacing-element` | Responsive: 3 breakpoints (base / md 768px / lg 1024px) |
+| Typography | `--underline-offset` | Consistent link underlines across components |
+| Fonts | `--font-body` (Outfit), `--font-heading` (Geist), `--font-mono` (Geist Mono) | |
+
+**Theme:** Light default; dark mode via `next-themes` (toggle in Header).
+
+**Breakpoints:** base (mobile-first), `md` 768px, `lg` 1024px.
 
 ## Key Decisions
+
 1. **No CSS Modules** in new UI — only Tailwind + semantic tokens
 2. **No Zod for Drupal data** — pure TS interfaces, optional chaining in templates
 3. **Product-level overrides collection** — e.g. `body = product.field_testo_main || collection.field_testo`
@@ -173,42 +393,93 @@ Header, MegaMenu, LanguageSwitcher replaced by layout components above (legacy f
 5. **Static images** in `public/images/` (flat structure): `usa-mosaic-quality.jpg`, `Retinatura-mosaico-rete.jpg.webp`
 6. **Deserializer preserves meta** — relationship meta (alt, width, height) flows through to templates
 7. **Blocks import only Composed, never Primitives** — enforced by /ds skill
-11. **Block naming convention** — `Spec*` = template-specific, `Gen*` = paragraph-driven transversal. Gen names derived mechanically from Drupal machine name: `blocco_{name}` → `Gen{PascalCase(name)}`
-8. **Primary-text token** for text on primary color — different from primary base, optimized per theme
-9. **Surface tokens** (1-5) for elevation instead of opacity hacks
-10. **Document filtering** — installation guides extracted from catalogs, linked in Maintenance card
+8. **Block naming convention** — `Spec*` = template-specific, `Gen*` = paragraph-driven transversal. Gen names derived mechanically from Drupal machine name: `blocco_{name}` → `Gen{PascalCase(name)}`
+9. **Primary-text token** for text on primary color — different from primary base, optimized per theme
+10. **Surface tokens** (1-5) for elevation instead of opacity hacks
+11. **Document filtering** — installation guides extracted from catalogs, linked in Maintenance card
+
+## Drupal Schema Reference
+
+### Content Types — 18 bundles
+
+| Category | Bundles |
+|----------|---------|
+| Products (6) | `prodotto_mosaico`, `prodotto_vetrite`, `prodotto_arredo`, `prodotto_tessuto`, `prodotto_pixall`, `prodotto_illuminazione` |
+| Content (8) | `page`, `landing_page`, `articolo`, `news`, `tutorial`, `progetto`, `ambiente`, `showroom` |
+| Metadata (4) | `categoria`, `categoria_blog`, `documento`, `tag` |
+
+### Taxonomy Vocabularies — 11
+
+| Product | Vocabularies |
+|---------|-------------|
+| Mosaico | `mosaico_collezioni`, `mosaico_colori` |
+| Vetrite | `vetrite_collezioni`, `vetrite_colori`, `vetrite_finiture`, `vetrite_textures` |
+| Arredo | `arredo_finiture` |
+| Tessuto | `tessuto_colori`, `tessuto_finiture`, `tessuto_tipologie`, `tessuto_manutenzione` |
+
+### Paragraph Types — 15
+
+`blocco_intro`, `blocco_quote`, `blocco_video`, `blocco_testo_immagine`, `blocco_testo_immagine_big`, `blocco_testo_immagine_blog`, `blocco_gallery`, `blocco_gallery_intro`, `blocco_documenti`, `blocco_correlati`, `blocco_newsletter`, `blocco_form_blog`, `blocco_slider_home`, `blocco_anni`, `blocco_tutorial`
 
 ## Current State
-- **ProdottoMosaico**: fully migrated to design system (5 Spec blocks, 9 composed, no legacy)
-- **Other 5 product templates** (Vetrite, Arredo, Tessuto, Pixall, Illuminazione): all legacy — next to migrate
-- **VetriteCollezione**: hybrid (legacy + Tailwind documents section)
-- **Navbar**: fully migrated to design system — floating glassmorphism bar, 4 distinct mega-menus (Explore: columns+video, Filter&Find: thumbnail columns, Projects: list+image crossfade, Info: strategic+corporate+professional), mobile fullscreen overlay, hide-on-scroll, 6 locale language switcher
-- **Footer**: still legacy
-- **Animations**: removed for now, to be reimplemented with proper approach
-- **Storybook**: all Composed and Spec blocks have stories, rules enforced (single Playground, controls, @storybook/nextjs-vite)
-- **Block naming**: Spec*/Gen* convention in place. All 10 Spec blocks renamed.
-- **Gen blocks built**: GenIntro, GenQuote, GenVideo (VimeoPlayer composed), GenTestoImmagine (portrait/landscape adaptive with muted bands), GenGallery (header with title+arrows, responsive slide sizing), GenTestoImmagineBig (title+body two-col header, full-bleed image), GenTestoImmagineBlog (centered prose column, optional image), GenGalleryIntro (intro h1+overline+body as GalleryCarousel header, reuses GalleryCarousel composed), GenDocumenti (h3 title + adaptive layout: 1-2 docs horizontal, 3+ grid vertical, reuses DocumentCard composed with layout variant)
-- **Gen blocks remaining**: GenCorrelati, GenNewsletter, GenFormBlog, GenSliderHome, GenAnni, GenTutorial
-- **New Composed components**: ArrowLink (inline link + arrow), VimeoPlayer (Vimeo SDK + custom controls + poster click-to-play), GalleryCarousel (CSS scroll-snap carousel with header prop for title+arrows — sizing delegated to consumer via slideClassName), GenTestoImmagineBody (text block with title + body + link), MegaMenuExplore (columns+video crossfade), MegaMenuFilterFind (thumbnail columns), MegaMenuProjects (list+image crossfade), MegaMenuInfo (strategic+corporate+professional), NavDarkModeToggle (theme toggle with hydration guard), NavLanguageSwitcher (locale dropdown with pending state)
-- **ParagraphResolver**: async, uses fetchParagraph for secondary fetches. GenIntro, GenQuote, GenVideo, GenTestoImmagine, GenGallery, GenTestoImmagineBig, GenTestoImmagineBlog, GenGalleryIntro, GenDocumenti wired with adapters. Rest still legacy.
-- **Templates updated**: Page, News, Ambiente, Articolo — removed legacy containers, added flex/gap spacing + ParagraphResolver
 
-## Next Steps — Immediate
-1. Continue remaining Gen blocks: GenDocumenti → GenCorrelati → GenNewsletter → GenFormBlog → GenSliderHome → GenAnni → GenTutorial
-2. Investigate horizontal scroll overflow on pages (not caused by carousel — unknown source)
+### Migration Status
 
-## Next Steps — After Gen Blocks
-- Apply ProdottoMosaico pattern to ProdottoVetrite template
-- Then: ProdottoArredo, ProdottoTessuto, ProdottoPixall, ProdottoIlluminazione
+| Status | Templates |
+|--------|-----------|
+| DS complete | ProdottoMosaico (5 Spec blocks), ProductListingTemplate (filters + grid) |
+| Minimal DS | Page, LandingPage (ParagraphResolver only) |
+| Hybrid | VetriteCollezione (legacy listing + Tailwind documents) |
+| Legacy | ProdottoVetrite, ProdottoArredo, ProdottoTessuto, ProdottoPixall, ProdottoIlluminazione, Articolo, News, Tutorial, Showroom, Documento, Ambiente, Progetto, Categoria |
+
+### Component Coverage
+
+- **UI primitives**: 57 (shadcn/ui, never modify directly)
+- **Composed**: 31
+- **Blocks**: 19 total — 10 Spec + 9 Gen built
+- **Gen blocks built (9/15)**: GenIntro, GenQuote, GenVideo, GenTestoImmagine, GenTestoImmagineBig, GenTestoImmagineBlog, GenGallery, GenGalleryIntro, GenDocumenti
+- **Gen blocks remaining (6)**: GenCorrelati, GenNewsletter, GenFormBlog, GenSliderHome, GenAnni, GenTutorial
+- **ParagraphResolver**: 9 Gen adapters wired; remaining paragraph types fall back to legacy `Blocco*` components
+
+### Layout
+
+| Component | Status |
+|-----------|--------|
+| Navbar | Migrated — glassmorphism bar, 4 mega-menus, mobile overlay, scroll hide, language switcher |
+| Footer | Legacy |
+
+### Storybook
+
+- 95 stories total across primitives, composed, blocks, design tokens
+- All DS composed and Spec blocks covered
+
+### Known Gaps
+
+- 2 i18n keys missing from DE, FR, ES, RU: `resistant`, `absent`
+- Several hardcoded labels not yet moved to `messages/*.json`
+- Animations removed, to be reimplemented with proper approach
+
+## Next Steps
+
+### Immediate
+
+1. Remaining Gen blocks (6): GenCorrelati → GenNewsletter → GenFormBlog → GenSliderHome → GenAnni → GenTutorial
+
+### Backlog
+
+- Product template DS migration: ProdottoVetrite → ProdottoArredo → ProdottoTessuto → ProdottoPixall → ProdottoIlluminazione
+- Footer migration to design system
 - Breadcrumb block (separate, above hero)
 - Contact form (Dialog/Sheet for CTA actions)
 - Alternative products carousel
 - Regional logic (EU vs US: pricing, CTAs, stock)
-- Translate hardcoded labels to messages/*.json (including "Get inspired through catalogs", "Scopri", "catalogo")
-- Sync missing translation keys (`resistant`, `absent`) to all 6 locales
+- Translate hardcoded labels to `messages/*.json`
+- Sync missing i18n keys (`resistant`, `absent`) to all 6 locales
 
 ## Agent Teams
+
 This project uses `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`. Whenever ci sono task indipendenti (es. modificare più template, esplorare più directory, eseguire check paralleli), lancia agenti in background (`run_in_background: true`) in un singolo messaggio anziché lavorare sequenzialmente. Usa foreground solo quando il risultato serve prima di procedere.
 
 ## Restore Points
+
 - Tag `pre-refactor-drupal-layer` — before data layer consolidation
