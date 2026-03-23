@@ -26,11 +26,10 @@ import ShowroomListing from '@/components_legacy/ShowroomListing';
 import DocumentListing from '@/components_legacy/DocumentListing';
 import {
   fetchProjects,
-  fetchEnvironments,
   fetchBlogPosts,
-  fetchShowrooms,
   fetchDocuments,
 } from '@/lib/drupal';
+import { fetchEnvironments, fetchShowrooms } from '@/lib/api/listings';
 
 // Node components
 import Page from '@/templates/nodes/Page';
