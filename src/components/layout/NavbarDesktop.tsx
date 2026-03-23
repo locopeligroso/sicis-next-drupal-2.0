@@ -200,8 +200,7 @@ export function NavbarDesktop({
               <div
                 role="region"
                 aria-label={getActiveLabel(openMenu as NavItemKey)}
-                className="border-t border-border/60"
-                className="max-h-[70vh] overflow-y-auto"
+                className="border-t border-border/60 max-h-[70vh] overflow-y-auto"
               >
                 {openMenu === 'explore' && (
                   <MegaMenuExplore menu={menu.explore} />
