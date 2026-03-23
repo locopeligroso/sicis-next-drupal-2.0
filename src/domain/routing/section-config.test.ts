@@ -80,4 +80,23 @@ describe('getSectionConfig', () => {
     const config = getSectionConfig(['furniture-and-accessories'], 'en');
     expect(config?.productType).toBe('prodotto_arredo');
   });
+
+  // ── Pixall override under Mosaico ──────────────────────────────────────
+
+  it('routes /mosaico/pixall to prodotto_pixall, not a Mosaico collection', () => {
+    const config = getSectionConfig(['mosaico', 'pixall'], 'it');
+    expect(config).toEqual({ productType: 'prodotto_pixall' });
+  });
+
+  it('still routes /mosaico/murano-smalto as a Mosaico collection filter', () => {
+    const config = getSectionConfig(['mosaico', 'murano-smalto'], 'it');
+    expect(config?.productType).toBe('prodotto_mosaico');
+    expect(config?.filterField).toBe('field_collezione.name');
+    expect(config?.filterValue).toBe('Murano Smalto');
+  });
+
+  it('still routes standalone /pixall to prodotto_pixall', () => {
+    const config = getSectionConfig(['pixall'], 'it');
+    expect(config).toEqual({ productType: 'prodotto_pixall' });
+  });
 });

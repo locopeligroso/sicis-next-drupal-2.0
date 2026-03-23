@@ -198,6 +198,8 @@ export function getSectionConfig(
   // ── Mosaico ──────────────────────────────────────────────────────────────
   if (MOSAICO_SLUGS.has(s1) || MOSAICO_PREFIXES.has(s1)) {
     if (!s2) return { productType: 'prodotto_mosaico' };
+    // Pixall is nested under /mosaico/pixall but is a standalone product type
+    if (s2 === 'pixall' && !s3) return { productType: 'prodotto_pixall' };
     if (!s3) {
       const termName = deslugify(decodeURIComponent(s2));
       // Collezioni con sottocollezioni (es. NeoColibrì → Barrels/Cubes/Domes)
@@ -310,6 +312,9 @@ export async function getSectionConfigAsync(
   const productType = registry.slugToProductType.get(s1);
   if (productType) {
     if (!s2) return { productType };
+
+    // Pixall is nested under /mosaico/pixall but is a standalone product type
+    if (s2 === 'pixall' && !s3) return { productType: 'prodotto_pixall' };
 
     // Check subcategory map (tessuto categories)
     const subcat = registry.subcategoryMap.get(s2);
