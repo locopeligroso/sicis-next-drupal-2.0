@@ -14,6 +14,8 @@ import { cn } from '@/lib/utils';
 interface NavbarMobileProps {
   locale: string;
   menu: NavbarMenu;
+  barOnly?: boolean;
+  overlayOnly?: boolean;
 }
 
 interface SubNav {
@@ -75,7 +77,7 @@ function buildSubNav(menu: NavbarMenu, key: SectionKey, title: string): SubNav {
 
 const NAV_SECTIONS: SectionKey[] = ['explore', 'filterFind', 'projects', 'info'];
 
-export function NavbarMobile({ locale, menu }: NavbarMobileProps) {
+export function NavbarMobile({ locale, menu, barOnly, overlayOnly }: NavbarMobileProps) {
   const t = useTranslations('nav');
   const router = useRouter();
   const pathname = usePathname();
@@ -154,119 +156,115 @@ export function NavbarMobile({ locale, menu }: NavbarMobileProps) {
     [locale, pathname, close, router, startTransition]
   );
 
-  return (
-    <>
-      {/* Mobile Bar — always visible */}
-      <div className="flex items-center justify-between px-6 h-[56px]">
-        <Link href={`/${locale}`} className="shrink-0">
-          <span className="text-sm font-bold tracking-[4px]">SICIS</span>
+  const overlay = isOpen ? (
+    <div className="fixed inset-0 z-50 bg-[#111] flex flex-col animate-in fade-in duration-200">
+      {/* Overlay Header */}
+      <div className="flex items-center justify-between px-6 h-[56px] shrink-0">
+        <Link href={`/${locale}`} className="shrink-0" onClick={close}>
+          <span className="text-sm font-bold tracking-[4px] text-white">SICIS</span>
         </Link>
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setIsOpen(true)}
-          aria-label="Open menu"
+          onClick={close}
+          aria-label="Close menu"
+          className="text-white hover:bg-white/10"
         >
-          <MenuIcon />
+          <XIcon />
         </Button>
       </div>
 
-      {/* Fullscreen Overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-[#111] flex flex-col animate-in fade-in duration-200"
-        >
-          {/* Overlay Header */}
-          <div className="flex items-center justify-between px-6 h-[56px] shrink-0">
-            <Link href={`/${locale}`} className="shrink-0" onClick={close}>
-              <span className="text-sm font-bold tracking-[4px] text-white">SICIS</span>
-            </Link>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={close}
-              aria-label="Close menu"
-              className="text-white hover:bg-white/10"
-            >
-              <XIcon />
-            </Button>
-          </div>
-
-          {/* Content area */}
-          <div className="flex-1 flex flex-col px-6 pt-8 overflow-y-auto">
-            {subNav === null ? (
-              /* Main menu items */
-              <nav className="flex flex-col gap-1">
-                {NAV_SECTIONS.map((key, index) => {
-                  const withChildren = hasChildren(menu, key);
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => handleNavItemClick(key)}
-                      className="text-left text-[28px] font-light text-white tracking-[1px] py-2 flex items-center gap-3 animate-in slide-in-from-bottom-4 fade-in fill-mode-both"
-                      style={{ animationDelay: `${index * 50}ms`, animationDuration: '300ms' }}
-                    >
-                      <span>{t(`${key}Label`)}</span>
-                      {withChildren && (
-                        <ArrowRightIcon className="size-5 text-white/60" />
-                      )}
-                    </button>
-                  );
-                })}
-              </nav>
-            ) : (
-              /* Sub-navigation */
-              <div className="animate-in slide-in-from-right-8 fade-in duration-200">
+      {/* Content area */}
+      <div className="flex-1 flex flex-col px-6 pt-8 overflow-y-auto">
+        {subNav === null ? (
+          <nav className="flex flex-col gap-1">
+            {NAV_SECTIONS.map((key, index) => {
+              const withChildren = hasChildren(menu, key);
+              return (
                 <button
+                  key={key}
                   type="button"
-                  onClick={() => setSubNav(null)}
-                  className="flex items-center gap-2 text-white/60 text-sm mb-6"
+                  onClick={() => handleNavItemClick(key)}
+                  className="text-left text-[28px] font-light text-white tracking-[1px] py-2 flex items-center gap-3 animate-in slide-in-from-bottom-4 fade-in fill-mode-both"
+                  style={{ animationDelay: `${index * 50}ms`, animationDuration: '300ms' }}
                 >
-                  <ArrowLeftIcon className="size-4" />
-                  <span>{subNav.title}</span>
+                  <span>{t(`${key}Label`)}</span>
+                  {withChildren && (
+                    <ArrowRightIcon className="size-5 text-white/60" />
+                  )}
                 </button>
-                <nav className="flex flex-col gap-3">
-                  {subNav.items.map((item) => (
-                    <Link
-                      key={item.url}
-                      href={item.url}
-                      onClick={close}
-                      className="text-[20px] text-white font-light"
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
-                </nav>
-              </div>
-            )}
+              );
+            })}
+          </nav>
+        ) : (
+          <div className="animate-in slide-in-from-right-8 fade-in duration-200">
+            <button
+              type="button"
+              onClick={() => setSubNav(null)}
+              className="flex items-center gap-2 text-white/60 text-sm mb-6"
+            >
+              <ArrowLeftIcon className="size-4" />
+              <span>{subNav.title}</span>
+            </button>
+            <nav className="flex flex-col gap-3">
+              {subNav.items.map((item) => (
+                <Link
+                  key={item.url}
+                  href={item.url}
+                  onClick={close}
+                  className="text-[20px] text-white font-light"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
           </div>
+        )}
+      </div>
 
-          {/* Language switcher at bottom */}
-          <div className={cn('px-6 pb-8 pt-4 shrink-0', isPending && 'opacity-50')}>
-            <div className="flex items-center gap-4">
-              {locales.map((loc) => {
-                const isCurrent = loc === locale;
-                return (
-                  <button
-                    key={loc}
-                    type="button"
-                    onClick={() => handleLocaleChange(loc)}
-                    className={cn(
-                      'text-sm uppercase tracking-widest',
-                      isCurrent
-                        ? 'text-white font-semibold'
-                        : 'text-white/40'
-                    )}
-                  >
-                    {loc}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+      {/* Language switcher at bottom */}
+      <div className={cn('px-6 pb-8 pt-4 shrink-0', isPending && 'opacity-50')}>
+        <div className="flex items-center gap-4">
+          {locales.map((loc) => {
+            const isCurrent = loc === locale;
+            return (
+              <button
+                key={loc}
+                type="button"
+                onClick={() => handleLocaleChange(loc)}
+                className={cn(
+                  'text-sm uppercase tracking-widest',
+                  isCurrent
+                    ? 'text-white font-semibold'
+                    : 'text-white/40'
+                )}
+              >
+                {loc}
+              </button>
+            );
+          })}
         </div>
-      )}
-    </>
+      </div>
+    </div>
+  ) : null;
+
+  const bar = (
+    <div className="flex items-center justify-between px-6 h-[56px]">
+      <Link href={`/${locale}`} className="shrink-0">
+        <span className="text-sm font-bold tracking-[4px]">SICIS</span>
+      </Link>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => setIsOpen(true)}
+        aria-label="Open menu"
+      >
+        <MenuIcon />
+      </Button>
+    </div>
   );
+
+  if (barOnly) return bar;
+  if (overlayOnly) return overlay;
+  return <>{bar}{overlay}</>;
 }
