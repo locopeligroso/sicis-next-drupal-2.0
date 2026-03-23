@@ -123,8 +123,16 @@ const INFO_CATEGORY_MAP: Record<string, 'strategic' | 'corporate' | 'professiona
  * Key = lowercase category title. These are hardcoded pages not present
  * in the Drupal menu.
  */
+const MOSAICO_SECONDARY: SecondaryLink[] = [
+  { title: 'Libreria cataloghi', url: '/download-catalogues' },
+  { title: 'Certificazioni e manuali', url: '/certifications' },
+  { title: 'Video tutorial', url: '/tutorial-vetrite' },
+  { title: 'Soluzioni espositive', url: '/soluzioni-espositive' },
+];
+
 const FILTER_FIND_SECONDARY_LINKS: Record<string, SecondaryLink[]> = {
-  // Intentionally empty for now — will be populated when these pages are defined
+  'mosaico': MOSAICO_SECONDARY,
+  'mosaic': MOSAICO_SECONDARY,
 };
 
 // ════════════════════════════════════════════════════════════════════════════
