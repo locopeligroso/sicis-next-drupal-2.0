@@ -197,7 +197,22 @@
     "categories": "Categorías",
     "additionalFilters": "Filtros adicionales",
     "showResults": "Mostrar {count} productos",
-    "activeCount": "Filtros ({count})"
+    "activeCount": "Filtros ({count})",
+    "colorDominant": "Color dominante",
+    "filtersAndTypologies": "Filtros y tipologías"
+  },
+  "breadcrumb": {
+    "filterAndFind": "Productos",
+    "change": "Cambiar"
+  },
+  "hub": {
+    "discoverAlso": "Descubre también",
+    "deepDives": "Más información",
+    "explore": "Explorar"
+  },
+  "share": {
+    "copyLink": "Copiar enlace",
+    "copied": "¡Enlace copiado!"
   },
   "sort": {
     "label": "Ordenar por",

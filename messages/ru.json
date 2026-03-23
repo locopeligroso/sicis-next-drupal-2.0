@@ -197,7 +197,22 @@
     "categories": "Категории",
     "additionalFilters": "Дополнительные фильтры",
     "showResults": "Показать {count} товаров",
-    "activeCount": "Фильтры ({count})"
+    "activeCount": "Фильтры ({count})",
+    "colorDominant": "Доминирующий цвет",
+    "filtersAndTypologies": "Фильтры и типологии"
+  },
+  "breadcrumb": {
+    "filterAndFind": "Продукция",
+    "change": "Изменить"
+  },
+  "hub": {
+    "discoverAlso": "Откройте также",
+    "deepDives": "Подробнее",
+    "explore": "Исследовать"
+  },
+  "share": {
+    "copyLink": "Копировать ссылку",
+    "copied": "Ссылка скопирована!"
   },
   "sort": {
     "label": "Сортировать по",

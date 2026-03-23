@@ -199,7 +199,22 @@
     "categories": "Categories",
     "additionalFilters": "Additional filters",
     "showResults": "Show {count} products",
-    "activeCount": "Filters ({count})"
+    "activeCount": "Filters ({count})",
+    "colorDominant": "Dominant color",
+    "filtersAndTypologies": "Filters & Typologies"
+  },
+  "breadcrumb": {
+    "filterAndFind": "Products",
+    "change": "Change"
+  },
+  "hub": {
+    "discoverAlso": "Discover also",
+    "deepDives": "Learn more",
+    "explore": "Explore"
+  },
+  "share": {
+    "copyLink": "Copy link",
+    "copied": "Link copied!"
   },
   "sort": {
     "label": "Sort by",
