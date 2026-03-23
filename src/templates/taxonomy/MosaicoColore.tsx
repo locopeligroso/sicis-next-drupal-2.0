@@ -1,4 +1,4 @@
-import { fetchProducts } from '@/lib/drupal';
+import { fetchProducts } from '@/lib/api/products';
 import { fetchAllFilterOptions } from '@/lib/api/filters';
 import { parseFiltersFromUrl } from '@/domain/filters/search-params';
 import { FILTER_REGISTRY } from '@/domain/filters/registry';

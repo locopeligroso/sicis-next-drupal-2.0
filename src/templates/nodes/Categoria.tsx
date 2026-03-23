@@ -1,12 +1,14 @@
 import Link from 'next/link';
 import { getTextValue } from '@/lib/field-helpers';
 import {
-  getCategoriaProductType,
   fetchProducts,
+  getCategoriaProductType,
+  type ProductCard,
+} from '@/lib/api/products';
+import {
   fetchPagesByCategory,
   fetchSubcategories,
   getDrupalImageUrl,
-  type ProductCard,
   type PageCard,
   type SubcategoryCard,
 } from '@/lib/drupal';

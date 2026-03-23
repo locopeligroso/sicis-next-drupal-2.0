@@ -1,4 +1,5 @@
-import { fetchProducts, getDrupalImageUrl } from '@/lib/drupal';
+import { fetchProducts } from '@/lib/api/products';
+import { getDrupalImageUrl } from '@/lib/drupal';
 import { fetchAllFilterOptions } from '@/lib/api/filters';
 import { parseFiltersFromUrl } from '@/domain/filters/search-params';
 import { FILTER_REGISTRY } from '@/domain/filters/registry';

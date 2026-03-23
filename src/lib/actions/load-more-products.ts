@@ -1,6 +1,6 @@
 'use server';
 
-import { fetchProducts, type ProductCard } from '@/lib/drupal/products';
+import { fetchProducts, type ProductCard } from '@/lib/api/products';
 import type { FilterDefinition } from '@/domain/filters/search-params';
 
 export async function loadMoreProducts(

@@ -7,7 +7,7 @@ import {
   getRevalidateTime,
 } from '@/lib/node-resolver';
 import UnknownEntity from '@/components_legacy/UnknownEntity';
-import { getSectionConfigAsync, fetchProducts } from '@/lib/drupal';
+import { getSectionConfigAsync } from '@/lib/drupal';
 import { getRoutingRegistry } from '@/domain/routing/routing-registry';
 import { parseFiltersFromUrl } from '@/domain/filters/search-params';
 import {
@@ -15,7 +15,7 @@ import {
   fetchFilterOptions,
   fetchCategoryOptions,
 } from '@/lib/api/filters';
-import { fetchFilterCounts } from '@/lib/drupal';
+import { fetchProducts, fetchFilterCounts } from '@/lib/api/products';
 import { FILTER_REGISTRY } from '@/domain/filters/registry';
 import type { FilterOption } from '@/domain/filters/registry';
 import { ProductListingTemplate } from '@/templates/nodes/ProductListingTemplate';
@@ -320,10 +320,27 @@ async function renderProductListing({
     total = productResult.total;
     filterOptions = allFilterOptions;
 
-    // TODO: Re-enable live counts when Drupal View endpoint is available.
-    // Currently disabled because counting requires paginating all products
-    // via JSON:API (27s+ per page on staging), making page loads too slow.
-    // See: docs/superpowers/specs/2026-03-20-unified-product-listing-design.md §3.2
+    // Live counts per filter value — REST V2 endpoint does server-side aggregation
+    // (no more client-side pagination loops that caused 27s+ page loads with JSON:API)
+    const countPromises = Object.entries(filters).map(async ([key, filterConfig]) => {
+      const counts = await fetchFilterCounts(
+        productType,
+        parsed.filterDefinitions,
+        key,
+        filterConfig.drupalField,
+        locale,
+      );
+      return [key, counts] as const;
+    });
+    const countResults = await Promise.all(countPromises);
+    for (const [key, counts] of countResults) {
+      const options = filterOptions[key];
+      if (options) {
+        for (const option of options) {
+          option.count = counts[option.label] ?? 0;
+        }
+      }
+    }
   }
 
   return (
