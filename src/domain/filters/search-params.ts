@@ -42,32 +42,6 @@ export interface FilterDefinition {
   operator: '=' | 'IN' | 'CONTAINS' | 'STARTS_WITH';
 }
 
-/**
- * Converts FilterDefinition[] to JSON:API URLSearchParams.
- * Migrated from src/lib/build-filters.ts — now in domain layer.
- */
-export function buildJsonApiFilters(
-  filters: FilterDefinition[],
-  params: URLSearchParams,
-): void {
-  filters.forEach((filter, index) => {
-    const alias = `f${index}`;
-    params.set(`filter[${alias}][condition][path]`, filter.field);
-
-    if (filter.operator !== '=') {
-      params.set(`filter[${alias}][condition][operator]`, filter.operator);
-    }
-
-    if (Array.isArray(filter.value)) {
-      filter.value.forEach((v, vi) => {
-        params.set(`filter[${alias}][condition][value][${vi}]`, v);
-      });
-    } else {
-      params.set(`filter[${alias}][condition][value]`, filter.value);
-    }
-  });
-}
-
 export interface ParsedFilters {
   contentType: string | null;
   filterDefinitions: FilterDefinition[];

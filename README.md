@@ -1,22 +1,24 @@
 # sicis-next-drupal-2.0
 
-Decoupled Next.js 14 frontend for Sicis luxury mosaic brand, powered by Drupal 10 headless CMS.
+Decoupled Next.js frontend for Sicis luxury mosaic brand, powered by Drupal 10 headless CMS.
 
 ## Prerequisites
 
 - Node.js 18+
-- npm or yarn
-- Access to Drupal 10 backend (JSON:API enabled)
+- npm
+- Access to Drupal 10 backend
 
 ## Tech Stack
 
-- **Next.js 14.2.29** (App Router)
+- **Next.js 16.1.7** (App Router)
+- **React 19.2.4**
 - **TypeScript** (strict mode)
-- **next-intl** (i18n: it, en, fr, de, es, ru)
+- **Tailwind CSS 4.2.2**
+- **next-intl** (i18n: IT, EN, FR, DE, ES, RU)
 - **nuqs** (URL state management)
-- **Zod** (schema validation)
-- **Tailwind CSS v4**
+- **embla-carousel** (carousels)
 - **Vitest** (unit testing)
+- **Storybook 10.3.1** (not actively maintained)
 
 ## Getting Started
 
@@ -28,13 +30,7 @@ npm install
 
 ### 2. Configure Environment
 
-Copy the example environment file:
-
-```bash
-cp .env.local.example .env.local
-```
-
-Edit `.env.local` and set:
+Create `.env.local` with:
 
 ```env
 # Drupal server-side URL (for API calls)
@@ -59,42 +55,42 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start development server |
+| `npm run dev` | Start development server (localhost:3000) |
 | `npm run build` | Build production bundle |
-| `npm start` | Start production server |
-| `npm run lint` | Run ESLint |
-| `npm run type-check` | Run TypeScript compiler check |
-
-## Testing
-
-Run tests with Vitest:
-
-```bash
-npx vitest
-```
-
-Run tests with UI:
-
-```bash
-npx vitest --ui
-```
-
-## Build for Production
-
-```bash
-npm run build
-npm start
-```
+| `npm run storybook` | Storybook dev (localhost:6006) |
+| `npx tsc --noEmit` | TypeScript check |
+| `npx vitest run` | Run tests |
 
 ## Project Structure
 
 ```
 src/
-├── app/              # Next.js App Router pages
-├── components/       # React components
-├── lib/              # Utilities and API clients
-├── i18n/             # Internationalization config
-└── types/            # TypeScript type definitions
+├── app/                    # Next.js App Router pages
+│   ├── [locale]/           # Locale-prefixed routes (6 languages)
+│   │   ├── [...slug]/      # Catch-all Drupal content route
+│   │   └── layout.tsx      # Fetches menus, renders Navbar + Footer
+│   └── api/revalidate/     # ISR webhook endpoint
+├── components/
+│   ├── blocks/             # Page blocks (Spec* = product-specific, Gen* = paragraph-driven)
+│   ├── composed/           # Reusable composed components
+│   ├── layout/             # Navbar, NavbarDesktop, NavbarMobile
+│   └── ui/                 # shadcn/ui primitives (do not modify)
+├── components_legacy/      # Legacy components (being migrated)
+│   └── blocks_legacy/      # ParagraphResolver + legacy Blocco* components
+├── domain/
+│   ├── filters/            # Filter registry, search params (nuqs)
+│   └── routing/            # Routing registry, section config
+├── lib/
+│   ├── drupal/             # Drupal data layer (config, menu, image helpers)
+│   ├── actions/            # Server actions (load-more-products)
+│   └── navbar/             # Menu mapper for navbar structure
+├── templates/
+│   ├── nodes/              # Node templates (19 content types)
+│   └── taxonomy/           # Taxonomy term templates
+├── types/drupal/           # TypeScript entity interfaces
+├── i18n/                   # Internationalization config
+├── messages/               # Translation files (6 locales)
+└── styles/                 # Global CSS with design tokens (OkLch)
 ```
 
 ## Environment Variables
@@ -104,7 +100,3 @@ src/
 | `DRUPAL_BASE_URL` | Yes | Drupal server-side URL for API calls |
 | `NEXT_PUBLIC_DRUPAL_BASE_URL` | Yes | Drupal public URL for browser assets |
 | `REVALIDATE_SECRET` | Yes | Secret for ISR revalidation endpoint |
-
-## License
-
-Proprietary — Sicis S.p.A.

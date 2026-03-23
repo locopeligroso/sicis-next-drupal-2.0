@@ -13,7 +13,6 @@ import { GenDocumenti } from '@/components/blocks/GenDocumenti';
 import type { GenDocumentiItem } from '@/components/blocks/GenDocumenti';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { getDrupalImageUrl } from '@/lib/drupal/image';
-import { fetchParagraph, needsSecondaryFetch } from '@/lib/drupal/paragraphs';
 
 // ── Legacy blocks ───────────────────────────────────────────────────────────
 import BloccoSliderHome from './BloccoSliderHome';
@@ -255,24 +254,19 @@ interface ParagraphResolverProps {
   paragraph: Record<string, unknown>;
 }
 
-export default async function ParagraphResolver({ paragraph }: ParagraphResolverProps) {
+export default function ParagraphResolver({ paragraph }: ParagraphResolverProps) {
   const type = paragraph.type as string;
 
-  // Secondary fetch for paragraphs with nested data (gallery slides, etc.)
-  const resolved = needsSecondaryFetch(type)
-    ? (await fetchParagraph(paragraph as { type: string; id: string; [key: string]: unknown }) ?? paragraph)
-    : paragraph;
-
   // Gen blocks (DS)
-  if (type === 'paragraph--blocco_intro') return adaptGenIntro(resolved);
-  if (type === 'paragraph--blocco_quote') return adaptGenQuote(resolved);
-  if (type === 'paragraph--blocco_video') return adaptGenVideo(resolved);
-  if (type === 'paragraph--blocco_testo_immagine') return adaptGenTestoImmagine(resolved);
-  if (type === 'paragraph--blocco_gallery') return adaptGenGallery(resolved);
-  if (type === 'paragraph--blocco_testo_immagine_big') return adaptGenTestoImmagineBig(resolved);
-  if (type === 'paragraph--blocco_testo_immagine_blog') return adaptGenTestoImmagineBlog(resolved);
-  if (type === 'paragraph--blocco_gallery_intro') return adaptGenGalleryIntro(resolved);
-  if (type === 'paragraph--blocco_documenti') return adaptGenDocumenti(resolved);
+  if (type === 'paragraph--blocco_intro') return adaptGenIntro(paragraph);
+  if (type === 'paragraph--blocco_quote') return adaptGenQuote(paragraph);
+  if (type === 'paragraph--blocco_video') return adaptGenVideo(paragraph);
+  if (type === 'paragraph--blocco_testo_immagine') return adaptGenTestoImmagine(paragraph);
+  if (type === 'paragraph--blocco_gallery') return adaptGenGallery(paragraph);
+  if (type === 'paragraph--blocco_testo_immagine_big') return adaptGenTestoImmagineBig(paragraph);
+  if (type === 'paragraph--blocco_testo_immagine_blog') return adaptGenTestoImmagineBlog(paragraph);
+  if (type === 'paragraph--blocco_gallery_intro') return adaptGenGalleryIntro(paragraph);
+  if (type === 'paragraph--blocco_documenti') return adaptGenDocumenti(paragraph);
 
   // Legacy blocks
   const Component = LEGACY_MAP[type];

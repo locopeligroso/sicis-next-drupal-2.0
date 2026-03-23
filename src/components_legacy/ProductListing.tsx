@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { ProductCard } from '@/lib/drupal';
+import type { ProductCard } from '@/lib/api/products';
 
 interface ProductListingProps {
   title: string;

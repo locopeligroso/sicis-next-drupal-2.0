@@ -1,6 +1,6 @@
 import { getProcessedText } from '@/lib/field-helpers';
 import { sanitizeHtml } from '@/lib/sanitize';
-import { getDrupalImageUrl, fetchParagraph } from '@/lib/drupal';
+import { getDrupalImageUrl } from '@/lib/drupal/image';
 
 interface ElementoBloccoAnni {
   field_anno?: string;
@@ -10,12 +10,7 @@ interface ElementoBloccoAnni {
 }
 
 export default async function BloccoAnni({ paragraph }: { paragraph: Record<string, unknown> }) {
-  // Secondary fetch to resolve nested field_anni elements with their images
-  const enriched =
-    paragraph.type && paragraph.id
-      ? await fetchParagraph(paragraph as { type: string; id: string; [key: string]: unknown })
-      : paragraph;
-  const data = enriched ?? paragraph;
+  const data = paragraph;
 
   const sectionTitle = getProcessedText(data.field_testo);
   const yearStart = data.field_anno as string | undefined;

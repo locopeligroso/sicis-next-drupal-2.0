@@ -1,15 +1,17 @@
 import Link from 'next/link';
 import { getTextValue } from '@/lib/field-helpers';
 import {
-  getCategoriaProductType,
   fetchProducts,
+  getCategoriaProductType,
+  type ProductCard,
+} from '@/lib/api/products';
+import {
   fetchPagesByCategory,
   fetchSubcategories,
-  getDrupalImageUrl,
-  type ProductCard,
   type PageCard,
   type SubcategoryCard,
-} from '@/lib/drupal';
+} from '@/lib/api/categories';
+import { getDrupalImageUrl } from '@/lib/drupal';
 import DrupalImage from '@/components_legacy/DrupalImage';
 import ParagraphResolver from '@/components_legacy/blocks_legacy/ParagraphResolver';
 
@@ -196,7 +198,8 @@ export default async function Categoria({ node }: CategoriaProps) {
   const title =
     getTextValue(node.field_titolo_main) || getTextValue(node.title) || '';
   const locale = (node.langcode as string) || 'it';
-  const categoriaUuid = node.id as string;
+  // C1 entity endpoint provides NID via _nid; fall back to id for legacy compat
+  const categoriaId = String(node._nid ?? node.id);
   const paragraphs =
     (node.field_blocchi as Record<string, unknown>[] | undefined) ?? [];
 
@@ -281,12 +284,12 @@ export default async function Categoria({ node }: CategoriaProps) {
   // ── Hub category with subcategories (e.g. Illuminazione → Lampadari, Lampade, etc.) ──
   // Fetch child node--categoria entities, then fetch products for ALL subcategories
   // and merge into a single listing. This mirrors the "Filter and Find" product listing.
-  const { subcategories } = await fetchSubcategories(categoriaUuid, locale);
+  const { subcategories } = await fetchSubcategories(categoriaId, locale);
 
   if (subcategories.length > 0) {
     // Fetch all prodotto_arredo whose field_categoria points to any subcategory
-    // or to the parent categoria itself. Uses IN operator with array of UUIDs.
-    const allCatUuids = [categoriaUuid, ...subcategories.map((s) => s.id)];
+    // or to the parent categoria itself. Uses IN operator with array of IDs.
+    const allCatIds = [categoriaId, ...subcategories.map((s) => s.id)];
     const { products: allProducts, total } = await fetchProducts({
       productType: 'prodotto_arredo',
       locale,
@@ -294,7 +297,7 @@ export default async function Categoria({ node }: CategoriaProps) {
       filters: [
         {
           field: 'field_categoria.id',
-          value: allCatUuids,
+          value: allCatIds,
           operator: 'IN',
         },
       ],
@@ -360,7 +363,7 @@ export default async function Categoria({ node }: CategoriaProps) {
   // ── Content category (Mosaico Artistico, Mosaico in Marmo, etc.) ──
   // Fetch node--page entities that have field_categoria pointing to this categoria
   const { pages, total } = await fetchPagesByCategory(
-    categoriaUuid,
+    categoriaId,
     locale,
     48,
   );

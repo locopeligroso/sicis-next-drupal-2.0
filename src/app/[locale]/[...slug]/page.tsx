@@ -1,21 +1,17 @@
 import { cache } from 'react';
 import { notFound } from 'next/navigation';
-import { translatePath, fetchJsonApiResource } from '@/lib/drupal';
-import {
-  getComponentName,
-  getIncludeFields,
-  getRevalidateTime,
-} from '@/lib/node-resolver';
+import { fetchEntity } from '@/lib/api/entity';
+import { getComponentName } from '@/lib/node-resolver';
 import UnknownEntity from '@/components_legacy/UnknownEntity';
-import { getSectionConfigAsync, fetchProducts } from '@/lib/drupal';
+import { getSectionConfigAsync } from '@/domain/routing/section-config';
 import { getRoutingRegistry } from '@/domain/routing/routing-registry';
 import { parseFiltersFromUrl } from '@/domain/filters/search-params';
 import {
   fetchAllFilterOptions,
   fetchFilterOptions,
-  fetchArredoCategoryOptions,
-  fetchFilterCounts,
-} from '@/lib/drupal';
+  fetchCategoryOptions,
+} from '@/lib/api/filters';
+import { fetchProducts, fetchFilterCounts } from '@/lib/api/products';
 import { FILTER_REGISTRY } from '@/domain/filters/registry';
 import type { FilterOption } from '@/domain/filters/registry';
 import { ProductListingTemplate } from '@/templates/nodes/ProductListingTemplate';
@@ -25,12 +21,12 @@ import BlogListing from '@/components_legacy/BlogListing';
 import ShowroomListing from '@/components_legacy/ShowroomListing';
 import DocumentListing from '@/components_legacy/DocumentListing';
 import {
-  fetchProjects,
   fetchEnvironments,
-  fetchBlogPosts,
   fetchShowrooms,
+  fetchProjects,
+  fetchBlogPosts,
   fetchDocuments,
-} from '@/lib/drupal';
+} from '@/lib/api/listings';
 
 // Node components
 import Page from '@/templates/nodes/Page';
@@ -63,23 +59,27 @@ import TaxonomyTerm from '@/templates/taxonomy/TaxonomyTerm';
  * React.cache() deduplicates identical calls within the same request.
  * Both generateMetadata() and SlugPage() call this with the same args,
  * so the second call returns the cached result — eliminating the double fetch.
+ *
+ * Uses the C1 entity endpoint which returns pre-resolved relationships and
+ * paragraphs — no INCLUDE_MAP or secondary fetches needed.
  */
 const getPageData = cache(async (locale: string, drupalPath: string) => {
-  const translated = await translatePath(drupalPath, locale);
-  if (!translated) return null;
+  const entity = await fetchEntity(drupalPath, locale);
+  if (!entity) return null;
 
-  const bundle = translated.entity.bundle;
-  const entityType =
-    `${translated.entity.type}--${bundle}` as `${string}--${string}`;
-  const include = getIncludeFields(bundle);
-  const revalidate = getRevalidateTime(entityType);
+  // Construct the compound entity type (e.g. "node--prodotto_mosaico")
+  // that COMPONENT_MAP and getComponentName expect
+  const entityType = `${entity.meta.type}--${entity.meta.bundle}`;
 
-  const resource = await fetchJsonApiResource(translated.jsonapi.individual, {
-    include,
-    revalidate,
-  });
-
-  return resource;
+  return {
+    ...entity.data,
+    // Inject `type` in the JSON:API compound format for COMPONENT_MAP dispatch
+    type: entityType,
+    // Inject UUID as `id` for backward compatibility with templates
+    id: entity.meta.uuid,
+    // NID for V10/V11 REST endpoints (subcategories, pages-by-category)
+    _nid: entity.meta.id,
+  } as Record<string, unknown>;
 });
 
 // Fallback: used when registry is null (Drupal menu unavailable).
@@ -262,7 +262,7 @@ async function renderProductListing({
       } else if (filterConfig?.nodeType === 'node--categoria') {
         optionPromises.push([
           group.filterKey,
-          fetchArredoCategoryOptions(locale, config.contentType),
+          fetchCategoryOptions(config.contentType, locale),
         ]);
       }
     }
@@ -320,10 +320,27 @@ async function renderProductListing({
     total = productResult.total;
     filterOptions = allFilterOptions;
 
-    // TODO: Re-enable live counts when Drupal View endpoint is available.
-    // Currently disabled because counting requires paginating all products
-    // via JSON:API (27s+ per page on staging), making page loads too slow.
-    // See: docs/superpowers/specs/2026-03-20-unified-product-listing-design.md §3.2
+    // Live counts per filter value — REST V2 endpoint does server-side aggregation
+    // (no more client-side pagination loops that caused 27s+ page loads with JSON:API)
+    const countPromises = Object.entries(filters).map(async ([key, filterConfig]) => {
+      const counts = await fetchFilterCounts(
+        productType,
+        parsed.filterDefinitions,
+        key,
+        filterConfig.drupalField,
+        locale,
+      );
+      return [key, counts] as const;
+    });
+    const countResults = await Promise.all(countPromises);
+    for (const [key, counts] of countResults) {
+      const options = filterOptions[key];
+      if (options) {
+        for (const option of options) {
+          option.count = counts[option.label] ?? 0;
+        }
+      }
+    }
   }
 
   return (

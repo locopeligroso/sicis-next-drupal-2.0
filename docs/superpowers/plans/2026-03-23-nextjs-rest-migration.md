@@ -12,6 +12,33 @@
 
 **Prerequisite:** Drupal endpoints (V1-V11, C1, C2) must be deployed and accessible before starting.
 
+**Drupal staging URL:** `https://www.sicis-stage.com`
+
+---
+
+## Staging Adaptations (discovered during Drupal testing)
+
+These adaptations MUST be applied during implementation. They override details in the task descriptions below.
+
+**Query parameters (Drupal-side naming):**
+- Pagination: use `items_per_page` (not `pageSize`). This is the native Views param. The response wrapper returns `pageSize` in the response body.
+- Blog type filter: use `content_type` (not `type`). `type` is a reserved Views param.
+- V10/V11 accept NID (`meta.id`), not UUID. Use `entity.meta.id` when calling subcategories/pages-by-category.
+
+**Data transformations (Next.js client responsibility):**
+- `path` in Views responses contains full URL (`https://www.sicis-stage.com/it/mosaico/...`). Strip domain: `new URL(path).pathname`.
+- `type` on products lacks `node--` prefix. Prefix it: `` `node--${type}` ``.
+- `priceOnDemand` is string `"0"`/`"1"`. Cast to boolean: `value === "1" || value === true`.
+- `created` on blog is Unix timestamp. Convert: `new Date(Number(created) * 1000).toISOString()`.
+- V3 taxonomy has no `slug` field. Derive from `path` (last segment after stripping domain) or from `name` via slugification.
+- Empty image URLs are `""` (empty string), not `null`. Normalize: `imageUrl || null`.
+
+**C1 entity response:**
+- Locale prefix in URL path: `/{locale}/api/v1/entity?path=...` (Drupal redirects without prefix).
+- Image shape confirmed: `{ type: "file--file", uri: { url: "https://..." }, meta: { alt, width, height } }`.
+- Taxonomy terms include `parent` (object or null) and `children` (array) for hierarchy.
+- Internal Drupal fields included (revision_id, revision_created, etc.) — ignore them, use only content fields.
+
 ---
 
 ### Task 1: Base Client + Types

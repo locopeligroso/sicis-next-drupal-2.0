@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { AmbienteCard } from '@/lib/drupal';
+import type { AmbienteCard } from '@/lib/api/listings';
 
 interface EnvironmentListingProps {
   title: string;

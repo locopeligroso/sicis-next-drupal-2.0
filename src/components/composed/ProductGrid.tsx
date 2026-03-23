@@ -1,4 +1,4 @@
-import type { ProductCard as ProductCardData } from "@/lib/drupal/products"
+import type { ProductCard as ProductCardData } from "@/lib/api/products"
 import { ProductCard } from "@/components/composed/ProductCard"
 import { cn } from "@/lib/utils"
 
