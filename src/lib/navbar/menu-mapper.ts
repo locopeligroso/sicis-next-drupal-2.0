@@ -27,17 +27,77 @@ const SECTION_TITLES = {
  * Key = lowercase title, Value = group label.
  */
 const EXPLORE_GROUP_MAP: Record<string, string> = {
+  // Mosaico — IT
   'tinte unite': 'Mosaico',
   'mosaico in marmo': 'Mosaico',
   'mosaico in metallo': 'Mosaico',
   'pixel mosaic': 'Mosaico',
   'artistic mosaic': 'Mosaico',
+  // Mosaico — EN
+  'solid colours': 'Mosaico',
+  'marble': 'Mosaico',
+  'metal mosaic': 'Mosaico',
+  // Mosaico — FR
+  'couleurs': 'Mosaico',
+  'mosaïque en métal': 'Mosaico',
+  // Mosaico — DE
+  'farben': 'Mosaico',
+  'marmormosaik': 'Mosaico',
+  'metallmosaik': 'Mosaico',
+  // Mosaico — ES
+  'colores': 'Mosaico',
+  'mosaico metálico': 'Mosaico',
+  // Mosaico — RU
+  'цвета': 'Mosaico',
+  'металлическая мозаика': 'Mosaico',
+
+  // Vetrite — all locales
   'lastre vetro vetrite': 'Vetrite',
+  'vetrite glass slabs': 'Vetrite',
+  'plaque en verre vetrite': 'Vetrite',
+  'glasscheibe vetrite': 'Vetrite',
+  'láminas de vidrio vetrite': 'Vetrite',
+  'cтеклянные листы vetrite': 'Vetrite',
+
+  // Living — IT
   'arredo': 'Living',
   'cucina': 'Living',
   'illuminazione': 'Living',
   'mosaico bagno': 'Living',
+  // Living — EN
+  'furniture': 'Living',
+  'kitchen': 'Living',
+  'lighting': 'Living',
+  'bathroom mosaics': 'Living',
+  // Living — FR
+  'ameublement': 'Living',
+  'cuisine': 'Living',
+  'éclairage': 'Living',
+  'mosaïques pour salle de bain': 'Living',
+  // Living — DE
+  'einrichtung': 'Living',
+  'küche': 'Living',
+  'leuchten': 'Living',
+  'badezimmermosaike': 'Living',
+  // Living — ES
+  'mueble': 'Living',
+  'cocina': 'Living',
+  'iluminación': 'Living',
+  'mosaicos para el baño': 'Living',
+  // Living — RU
+  'обстановка': 'Living',
+  'кухня': 'Living',
+  'освещение': 'Living',
+  'мозаика для ванной комнаты': 'Living',
+
+  // Tessile — all locales
   'prodotti tessili': 'Tessile',
+  'textiles': 'Tessile',
+  'produits textiles': 'Tessile',
+  'textilien': 'Tessile',
+  'текстильные изделия': 'Tessile',
+
+  // Jewels — same in all locales
   'sicis jewels': 'Jewels',
 };
 
