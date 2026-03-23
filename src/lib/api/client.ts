@@ -64,3 +64,14 @@ export function emptyToNull(value: string | null | undefined): string | null {
   if (!value || value === '') return null;
   return value;
 }
+
+/**
+ * Strip locale prefix from a path.
+ * Drupal paths include locale: "/it/ambienti/arredo-bagno"
+ * Legacy components prepend locale themselves, so we need: "/ambienti/arredo-bagno"
+ */
+export function stripLocalePrefix(path: string | null): string | null {
+  if (!path) return null;
+  // Remove leading /{2-letter-locale}/ prefix
+  return path.replace(/^\/[a-z]{2}\//, '/');
+}

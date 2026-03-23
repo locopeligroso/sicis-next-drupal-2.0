@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { apiGet, stripDomain, emptyToNull } from './client';
+import { apiGet, stripDomain, stripLocalePrefix, emptyToNull } from './client';
 import type {
   PaginatedResponse,
   CategoryCard as RestCategoryCard,
@@ -71,7 +71,7 @@ export const fetchSubcategories = cache(
         id: item.id,
         title: item.title,
         imageUrl: emptyToNull(item.imageUrl),
-        path: stripDomain(item.path),
+        path: stripLocalePrefix(stripDomain(item.path)),
       })),
       total: result.total,
     };
@@ -114,7 +114,7 @@ export const fetchPagesByCategory = cache(
         id: item.id,
         title: item.title,
         imageUrl: emptyToNull(item.imageUrl),
-        path: stripDomain(item.path),
+        path: stripLocalePrefix(stripDomain(item.path)),
       })),
       total: result.total,
     };

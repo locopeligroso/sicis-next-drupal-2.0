@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { apiGet, stripDomain, emptyToNull } from './client';
+import { apiGet, stripDomain, stripLocalePrefix, emptyToNull } from './client';
 import type { PaginatedResponse, ProductCard as RestProductCard } from './types';
 import type { FilterDefinition } from '@/domain/filters/search-params';
 
@@ -104,7 +104,7 @@ function normalizeProduct(item: RestProductCard): ProductCard {
       typeof item.priceOnDemand === 'string'
         ? item.priceOnDemand === '1'
         : Boolean(item.priceOnDemand),
-    path: stripDomain(item.path),
+    path: stripLocalePrefix(stripDomain(item.path)),
   };
 }
 

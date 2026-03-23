@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { apiGet, stripDomain, emptyToNull } from './client';
+import { apiGet, stripDomain, stripLocalePrefix, emptyToNull } from './client';
 import type {
   PaginatedResponse,
   EnvironmentCard,
@@ -42,7 +42,7 @@ export const fetchEnvironments = cache(
     return {
       environments: result.items.map((item) => ({
         ...item,
-        path: stripDomain(item.path),
+        path: stripLocalePrefix(stripDomain(item.path)),
         imageUrl: emptyToNull(item.imageUrl),
       })),
       total: result.total,
@@ -63,7 +63,7 @@ export const fetchShowrooms = cache(
       showrooms: result.items.map((item): ShowroomCard => ({
         id: item.id,
         title: item.title,
-        path: stripDomain(item.path),
+        path: stripLocalePrefix(stripDomain(item.path)),
         imageUrl: emptyToNull(item.imageUrl),
         address: item.address,
         city: item.city,
@@ -161,7 +161,7 @@ export const fetchBlogPosts = cache(
         id: item.id,
         title: item.title,
         imageUrl: emptyToNull(item.imageUrl),
-        path: stripDomain(item.path),
+        path: stripLocalePrefix(stripDomain(item.path)),
         type: item.type,
         created: unixToIso(item.created),
       })),
@@ -186,7 +186,7 @@ export const fetchProjects = cache(
         id: item.id,
         title: item.title,
         imageUrl: emptyToNull(item.imageUrl),
-        path: stripDomain(item.path),
+        path: stripLocalePrefix(stripDomain(item.path)),
       })),
       total: result.total,
     };
@@ -209,7 +209,7 @@ export const fetchDocuments = cache(
         id: item.id,
         title: item.title,
         imageUrl: emptyToNull(item.imageUrl),
-        path: stripDomain(item.path),
+        path: stripLocalePrefix(stripDomain(item.path)),
         externalUrl: item.externalUrl ?? null,
         documentType: item.documentType ?? null,
         category: item.category ?? null,
