@@ -134,3 +134,47 @@ describe('FILTER_REGISTRY completeness', () => {
     expect(translateBasePath('/pixall', 'en')).toBe('/pixall');
   });
 });
+
+describe('filter removal — unused P1/P2 filters', () => {
+  it('prodotto_vetrite has ONLY collection and color filters', () => {
+    const config = getFilterConfig('prodotto_vetrite')!;
+    const keys = Object.keys(config.filters);
+    expect(keys).toEqual(['collection', 'color']);
+    expect(config.filters).not.toHaveProperty('finish');
+    expect(config.filters).not.toHaveProperty('texture');
+  });
+
+  it('prodotto_arredo has ONLY subcategory filter', () => {
+    const config = getFilterConfig('prodotto_arredo')!;
+    const keys = Object.keys(config.filters);
+    expect(keys).toEqual(['subcategory']);
+    expect(config.filters).not.toHaveProperty('finish');
+    expect(config.filters).not.toHaveProperty('fabric');
+  });
+
+  it('prodotto_mosaico has collection, color, shape, finish — NO grout', () => {
+    const config = getFilterConfig('prodotto_mosaico')!;
+    const keys = Object.keys(config.filters);
+    expect(keys).toEqual(['collection', 'color', 'shape', 'finish']);
+    expect(config.filters).not.toHaveProperty('grout');
+  });
+
+  it('prodotto_pixall has color and shape — NO grout', () => {
+    const config = getFilterConfig('prodotto_pixall')!;
+    const keys = Object.keys(config.filters);
+    expect(keys).toEqual(['color', 'shape']);
+    expect(config.filters).not.toHaveProperty('grout');
+  });
+
+  it('prodotto_tessuto retains ALL its filters unchanged', () => {
+    const config = getFilterConfig('prodotto_tessuto')!;
+    const keys = Object.keys(config.filters);
+    expect(keys).toEqual(['category', 'type', 'color', 'finish']);
+  });
+
+  it('prodotto_illuminazione retains its subcategory filter unchanged', () => {
+    const config = getFilterConfig('prodotto_illuminazione')!;
+    const keys = Object.keys(config.filters);
+    expect(keys).toEqual(['subcategory']);
+  });
+});
