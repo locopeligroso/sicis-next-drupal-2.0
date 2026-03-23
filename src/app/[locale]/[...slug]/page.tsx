@@ -1,11 +1,7 @@
 import { cache } from 'react';
 import { notFound } from 'next/navigation';
-import { translatePath, fetchJsonApiResource } from '@/lib/drupal';
-import {
-  getComponentName,
-  getIncludeFields,
-  getRevalidateTime,
-} from '@/lib/node-resolver';
+import { fetchEntity } from '@/lib/api/entity';
+import { getComponentName } from '@/lib/node-resolver';
 import UnknownEntity from '@/components_legacy/UnknownEntity';
 import { getSectionConfigAsync } from '@/lib/drupal';
 import { getRoutingRegistry } from '@/domain/routing/routing-registry';
@@ -63,23 +59,27 @@ import TaxonomyTerm from '@/templates/taxonomy/TaxonomyTerm';
  * React.cache() deduplicates identical calls within the same request.
  * Both generateMetadata() and SlugPage() call this with the same args,
  * so the second call returns the cached result — eliminating the double fetch.
+ *
+ * Uses the C1 entity endpoint which returns pre-resolved relationships and
+ * paragraphs — no INCLUDE_MAP or secondary fetches needed.
  */
 const getPageData = cache(async (locale: string, drupalPath: string) => {
-  const translated = await translatePath(drupalPath, locale);
-  if (!translated) return null;
+  const entity = await fetchEntity(drupalPath, locale);
+  if (!entity) return null;
 
-  const bundle = translated.entity.bundle;
-  const entityType =
-    `${translated.entity.type}--${bundle}` as `${string}--${string}`;
-  const include = getIncludeFields(bundle);
-  const revalidate = getRevalidateTime(entityType);
+  // Construct the compound entity type (e.g. "node--prodotto_mosaico")
+  // that COMPONENT_MAP and getComponentName expect
+  const entityType = `${entity.meta.type}--${entity.meta.bundle}`;
 
-  const resource = await fetchJsonApiResource(translated.jsonapi.individual, {
-    include,
-    revalidate,
-  });
-
-  return resource;
+  return {
+    ...entity.data,
+    // Inject `type` in the JSON:API compound format for COMPONENT_MAP dispatch
+    type: entityType,
+    // Inject UUID as `id` for backward compatibility with templates
+    id: entity.meta.uuid,
+    // NID for V10/V11 REST endpoints (subcategories, pages-by-category)
+    _nid: entity.meta.id,
+  } as Record<string, unknown>;
 });
 
 // Fallback: used when registry is null (Drupal menu unavailable).

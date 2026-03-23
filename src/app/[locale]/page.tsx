@@ -1,5 +1,4 @@
-import { translatePath, fetchJsonApiResource } from '@/lib/drupal';
-import { getIncludeFields } from '@/lib/node-resolver';
+import { fetchEntity } from '@/lib/api/entity';
 import Page from '@/templates/nodes/Page';
 
 interface HomePageProps {
@@ -12,16 +11,11 @@ export default async function HomePage({ params }: HomePageProps) {
   let homepage: Record<string, unknown> | null = null;
 
   try {
-    // Drupal's front page resolves via decoupled_router at /
-    const translated = await translatePath('/', locale);
+    // C1 entity endpoint resolves the front page at path "/"
+    const entity = await fetchEntity('/', locale);
 
-    if (translated) {
-      const bundle = translated.entity.bundle; // 'page'
-      const include = getIncludeFields(bundle); // 'field_blocchi,field_blocchi.field_immagine'
-      homepage = await fetchJsonApiResource(translated.jsonapi.individual, {
-        include,
-        revalidate: 600,
-      }) as Record<string, unknown> | null;
+    if (entity) {
+      homepage = entity.data as Record<string, unknown>;
     }
   } catch (error) {
     console.error('[HomePage] Failed to fetch homepage node', error);
