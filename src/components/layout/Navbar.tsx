@@ -17,7 +17,7 @@ export function Navbar({ locale, menu }: NavbarProps) {
 
   return (
     <nav
-      className="fixed top-4 left-4 right-4 z-50 mx-auto max-w-main rounded-4xl border border-white/60 bg-white/90 shadow-[0_4px_24px_rgba(0,0,0,0.08)] backdrop-blur-[20px] transition-transform duration-300 ease-in-out dark:border-white/10 dark:bg-[oklch(0.20_0_0/0.85)]"
+      className="fixed top-4 left-4 right-4 z-50 mx-auto max-w-main overflow-hidden rounded-4xl border border-white/60 bg-white/90 shadow-[0_4px_24px_rgba(0,0,0,0.08)] backdrop-blur-[20px] transition-transform duration-300 ease-in-out dark:border-white/10 dark:bg-[oklch(0.20_0_0/0.85)]"
       style={{
         transform: isVisible
           ? 'translateY(0)'
@@ -34,7 +34,7 @@ export function Navbar({ locale, menu }: NavbarProps) {
         />
       </div>
 
-      {/* Mobile */}
+      {/* Mobile bar (inside floating container) */}
       <div className="lg:hidden">
         <NavbarMobile locale={locale} menu={menu} />
       </div>
