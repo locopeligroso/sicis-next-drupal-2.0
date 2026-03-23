@@ -14,15 +14,10 @@ import type { GenDocumentiItem } from '@/components/blocks/GenDocumenti';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { getDrupalImageUrl } from '@/lib/drupal/image';
 
-// ── Legacy blocks ───────────────────────────────────────────────────────────
+// ── Legacy blocks (remaining — not yet migrated to Gen*) ────────────────────
 import BloccoSliderHome from './BloccoSliderHome';
-// BloccoGallery removed — replaced by GenGallery
-// BloccoTestoImmagineBig removed — replaced by GenTestoImmagineBig
-// BloccoTestoImmagineBlog removed — replaced by GenTestoImmagineBlog
-// BloccoGalleryIntro removed — replaced by GenGalleryIntro
 import BloccoVideo from './BloccoVideo';
 import BloccoCorrelati from './BloccoCorrelati';
-// BloccoDocumenti removed — replaced by GenDocumenti
 import BloccoNewsletter from './BloccoNewsletter';
 import BloccoFormBlog from './BloccoFormBlog';
 import BloccoAnni from './BloccoAnni';
@@ -33,11 +28,8 @@ type ParagraphComponent = (props: { paragraph: Record<string, unknown> }) => any
 
 const LEGACY_MAP: Record<string, ParagraphComponent> = {
   'paragraph--blocco_slider_home': BloccoSliderHome,
-  // blocco_testo_immagine_blog removed — replaced by GenTestoImmagineBlog
-  // blocco_gallery_intro removed — replaced by GenGalleryIntro
   'paragraph--blocco_video': BloccoVideo,
   'paragraph--blocco_correlati': BloccoCorrelati,
-  // blocco_documenti removed — replaced by GenDocumenti
   'paragraph--blocco_newsletter': BloccoNewsletter,
   'paragraph--blocco_form_blog': BloccoFormBlog,
   'paragraph--blocco_anni': BloccoAnni,

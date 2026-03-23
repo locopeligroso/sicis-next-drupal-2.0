@@ -1,6 +1,6 @@
 # CLAUDE.md — Sicis Next.js Frontend
 
-> **Source of truth:** The code is always the source of truth. This document may be outdated — when in doubt, read the code. For Drupal data (fields, entities, menus, paragraphs), the only real source is what Drupal returns via JSON:API — never assume field presence or structure from this doc alone, always verify against the actual API response.
+> **Source of truth:** The code is always the source of truth. This document may be outdated — when in doubt, read the code. For Drupal data (fields, entities, menus, paragraphs), the only real source is what Drupal returns via REST endpoints — never assume field presence or structure from this doc alone, always verify against the actual API response.
 
 ## Project Overview
 Decoupled Next.js 16 frontend for Sicis (luxury mosaic brand) backed by headless Drupal 10.
@@ -19,26 +19,31 @@ Next 16.1.7 | React 19.2.4 | Tailwind 4.2.2 | Storybook 10.3.1 | next-intl | nuq
 
 ## Architecture
 
-### Data Layer (`src/lib/drupal/`)
-Single unified Drupal client split by responsibility:
-- `config.ts` — DRUPAL_BASE_URL, DRUPAL_ORIGIN (single source of truth)
-- `core.ts` — translatePath, fetchJsonApiResource, getResourceByPath
-- `deserializer.ts` — buildIncludedMap, deserializeResource (preserves relationship meta: alt, width, height)
-- `image.ts` — getDrupalImageUrl
-- `menu.ts` — fetchMenu, transformMenuToNavItems
-- `paragraphs.ts` — fetchParagraph, needsSecondaryFetch
-- `products.ts` — fetchProducts, getCategoriaProductType, slugToTermName
-- `filters.ts` — fetchFilterOptions, fetchAllFilterOptions
-- `projects.ts` — fetchProjects
-- `blog.ts` — fetchBlogPosts (articolo, news, tutorial merged)
-- `documents.ts` — fetchDocuments
-- `showrooms.ts` — fetchShowrooms
-- `environments.ts` — fetchEnvironments (ambiente nodes)
-- `pages-by-category.ts` — fetchPagesByCategory
-- `subcategories.ts` — fetchSubcategories
-- `types.ts` — JSON:API type definitions
-- `translated-path.ts` — getTranslatedPath
-- `index.ts` — barrel re-export (import from `@/lib/drupal`)
+### Data Layer
+
+**REST API client (`src/lib/api/`):**
+- `client.ts` — `apiGet` (base fetcher), `stripDomain`, `stripLocalePrefix`, `emptyToNull` (normalizers)
+- `types.ts` — Response interfaces for all endpoints (ProductCard, BlogCard, EntityResponse, etc.)
+- `entity.ts` — `fetchEntity` (C1: path → fully resolved entity with paragraphs)
+- `products.ts` — `fetchProducts` (V1), `fetchFilterCounts` (V2), `getCategoriaProductType`
+- `filters.ts` — `fetchFilterOptions` (V3), `fetchCategoryOptions` (V4), `fetchAllFilterOptions`
+- `listings.ts` — `fetchEnvironments` (V7), `fetchShowrooms` (V8), `fetchBlogPosts` (V5), `fetchProjects` (V6), `fetchDocuments` (V9)
+- `categories.ts` — `fetchSubcategories` (V10), `fetchPagesByCategory` (V11)
+- `translate-path.ts` — `getTranslatedPath` (C2: cross-locale path resolution)
+
+**Drupal utilities (`src/lib/drupal/` — reduced to 4 files):**
+- `config.ts` — DRUPAL_BASE_URL (single source of truth)
+- `menu.ts` — fetchMenu, transformMenuToNavItems (uses native Drupal menu API, not REST)
+- `image.ts` — getDrupalImageUrl (extracts uri.url from C1 image shape)
+- `index.ts` — barrel re-export
+
+**Drupal REST endpoint conventions:**
+- All Views endpoints require locale prefix: `/{locale}/api/v1/{endpoint}`
+- Views responses are wrapped: `{ items: [...], total, page, pageSize }`
+- C1 entity response: `{ meta: { type, bundle, id, uuid, locale, path }, data: { ...fields } }`
+- Pagination query param: `items_per_page` (native Views param)
+- Paths in Views responses contain full domain URL — `stripDomain` + `stripLocalePrefix` normalize them
+- Image shape from C1: `{ type: "file--file", uri: { url: "https://..." }, meta: { alt, width, height } }`
 
 ### Domain Layer
 - `src/domain/filters/` — `registry.ts` (FILTER_REGISTRY, SLUG_OVERRIDES), `search-params.ts` (nuqs integration)
@@ -54,8 +59,8 @@ Set of hardcoded product slugs (mosaico, mosaic, arredo, furniture-and-accessori
 **Stage 2 — Multi-slug interception**
 URLs with 2+ segments (e.g. `/mosaico/murano-smalto`). `getSectionConfigAsync` runs first; if a config is found and `parseFiltersFromUrl` detects at least one active filter → `renderProductListing()` with filter active.
 
-**Stage 3 — Drupal translatePath**
-`translatePath` resolves the path via `decoupled_router` to a JSON:API node. Resource is fetched with `fetchJsonApiResource` using the bundle's INCLUDE_MAP. Rendered via `COMPONENT_MAP[componentName]`.
+**Stage 3 — Drupal entity resolution**
+`fetchEntity` (C1 endpoint) resolves path to a fully pre-resolved entity in one call. No INCLUDE_MAP or secondary fetches needed. Rendered via `COMPONENT_MAP[getComponentName(entityType)]`.
 
 **Interception: node--categoria**
 If `translatePath` resolves to `node--categoria` AND `getSectionConfigAsync` returns a config with `filterField` set → the node is a subcategory listing, not a hub category. Renders via `renderProductListing()` using the Drupal node title for the heading.
@@ -74,22 +79,12 @@ Drupal uses `node--page` nodes as hub pages for listing sections. `field_page_id
 | Static pages (page, landing_page) | 600 s | `node-resolver.ts` |
 | Taxonomy terms | 3600 s | `node-resolver.ts` |
 | Menus | 600 s | `menu.ts` |
-| Paths (translatePath) | 3600 s | `core.ts` |
+| Entity (C1 fetchEntity) | 60 s | `entity.ts` |
 
 #### Server Actions
 
 - `src/lib/actions/load-more-products.ts` — `loadMoreProducts` (product pagination via "Load More" button)
 - `src/lib/get-translated-path.ts` — `getTranslatedPath` (`'use server'` wrapper for cross-locale path resolution in client components)
-
-### INCLUDE_MAP
-
-Rules:
-- If a relationship field is not in the INCLUDE_MAP, Drupal returns only `{ type, id }` without data
-- All nested images (stucco, colori, forma, categoria) must be explicitly included
-- `showroom` and `documento`: do NOT have `field_blocchi` — Drupal returns 400 if included
-- `prodotto_arredo` and `prodotto_illuminazione`: `field_finiture.field_immagine` included
-- `mosaico_collezioni` and `vetrite_collezioni`: `field_documenti` chain included
-- `blocco_documenti` included in PARAGRAPH_INCLUDE
 
 ### Dev Preview Routes
 - `src/app/dev/layout.tsx` — Dev-only layout with fonts + tokens + theme, no Header/Footer/i18n. Guarded by `NODE_ENV !== 'development'`.
@@ -135,9 +130,11 @@ Scan with: `node /Users/nicolagasco/.claude/skills/ds/scripts/inventory.js block
 | `paragraph--blocco_gallery_intro` | `GenGalleryIntro` |
 | `paragraph--blocco_documenti` | `GenDocumenti` |
 
-**Gen blocks remaining — still using legacy `Blocco*` fallback:**
+**Gen blocks remaining to build** (still using legacy `Blocco*` in LEGACY_MAP):
 
 `GenCorrelati`, `GenNewsletter`, `GenFormBlog`, `GenSliderHome`, `GenAnni`, `GenTutorial`
+
+**Deleted legacy Blocco\* files** (replaced by Gen* equivalents): BloccoIntro, BloccoQuote, BloccoGallery, BloccoTestoImmagine, BloccoTestoImmagineBig, BloccoTestoImmagineBlog, BloccoGalleryIntro, BloccoDocumenti
 
 ---
 
