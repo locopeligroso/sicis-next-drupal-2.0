@@ -13,9 +13,9 @@ import { parseFiltersFromUrl } from '@/domain/filters/search-params';
 import {
   fetchAllFilterOptions,
   fetchFilterOptions,
-  fetchArredoCategoryOptions,
-  fetchFilterCounts,
-} from '@/lib/drupal';
+  fetchCategoryOptions,
+} from '@/lib/api/filters';
+import { fetchFilterCounts } from '@/lib/drupal';
 import { FILTER_REGISTRY } from '@/domain/filters/registry';
 import type { FilterOption } from '@/domain/filters/registry';
 import { ProductListingTemplate } from '@/templates/nodes/ProductListingTemplate';
@@ -262,7 +262,7 @@ async function renderProductListing({
       } else if (filterConfig?.nodeType === 'node--categoria') {
         optionPromises.push([
           group.filterKey,
-          fetchArredoCategoryOptions(locale, config.contentType),
+          fetchCategoryOptions(config.contentType, locale),
         ]);
       }
     }
