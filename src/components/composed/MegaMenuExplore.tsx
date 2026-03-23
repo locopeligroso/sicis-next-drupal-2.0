@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { ExploreSection } from '@/lib/navbar/types';
 import { cn } from '@/lib/utils';
 
@@ -19,6 +19,42 @@ const PLACEHOLDER_COLORS: Record<string, string> = {
   Tessile: 'linear-gradient(145deg, #3a4a5a, #1a2a3a)',
   Jewels: 'linear-gradient(145deg, #5a3a5a, #3a1a3a)',
 };
+
+/**
+ * Video sources for category groups.
+ * Videos auto-play muted on hover, pause when not active.
+ */
+const GROUP_VIDEOS: Record<string, string> = {
+  Mosaico: '/video/mosaico - nav.mov',
+  Vetrite: '/video/vetrite-nav.mov',
+};
+
+/** Inline video that plays on hover and pauses when hidden. */
+function HoverVideo({ src, isActive }: { src: string; isActive: boolean }) {
+  const ref = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (isActive) {
+      el.play().catch(() => {});
+    } else {
+      el.pause();
+    }
+  }, [isActive]);
+
+  return (
+    <video
+      ref={ref}
+      src={src}
+      muted
+      loop
+      playsInline
+      preload="metadata"
+      className="absolute inset-0 w-full h-full object-cover"
+    />
+  );
+}
 
 export function MegaMenuExplore({ menu }: MegaMenuExploreProps) {
   const [hoveredGroup, setHoveredGroup] = useState<string | null>(null);
@@ -80,6 +116,7 @@ export function MegaMenuExplore({ menu }: MegaMenuExploreProps) {
       >
         {menu.items.map((group) => {
           const isActive = activeGroup === group.label;
+          const videoSrc = GROUP_VIDEOS[group.label];
           const background =
             PLACEHOLDER_COLORS[group.label] ??
             'linear-gradient(145deg, #444, #222)';
@@ -89,12 +126,15 @@ export function MegaMenuExplore({ menu }: MegaMenuExploreProps) {
               key={group.label}
               className="absolute inset-0 transition-opacity duration-[400ms]"
               style={{
-                background,
+                background: videoSrc ? undefined : background,
                 opacity: isActive ? 1 : 0,
               }}
             >
+              {videoSrc ? (
+                <HoverVideo src={videoSrc} isActive={isActive} />
+              ) : null}
               {/* Category label overlay */}
-              <span className="absolute bottom-4 left-4 text-[10px] tracking-[3px] uppercase text-white/40">
+              <span className="absolute bottom-4 left-4 text-[10px] tracking-[3px] uppercase text-white/40 z-10">
                 {group.label}
               </span>
             </div>
