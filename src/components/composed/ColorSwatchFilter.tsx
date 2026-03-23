@@ -36,25 +36,21 @@ export function ColorSwatchFilter({
         const isDisabled = !isActive && option.count === 0
 
         return (
-          <div key={option.slug} className={cn("flex flex-col items-center gap-1", isDisabled && "opacity-40")}>
-            <button
-              type="button"
-              onClick={() => !isDisabled && onChange(option.slug)}
-              disabled={isDisabled}
-              className={cn(
-                "size-8 rounded-full border border-border transition-shadow",
-                !option.imageUrl && !option.cssColor && "bg-muted",
-                isActive && "ring-2 ring-primary ring-offset-2",
-                isDisabled && "cursor-not-allowed grayscale"
-              )}
-              style={backgroundStyle}
-              aria-label={option.label}
-              title={option.label}
-            />
-            <span className="max-w-8 truncate text-center text-xs text-muted-foreground">
-              {option.label}
-            </span>
-          </div>
+          <button
+            key={option.slug}
+            type="button"
+            onClick={() => !isDisabled && onChange(option.slug)}
+            disabled={isDisabled}
+            className={cn(
+              "size-8 rounded-full border border-border transition-shadow",
+              !option.imageUrl && !option.cssColor && "bg-muted",
+              isActive && "ring-2 ring-primary ring-offset-2",
+              isDisabled && "cursor-not-allowed opacity-40 grayscale"
+            )}
+            style={backgroundStyle}
+            aria-label={option.label}
+            title={option.label}
+          />
         )
       })}
     </div>
