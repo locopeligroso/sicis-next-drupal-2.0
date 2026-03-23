@@ -1,6 +1,5 @@
 'use client';
 
-import { Fragment } from 'react';
 import { useTranslations } from 'next-intl';
 import { useFilterSync } from '@/hooks/use-filter-sync';
 import { ActiveFilters } from '@/components/composed/ActiveFilters';
@@ -9,6 +8,8 @@ import { CheckboxFilter } from '@/components/composed/CheckboxFilter';
 import { ColorSwatchFilter } from '@/components/composed/ColorSwatchFilter';
 import { ImageListFilter } from '@/components/composed/ImageListFilter';
 import { Typography } from '@/components/composed/Typography';
+import { TypologyNav } from '@/components/composed/TypologyNav';
+import type { TypologyNavItem } from '@/components/composed/TypologyNav';
 import { Separator } from '@/components/ui/separator';
 import type {
   FilterGroupConfig,
@@ -25,9 +26,9 @@ export interface SpecFilterSidebarContentProps {
   listingConfig: ListingConfig;
   basePath: string;
   locale: string;
+  typologyNav?: TypologyNavItem[];
+  activeTypologySlug?: string;
 }
-
-const PRIORITY_ORDER: Record<string, number> = { P0: 0, P1: 1, P2: 2 };
 
 export function SpecFilterSidebarContent({
   filters,
@@ -37,6 +38,8 @@ export function SpecFilterSidebarContent({
   listingConfig,
   basePath,
   locale,
+  typologyNav,
+  activeTypologySlug,
 }: SpecFilterSidebarContentProps) {
   const { toggleFilter, clearFilter, clearAll, isActive } = useFilterSync({
     basePath,
@@ -45,15 +48,8 @@ export function SpecFilterSidebarContent({
   });
   const t = useTranslations('filters');
 
-  // Sort filter groups by priority (P0 first, then P1, then P2)
-  const sortedGroups = Object.values(filters).sort(
-    (a, b) => (PRIORITY_ORDER[a.priority] ?? 3) - (PRIORITY_ORDER[b.priority] ?? 3),
-  );
-
-  // Determine which groups to show
-  const visibleGroups = hasActiveP0
-    ? sortedGroups
-    : sortedGroups.filter((g) => g.priority === 'P0');
+  // Use filters in their natural (registry) order
+  const visibleGroups = Object.values(filters);
 
   const handleRemoveFilter = (key: string) => {
     clearFilter(key);
@@ -69,16 +65,9 @@ export function SpecFilterSidebarContent({
       />
 
       {/* Filter groups */}
-      {visibleGroups.map((group, i) => {
+      {visibleGroups.map((group) => {
         const options = filterOptions[group.key] ?? [];
         if (options.length === 0) return null;
-
-        // Show separator + label before the first non-P0 filter when P0 is active
-        const prevGroup = i > 0 ? visibleGroups[i - 1] : null;
-        const showSeparator =
-          hasActiveP0 &&
-          group.priority !== 'P0' &&
-          (prevGroup?.priority === 'P0' || i === 0);
 
         // Find matching categoryGroupDef for this filter
         const categoryGroup = listingConfig.categoryGroups.find(
@@ -95,60 +84,63 @@ export function SpecFilterSidebarContent({
         const groupLabel = t(group.key);
 
         return (
-          <Fragment key={group.key}>
-            {showSeparator && (
-              <div className="flex flex-col gap-2">
-                <Separator />
-                <Typography textRole="caption" className="text-muted-foreground">
-                  {t('additionalFilters')}
-                </Typography>
-              </div>
+          <FilterGroup key={group.key} label={groupLabel}>
+            {categoryGroup?.hasColorSwatch ? (
+              <ColorSwatchFilter
+                options={options}
+                activeValue={activeValue}
+                onChange={(slug) =>
+                  toggleFilter(
+                    group.key,
+                    slug,
+                    group.type,
+                    group.pathPrefix?.[locale],
+                  )
+                }
+              />
+            ) : categoryGroup?.hasImage ? (
+              <ImageListFilter
+                options={options}
+                activeValue={activeValue}
+                onChange={(slug) =>
+                  toggleFilter(
+                    group.key,
+                    slug,
+                    group.type,
+                    group.pathPrefix?.[locale],
+                  )
+                }
+              />
+            ) : (
+              <CheckboxFilter
+                options={options}
+                activeValues={activeForGroup}
+                onChange={(slug) =>
+                  toggleFilter(
+                    group.key,
+                    slug,
+                    group.type,
+                    group.pathPrefix?.[locale],
+                  )
+                }
+              />
             )}
-            <FilterGroup label={groupLabel}>
-              {categoryGroup?.hasColorSwatch ? (
-                <ColorSwatchFilter
-                  options={options}
-                  activeValue={activeValue}
-                  onChange={(slug) =>
-                    toggleFilter(
-                      group.key,
-                      slug,
-                      group.type,
-                      group.pathPrefix?.[locale],
-                    )
-                  }
-                />
-              ) : categoryGroup?.hasImage ? (
-                <ImageListFilter
-                  options={options}
-                  activeValue={activeValue}
-                  onChange={(slug) =>
-                    toggleFilter(
-                      group.key,
-                      slug,
-                      group.type,
-                      group.pathPrefix?.[locale],
-                    )
-                  }
-                />
-              ) : (
-                <CheckboxFilter
-                  options={options}
-                  activeValues={activeForGroup}
-                  onChange={(slug) =>
-                    toggleFilter(
-                      group.key,
-                      slug,
-                      group.type,
-                      group.pathPrefix?.[locale],
-                    )
-                  }
-                />
-              )}
-            </FilterGroup>
-          </Fragment>
+          </FilterGroup>
         );
       })}
+
+      {/* Typology navigation */}
+      {typologyNav && typologyNav.length > 0 && (
+        <>
+          <Separator />
+          <div className="flex flex-col gap-3">
+            <Typography textRole="overline" as="span" className="text-muted-foreground">
+              {t('typologies')}
+            </Typography>
+            <TypologyNav items={typologyNav} activeSlug={activeTypologySlug} />
+          </div>
+        </>
+      )}
     </div>
   );
 }
