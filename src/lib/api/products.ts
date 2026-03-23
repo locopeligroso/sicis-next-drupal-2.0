@@ -196,13 +196,13 @@ export async function fetchFilterCounts(
     ? filtersToQueryParams(otherFilters)
     : {};
 
-  const result = await apiGet<Record<string, number>>(
+  const result = await apiGet<{ counts: Record<string, number> }>(
     `/${locale}/products/${productType}/counts/${filterKey}`,
     filterParams,
     60,
   );
 
-  return result ?? {};
+  return result?.counts ?? {};
 }
 
 // ── Pure utility (migrated from src/lib/drupal/products.ts) ─────────────────
