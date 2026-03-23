@@ -4,9 +4,10 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { locales } from '@/i18n/request';
-import Header from '@/components_legacy/Header';
 import Footer from '@/components_legacy/Footer';
+import { Navbar } from '@/components/layout/Navbar';
 import { fetchMenu, transformMenuToNavItems } from '@/lib/drupal';
+import { mapMenuToNavbar } from '@/lib/navbar/menu-mapper';
 import { cn } from '@/lib/utils';
 import { ThemeProvider } from '@/components/theme-provider';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -45,6 +46,7 @@ export default async function LocaleLayout({
     fetchMenu('footer', locale),
   ]);
   const initialMenu = transformMenuToNavItems(menu, locale);
+  const navbarMenu = mapMenuToNavbar(initialMenu);
   const footerMenuItems = transformMenuToNavItems(footerMenu, locale);
 
   return (
@@ -62,8 +64,8 @@ export default async function LocaleLayout({
         <ThemeProvider>
           <TooltipProvider>
             <NextIntlClientProvider messages={messages}>
-              <Header locale={locale} initialMenu={initialMenu} />
-              <main style={{ minHeight: '60vh' }}>{children}</main>
+              <Navbar locale={locale} menu={navbarMenu} />
+              <main className="pt-[92px]" style={{ minHeight: '60vh' }}>{children}</main>
               <Footer locale={locale} initialMenu={footerMenuItems} />
             </NextIntlClientProvider>
           </TooltipProvider>
