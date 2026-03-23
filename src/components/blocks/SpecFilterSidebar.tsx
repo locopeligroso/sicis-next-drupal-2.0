@@ -1,3 +1,4 @@
+import { FilterPanel } from '@/components/composed/FilterPanel';
 import { MobileFilterTrigger } from '@/components/composed/MobileFilterTrigger';
 import { SpecFilterSidebarContent } from './SpecFilterSidebarContent';
 import type {
@@ -42,10 +43,10 @@ export function SpecFilterSidebar({
 
   return (
     <>
-      {/* Desktop sidebar -- sticky, always visible on md+ */}
-      <aside className="sticky top-0 hidden md:block w-64 shrink-0 overflow-y-auto h-screen p-4">
-        {content}
-      </aside>
+      {/* Desktop sidebar -- sticky glass panel, always visible on md+ */}
+      <div className="sticky top-20 hidden self-start md:block">
+        <FilterPanel>{content}</FilterPanel>
+      </div>
 
       {/* Mobile trigger -- FAB + Sheet drawer, visible below md */}
       <MobileFilterTrigger
