@@ -67,15 +67,15 @@ export async function fetchFilterOptions(
     return [];
   }
 
-  const items = await apiGet<TaxonomyItem[]>(
+  const result = await apiGet<{ items: TaxonomyItem[] }>(
     `/${locale}/taxonomy/${vocabulary}`,
     {},
     3600,
   );
 
-  if (!items) return [];
+  if (!result?.items) return [];
 
-  return items.map((item) => {
+  return result.items.map((item) => {
     const filterOption: FilterOption = {
       id: item.id,
       slug: deriveSlug(item.path, item.name),
@@ -105,15 +105,15 @@ export async function fetchCategoryOptions(
   productType: string,
   locale: string,
 ): Promise<FilterOption[]> {
-  const items = await apiGet<CategoryOptionItem[]>(
+  const result = await apiGet<{ items: CategoryOptionItem[] }>(
     `/${locale}/category-options/${productType}`,
     {},
     3600,
   );
 
-  if (!items) return [];
+  if (!result?.items) return [];
 
-  return items
+  return result.items
     .map((item) => {
       const imageUrl = emptyToNull(item.imageUrl);
       return {
