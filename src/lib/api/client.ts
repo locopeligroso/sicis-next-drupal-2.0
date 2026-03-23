@@ -1,13 +1,21 @@
 import { DRUPAL_BASE_URL } from '@/lib/drupal/config';
 
-const API_BASE = `${DRUPAL_BASE_URL}/api/v1`;
-
+/**
+ * Drupal REST endpoints require locale prefix BEFORE /api/v1:
+ *   https://drupal.example.com/{locale}/api/v1/{endpoint}
+ *
+ * Callers pass paths like `/{locale}/entity` or `/{locale}/products/prodotto_mosaico`.
+ * This function inserts `/api/v1` after the locale prefix.
+ */
 export async function apiGet<T>(
   path: string,
   params: Record<string, string | number | boolean | undefined> = {},
   revalidate: number = 300,
 ): Promise<T | null> {
-  const url = new URL(`${API_BASE}${path}`);
+  // path comes in as "/{locale}/endpoint" — insert /api/v1 after locale
+  // e.g. "/it/entity" → "/it/api/v1/entity"
+  const pathWithApi = path.replace(/^\/([a-z]{2})\//, '/$1/api/v1/');
+  const url = new URL(`${DRUPAL_BASE_URL}${pathWithApi}`);
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== null) {
       url.searchParams.set(key, String(value));
