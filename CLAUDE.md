@@ -1,5 +1,7 @@
 # CLAUDE.md — Sicis Next.js Frontend
 
+> **Source of truth:** The code is always the source of truth. This document may be outdated — when in doubt, read the code. For Drupal data (fields, entities, menus, paragraphs), the only real source is what Drupal returns via JSON:API — never assume field presence or structure from this doc alone, always verify against the actual API response.
+
 ## Project Overview
 Decoupled Next.js 16 frontend for Sicis (luxury mosaic brand) backed by headless Drupal 10.
 6 languages: IT (default), EN, FR, DE, ES, RU.
