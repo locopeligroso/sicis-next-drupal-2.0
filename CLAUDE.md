@@ -99,21 +99,15 @@ Rules:
 
 ### Composed (`src/components/composed/`)
 
-| Group | Components |
-|-------|-----------|
-| Product | Typography, ResponsiveImage, ProductCarousel, ProductCta, ProductPricingCard, AttributeGrid, SwatchList, SpecsTable, DocumentCard |
-| Listing & Filters | ProductCard, ProductGrid, CategoryCard, CategoryCardGrid, ListingToolbar, ActiveFilters, FilterGroup, LoadMoreButton |
-| Filter Types | CheckboxFilter, ColorSwatchFilter, ImageListFilter |
-| Navigation & Layout | MegaMenuExplore, MegaMenuFilterFind, MegaMenuProjects, MegaMenuInfo, NavDarkModeToggle, NavLanguageSwitcher |
-| Content & Media | ArrowLink, VimeoPlayer, GalleryCarousel |
-| Utility | MobileFilterTrigger, GenTestoImmagineBody |
+Scan with: `node /Users/nicolagasco/.claude/skills/ds/scripts/inventory.js composed`
 
-**Component notes for non-obvious entries:**
+**Non-obvious components:**
 
-- **VimeoPlayer** — Client component wrapping `@vimeo/player` SDK. Renders a poster image overlay on load; on play, shows the Vimeo iframe with custom controls (play/pause, seek slider, volume, fullscreen). Native Vimeo controls are disabled (`controls=0`).
-- **GalleryCarousel** — Horizontal scroll carousel with snap alignment, prev/next arrow buttons, and an optional `header` slot (title + nav arrows rendered edge-aligned with the page container). Used by `GenGallery` and `GenGalleryIntro`.
-- **MobileFilterTrigger** — Fixed floating action button (below `md` breakpoint) that opens a left-side Sheet drawer containing the filter tree (`children`). Displays active filter count and result count in the footer close button.
-- **GenTestoImmagineBody** — Shared text column sub-component used inside `GenTestoImmagine` and `GenTestoImmagineBig`. Renders an optional H2 title, sanitized HTML body, and an optional `ArrowLink`.
+- **VimeoPlayer** — Client component wrapping `@vimeo/player` SDK. Poster image overlay; on play, Vimeo iframe with custom controls. Native controls disabled (`controls=0`).
+- **GalleryCarousel** — Horizontal scroll carousel with snap alignment, prev/next arrows, optional `header` slot. Used by `GenGallery` and `GenGalleryIntro`.
+- **DocumentCard** — Auto-detects label+icon from href URL pattern (PDF/video/catalog/fallback). Supports `vertical` and `horizontal` layout variants.
+- **MobileFilterTrigger** — Fixed FAB (below `md`) opening Sheet drawer with filter tree. Shows active filter count + result count.
+- **GenTestoImmagineBody** — Shared text column used inside `GenTestoImmagine` and `GenTestoImmagineBig`.
 
 ---
 
@@ -123,20 +117,7 @@ Rules:
 - `Spec*` — Product and listing page blocks, tightly coupled to specific data shapes (product fields, filter registries). Used directly in templates.
 - `Gen*` — General-purpose paragraph blocks driven by Drupal `paragraph--blocco_*` data. Wired through `ParagraphResolver` and reusable across all content types.
 
-**Spec blocks:**
-
-| Block | Purpose |
-|-------|---------|
-| `SpecProductHero` | Carousel + title + collection subtitle + description + CTAs + pricing card + discover link + sticky mobile CTA bar |
-| `SpecProductDetails` | Attribute row (dimensions, shape, finishing) |
-| `SpecProductSpecs` | Info cards (Assembly/Grouting/Maintenance) + technical sheet grid on `surface-1` background |
-| `SpecProductResources` | Catalog document cards grid |
-| `SpecProductGallery` | Image grid |
-| `SpecProductListing` | Product grid with filter state integration |
-| `SpecFilterSidebar` | Desktop filter panel (Sheet wrapper) |
-| `SpecFilterSidebarContent` | Client component rendering filter groups (CheckboxFilter, ColorSwatchFilter, ImageListFilter) from `FilterGroupConfig[]` |
-| `SpecListingHeader` | Listing page header — category title, description, result count, sort controls |
-| `SpecCategory` | Category hub card (image + title + product count) |
+Scan with: `node /Users/nicolagasco/.claude/skills/ds/scripts/inventory.js blocks`
 
 **Gen blocks built — `blocco_*` → `Gen*` mapping:**
 
@@ -196,34 +177,13 @@ shadcn/ui primitives (base-vega preset, base-ui). NEVER modify directly.
 
 ### Legacy (`src/components_legacy/`)
 
-**Root components:**
-Header, Footer, MegaMenu, DrupalImage, LanguageSwitcher, ColorSwatches, FilterSidebar, FilterSidebarSkeleton, ProductListing, ProductListingSkeleton, Documents, Specs, UnknownEntity, ProjectListing, EnvironmentListing, BlogListing, ShowroomListing, DocumentListing
+Being replaced progressively. Check directory contents for current state.
 
 Notes:
 - Header, MegaMenu, LanguageSwitcher superseded by `src/components/layout/` — kept for reference only
 - Footer still actively used (not yet migrated)
 - DrupalImage still used in all legacy product templates
-
-**`blocks_legacy/`:**
-`Blocco*` paragraph components + `SliderClient` (client-side carousel used by BloccoSliderHome) + `ParagraphResolver`
-
-| Component | Status |
-|-----------|--------|
-| BloccoGallery | Replaced by `GenGallery` |
-| BloccoTestoImmagineBig | Replaced by `GenTestoImmagineBig` |
-| BloccoTestoImmagineBlog | Replaced by `GenTestoImmagineBlog` |
-| BloccoGalleryIntro | Replaced by `GenGalleryIntro` |
-| BloccoDocumenti | Replaced by `GenDocumenti` |
-| BloccoQuote | Replaced by `GenQuote` (via BloccoIntro path) |
-| BloccoIntro | Replaced by `GenIntro` |
-| BloccoSliderHome | Active in LEGACY_MAP |
-| BloccoVideo | Active in LEGACY_MAP (BloccoVideo path; GenVideo wired separately) |
-| BloccoCorrelati | Active in LEGACY_MAP |
-| BloccoNewsletter | Active in LEGACY_MAP |
-| BloccoFormBlog | Active in LEGACY_MAP |
-| BloccoAnni | Active in LEGACY_MAP |
-| BloccoTutorial | Active in LEGACY_MAP |
-| SliderClient | Used by BloccoSliderHome |
+- `blocks_legacy/`: `Blocco*` paragraph components + `ParagraphResolver`. Migration status tracked in ParagraphResolver's `LEGACY_MAP` — source of truth for what's still legacy
 
 ## Templates — Migration Matrix
 
@@ -336,18 +296,9 @@ Zero React/Next.js dependencies — 100% unit-testable.
 
 ## Storybook
 
-Framework: `@storybook/nextjs-vite`. All stories use `satisfies Meta` pattern with a single `Playground` story per component and `argTypes` controls.
+**Status: not actively maintained.** Decision pending on whether to dismiss or resume.
 
-`preview.ts` configuration: `nextjs.appDirectory: true` + `nextjs.navigation` mocks.
-
-| Directory | Coverage |
-|---|---|
-| `.storybook/stories/primitives/` | All shadcn/ui primitives |
-| `.storybook/stories/composed/` | All DS composed components with stories |
-| `.storybook/stories/blocks/` | All Spec blocks + select Gen blocks |
-| `.storybook/stories/design-tokens/` | Colors, Spacing, Typography catalog |
-
-`.storybook/drafts/` — empty (all draft stories deleted after extraction).
+Framework: `@storybook/nextjs-vite`. Stories in `.storybook/stories/` organized by layer (primitives, composed, blocks, design-tokens).
 
 ---
 
@@ -421,9 +372,8 @@ Source: `src/styles/globals.css`
 
 ### Component Coverage
 
-- **Gen blocks built**: GenIntro, GenQuote, GenVideo, GenTestoImmagine, GenTestoImmagineBig, GenTestoImmagineBlog, GenGallery, GenGalleryIntro, GenDocumenti
-- **Gen blocks remaining**: GenCorrelati, GenNewsletter, GenFormBlog, GenSliderHome, GenAnni, GenTutorial
-- **ParagraphResolver**: Gen adapters wired for all built blocks; remaining paragraph types fall back to legacy `Blocco*` components
+- **Gen blocks remaining to build**: GenCorrelati, GenNewsletter, GenFormBlog, GenSliderHome, GenAnni, GenTutorial
+- **ParagraphResolver**: source of truth for Gen vs legacy wiring — check `LEGACY_MAP` in `src/components_legacy/blocks_legacy/ParagraphResolver.tsx`
 
 ### Layout
 
@@ -434,7 +384,7 @@ Source: `src/styles/globals.css`
 
 ### Storybook
 
-- All DS composed and Spec blocks have stories
+- Not actively maintained (see Storybook section above)
 
 ### Known Gaps
 
