@@ -13,6 +13,7 @@ interface NavbarProps {
 
 export function Navbar({ locale, menu }: NavbarProps) {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { isVisible } = useScrollDirection({ forceVisible: openMenu !== null });
 
   return (
@@ -37,13 +38,13 @@ export function Navbar({ locale, menu }: NavbarProps) {
 
         {/* Mobile bar only (inside floating container) */}
         <div className="lg:hidden">
-          <NavbarMobile locale={locale} menu={menu} barOnly />
+          <NavbarMobile locale={locale} menu={menu} barOnly isOpen={isMobileOpen} setIsOpen={setIsMobileOpen} />
         </div>
       </nav>
 
       {/* Mobile overlay (outside nav to avoid overflow-hidden clipping) */}
       <div className="lg:hidden">
-        <NavbarMobile locale={locale} menu={menu} overlayOnly />
+        <NavbarMobile locale={locale} menu={menu} overlayOnly isOpen={isMobileOpen} setIsOpen={setIsMobileOpen} />
       </div>
     </>
   );

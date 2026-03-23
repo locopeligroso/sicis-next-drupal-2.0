@@ -16,6 +16,8 @@ interface NavbarMobileProps {
   menu: NavbarMenu;
   barOnly?: boolean;
   overlayOnly?: boolean;
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
 }
 
 interface SubNav {
@@ -77,12 +79,11 @@ function buildSubNav(menu: NavbarMenu, key: SectionKey, title: string): SubNav {
 
 const NAV_SECTIONS: SectionKey[] = ['explore', 'filterFind', 'projects', 'info'];
 
-export function NavbarMobile({ locale, menu, barOnly, overlayOnly }: NavbarMobileProps) {
+export function NavbarMobile({ locale, menu, barOnly, overlayOnly, isOpen, setIsOpen }: NavbarMobileProps) {
   const t = useTranslations('nav');
   const router = useRouter();
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
-  const [isOpen, setIsOpen] = useState(false);
   const [subNav, setSubNav] = useState<SubNav | null>(null);
 
   // Body scroll lock
