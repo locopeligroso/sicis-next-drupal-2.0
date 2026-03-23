@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { NavDarkModeToggle } from '@/components/composed/NavDarkModeToggle';
 import { NavLanguageSwitcher } from '@/components/composed/NavLanguageSwitcher';
 import { MegaMenuInfo } from '@/components/composed/MegaMenuInfo';
+import { MegaMenuExplore } from '@/components/composed/MegaMenuExplore';
 import { cn } from '@/lib/utils';
 
 interface NavbarDesktopProps {
@@ -199,12 +200,16 @@ export function NavbarDesktop({
                 aria-label={getActiveLabel(openMenu as NavItemKey)}
                 className="max-h-[70vh] overflow-y-auto"
               >
-                {openMenu === 'info' && <MegaMenuInfo menu={menu.info} />}
-                {openMenu !== 'info' && (
-                  <div className="p-10 text-sm text-muted-foreground">
-                    Mega-menu: {openMenu}
-                  </div>
+                {openMenu === 'explore' && (
+                  <MegaMenuExplore menu={menu.explore} />
                 )}
+                {openMenu === 'info' && <MegaMenuInfo menu={menu.info} />}
+                {openMenu !== 'explore' &&
+                  openMenu !== 'info' && (
+                    <div className="p-10 text-sm text-muted-foreground">
+                      Mega-menu: {openMenu}
+                    </div>
+                  )}
               </div>
             )}
           </div>
