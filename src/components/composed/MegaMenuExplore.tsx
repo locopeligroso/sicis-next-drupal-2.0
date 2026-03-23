@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { ExploreSection } from '@/lib/navbar/types';
+import { cn } from '@/lib/utils';
 
 interface MegaMenuExploreProps {
   menu: ExploreSection;
@@ -43,12 +44,12 @@ export function MegaMenuExplore({ menu }: MegaMenuExploreProps) {
             >
               {/* Column header */}
               <div
-                className="pb-3 mb-4"
-                style={{
-                  borderBottom: isHovered
-                    ? '2px solid hsl(var(--foreground))'
-                    : '1px solid hsl(var(--muted-foreground) / 0.25)',
-                }}
+                className={cn(
+                  'pb-3 mb-4',
+                  isHovered
+                    ? 'border-b-2 border-foreground'
+                    : 'border-b border-muted-foreground/25',
+                )}
               >
                 <span className="text-[10px] tracking-[2.5px] uppercase font-bold text-foreground">
                   {group.label}
