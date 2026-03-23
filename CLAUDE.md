@@ -114,8 +114,13 @@ Gen blocks are rendered via `ParagraphResolver` which maps `paragraph--{type}` �
 #### Primitives (`src/components/ui/`)
 57 shadcn/ui primitives (base-vega preset, base-ui). NEVER modify directly.
 
+#### Layout (`src/components/layout/`)
+- `Navbar` — floating glassmorphism shell, scroll hide/show, responsive desktop/mobile switch
+- `NavbarDesktop` — desktop bar: logo + 4 nav items (label+desc) + search + dark mode + language switcher + mega-menu panel animation
+- `NavbarMobile` — mobile: hamburger + fullscreen dark overlay + push sub-navigation + language switcher
+
 #### Legacy (`src/components_legacy/`)
-18 root components (Header, Footer, MegaMenu, DrupalImage, LanguageSwitcher, etc.) + 15 paragraph blocks in `blocks_legacy/` — to be replaced progressively.
+Header, MegaMenu, LanguageSwitcher replaced by layout components above (legacy files kept for reference). Footer still legacy. DrupalImage etc. + 15 paragraph blocks in `blocks_legacy/` — to be replaced progressively.
 
 ### Templates
 - `src/templates/nodes/` — 18 node type templates (includes ProdottoIlluminazione)
@@ -177,13 +182,14 @@ Gen blocks are rendered via `ParagraphResolver` which maps `paragraph--{type}` �
 - **ProdottoMosaico**: fully migrated to design system (5 Spec blocks, 9 composed, no legacy)
 - **Other 5 product templates** (Vetrite, Arredo, Tessuto, Pixall, Illuminazione): all legacy — next to migrate
 - **VetriteCollezione**: hybrid (legacy + Tailwind documents section)
-- **Header/Footer**: legacy, managed separately from product templates
+- **Navbar**: fully migrated to design system — floating glassmorphism bar, 4 distinct mega-menus (Explore: columns+video, Filter&Find: thumbnail columns, Projects: list+image crossfade, Info: strategic+corporate+professional), mobile fullscreen overlay, hide-on-scroll, 6 locale language switcher
+- **Footer**: still legacy
 - **Animations**: removed for now, to be reimplemented with proper approach
 - **Storybook**: all Composed and Spec blocks have stories, rules enforced (single Playground, controls, @storybook/nextjs-vite)
 - **Block naming**: Spec*/Gen* convention in place. All 10 Spec blocks renamed.
 - **Gen blocks built**: GenIntro, GenQuote, GenVideo (VimeoPlayer composed), GenTestoImmagine (portrait/landscape adaptive with muted bands), GenGallery (header with title+arrows, responsive slide sizing), GenTestoImmagineBig (title+body two-col header, full-bleed image), GenTestoImmagineBlog (centered prose column, optional image), GenGalleryIntro (intro h1+overline+body as GalleryCarousel header, reuses GalleryCarousel composed), GenDocumenti (h3 title + adaptive layout: 1-2 docs horizontal, 3+ grid vertical, reuses DocumentCard composed with layout variant)
 - **Gen blocks remaining**: GenCorrelati, GenNewsletter, GenFormBlog, GenSliderHome, GenAnni, GenTutorial
-- **New Composed components**: ArrowLink (inline link + arrow), VimeoPlayer (Vimeo SDK + custom controls + poster click-to-play), GalleryCarousel (CSS scroll-snap carousel with header prop for title+arrows — sizing delegated to consumer via slideClassName), GenTestoImmagineBody (text block with title + body + link)
+- **New Composed components**: ArrowLink (inline link + arrow), VimeoPlayer (Vimeo SDK + custom controls + poster click-to-play), GalleryCarousel (CSS scroll-snap carousel with header prop for title+arrows — sizing delegated to consumer via slideClassName), GenTestoImmagineBody (text block with title + body + link), MegaMenuExplore (columns+video crossfade), MegaMenuFilterFind (thumbnail columns), MegaMenuProjects (list+image crossfade), MegaMenuInfo (strategic+corporate+professional), NavDarkModeToggle (theme toggle with hydration guard), NavLanguageSwitcher (locale dropdown with pending state)
 - **ParagraphResolver**: async, uses fetchParagraph for secondary fetches. GenIntro, GenQuote, GenVideo, GenTestoImmagine, GenGallery, GenTestoImmagineBig, GenTestoImmagineBlog, GenGalleryIntro, GenDocumenti wired with adapters. Rest still legacy.
 - **Templates updated**: Page, News, Ambiente, Articolo — removed legacy containers, added flex/gap spacing + ParagraphResolver
 
