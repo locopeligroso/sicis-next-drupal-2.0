@@ -8,6 +8,7 @@ import type { NavbarMenu } from '@/lib/navbar/types';
 import { Button } from '@/components/ui/button';
 import { NavDarkModeToggle } from '@/components/composed/NavDarkModeToggle';
 import { NavLanguageSwitcher } from '@/components/composed/NavLanguageSwitcher';
+import { MegaMenuInfo } from '@/components/composed/MegaMenuInfo';
 import { cn } from '@/lib/utils';
 
 interface NavbarDesktopProps {
@@ -28,7 +29,7 @@ type NavItemKey = (typeof NAV_ITEMS)[number]['key'];
 
 export function NavbarDesktop({
   locale,
-  menu: _menu,
+  menu,
   openMenu,
   setOpenMenu,
 }: NavbarDesktopProps) {
@@ -198,9 +199,12 @@ export function NavbarDesktop({
                 aria-label={getActiveLabel(openMenu as NavItemKey)}
                 className="max-h-[70vh] overflow-y-auto"
               >
-                <div className="p-10 text-sm text-muted-foreground">
-                  Mega-menu: {openMenu}
-                </div>
+                {openMenu === 'info' && <MegaMenuInfo menu={menu.info} />}
+                {openMenu !== 'info' && (
+                  <div className="p-10 text-sm text-muted-foreground">
+                    Mega-menu: {openMenu}
+                  </div>
+                )}
               </div>
             )}
           </div>
