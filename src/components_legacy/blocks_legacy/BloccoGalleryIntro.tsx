@@ -1,11 +1,9 @@
 import { getProcessedText } from '@/lib/field-helpers';
 import { sanitizeHtml } from '@/lib/sanitize';
-import { getDrupalImageUrl, fetchParagraph } from '@/lib/drupal';
+import { getDrupalImageUrl } from '@/lib/drupal/image';
 
 export default async function BloccoGalleryIntro({ paragraph }: { paragraph: Record<string, unknown> }) {
-  // Re-fetch paragraph with nested elements and their images
-  const enriched = await fetchParagraph(paragraph as { type: string; id: string; [key: string]: unknown });
-  const data = enriched ?? paragraph;
+  const data = paragraph;
 
   const title = getProcessedText(data.field_titolo_formattato);
   const body = getProcessedText(data.field_testo);

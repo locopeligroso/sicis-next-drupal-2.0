@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { DocumentCard } from '@/lib/drupal';
+import type { DocumentCard } from '@/lib/api/listings';
 
 interface DocumentListingProps {
   title: string;

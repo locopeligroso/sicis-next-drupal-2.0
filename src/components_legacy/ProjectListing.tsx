@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { ProgettoCard } from '@/lib/drupal';
+import type { ProgettoCard } from '@/lib/api/listings';
 
 interface ProjectListingProps {
   title: string;

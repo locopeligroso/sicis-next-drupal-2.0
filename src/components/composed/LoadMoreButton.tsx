@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
-import type { ProductCard as ProductCardData } from '@/lib/drupal/products'
+import type { ProductCard as ProductCardData } from '@/lib/api/products'
 import type { FilterDefinition } from '@/domain/filters/search-params'
 import { loadMoreProducts } from '@/lib/actions/load-more-products'
 import { ProductGrid } from '@/components/composed/ProductGrid'

@@ -2,7 +2,7 @@ import { SpecListingHeader } from '@/components/blocks/SpecListingHeader';
 import { SpecFilterSidebar } from '@/components/blocks/SpecFilterSidebar';
 import { SpecCategory } from '@/components/blocks/SpecCategory';
 import { SpecProductListing } from '@/components/blocks/SpecProductListing';
-import type { ProductCard } from '@/lib/drupal/products';
+import type { ProductCard } from '@/lib/api/products';
 import type {
   ListingConfig,
   FilterOption,

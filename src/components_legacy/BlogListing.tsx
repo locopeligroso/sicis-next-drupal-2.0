@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { BlogCard } from '@/lib/drupal';
+import type { BlogCard } from '@/lib/api/listings';
 
 interface BlogListingProps {
   title: string;

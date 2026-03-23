@@ -1,14 +1,7 @@
-import { getDrupalImageUrl, fetchParagraph } from '@/lib/drupal';
+import { getDrupalImageUrl } from '@/lib/drupal/image';
 
 export default async function BloccoGallery({ paragraph }: { paragraph: Record<string, unknown> }) {
-  // Re-fetch paragraph with nested slides and their images
-  // NOTE: Drupal field is field_slide, NOT field_elementi
-  // Guard: fetchParagraph requires { type, id } — fall back to paragraph as-is if missing
-  const enriched =
-    typeof paragraph.type === 'string' && typeof paragraph.id === 'string'
-      ? await fetchParagraph(paragraph as { type: string; id: string; [key: string]: unknown })
-      : null;
-  const data = enriched ?? paragraph;
+  const data = paragraph;
 
   const items = (data.field_slide as Record<string, unknown>[] | undefined) ?? [];
 

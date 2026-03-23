@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { fetchEntity } from '@/lib/api/entity';
 import { getComponentName } from '@/lib/node-resolver';
 import UnknownEntity from '@/components_legacy/UnknownEntity';
-import { getSectionConfigAsync } from '@/lib/drupal';
+import { getSectionConfigAsync } from '@/domain/routing/section-config';
 import { getRoutingRegistry } from '@/domain/routing/routing-registry';
 import { parseFiltersFromUrl } from '@/domain/filters/search-params';
 import {

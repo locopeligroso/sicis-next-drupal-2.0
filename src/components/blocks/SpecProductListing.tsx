@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ListingToolbar } from '@/components/composed/ListingToolbar'
 import { LoadMoreButton } from '@/components/composed/LoadMoreButton'
-import type { ProductCard } from '@/lib/drupal/products'
+import type { ProductCard } from '@/lib/api/products'
 import type { SortOptionDef } from '@/domain/filters/registry'
 import type { FilterDefinition } from '@/domain/filters/search-params'
 

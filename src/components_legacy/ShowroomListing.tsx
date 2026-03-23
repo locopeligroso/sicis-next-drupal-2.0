@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { ShowroomCard } from '@/lib/drupal';
+import type { ShowroomCard } from '@/lib/api/listings';
 
 interface ShowroomListingProps {
   title: string;

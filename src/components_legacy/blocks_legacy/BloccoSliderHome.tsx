@@ -1,14 +1,9 @@
-import { getDrupalImageUrl, fetchParagraph } from '@/lib/drupal';
+import { getDrupalImageUrl } from '@/lib/drupal/image';
 import { getProcessedText } from '@/lib/field-helpers';
 import SliderClient, { type SlideData } from './SliderClient';
 
 export default async function BloccoSliderHome({ paragraph }: { paragraph: Record<string, unknown> }) {
-  // Re-fetch paragraph with nested elements and their images
-  const enriched =
-    typeof paragraph.type === 'string' && typeof paragraph.id === 'string'
-      ? await fetchParagraph(paragraph as { type: string; id: string; [key: string]: unknown })
-      : null;
-  const data = enriched ?? paragraph;
+  const data = paragraph;
 
   const items = (data.field_elementi as Record<string, unknown>[] | undefined) ?? [];
 
