@@ -4,10 +4,25 @@
 
 import { cache } from 'react';
 import { DRUPAL_BASE_URL, DRUPAL_ORIGIN } from './config';
-import {
-  buildJsonApiFilters,
-  type FilterDefinition,
-} from '@/domain/filters/search-params';
+import type { FilterDefinition } from '@/domain/filters/search-params';
+
+/** @internal Builds JSON:API filter query params from FilterDefinition[]. */
+function buildJsonApiFilters(filters: FilterDefinition[], params: URLSearchParams): void {
+  filters.forEach((filter, index) => {
+    const alias = `f${index}`;
+    params.set(`filter[${alias}][condition][path]`, filter.field);
+    if (filter.operator !== '=') {
+      params.set(`filter[${alias}][condition][operator]`, filter.operator);
+    }
+    if (Array.isArray(filter.value)) {
+      filter.value.forEach((v, vi) => {
+        params.set(`filter[${alias}][condition][value][${vi}]`, v);
+      });
+    } else {
+      params.set(`filter[${alias}][condition][value]`, filter.value);
+    }
+  });
+}
 
 export interface ProductCard {
   id: string;

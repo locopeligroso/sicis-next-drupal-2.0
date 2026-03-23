@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getRevalidateTime, getComponentName, getIncludeFields } from './node-resolver';
+import { getRevalidateTime, getComponentName } from './node-resolver';
 
 // ── getComponentName ──────────────────────────────────────────────────────
 
@@ -115,71 +115,3 @@ describe('getRevalidateTime', () => {
   });
 });
 
-// ── getIncludeFields ──────────────────────────────────────────────────────
-
-describe('getIncludeFields', () => {
-  it('returns include fields for prodotto_mosaico', () => {
-    const include = getIncludeFields('prodotto_mosaico');
-    expect(include).toBeDefined();
-    expect(include).toContain('field_immagine');
-    expect(include).toContain('field_collezione');
-    expect(include).toContain('field_gallery');
-  });
-
-  it('returns include fields for prodotto_arredo', () => {
-    const include = getIncludeFields('prodotto_arredo');
-    expect(include).toBeDefined();
-    expect(include).toContain('field_immagine');
-    expect(include).toContain('field_categoria');
-  });
-
-  it('returns include fields for prodotto_vetrite', () => {
-    const include = getIncludeFields('prodotto_vetrite');
-    expect(include).toBeDefined();
-    expect(include).toContain('field_collezione');
-    expect(include).toContain('field_colori');
-  });
-
-  it('returns include fields for prodotto_tessuto', () => {
-    const include = getIncludeFields('prodotto_tessuto');
-    expect(include).toBeDefined();
-    expect(include).toContain('field_colori');
-    expect(include).toContain('field_categoria');
-  });
-
-  it('returns include fields for prodotto_pixall', () => {
-    const include = getIncludeFields('prodotto_pixall');
-    expect(include).toBeDefined();
-    expect(include).toContain('field_immagine');
-    expect(include).toContain('field_colori');
-  });
-
-  it('returns field_blocchi for page (paragraph-based content)', () => {
-    const include = getIncludeFields('page');
-    expect(include).toBeDefined();
-    expect(include).toContain('field_blocchi');
-  });
-
-  it('returns field_blocchi for articolo', () => {
-    const include = getIncludeFields('articolo');
-    expect(include).toBeDefined();
-    expect(include).toContain('field_blocchi');
-    expect(include).toContain('field_immagine');
-  });
-
-  it('does NOT include field_blocchi for prodotto_mosaico (products have no paragraphs)', () => {
-    const include = getIncludeFields('prodotto_mosaico');
-    expect(include).not.toContain('field_blocchi');
-  });
-
-  it('returns undefined for unknown bundle', () => {
-    const include = getIncludeFields('unknown_bundle');
-    expect(include).toBeUndefined();
-  });
-
-  it('returns include fields for taxonomy terms', () => {
-    const include = getIncludeFields('mosaico_collezioni');
-    expect(include).toBeDefined();
-    expect(include).toContain('field_immagine');
-  });
-});
