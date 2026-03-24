@@ -25,8 +25,11 @@ const PLACEHOLDER_COLORS: Record<string, string> = {
  * Videos auto-play muted on hover, pause when not active.
  */
 const GROUP_VIDEOS: Record<string, string> = {
-  Mosaico: '/video/mosaico - nav.mov',
-  Vetrite: '/video/vetrite-nav.mov',
+  Mosaico: '/video/mosaico - nav.mp4',
+  Vetrite: '/video/vetrite-nav.mp4',
+  Living: '/video/arredo-nav.mp4',
+  Tessile: '/video/textile-nav.mp4',
+  Jewels: '/video/jewels-nav.mp4',
 };
 
 /** Inline video that plays on hover and pauses when hidden. */
