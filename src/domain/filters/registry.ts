@@ -84,12 +84,10 @@ export const SLUG_OVERRIDES: Record<string, string> = {
   colibrì: 'Colibrì',
   neocolibri: 'NeoColibrì',
   neocolibrì: 'NeoColibrì',
-  'neocolibri-barrels': 'NeoColibrì - Barrels',
-  'neocolibrì-barrels': 'NeoColibrì - Barrels',
-  'neocolibri-cubes': 'NeoColibrì - Cubes',
-  'neocolibrì-cubes': 'NeoColibrì - Cubes',
-  'neocolibri-domes': 'NeoColibrì - Domes',
-  'neocolibrì-domes': 'NeoColibrì - Domes',
+  // Removed: neocolibri-barrels, neocolibri-cubes, neocolibri-domes
+  // These are no longer separate collection slugs — Barrels/Cubes/Domes will become
+  // "Tipo" sub-filter values under the unified NeoColibrì collection.
+  // See TODO in prodotto_mosaico config below.
   'petites-fleurs': 'Petites fleurs',
   // Slash in name
   'red-orange': 'Red / Orange',
@@ -166,6 +164,12 @@ export function deslugify(slug: string): string {
 // ── Filter Registry ───────────────────────────────────────────────────────
 
 export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
+  // TODO: Neoglass and NeoColibrì have sub-categorizations (Barrels/Cubes/Domes)
+  // that should appear as a "Tipo" multi-select filter when browsing these collections.
+  // Requires Drupal taxonomy restructuring — currently these are separate collection entries.
+  // Frontend rendering logic: when collection is Neoglass or NeoColibrì,
+  // SpecFilterSidebarContent should show an additional "Tipo" filter group
+  // with options: Barrels, Cubes, Domes.
   prodotto_mosaico: {
     contentType: 'prodotto_mosaico',
     basePaths: {
