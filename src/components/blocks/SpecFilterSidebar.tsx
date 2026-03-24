@@ -20,6 +20,7 @@ export interface SpecFilterSidebarProps {
   totalCount?: number;
   typologyNav?: TypologyNavItem[];
   activeTypologySlug?: string;
+  activePathFilterKey?: string;
 }
 
 export function SpecFilterSidebar({
@@ -33,6 +34,7 @@ export function SpecFilterSidebar({
   totalCount,
   typologyNav,
   activeTypologySlug,
+  activePathFilterKey,
 }: SpecFilterSidebarProps) {
   const content = (
     <SpecFilterSidebarContent
@@ -45,13 +47,14 @@ export function SpecFilterSidebar({
       locale={locale}
       typologyNav={typologyNav}
       activeTypologySlug={activeTypologySlug}
+      activePathFilterKey={activePathFilterKey}
     />
   );
 
   return (
     <>
-      {/* Desktop sidebar -- sticky glass panel, always visible on md+ */}
-      <div className="sticky top-20 hidden self-start md:block">
+      {/* Desktop sidebar -- anchored left panel, full height, always visible on md+ */}
+      <div className="hidden md:block">
         <FilterPanel>{content}</FilterPanel>
       </div>
 

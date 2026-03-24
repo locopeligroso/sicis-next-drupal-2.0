@@ -35,53 +35,48 @@ export function ContextBar({
   const t = useTranslations("breadcrumb")
 
   return (
-    <div className="flex items-center gap-3 border-b border-border pb-3 mb-3">
-      {/* Thumbnail or swatch */}
+    <div className="flex items-center gap-(--spacing-element) border-b border-border pb-(--spacing-element) mb-(--spacing-content)">
+      {/* Thumbnail or swatch — centered vertically with title + actions */}
       {thumbnail ? (
         <Image
           src={thumbnail}
           alt={title}
-          width={48}
-          height={48}
-          className="size-12 rounded-full object-cover"
+          width={64}
+          height={64}
+          className="size-16 shrink-0 rounded-full object-cover"
         />
       ) : swatchColor ? (
         <div
-          className="size-12 shrink-0 rounded-full"
+          className="size-16 shrink-0 rounded-full"
           style={{ backgroundColor: swatchColor }}
         />
       ) : null}
 
-      {/* Title + subtitle */}
-      <div className="min-w-0">
-        <Typography textRole="body-lg" as="p" className="truncate font-bold text-foreground">
+      {/* Title + actions below */}
+      <div className="min-w-0 flex flex-col gap-1">
+        <Typography textRole="h3" as="p" className="truncate text-foreground">
           {title}
         </Typography>
-        <Typography textRole="body-sm" as="p" className="truncate text-muted-foreground">
-          {subtitle}
-        </Typography>
+        <div className="flex items-center gap-2">
+          {/* Change popover */}
+          <Popover>
+            <PopoverTrigger
+              render={
+                <Button variant="outline" size="sm">
+                  {t("change")}
+                  <ChevronDown className="size-4" />
+                </Button>
+              }
+            />
+            <PopoverContent align="start">{changePopoverContent}</PopoverContent>
+          </Popover>
+
+          {/* Close / back link */}
+          <Button variant="ghost" size="icon" render={<Link href={backHref} />}>
+            <X className="size-4" />
+          </Button>
+        </div>
       </div>
-
-      {/* Vertical separator */}
-      <Separator orientation="vertical" className="h-7" />
-
-      {/* Change popover */}
-      <Popover>
-        <PopoverTrigger
-          render={
-            <Button variant="outline" size="sm">
-              {t("change")}
-              <ChevronDown className="size-4" />
-            </Button>
-          }
-        />
-        <PopoverContent align="start">{changePopoverContent}</PopoverContent>
-      </Popover>
-
-      {/* Close / back link */}
-      <Button variant="ghost" size="icon" render={<Link href={backHref} />}>
-        <X className="size-4" />
-      </Button>
 
       {/* Spacer to push ShareButton to the right */}
       <div className="ml-auto">

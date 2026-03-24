@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import { useTranslations } from "next-intl"
-import { ChevronDownIcon } from "lucide-react"
 
 import {
   Breadcrumb,
@@ -85,7 +84,7 @@ export function ListingBreadcrumb({
   const activeCategoryLabel = getCategoryLabel(activeCategory)
 
   return (
-    <Breadcrumb>
+    <Breadcrumb className="pt-(--spacing-content) pb-(--spacing-element)">
       <BreadcrumbList>
         {/* Products link */}
         <BreadcrumbItem>
@@ -99,9 +98,8 @@ export function ListingBreadcrumb({
         {/* Category with dropdown */}
         <BreadcrumbItem>
           <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-1 transition-colors hover:text-foreground">
+            <DropdownMenuTrigger className="transition-colors hover:text-foreground">
               {activeCategoryLabel}
-              <ChevronDownIcon className="size-3.5" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
               {CATEGORY_TYPES.map((type) => (

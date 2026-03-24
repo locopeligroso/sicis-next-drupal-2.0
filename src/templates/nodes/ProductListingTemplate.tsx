@@ -57,6 +57,9 @@ interface ProductListingTemplateProps {
   // Whether to show the filter panel — defaults to true for listing modes
   hasFilterPanel?: boolean;
 
+  // Key of the P0 filter active via path — excluded from panel (e.g. 'collection' or 'color')
+  activePathFilterKey?: string;
+
   // Legacy compat — used to derive variant when variant is not provided
   hasActiveP0?: boolean;
 }
@@ -124,6 +127,7 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
     typologyNav,
     activeTypologySlug,
     hasFilterPanel: hasFilterPanelProp,
+    activePathFilterKey,
     hasActiveP0,
   } = props;
 
@@ -163,58 +167,59 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
 
   // ── Listing modes: context-bar or airy-header ─────────────────────────
   return (
-    <div className="max-w-listing mx-auto px-(--spacing-page) pb-(--spacing-section)">
-      <ListingBreadcrumb
-        locale={locale}
-        activeCategory={productType}
-        subcategoryLabel={title}
-      />
-      <div className="flex gap-5 items-start">
-        {hasFilterPanel && (
-          <SpecFilterSidebar
-            filters={filters}
-            filterOptions={filterOptions}
-            activeFilters={activeFilters}
-            hasActiveP0={true}
-            listingConfig={listingConfig}
-            basePath={basePath}
-            locale={locale}
-            totalCount={total}
-            typologyNav={typologyNav}
-            activeTypologySlug={activeTypologySlug}
+    <div className="flex items-start">
+      {/* Panel — anchored to left edge of viewport */}
+      {hasFilterPanel && (
+        <SpecFilterSidebar
+          filters={filters}
+          filterOptions={filterOptions}
+          activeFilters={activeFilters}
+          hasActiveP0={true}
+          listingConfig={listingConfig}
+          basePath={basePath}
+          locale={locale}
+          totalCount={total}
+          typologyNav={typologyNav}
+          activeTypologySlug={activeTypologySlug}
+          activePathFilterKey={activePathFilterKey}
+        />
+      )}
+      {/* Content — contained */}
+      <main className="flex-1 min-w-0 max-w-listing mx-auto px-(--spacing-page) pb-(--spacing-section)">
+        <ListingBreadcrumb
+          locale={locale}
+          activeCategory={productType}
+          subcategoryLabel={title}
+        />
+        {variant === 'context-bar' ? (
+          <ContextBar
+            thumbnail={imageUrl}
+            swatchColor={swatchColor}
+            title={title}
+            subtitle={`${total ?? 0} prodotti`}
+            changePopoverContent={changePopoverContent}
+            backHref={backHref ?? basePath}
+          />
+        ) : (
+          <AiryHeader
+            title={title}
+            description={description}
+            productCount={total}
           />
         )}
-        <main className="flex-1 min-w-0">
-          {variant === 'context-bar' ? (
-            <ContextBar
-              thumbnail={imageUrl}
-              swatchColor={swatchColor}
-              title={title}
-              subtitle={`${total ?? 0} prodotti`}
-              changePopoverContent={changePopoverContent}
-              backHref={backHref ?? basePath}
-            />
-          ) : (
-            <AiryHeader
-              title={title}
-              description={description}
-              productCount={total}
-            />
-          )}
-          <SpecProductListing
-            products={products ?? []}
-            total={total ?? 0}
-            sortOptions={listingConfig.sortOptions}
-            currentSort={currentSort ?? ''}
-            productType={productType}
-            activeFilters={filterDefinitions}
-            pageSize={listingConfig.pageSize}
-            locale={locale}
-            basePath={basePath}
-            productCardRatio={listingConfig.productCardRatio}
-          />
-        </main>
-      </div>
+        <SpecProductListing
+          products={products ?? []}
+          total={total ?? 0}
+          sortOptions={listingConfig.sortOptions}
+          currentSort={currentSort ?? ''}
+          productType={productType}
+          activeFilters={filterDefinitions}
+          pageSize={listingConfig.pageSize}
+          locale={locale}
+          basePath={basePath}
+          productCardRatio={listingConfig.productCardRatio}
+        />
+      </main>
     </div>
   );
 }

@@ -12,7 +12,7 @@ import {
   fetchCategoryOptions,
 } from '@/lib/api/filters';
 import { fetchProducts, fetchFilterCounts } from '@/lib/api/products';
-import { FILTER_REGISTRY } from '@/domain/filters/registry';
+import { FILTER_REGISTRY, deslugify } from '@/domain/filters/registry';
 import type { FilterOption } from '@/domain/filters/registry';
 import type { TypologyNavItem } from '@/components/composed/TypologyNav';
 import { ProductListingTemplate } from '@/templates/nodes/ProductListingTemplate';
@@ -378,12 +378,16 @@ async function renderProductListing({
   const hasFilterPanel =
     variant === 'hub' ? false : Object.keys(filters).length > 0;
 
+  // ── Active P0 filter key (the one in the URL path, excluded from panel) ──
+  const activePathP0 = parsed.activeFilters.find((f) => f.type === 'path');
+  const activePathFilterKey = activePathP0?.key;
+
   // ── Context-bar props: imageUrl / swatchColor from active P0 option ──
   let imageUrl: string | undefined;
   let swatchColor: string | undefined;
 
   if (variant === 'context-bar') {
-    const activeP0 = parsed.activeFilters.find((f) => f.type === 'path');
+    const activeP0 = activePathP0;
     if (activeP0) {
       const options = filterOptions[activeP0.key] ?? [];
       const activeOption = options.find((o) => o.slug === activeP0.value);
@@ -393,6 +397,40 @@ async function renderProductListing({
         swatchColor = activeOption.cssColor;
       }
     }
+  }
+
+  // ── Change popover content for context-bar (collections or colors) ──
+  let changePopoverContent: React.ReactNode | undefined;
+
+  if (variant === 'context-bar' && activePathP0) {
+    // The popover shows the OTHER P0 options (same key as the active one)
+    const popoverOptions = filterOptions[activePathP0.key] ?? [];
+    const categoryGroup = listing.categoryGroups.find(
+      (cg) => cg.filterKey === activePathP0.key,
+    );
+    const isColorSwatch = categoryGroup?.hasColorSwatch ?? false;
+    const pathPrefix = filters[activePathP0.key]?.pathPrefix?.[locale];
+
+    const popoverItems = popoverOptions.map((opt) => ({
+      slug: opt.slug,
+      label: opt.label,
+      imageUrl: opt.imageUrl,
+      cssColor: opt.cssColor,
+      href: pathPrefix
+        ? `${basePath}/${pathPrefix}/${opt.slug}`
+        : `${basePath}/${opt.slug}`,
+      isActive: opt.slug === activePathP0.value,
+    }));
+
+    const { CollectionPopoverContent } = await import(
+      '@/components/composed/CollectionPopoverContent'
+    );
+    changePopoverContent = (
+      <CollectionPopoverContent
+        items={popoverItems}
+        mode={isColorSwatch ? 'swatches' : 'list'}
+      />
+    );
   }
 
   // ── Typology nav for Arredo/Illuminazione/Tessile ───────────────────
@@ -455,8 +493,10 @@ async function renderProductListing({
       imageUrl={imageUrl}
       swatchColor={swatchColor}
       backHref={basePath}
+      changePopoverContent={changePopoverContent}
       typologyNav={typologyNav}
       activeTypologySlug={activeTypologySlug}
+      activePathFilterKey={activePathFilterKey}
     />
   );
 }
@@ -527,9 +567,11 @@ export default async function SlugPage({
   if (singleSlug && isListingSlug) {
     const sectionConfig = await getSectionConfigAsync(slug, locale);
     if (sectionConfig) {
+      // Hub page — title is the section display name, derived from sectionConfig
+      // deslugify converts the slug to a human-readable name (e.g. "mosaico" → "Mosaico")
       return renderProductListing({
         productType: sectionConfig.productType,
-        title: singleSlug,
+        title: deslugify(singleSlug),
         slug,
         searchParams: sp,
         locale,
@@ -550,9 +592,13 @@ export default async function SlugPage({
       // by verifying getSectionConfig returns a productType (it returns null for detail pages)
       const parsed = parseFiltersFromUrl(slug, sp as Record<string, string> ?? {}, locale);
       if (parsed.activeFilters.length > 0) {
+        // Title = the active P0 filter's label (e.g. "Murano Smalto", "Rosso", "Seats")
+        // Falls back to deslugify of the filter value or last slug segment
+        const activeP0 = parsed.activeFilters.find((f) => f.type === 'path');
+        const listingTitle = activeP0?.label ?? deslugify(slug[slug.length - 1]);
         return renderProductListing({
           productType: sectionConfig.productType,
-          title: slug[0],
+          title: listingTitle,
           slug,
           searchParams: sp,
           locale,
@@ -580,7 +626,7 @@ export default async function SlugPage({
     if (sectionConfig) {
       return renderProductListing({
         productType: sectionConfig.productType,
-        title: slug[slug.length - 1] ?? slug[0] ?? 'Prodotti',
+        title: deslugify(slug[slug.length - 1] ?? slug[0] ?? 'Prodotti'),
         slug,
         searchParams: sp,
         locale,

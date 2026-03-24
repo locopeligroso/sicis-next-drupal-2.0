@@ -28,6 +28,8 @@ export interface SpecFilterSidebarContentProps {
   locale: string;
   typologyNav?: TypologyNavItem[];
   activeTypologySlug?: string;
+  /** Key of the P0 filter active via path (e.g. 'collection' or 'color') — excluded from panel */
+  activePathFilterKey?: string;
 }
 
 export function SpecFilterSidebarContent({
@@ -40,6 +42,7 @@ export function SpecFilterSidebarContent({
   locale,
   typologyNav,
   activeTypologySlug,
+  activePathFilterKey,
 }: SpecFilterSidebarContentProps) {
   const { toggleFilter, clearFilter, clearAll, isActive } = useFilterSync({
     basePath,
@@ -48,8 +51,10 @@ export function SpecFilterSidebarContent({
   });
   const t = useTranslations('filters');
 
-  // Use filters in their natural (registry) order
-  const visibleGroups = Object.values(filters);
+  // Exclude the P0 filter that's active via path (it's shown in the context bar)
+  const visibleGroups = Object.values(filters).filter(
+    (g) => g.key !== activePathFilterKey,
+  );
 
   const handleRemoveFilter = (key: string) => {
     clearFilter(key);
