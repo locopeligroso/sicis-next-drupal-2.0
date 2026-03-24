@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { getTranslations } from "next-intl/server"
+import { ArrowUpRight } from "lucide-react"
 
 import { HubSection } from "@/components/composed/HubSection"
 import { CategoryCard } from "@/components/composed/CategoryCard"
@@ -32,7 +33,7 @@ export async function SpecHubArredo({
 
   // ── 1. Typology cards ────────────────────────────────────────────────
   const typologySection = categories.length > 0 ? (
-    <section className="flex flex-col gap-4">
+    <section className="flex flex-col gap-(--spacing-element)">
       <Typography textRole="overline" as="h2">
         {tFilters("typologies")}
       </Typography>
@@ -87,22 +88,10 @@ export async function SpecHubArredo({
           <Link
             key={link.slug}
             href="#"
-            className="flex items-center gap-3 rounded-lg border border-border p-4 transition-colors hover:bg-accent"
+            className="flex items-center gap-3 rounded-lg border border-border p-(--spacing-element) transition-colors hover:bg-accent"
           >
             <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-muted">
-              <svg
-                className="size-5 text-muted-foreground"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.5}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
-                />
-              </svg>
+              <ArrowUpRight className="size-5 text-muted-foreground" />
             </div>
             <div className="min-w-0">
               <Typography textRole="body-sm" as="span" className="block truncate font-medium text-foreground">

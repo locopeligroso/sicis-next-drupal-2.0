@@ -54,9 +54,7 @@ export function SpecFilterSidebar({
   return (
     <>
       {/* Desktop sidebar -- anchored left panel, full height, always visible on md+ */}
-      <div className="hidden md:block">
-        <FilterPanel>{content}</FilterPanel>
-      </div>
+      <FilterPanel className="hidden md:block">{content}</FilterPanel>
 
       {/* Mobile trigger -- FAB + Sheet drawer, visible below md */}
       <MobileFilterTrigger

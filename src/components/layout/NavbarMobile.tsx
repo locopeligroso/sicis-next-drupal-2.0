@@ -162,7 +162,7 @@ export function NavbarMobile({ locale, menu, barOnly, overlayOnly, isOpen, setIs
       {/* Overlay Header */}
       <div className="flex items-center justify-between px-6 h-[56px] shrink-0">
         <Link href={`/${locale}`} className="shrink-0" onClick={close}>
-          <span className="text-sm font-bold tracking-[4px] text-white">SICIS</span>
+          <img src="/images/logo.png" alt="SICIS" className="h-5 w-auto invert" />
         </Link>
         <Button
           variant="ghost"
@@ -252,7 +252,7 @@ export function NavbarMobile({ locale, menu, barOnly, overlayOnly, isOpen, setIs
   const bar = (
     <div className="flex items-center justify-between px-6 h-[56px]">
       <Link href={`/${locale}`} className="shrink-0">
-        <span className="text-sm font-bold tracking-[4px]">SICIS</span>
+        <img src="/images/logo.png" alt="SICIS" className="h-5 w-auto" />
       </Link>
       <Button
         variant="ghost"

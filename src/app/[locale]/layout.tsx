@@ -11,6 +11,7 @@ import { mapMenuToNavbar } from '@/lib/navbar/menu-mapper';
 import { cn } from '@/lib/utils';
 import { ThemeProvider } from '@/components/theme-provider';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { Toaster } from '@/components/ui/sonner';
 import '@/styles/globals.css';
 
 const fontBody = Outfit({ subsets: ['latin'], variable: '--font-body' });
@@ -65,8 +66,19 @@ export default async function LocaleLayout({
           <TooltipProvider>
             <NextIntlClientProvider messages={messages}>
               <Navbar locale={locale} menu={navbarMenu} />
+              {process.env.NODE_ENV === 'development' && (
+                <div className="fixed bottom-2 left-2 z-[9999] rounded bg-black/80 px-2 py-1 font-mono text-xs text-white">
+                  <span className="sm:hidden">base (&lt;640)</span>
+                  <span className="hidden sm:inline md:hidden">sm (640-767)</span>
+                  <span className="hidden md:inline lg:hidden">md (768-1023)</span>
+                  <span className="hidden lg:inline xl:hidden">lg (1024-1279)</span>
+                  <span className="hidden xl:inline 2xl:hidden">xl (1280-1535)</span>
+                  <span className="hidden 2xl:inline">2xl (1536+)</span>
+                </div>
+              )}
               <main className="pt-[92px]" style={{ minHeight: '60vh' }}>{children}</main>
               <Footer locale={locale} initialMenu={footerMenuItems} />
+              <Toaster />
             </NextIntlClientProvider>
           </TooltipProvider>
         </ThemeProvider>

@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { getTranslations } from "next-intl/server"
+import { ArrowUpRight } from "lucide-react"
 
 import type {
   FilterOption,
@@ -10,6 +11,7 @@ import { CategoryCardGrid } from "@/components/composed/CategoryCardGrid"
 import { HubSection } from "@/components/composed/HubSection"
 import { PixallHubCard } from "@/components/composed/PixallHubCard"
 import { CategoryCard } from "@/components/composed/CategoryCard"
+import { ColorSwatchLink } from "@/components/composed/ColorSwatchLink"
 import { Typography } from "@/components/composed/Typography"
 
 interface SpecHubMosaicoProps {
@@ -37,23 +39,28 @@ export async function SpecHubMosaico({
 
   // ── 1. Color swatches ────────────────────────────────────────────────
   const colorSwatchSection = colorOptions.length > 0 ? (
-    <section className="flex flex-col gap-4">
-      <Typography textRole="overline" as="h2">
-        {tFilters("colors")}
-      </Typography>
-      <div className="flex flex-wrap gap-3">
+    <section className="flex flex-col gap-(--spacing-element)">
+      <div className="flex items-baseline justify-between">
+        <Typography textRole="h2" as="h2">
+          {tHub("exploreByColor")}
+        </Typography>
+        <Typography textRole="overline" as="span" className="text-muted-foreground">
+          {tHub("solidColours")}
+        </Typography>
+      </div>
+      <hr className="border-t border-border" />
+      <div className="flex flex-wrap gap-4">
         {colorOptions.map((color) => {
           const href = colorPathPrefix
             ? `${basePath}/${colorPathPrefix}/${color.slug}`
             : `${basePath}/${color.slug}`
           return (
-            <Link
+            <ColorSwatchLink
               key={color.slug}
               href={href}
-              className="size-11 rounded-full border border-border transition-opacity hover:opacity-80"
-              style={{ background: color.cssColor }}
-              aria-label={color.label}
-              title={color.label}
+              label={color.label}
+              imageUrl={color.imageUrl}
+              cssColor={color.cssColor}
             />
           )
         })}
@@ -64,7 +71,8 @@ export async function SpecHubMosaico({
   // ── 2. Collection cards ──────────────────────────────────────────────
   const collectionSection = collectionOptions.length > 0 ? (
     <CategoryCardGrid
-      title={tFilters("collections")}
+      title={tHub("exploreByCollection")}
+      subtitle={tHub("solidColours")}
       cards={collectionOptions}
       aspectRatio={listingConfig.categoryCardRatio}
       hasColorSwatch={false}
@@ -126,22 +134,10 @@ export async function SpecHubMosaico({
           <Link
             key={link.slug}
             href="#"
-            className="flex items-center gap-3 rounded-lg border border-border p-4 transition-colors hover:bg-accent"
+            className="flex items-center gap-3 rounded-lg border border-border p-(--spacing-element) transition-colors hover:bg-accent"
           >
             <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-muted">
-              <svg
-                className="size-5 text-muted-foreground"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.5}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
-                />
-              </svg>
+              <ArrowUpRight className="size-5 text-muted-foreground" />
             </div>
             <div className="min-w-0">
               <Typography textRole="body-sm" as="span" className="block truncate font-medium text-foreground">

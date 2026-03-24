@@ -9,10 +9,11 @@ interface HubSectionProps {
 
 export function HubSection({ title, children, className }: HubSectionProps) {
   return (
-    <section className={cn("flex flex-col gap-4", className)}>
-      <Typography textRole="overline" as="h2">
+    <section className={cn("flex flex-col gap-(--spacing-element)", className)}>
+      <Typography textRole="h2" as="h2">
         {title}
       </Typography>
+      <hr className="border-t border-border" />
       {children}
     </section>
   )

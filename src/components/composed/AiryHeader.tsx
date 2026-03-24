@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server"
 
+import { ShareButton } from "@/components/composed/ShareButton"
 import { Typography } from "@/components/composed/Typography"
 
 interface AiryHeaderProps {
@@ -18,7 +19,7 @@ export async function AiryHeader({
   const t = await getTranslations("listing")
 
   return (
-    <div className="flex flex-col gap-(--spacing-element) border-b border-border pb-(--spacing-content) mb-(--spacing-content)">
+    <div className="flex flex-col gap-(--spacing-element) border-b border-border mb-(--spacing-content) pb-(--spacing-element)">
       <Typography textRole="h1" as="h1" className="max-w-[40ch]">
         {title}
       </Typography>
@@ -39,14 +40,7 @@ export async function AiryHeader({
               {t("productCount", { count: productCount })}
             </Typography>
           )}
-          {shareUrl && (
-            <>
-              {productCount != null && (
-                <span className="text-muted-foreground">·</span>
-              )}
-              <span>🔗</span>
-            </>
-          )}
+          {shareUrl && <ShareButton />}
         </div>
       )}
     </div>

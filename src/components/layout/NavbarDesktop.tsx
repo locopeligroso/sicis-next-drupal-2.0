@@ -130,7 +130,7 @@ export function NavbarDesktop({
       <div className="flex items-center justify-between px-9 h-[72px]">
         {/* Left — Logo */}
         <Link href={`/${locale}`} className="shrink-0">
-          <span className="text-sm font-bold tracking-[4px]">SICIS</span>
+          <img src="/images/logo.png" alt="SICIS" className="h-5 w-auto" />
         </Link>
 
         {/* Center — Nav Items */}

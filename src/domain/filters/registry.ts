@@ -21,6 +21,8 @@ export interface FilterOption {
   label: string;
   id?: string;
   count?: number;
+  /** Count with only P0 filter active — used to distinguish "not in collection" (0) from "filtered out by P1" (0 count but baseCount > 0) */
+  baseCount?: number;
   imageUrl?: string;    // preview image for category cards
   cssColor?: string;    // fallback CSS color for swatches
 }

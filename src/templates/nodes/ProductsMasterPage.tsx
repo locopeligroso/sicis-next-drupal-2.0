@@ -113,7 +113,7 @@ export default async function ProductsMasterPage({
       </div>
 
       {/* Category cards grid */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-(--spacing-element) md:grid-cols-2 lg:grid-cols-3">
         {CATEGORY_TYPES.map((type) => {
           const label = getCategoryLabel(type);
           const desc = getCategoryDesc(type);
@@ -131,7 +131,7 @@ export default async function ProductsMasterPage({
 
               {/* Overlay — raw white/black values intentional: text sits on a
                  photo with a scrim gradient, not on a themed surface. */}
-              <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/60 to-transparent p-5 transition-colors group-hover:from-black/70">
+              <div className="absolute inset-0 flex flex-col justify-end gap-1 bg-gradient-to-t from-black/60 to-transparent p-(--spacing-element) transition-colors group-hover:from-black/70">
                 <Typography
                   textRole="h3"
                   as="span"
@@ -143,7 +143,7 @@ export default async function ProductsMasterPage({
                   <Typography
                     textRole="body-sm"
                     as="span"
-                    className="mt-1 text-white/80"
+                    className="text-white/80"
                   >
                     {desc}
                   </Typography>

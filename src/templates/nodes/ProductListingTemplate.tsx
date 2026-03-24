@@ -167,7 +167,7 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
 
   // ── Listing modes: context-bar or airy-header ─────────────────────────
   return (
-    <div className="flex items-start">
+    <div className="flex">
       {/* Panel — anchored to left edge of viewport */}
       {hasFilterPanel && (
         <SpecFilterSidebar
@@ -210,7 +210,6 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
         <SpecProductListing
           products={products ?? []}
           total={total ?? 0}
-          sortOptions={listingConfig.sortOptions}
           currentSort={currentSort ?? ''}
           productType={productType}
           activeFilters={filterDefinitions}

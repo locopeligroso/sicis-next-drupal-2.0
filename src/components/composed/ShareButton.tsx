@@ -14,7 +14,7 @@ export function ShareButton() {
   }
 
   return (
-    <Button variant="ghost" size="icon" onClick={handleShare} title={t('copyLink')}>
+    <Button variant="outline" size="icon-sm" onClick={handleShare} title={t('copyLink')}>
       <LinkIcon />
     </Button>
   )

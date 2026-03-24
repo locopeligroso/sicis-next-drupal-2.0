@@ -23,7 +23,7 @@ export function ProductCard({
     <Link
       href={href}
       className={cn(
-        "group flex flex-col gap-2 rounded-lg bg-card",
+        "group flex flex-col gap-2 rounded-lg",
         className,
       )}
     >

@@ -355,6 +355,7 @@ async function renderProductListing({
         }
       }
     }
+
   }
 
   // ── Determine layout variant ──────────────────────────────────────────
@@ -381,6 +382,38 @@ async function renderProductListing({
   // ── Active P0 filter key (the one in the URL path, excluded from panel) ──
   const activePathP0 = parsed.activeFilters.find((f) => f.type === 'path');
   const activePathFilterKey = activePathP0?.key;
+
+  // ── Base counts (P0-only) for non-P0 filter groups ───────────────────
+  // Distinguishes "not in collection" (baseCount=0) from "filtered out by P1"
+  if (activePathP0 && parsed.filterDefinitions.length > 0) {
+    const p0Config = filters[activePathP0.key];
+    const p0OnlyDefs = parsed.filterDefinitions.filter(
+      (fd) => p0Config && fd.field === p0Config.drupalField,
+    );
+
+    const baseCountPromises = Object.entries(filters)
+      .filter(([key]) => key !== activePathP0.key)
+      .map(async ([key, filterConfig]) => {
+        const counts = await fetchFilterCounts(
+          productType,
+          p0OnlyDefs,
+          key,
+          filterConfig.drupalField,
+          locale,
+        );
+        return [key, counts] as const;
+      });
+
+    const baseResults = await Promise.all(baseCountPromises);
+    for (const [key, counts] of baseResults) {
+      const options = filterOptions[key];
+      if (options) {
+        for (const option of options) {
+          option.baseCount = counts[option.label] ?? 0;
+        }
+      }
+    }
+  }
 
   // ── Context-bar props: imageUrl / swatchColor from active P0 option ──
   let imageUrl: string | undefined;

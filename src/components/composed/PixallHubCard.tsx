@@ -44,7 +44,7 @@ export function PixallHubCard({
 
       {/* Text column */}
       <div className="flex flex-col justify-center gap-2">
-        <Typography textRole="h3">{title}</Typography>
+        <Typography textRole="h3" as="h2">{title}</Typography>
 
         {description ? (
           <Typography textRole="body-md" className="text-muted-foreground">
@@ -66,7 +66,7 @@ export function PixallHubCard({
           </div>
         ) : null}
 
-        <Button variant="outline" size="sm" className="mt-2 w-fit" render={<Link href={exploreHref} />}>
+        <Button variant="outline" size="sm" className="mt-2 w-fit" nativeButton={false} render={<Link href={exploreHref} />}>
           {exploreLabel}
         </Button>
       </div>

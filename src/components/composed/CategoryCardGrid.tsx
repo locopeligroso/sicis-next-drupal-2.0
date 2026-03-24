@@ -4,6 +4,7 @@ import { Typography } from "@/components/composed/Typography"
 
 interface CategoryCardGridProps {
   title: string
+  subtitle?: string
   cards: FilterOption[]
   aspectRatio: string
   hasColorSwatch?: boolean
@@ -12,16 +13,25 @@ interface CategoryCardGridProps {
 
 export function CategoryCardGrid({
   title,
+  subtitle,
   cards,
   aspectRatio,
   hasColorSwatch,
   buildHref,
 }: CategoryCardGridProps) {
   return (
-    <section className="flex flex-col gap-4">
-      <Typography textRole="overline" as="h2">
-        {title}
-      </Typography>
+    <section className="flex flex-col gap-(--spacing-element)">
+      <div className="flex items-baseline justify-between">
+        <Typography textRole="h2" as="h2">
+          {title}
+        </Typography>
+        {subtitle && (
+          <Typography textRole="overline" as="span" className="text-muted-foreground">
+            {subtitle}
+          </Typography>
+        )}
+      </div>
+      <hr className="border-t border-border" />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
         {cards.map((card) => (

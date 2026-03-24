@@ -46,16 +46,15 @@ export function useFilterSync({
 
         if (otherPathActive) {
           // Second P0 → use query param instead of path navigation
-          const params = new URLSearchParams(searchParams.toString());
+          // Reset all other query filters (P1) when changing a P0-level filter
+          const params = new URLSearchParams();
           const queryKey = key;
-          if (params.get(queryKey) === value) {
-            params.delete(queryKey);
-          } else {
+          if (searchParams.get(queryKey) !== value) {
             params.set(queryKey, value);
           }
-          params.delete('page');
           const currentPath = window.location.pathname;
-          router.push(`${currentPath}?${params.toString()}`);
+          const qs = params.toString();
+          router.push(qs ? `${currentPath}?${qs}` : currentPath);
           return;
         }
 

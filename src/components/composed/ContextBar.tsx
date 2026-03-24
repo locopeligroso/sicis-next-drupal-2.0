@@ -35,7 +35,7 @@ export function ContextBar({
   const t = useTranslations("breadcrumb")
 
   return (
-    <div className="flex items-center gap-(--spacing-element) border-b border-border pb-(--spacing-element) mb-(--spacing-content)">
+    <div className="flex items-center gap-(--spacing-element) border-b border-border bg-background mb-(--spacing-element) pb-(--spacing-element)">
       {/* Thumbnail or swatch — centered vertically with title + actions */}
       {thumbnail ? (
         <Image
@@ -43,11 +43,11 @@ export function ContextBar({
           alt={title}
           width={64}
           height={64}
-          className="size-16 shrink-0 rounded-full object-cover"
+          className="size-16 shrink-0 rounded-full object-cover shadow-[inset_0_0_0_1px_rgba(128,128,128,0.25),0_0_0_1px_rgba(128,128,128,0.15)]"
         />
       ) : swatchColor ? (
         <div
-          className="size-16 shrink-0 rounded-full"
+          className="size-16 shrink-0 rounded-full shadow-[inset_0_0_0_1px_rgba(128,128,128,0.25),0_0_0_1px_rgba(128,128,128,0.15)]"
           style={{ backgroundColor: swatchColor }}
         />
       ) : null}
@@ -64,22 +64,22 @@ export function ContextBar({
               render={
                 <Button variant="outline" size="sm">
                   {t("change")}
-                  <ChevronDown className="size-4" />
+                  <ChevronDown data-icon="inline-end" />
                 </Button>
               }
             />
-            <PopoverContent align="start">{changePopoverContent}</PopoverContent>
+            <PopoverContent align="start" className="w-64 max-h-72 overflow-y-auto">{changePopoverContent}</PopoverContent>
           </Popover>
 
           {/* Close / back link */}
-          <Button variant="ghost" size="icon" render={<Link href={backHref} />}>
-            <X className="size-4" />
+          <Button variant="outline" size="icon-sm" nativeButton={false} render={<Link href={backHref} />}>
+            <X />
           </Button>
         </div>
       </div>
 
-      {/* Spacer to push ShareButton to the right */}
-      <div className="ml-auto">
+      {/* Share bottom-right */}
+      <div className="ml-auto self-end">
         <ShareButton />
       </div>
     </div>

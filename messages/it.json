@@ -208,6 +208,9 @@
     "change": "Cambia"
   },
   "hub": {
+    "exploreByColor": "Esplora per colore",
+    "solidColours": "Solid Colours",
+    "exploreByCollection": "Esplora per collezione",
     "discoverAlso": "Scopri anche",
     "deepDives": "Approfondimenti",
     "explore": "Esplora"

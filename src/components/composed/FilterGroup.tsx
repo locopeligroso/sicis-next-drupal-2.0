@@ -6,6 +6,8 @@ interface FilterGroupProps {
 }
 
 export function FilterGroup({ label, children }: FilterGroupProps) {
+  if (!children) return null
+
   return (
     <div className="flex flex-col gap-3">
       <Typography textRole="overline" as="span" className="text-muted-foreground">

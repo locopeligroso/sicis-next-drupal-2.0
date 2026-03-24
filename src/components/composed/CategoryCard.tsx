@@ -66,7 +66,7 @@ export function CategoryCard({
     return (
       <div
         className={cn(
-          "flex flex-col gap-3 rounded-lg bg-card p-3 opacity-40 cursor-not-allowed",
+          "flex flex-col gap-2 opacity-40 cursor-not-allowed",
           className,
         )}
         aria-disabled="true"
@@ -80,7 +80,7 @@ export function CategoryCard({
     <Link
       href={href}
       className={cn(
-        "group flex flex-col gap-3 rounded-lg bg-card p-3 transition-opacity hover:opacity-80",
+        "group flex flex-col gap-2 transition-opacity hover:opacity-80",
         className,
       )}
     >

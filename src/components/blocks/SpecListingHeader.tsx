@@ -7,8 +7,7 @@ export interface SpecListingHeaderProps {
 
 export function SpecListingHeader({ title, description }: SpecListingHeaderProps) {
   return (
-    <section className="max-w-main mx-auto px-(--spacing-page) py-(--spacing-section)">
-      <div className="flex flex-col gap-2">
+    <section className="flex flex-col gap-2 pt-(--spacing-element) pb-(--spacing-section)">
         <Typography textRole="h1" as="h1">
           {title}
         </Typography>
@@ -17,7 +16,6 @@ export function SpecListingHeader({ title, description }: SpecListingHeaderProps
             {description}
           </Typography>
         )}
-      </div>
     </section>
   )
 }

@@ -1,5 +1,8 @@
 "use client"
 
+import Image from "next/image"
+import { Check, X } from "lucide-react"
+import { Typography } from "@/components/composed/Typography"
 import { cn } from "@/lib/utils"
 
 interface ImageListFilterProps {
@@ -8,6 +11,7 @@ interface ImageListFilterProps {
     label: string
     imageUrl?: string | null
     count?: number
+    baseCount?: number
   }[]
   activeValue?: string
   onChange: (slug: string) => void
@@ -18,39 +22,55 @@ export function ImageListFilter({
   activeValue,
   onChange,
 }: ImageListFilterProps) {
+  const visible = options.filter((o) => {
+    const base = o.baseCount ?? o.count ?? 0
+    return base > 0 || activeValue === o.slug
+  })
+
   return (
     <div className="flex flex-col gap-1">
-      {options.map((option) => {
+      {visible.map((option) => {
         const isActive = activeValue === option.slug
-        const isDisabled = !isActive && option.count === 0
+        const isEmpty = !isActive && option.count === 0
 
         return (
-          <button
-            key={option.slug}
-            type="button"
-            onClick={() => !isDisabled && onChange(option.slug)}
-            disabled={isDisabled}
-            className={cn(
-              "flex items-center gap-3 rounded-md px-2 py-1.5 text-sm transition-colors",
-              isActive ? "bg-accent" : isDisabled ? "opacity-40 cursor-not-allowed" : "hover:bg-muted"
-            )}
-          >
-            {option.imageUrl ? (
-              <img
-                src={option.imageUrl}
-                alt={option.label}
-                className={cn("size-8 shrink-0 rounded-sm object-cover", isDisabled && "grayscale")}
-              />
-            ) : (
-              <span className="size-8 shrink-0 rounded-sm bg-muted" />
-            )}
-            <span>
-              {option.label}
-              {option.count != null && (
-                <span className="ml-1 text-muted-foreground">({option.count})</span>
+          <div key={option.slug} className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onChange(option.slug)}
+              className={cn(
+                "flex flex-1 items-center gap-3 rounded-md px-2 py-1.5 transition-colors hover:bg-muted",
+                isActive && "bg-muted ring-2 ring-primary",
+                isEmpty && "opacity-30",
               )}
-            </span>
-          </button>
+            >
+              {option.imageUrl ? (
+                <Image
+                  src={option.imageUrl}
+                  alt={option.label}
+                  width={32}
+                  height={32}
+                  className="size-8 shrink-0 rounded-sm object-cover"
+                />
+              ) : (
+                <span className="size-8 shrink-0 rounded-sm bg-muted" />
+              )}
+              <Typography textRole="body-sm" as="span">
+                {option.label}
+              </Typography>
+              {isActive && <Check className="ml-auto size-4 text-primary" />}
+            </button>
+            {isActive && (
+              <button
+                type="button"
+                onClick={() => onChange(option.slug)}
+                className="shrink-0 cursor-pointer rounded-full p-0.5 text-muted-foreground transition-colors hover:text-foreground"
+                aria-label={`Remove ${option.label}`}
+              >
+                <X className="size-3" />
+              </button>
+            )}
+          </div>
         )
       })}
     </div>
