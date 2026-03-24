@@ -1,6 +1,7 @@
 import { FilterPanel } from '@/components/composed/FilterPanel';
 import { MobileFilterTrigger } from '@/components/composed/MobileFilterTrigger';
 import { SpecFilterSidebarContent } from './SpecFilterSidebarContent';
+import type { TypologyNavItem } from '@/components/composed/TypologyNav';
 import type {
   FilterGroupConfig,
   FilterOption,
@@ -17,6 +18,8 @@ export interface SpecFilterSidebarProps {
   basePath: string;
   locale: string;
   totalCount?: number;
+  typologyNav?: TypologyNavItem[];
+  activeTypologySlug?: string;
 }
 
 export function SpecFilterSidebar({
@@ -28,6 +31,8 @@ export function SpecFilterSidebar({
   basePath,
   locale,
   totalCount,
+  typologyNav,
+  activeTypologySlug,
 }: SpecFilterSidebarProps) {
   const content = (
     <SpecFilterSidebarContent
@@ -38,6 +43,8 @@ export function SpecFilterSidebar({
       listingConfig={listingConfig}
       basePath={basePath}
       locale={locale}
+      typologyNav={typologyNav}
+      activeTypologySlug={activeTypologySlug}
     />
   );
 
