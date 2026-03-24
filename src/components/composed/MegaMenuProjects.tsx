@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import type { ProjectsSection } from '@/lib/navbar/types';
 import { cn } from '@/lib/utils';
@@ -9,11 +10,11 @@ interface MegaMenuProjectsProps {
   menu: ProjectsSection;
 }
 
-const PLACEHOLDER_COLORS = [
-  'linear-gradient(145deg, #5a4a3a, #3a2a1a)',
-  'linear-gradient(145deg, #3a5a4a, #1a3a2a)',
-  'linear-gradient(145deg, #4a3a5a, #2a1a3a)',
-  'linear-gradient(145deg, #5a5a3a, #3a3a1a)',
+const HOVER_IMAGES = [
+  '/images/nav/progetti/progetti.jpg',
+  '/images/nav/progetti/ambienti.jpg',
+  '/images/nav/progetti/inspiration.jpg',
+  '/images/nav/progetti/interior-design.jpg',
 ];
 
 const TITLE_KEYS = [
@@ -49,9 +50,7 @@ export function MegaMenuProjects({ menu }: MegaMenuProjectsProps) {
             <a
               key={item.id}
               href={item.url}
-              className={cn(
-                !isLast && 'border-b border-border/60 pb-4'
-              )}
+              className={cn(!isLast && 'border-b border-border/60 pb-4')}
               onMouseEnter={() => setHoveredIndex(index)}
             >
               <div
@@ -59,11 +58,10 @@ export function MegaMenuProjects({ menu }: MegaMenuProjectsProps) {
                   'text-sm transition-colors',
                   isHovered
                     ? 'font-bold text-foreground'
-                    : 'font-semibold text-muted-foreground'
+                    : 'font-semibold text-muted-foreground',
                 )}
               >
-                {t(TITLE_KEYS[index])}{' '}
-                <span aria-hidden="true">&rarr;</span>
+                {t(TITLE_KEYS[index])} <span aria-hidden="true">&rarr;</span>
               </div>
               <div className="text-xs text-muted-foreground leading-[1.5] mt-1">
                 {t(DESC_KEYS[index])}
@@ -81,12 +79,19 @@ export function MegaMenuProjects({ menu }: MegaMenuProjectsProps) {
           return (
             <div
               key={item.id}
-              className="absolute inset-0 transition-opacity duration-[400ms]"
-              style={{
-                background: PLACEHOLDER_COLORS[index],
-                opacity: isActive ? 1 : 0,
-              }}
+              className={cn(
+                'absolute inset-0 transition-opacity duration-[400ms]',
+                isActive ? 'opacity-100' : 'opacity-0',
+              )}
             >
+              <Image
+                src={HOVER_IMAGES[index]}
+                alt=""
+                fill
+                sizes="(min-width: 1024px) 60vw, 50vw"
+                className="object-cover"
+                priority={index === 0}
+              />
               {/* Caption overlay */}
               <span className="absolute bottom-4 left-4 text-[10px] tracking-[3px] uppercase text-white/35">
                 {t(TITLE_KEYS[index])}
