@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import { Typography } from '@/components/composed/Typography';
 import { cn } from '@/lib/utils';
 
 export interface TypologyNavItem {
@@ -40,7 +41,7 @@ export function TypologyNav({ items, activeSlug }: TypologyNavProps) {
               ) : (
                 <div className="bg-muted size-6 shrink-0 rounded" />
               )}
-              {item.label}
+              <Typography textRole="body-sm" as="span">{item.label}</Typography>
             </span>
           );
         }
@@ -65,7 +66,7 @@ export function TypologyNav({ items, activeSlug }: TypologyNavProps) {
             ) : (
               <div className="bg-muted size-6 shrink-0 rounded" />
             )}
-            {item.label}
+            <Typography textRole="body-sm" as="span">{item.label}</Typography>
           </Link>
         );
       })}

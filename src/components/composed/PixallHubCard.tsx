@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { Button } from "@/components/ui/button"
 import { Typography } from "@/components/composed/Typography"
 import { cn } from "@/lib/utils"
 
@@ -65,12 +66,9 @@ export function PixallHubCard({
           </div>
         ) : null}
 
-        <Link
-          href={exploreHref}
-          className="mt-2 inline-flex w-fit items-center rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-        >
+        <Button variant="outline" size="sm" className="mt-2 w-fit" render={<Link href={exploreHref} />}>
           {exploreLabel}
-        </Link>
+        </Button>
       </div>
     </div>
   )

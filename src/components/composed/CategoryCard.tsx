@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { AspectRatio } from "@/components/ui/aspect-ratio"
+import { Typography } from "@/components/composed/Typography"
 import { cn } from "@/lib/utils"
 
 interface CategoryCardProps {
@@ -57,7 +58,7 @@ export function CategoryCard({
         ) : null}
       </AspectRatio>
 
-      <span className="truncate text-sm text-foreground">{title}</span>
+      <Typography textRole="body-sm" className="truncate text-foreground">{title}</Typography>
     </>
   )
 
