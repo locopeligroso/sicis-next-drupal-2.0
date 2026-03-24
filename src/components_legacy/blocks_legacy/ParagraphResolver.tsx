@@ -11,6 +11,10 @@ import { GenGalleryIntro } from '@/components/blocks/GenGalleryIntro';
 import type { GenGalleryIntroSlide } from '@/components/blocks/GenGalleryIntro';
 import { GenDocumenti } from '@/components/blocks/GenDocumenti';
 import type { GenDocumentiItem } from '@/components/blocks/GenDocumenti';
+import { GenA } from '@/components/blocks/GenA';
+import { GenB } from '@/components/blocks/GenB';
+import type { GenBItem } from '@/components/blocks/GenB';
+import { GenC } from '@/components/blocks/GenC';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { getDrupalImageUrl } from '@/lib/drupal/image';
 
@@ -240,6 +244,91 @@ function adaptGenQuote(p: Record<string, unknown>) {
   return <GenQuote text={text} linkHref={linkHref} linkLabel={linkLabel} />;
 }
 
+function drupalRatioToNumber(ratio: string | null | undefined): number {
+  const map: Record<string, number> = { '3_2': 3 / 2, '2_3': 2 / 3, '1_1': 1 };
+  return map[ratio ?? ''] ?? 1;
+}
+
+function adaptGenA(p: Record<string, unknown>) {
+  const imageSrc = getDrupalImageUrl(p.field_immagine);
+  const imageAlt = ((p.field_immagine as Record<string, unknown> | undefined)?.meta as Record<string, unknown> | undefined)?.alt as string ?? '';
+  const videoCode = getTextValue(p.field_video) ?? null;
+  const ratio = drupalRatioToNumber(getTextValue(p.field_ratio));
+  const captionHtml = getProcessedText(p.field_caption);
+
+  const imageSmallSrc = getDrupalImageUrl(p.field_immagine_small);
+  const imageSmallAlt = ((p.field_immagine_small as Record<string, unknown> | undefined)?.meta as Record<string, unknown> | undefined)?.alt as string ?? '';
+  const videoSmallCode = getTextValue(p.field_video_small) ?? null;
+  const ratioSmall = drupalRatioToNumber(getTextValue(p.field_ratio_small));
+  const captionSmallHtml = getProcessedText(p.field_caption_small);
+
+  const layout = (getTextValue(p.field_layout_blocco_a) as 'img_big_sx' | 'img_big_dx') ?? 'img_big_sx';
+
+  if (!imageSrc && !videoCode && !imageSmallSrc && !videoSmallCode) return null;
+
+  return (
+    <GenA
+      imageSrc={imageSrc}
+      imageAlt={imageAlt}
+      videoCode={videoCode}
+      ratio={ratio}
+      captionHtml={captionHtml}
+      imageSmallSrc={imageSmallSrc}
+      imageSmallAlt={imageSmallAlt}
+      videoSmallCode={videoSmallCode}
+      ratioSmall={ratioSmall}
+      captionSmallHtml={captionSmallHtml}
+      layout={layout}
+    />
+  );
+}
+
+function adaptGenB(p: Record<string, unknown>) {
+  const images = (p.field_3_immagini as Array<Record<string, unknown>> | undefined) ?? [];
+  const videos = (p.field_3_video as Array<string> | undefined) ?? [];
+
+  const items: GenBItem[] = images.map((img, i) => ({
+    imageSrc: getDrupalImageUrl(img),
+    imageAlt: ((img as Record<string, unknown>)?.meta as Record<string, unknown> | undefined)?.alt as string ?? '',
+    videoCode: videos[i] ?? null,
+  }));
+
+  if (items.length === 0) return null;
+
+  return <GenB items={items} />;
+}
+
+function adaptGenC(p: Record<string, unknown>) {
+  const titleRaw = getProcessedText(p.field_titolo_formattato);
+  const title = titleRaw ? titleRaw.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() : null;
+  const bodyHtml = getProcessedText(p.field_testo);
+  const imageSrc = getDrupalImageUrl(p.field_immagine);
+  const imageAlt = ((p.field_immagine as Record<string, unknown> | undefined)?.meta as Record<string, unknown> | undefined)?.alt as string ?? '';
+  const videoCode = getTextValue(p.field_video) ?? null;
+  const captionHtml = getProcessedText(p.field_caption);
+  const linkHref = getTextValue(p.field_collegamento_esterno)
+    ?? (p.field_collegamento_interno as Record<string, unknown> | undefined)?.path as string
+    ?? null;
+  const linkLabel = getTextValue(p.field_label_collegamento) ?? null;
+  const layout = (getTextValue(p.field_layout_blocco_c) as 'text_sx' | 'text_dx') ?? 'text_sx';
+
+  if (!imageSrc && !videoCode && !bodyHtml) return null;
+
+  return (
+    <GenC
+      title={title}
+      bodyHtml={bodyHtml}
+      linkHref={linkHref}
+      linkLabel={linkLabel}
+      imageSrc={imageSrc}
+      imageAlt={imageAlt}
+      videoCode={videoCode}
+      captionHtml={captionHtml}
+      layout={layout}
+    />
+  );
+}
+
 // ── Resolver ────────────────────────────────────────────────────────────────
 
 interface ParagraphResolverProps {
@@ -259,6 +348,9 @@ export default function ParagraphResolver({ paragraph }: ParagraphResolverProps)
   if (type === 'paragraph--blocco_testo_immagine_blog') return adaptGenTestoImmagineBlog(paragraph);
   if (type === 'paragraph--blocco_gallery_intro') return adaptGenGalleryIntro(paragraph);
   if (type === 'paragraph--blocco_documenti') return adaptGenDocumenti(paragraph);
+  if (type === 'paragraph--blocco_a') return adaptGenA(paragraph);
+  if (type === 'paragraph--blocco_b') return adaptGenB(paragraph);
+  if (type === 'paragraph--blocco_c') return adaptGenC(paragraph);
 
   // Legacy blocks
   const Component = LEGACY_MAP[type];
