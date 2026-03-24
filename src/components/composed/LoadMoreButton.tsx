@@ -19,6 +19,7 @@ interface LoadMoreButtonProps {
   initialTotal: number
   locale: string
   productCardRatio?: string
+  imageFit?: "cover" | "contain"
 }
 
 export function LoadMoreButton({
@@ -30,6 +31,7 @@ export function LoadMoreButton({
   initialTotal,
   locale,
   productCardRatio,
+  imageFit,
 }: LoadMoreButtonProps) {
   const t = useTranslations('listing')
   const [products, setProducts] = useState(initialProducts)
@@ -68,7 +70,7 @@ export function LoadMoreButton({
 
   return (
     <>
-      <ProductGrid products={products} productCardRatio={productCardRatio} />
+      <ProductGrid products={products} productCardRatio={productCardRatio} imageFit={imageFit} />
       {hasMore && (
         <div className="flex justify-center py-8">
           <Button

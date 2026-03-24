@@ -14,7 +14,7 @@ import {
 import { fetchProducts, fetchFilterCounts } from '@/lib/api/products';
 import { FILTER_REGISTRY, deslugify } from '@/domain/filters/registry';
 import type { FilterOption } from '@/domain/filters/registry';
-import type { TypologyNavItem } from '@/components/composed/TypologyNav';
+import { getHubDeepDiveLinks } from '@/lib/navbar/hub-links';
 import { ProductListingTemplate } from '@/templates/nodes/ProductListingTemplate';
 import ProjectListing from '@/components_legacy/ProjectListing';
 import EnvironmentListing from '@/components_legacy/EnvironmentListing';
@@ -260,6 +260,52 @@ async function renderProductListing({
   let total;
   let filterOptions: Record<string, FilterOption[]>;
 
+  // ── Subcategory override (?sub=slug) for category-based types ──────
+  // Must run BEFORE product fetch so filterDefinitions are updated.
+  const TYPOLOGY_TYPES = new Set([
+    'prodotto_arredo',
+    'prodotto_illuminazione',
+    'prodotto_tessuto',
+  ]);
+  let subcategories: { slug: string; label: string }[] | undefined;
+
+  if (TYPOLOGY_TYPES.has(productType) && hasActiveP0) {
+    const p0FilterKey = Object.values(filters).find((f) => f.priority === 'P0')?.key;
+    if (p0FilterKey) {
+      // Pre-fetch category options to find children of active parent
+      const categoryOptions = await fetchCategoryOptions(productType, locale);
+      const activeP0 = parsed.activeFilters.find((f) => f.type === 'path');
+      if (activeP0) {
+        const activeOption = categoryOptions.find((o) => o.slug === activeP0.value);
+        if (activeOption?.id) {
+          const children = categoryOptions.filter((o) => o.parentId === activeOption.id);
+          if (children.length > 0) {
+            subcategories = children.map((child) => ({
+              slug: child.slug,
+              label: child.label,
+            }));
+
+            // If ?sub=slug is active, override the category filter to the subcategory
+            const subParam = Array.isArray(sp?.sub) ? sp.sub[0] : sp?.sub;
+            if (subParam && subcategories.some((sc) => sc.slug === subParam)) {
+              const subLabel = subcategories.find((sc) => sc.slug === subParam)!.label;
+              const catFieldIndex = parsed.filterDefinitions.findIndex(
+                (fd) => fd.field === 'field_categoria.title',
+              );
+              if (catFieldIndex >= 0) {
+                parsed.filterDefinitions[catFieldIndex] = {
+                  ...parsed.filterDefinitions[catFieldIndex],
+                  value: subLabel,
+                };
+              }
+              parsed.activeFilters.push({ key: 'sub', value: subParam, type: 'query', label: subLabel });
+            }
+          }
+        }
+      }
+    }
+  }
+
   if (!hasActiveP0 && listing.categoryGroups.length > 0) {
     // ── State 1: Hub mode — show category cards, no product grid ──────────
     // Fetch only the filter options needed for category card groups + sidebar
@@ -336,16 +382,18 @@ async function renderProductListing({
 
     // Live counts per filter value — REST V2 endpoint does server-side aggregation
     // (no more client-side pagination loops that caused 27s+ page loads with JSON:API)
-    const countPromises = Object.entries(filters).map(async ([key, filterConfig]) => {
-      const counts = await fetchFilterCounts(
-        productType,
-        parsed.filterDefinitions,
-        key,
-        filterConfig.drupalField,
-        locale,
-      );
-      return [key, counts] as const;
-    });
+    const countPromises = Object.entries(filters)
+      .filter(([, cfg]) => !cfg.nodeType)
+      .map(async ([key, filterConfig]) => {
+        const counts = await fetchFilterCounts(
+          productType,
+          parsed.filterDefinitions,
+          key,
+          filterConfig.drupalField,
+          locale,
+        );
+        return [key, counts] as const;
+      });
     const countResults = await Promise.all(countPromises);
     for (const [key, counts] of countResults) {
       const options = filterOptions[key];
@@ -359,17 +407,10 @@ async function renderProductListing({
   }
 
   // ── Determine layout variant ──────────────────────────────────────────
-  const CONTEXT_BAR_TYPES = new Set(['prodotto_mosaico', 'prodotto_vetrite']);
-  const TYPOLOGY_TYPES = new Set([
-    'prodotto_arredo',
-    'prodotto_illuminazione',
-    'prodotto_tessuto',
-  ]);
-
   let variant: 'hub' | 'context-bar' | 'airy-header';
   if (!hasActiveP0 && listing.categoryGroups.length > 0) {
     variant = 'hub';
-  } else if (hasActiveP0 && CONTEXT_BAR_TYPES.has(productType)) {
+  } else if (hasActiveP0) {
     variant = 'context-bar';
   } else {
     variant = 'airy-header';
@@ -392,7 +433,7 @@ async function renderProductListing({
     );
 
     const baseCountPromises = Object.entries(filters)
-      .filter(([key]) => key !== activePathP0.key)
+      .filter(([key, cfg]) => key !== activePathP0.key && !cfg.nodeType)
       .map(async ([key, filterConfig]) => {
         const counts = await fetchFilterCounts(
           productType,
@@ -444,7 +485,13 @@ async function renderProductListing({
     const isColorSwatch = categoryGroup?.hasColorSwatch ?? false;
     const pathPrefix = filters[activePathP0.key]?.pathPrefix?.[locale];
 
-    const popoverItems = popoverOptions.map((opt) => ({
+    // For category-based types (arredo/illuminazione/tessuto), show only parents in popover
+    const isTypologyType = TYPOLOGY_TYPES.has(productType);
+    const filteredPopoverOptions = isTypologyType
+      ? popoverOptions.filter((opt) => !opt.parentId)
+      : popoverOptions;
+
+    const popoverItems = filteredPopoverOptions.map((opt) => ({
       slug: opt.slug,
       label: opt.label,
       imageUrl: opt.imageUrl,
@@ -466,44 +513,9 @@ async function renderProductListing({
     );
   }
 
-  // ── Typology nav for Arredo/Illuminazione/Tessile ───────────────────
-  let typologyNav: TypologyNavItem[] | undefined;
-  let activeTypologySlug: string | undefined;
-
-  if (TYPOLOGY_TYPES.has(productType) && variant !== 'hub') {
-    // Reuse filterOptions which already have counts merged (from State 2 above).
-    // The P0 filter key is 'subcategory' (Arredo/Illuminazione) or 'category' (Tessile).
-    const p0FilterKey = Object.values(filters).find((f) => f.priority === 'P0')?.key;
-    const existingOptions = p0FilterKey ? filterOptions[p0FilterKey] : undefined;
-
-    if (existingOptions && existingOptions.length > 0) {
-      typologyNav = existingOptions.map((opt) => ({
-        slug: opt.slug,
-        label: opt.label,
-        imageUrl: opt.imageUrl,
-        href: `${basePath}/${opt.slug}`,
-        count: opt.count,
-      }));
-    } else {
-      // Fallback: fetch category options if not available in filterOptions
-      const categoryOptions = await fetchCategoryOptions(
-        config.contentType,
-        locale,
-      );
-      typologyNav = categoryOptions.map((opt) => ({
-        slug: opt.slug,
-        label: opt.label,
-        imageUrl: opt.imageUrl,
-        href: `${basePath}/${opt.slug}`,
-      }));
-    }
-
-    // Determine active typology from the P0 filter (subcategory/category key)
-    const activeP0 = parsed.activeFilters.find((f) => f.type === 'path');
-    if (activeP0) {
-      activeTypologySlug = activeP0.value;
-    }
-  }
+  // ── Deep dive links for hub mode (from Filter & Find mega-menu) ────
+  const deepDiveLinks =
+    variant === 'hub' ? await getHubDeepDiveLinks(productType, locale) : [];
 
   return (
     <ProductListingTemplate
@@ -527,9 +539,9 @@ async function renderProductListing({
       swatchColor={swatchColor}
       backHref={basePath}
       changePopoverContent={changePopoverContent}
-      typologyNav={typologyNav}
-      activeTypologySlug={activeTypologySlug}
+      subcategories={subcategories}
       activePathFilterKey={activePathFilterKey}
+      deepDiveLinks={deepDiveLinks}
     />
   );
 }

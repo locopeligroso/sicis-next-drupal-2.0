@@ -5,11 +5,12 @@ import { cn } from "@/lib/utils"
 interface ProductGridProps {
   products: ProductCardData[]
   productCardRatio?: string
+  imageFit?: "cover" | "contain"
   columns?: 4 | 5
   className?: string
 }
 
-export function ProductGrid({ products, productCardRatio, columns = 4, className }: ProductGridProps) {
+export function ProductGrid({ products, productCardRatio, imageFit, columns = 4, className }: ProductGridProps) {
   const gridCols = 'grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5'
 
   return (
@@ -27,6 +28,7 @@ export function ProductGrid({ products, productCardRatio, columns = 4, className
           imageUrl={product.imageUrl}
           href={product.path ?? "#"}
           aspectRatio={productCardRatio}
+          imageFit={imageFit}
         />
       ))}
     </div>

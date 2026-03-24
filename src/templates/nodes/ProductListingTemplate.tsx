@@ -7,7 +7,7 @@ import { SpecCategory } from '@/components/blocks/SpecCategory';
 import { SpecHubMosaico } from '@/components/blocks/SpecHubMosaico';
 import { SpecHubArredo } from '@/components/blocks/SpecHubArredo';
 import { SpecProductListing } from '@/components/blocks/SpecProductListing';
-import type { TypologyNavItem } from '@/components/composed/TypologyNav';
+import type { SecondaryLink } from '@/lib/navbar/types';
 import type { ProductCard } from '@/lib/api/products';
 import type {
   ListingConfig,
@@ -50,9 +50,8 @@ interface ProductListingTemplateProps {
   changePopoverContent?: React.ReactNode;
   backHref?: string;
 
-  // Typology nav (Arredo/Illuminazione/Tessile)
-  typologyNav?: TypologyNavItem[];
-  activeTypologySlug?: string;
+  // Subcategories of active parent category (Arredo/Illuminazione)
+  subcategories?: { slug: string; label: string }[];
 
   // Whether to show the filter panel — defaults to true for listing modes
   hasFilterPanel?: boolean;
@@ -62,6 +61,9 @@ interface ProductListingTemplateProps {
 
   // Legacy compat — used to derive variant when variant is not provided
   hasActiveP0?: boolean;
+
+  // Deep dive links from Filter & Find mega-menu (for hub Approfondimenti section)
+  deepDiveLinks?: SecondaryLink[];
 }
 
 /**
@@ -96,7 +98,9 @@ function mapCategoriesToHubArredo(
   // Arredo/Illuminazione use 'subcategory', Tessile uses 'category'
   const options =
     filterOptions.subcategory ?? filterOptions.category ?? [];
-  return options.map((opt) => ({
+  // Only top-level categories (not children) for the hub
+  const parents = options.filter((opt) => !opt.parentId);
+  return parents.map((opt) => ({
     slug: opt.slug,
     label: opt.label,
     imageUrl: opt.imageUrl ?? null,
@@ -124,11 +128,11 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
     currentSort,
     changePopoverContent,
     backHref,
-    typologyNav,
-    activeTypologySlug,
+    subcategories,
     hasFilterPanel: hasFilterPanelProp,
     activePathFilterKey,
     hasActiveP0,
+    deepDiveLinks,
   } = props;
 
   const variant = resolveVariant(props.variant, hasActiveP0, listingConfig);
@@ -152,6 +156,7 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
             listingConfig={listingConfig}
             basePath={basePath}
             locale={locale}
+            deepDiveLinks={deepDiveLinks}
           />
         ) : (
           <SpecHubArredo
@@ -159,6 +164,7 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
             basePath={basePath}
             locale={locale}
             categoryCardRatio={listingConfig.categoryCardRatio}
+            deepDiveLinks={deepDiveLinks}
           />
         )}
       </div>
@@ -179,8 +185,7 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
           basePath={basePath}
           locale={locale}
           totalCount={total}
-          typologyNav={typologyNav}
-          activeTypologySlug={activeTypologySlug}
+          subcategories={subcategories}
           activePathFilterKey={activePathFilterKey}
         />
       )}
@@ -217,6 +222,7 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
           locale={locale}
           basePath={basePath}
           productCardRatio={listingConfig.productCardRatio}
+          imageFit={productType === 'prodotto_illuminazione' || productType === 'prodotto_arredo' ? 'contain' : 'cover'}
         />
       </main>
     </div>

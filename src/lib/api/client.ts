@@ -50,7 +50,13 @@ export function stripDomain(urlOrPath: string | null): string | null {
   if (!urlOrPath) return null;
   try {
     const parsed = new URL(urlOrPath);
-    return parsed.pathname;
+    let pathname = parsed.pathname;
+    // Strip Drupal base path (e.g. /www.sicis.com_aiweb/httpdocs)
+    const drupalBasePath = new URL(DRUPAL_BASE_URL).pathname.replace(/\/$/, '');
+    if (drupalBasePath && pathname.startsWith(drupalBasePath)) {
+      pathname = pathname.slice(drupalBasePath.length) || '/';
+    }
+    return pathname;
   } catch {
     // Already a path, not a full URL
     return urlOrPath;

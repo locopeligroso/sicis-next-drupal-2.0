@@ -35,7 +35,7 @@ export function GenA({
   return (
     <section
       className={cn(
-        'max-w-main mx-auto px-(--spacing-page) flex flex-col gap-(--spacing-content)',
+        'w-full max-w-main mx-auto px-(--spacing-page) flex flex-col gap-(--spacing-content)',
         'md:flex-row md:items-center',
         className,
       )}

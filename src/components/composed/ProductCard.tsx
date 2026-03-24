@@ -8,6 +8,7 @@ interface ProductCardProps {
   imageUrl?: string | null
   href: string
   aspectRatio?: string  // e.g. "1/1", "3/4" — defaults to "1/1"
+  imageFit?: "cover" | "contain"
   className?: string
 }
 
@@ -17,6 +18,7 @@ export function ProductCard({
   imageUrl,
   href,
   aspectRatio = "1/1",
+  imageFit = "cover",
   className,
 }: ProductCardProps) {
   return (
@@ -32,7 +34,7 @@ export function ProductCard({
           <img
             src={imageUrl}
             alt={title}
-            className="absolute inset-0 size-full object-cover transition-opacity duration-300 group-hover:opacity-80"
+            className={cn("transition-opacity duration-300 group-hover:opacity-80", imageFit === "contain" ? "absolute inset-4 h-[calc(100%-2rem)] w-[calc(100%-2rem)] object-contain" : "absolute inset-0 size-full object-cover")}
           />
         ) : null}
       </div>

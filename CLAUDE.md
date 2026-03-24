@@ -21,29 +21,144 @@ Next 16.1.7 | React 19.2.4 | Tailwind 4.2.2 | Storybook 10.3.1 | next-intl | nuq
 
 ### Data Layer
 
+All Drupal data comes exclusively from the REST endpoints below. No other data source is used.
+
 **REST API client (`src/lib/api/`):**
 - `client.ts` — `apiGet` (base fetcher), `stripDomain`, `stripLocalePrefix`, `emptyToNull` (normalizers)
-- `types.ts` — Response interfaces for all endpoints (ProductCard, BlogCard, EntityResponse, etc.)
-- `entity.ts` — `fetchEntity` (C1: path → fully resolved entity with paragraphs)
+- `types.ts` — Response interfaces for all endpoints (source of truth for REST response shapes)
+- `entity.ts` — `fetchEntity` (C1)
 - `products.ts` — `fetchProducts` (V1), `fetchFilterCounts` (V2), `getCategoriaProductType`
 - `filters.ts` — `fetchFilterOptions` (V3), `fetchCategoryOptions` (V4), `fetchAllFilterOptions`
-- `listings.ts` — `fetchEnvironments` (V7), `fetchShowrooms` (V8), `fetchBlogPosts` (V5), `fetchProjects` (V6), `fetchDocuments` (V9)
+- `listings.ts` — `fetchBlogPosts` (V5), `fetchProjects` (V6), `fetchEnvironments` (V7), `fetchShowrooms` (V8), `fetchDocuments` (V9)
 - `categories.ts` — `fetchSubcategories` (V10), `fetchPagesByCategory` (V11)
-- `translate-path.ts` — `getTranslatedPath` (C2: cross-locale path resolution)
+- `translate-path.ts` — `getTranslatedPath` (C2)
 
-**Drupal utilities (`src/lib/drupal/` — reduced to 4 files):**
+**Drupal utilities (`src/lib/drupal/`):**
 - `config.ts` — DRUPAL_BASE_URL (single source of truth)
-- `menu.ts` — fetchMenu, transformMenuToNavItems (uses native Drupal menu API, not REST)
-- `image.ts` — getDrupalImageUrl (extracts uri.url from C1 image shape)
+- `menu.ts` — `fetchMenu` (M1), `transformMenuToNavItems`
+- `image.ts` — `getDrupalImageUrl` (extracts `uri.url` from C1 image shape)
 - `index.ts` — barrel re-export
 
-**Drupal REST endpoint conventions:**
-- All Views endpoints require locale prefix: `/{locale}/api/v1/{endpoint}`
-- Views responses are wrapped: `{ items: [...], total, page, pageSize }`
-- C1 entity response: `{ meta: { type, bundle, id, uuid, locale, path }, data: { ...fields } }`
-- Pagination query param: `items_per_page` (native Views param)
-- Paths in Views responses contain full domain URL — `stripDomain` + `stripLocalePrefix` normalize them
-- Image shape from C1: `{ type: "file--file", uri: { url: "https://..." }, meta: { alt, width, height } }`
+#### Drupal REST Endpoint Reference
+
+All data from Drupal flows through these endpoints. This is the **sole source of truth** for Drupal data.
+
+**Conventions:**
+- Custom endpoints go through `apiGet()` which inserts `/api/v1/` after locale: `/{locale}/api/v1/{endpoint}`
+- Paginated responses (V1, V5–V11) wrap items: `{ items: T[], total: number, page: number, pageSize: number }`
+- Pagination param: `items_per_page` (Drupal Views native) + `page` (0-based)
+- Paths in Views responses contain the full Drupal domain URL — normalize with `stripDomain()` + `stripLocalePrefix()`
+- Image URLs: empty string `""` when no image (not `null`) — normalize with `emptyToNull()`
+
+**C1 — Entity (single entity by path)**
+- URL: `/{locale}/api/v1/entity?path={pathWithoutLocale}`
+- Function: `fetchEntity(path, locale)` in `entity.ts`
+- Response: `{ meta: { type, bundle, id (NID), uuid, locale, path }, data: { ...allFields } }`
+- Returns the fully pre-resolved entity with all relationships and paragraphs inline. No secondary fetches needed.
+- Image shape inside `data`: `{ type: "file--file", uri: { url: "https://..." }, meta: { alt, width, height } }`
+- Revalidate: 60s
+
+**C2 — Translate Path (cross-locale path resolution)**
+- URL: `/{locale}/api/v1/translate-path?path={path}&from={locale}&to={targetLocale}`
+- Function: `getTranslatedPath(path, fromLocale, toLocale)` in `translate-path.ts`
+- Response: `{ translatedPath: "/en/mosaic" | null }`
+- Revalidate: 3600s
+
+**V1 — Products (paginated product listing)**
+- URL: `/{locale}/api/v1/products/{productType}?items_per_page=N&page=N&sort=...&{filterParams}`
+- Function: `fetchProducts(options)` in `products.ts`
+- productType: `prodotto_mosaico` | `prodotto_vetrite` | `prodotto_arredo` | `prodotto_tessuto` | `prodotto_pixall` | `prodotto_illuminazione`
+- Filter query params (mapped from Drupal fields via `DRUPAL_FIELD_TO_REST_PARAM`): `collection`, `color`, `shape`, `finish`, `grout`, `texture`, `fabric`, `category`, `type`
+- `category_id` (NID-based filtering) is NOT supported — the V1 endpoint silently ignores it. Use `category` (title-based) instead.
+- `category` does NOT support multi-value (comma-separated or array) — only single value per request
+- Response item: `{ id, type, title, subtitle, imageUrl, price, priceOnDemand ("0"|"1"|null), path }`
+- `type` comes without `node--` prefix (e.g. `"prodotto_arredo"`)
+- `path` contains full Drupal domain URL
+- Revalidate: 60s
+
+**V2 — Filter Counts (aggregated counts per filter value)**
+- URL: `/{locale}/api/v1/products/{productType}/counts/{filterKey}?{activeFilterParams}`
+- Function: `fetchFilterCounts(productType, activeFilters, filterKey, drupalField, locale)` in `products.ts`
+- filterKey: `collection` | `color` | `shape` | `finish` | `grout` | `texture` | `fabric` | `category` | `type`
+- Response: `{ counts: { "Pluma": 42, "Blends": 88, ... } }`
+- Active filters (excluding the one being counted) are passed as query params to get cross-filtered counts
+- Revalidate: 60s
+
+**V3 — Taxonomy Terms (vocabulary listing)**
+- URL: `/{locale}/api/v1/taxonomy/{vocabulary}`
+- Function: `fetchFilterOptions(taxonomyType, locale)` in `filters.ts`
+- vocabulary: extracted from `taxonomyType` by splitting on `--` (e.g. `taxonomy_term--mosaico_collezioni` → `mosaico_collezioni`)
+- All vocabularies: `mosaico_collezioni`, `mosaico_colori`, `vetrite_collezioni`, `vetrite_colori`, `vetrite_finiture`, `vetrite_textures`, `arredo_finiture`, `tessuto_colori`, `tessuto_finiture`, `tessuto_tipologie`, `tessuto_manutenzione`
+- Response item: `{ id, name, weight (string), imageUrl (string, "" if empty) }` — **no `path` field**
+- Slug is derived from `name` via `deriveSlug()` (slugify fallback)
+- Empty vocabularies (0 terms in Drupal): `arredo_finiture`, `tessuto_finiture`
+- Revalidate: 3600s
+
+**V4 — Category Options (node--categoria listing for a product type)**
+- URL: `/{locale}/api/v1/category-options/{productType}`
+- Function: `fetchCategoryOptions(productType, locale)` in `filters.ts`
+- Used for product types that organize by `node--categoria` instead of taxonomy: `prodotto_arredo`, `prodotto_illuminazione`, `prodotto_tessuto`
+- Response: `{ items: [...] }` — **no `total`, `page`, `pageSize`** (not paginated)
+- Response item: `{ id, name, imageUrl, path, parentId, parentPath }`
+- `parentId`/`parentPath` present when the categoria has a parent (hub) categoria
+- Revalidate: 3600s
+
+**V5 — Blog Posts**
+- URL: `/{locale}/api/v1/blog?items_per_page=N&page=N`
+- Function: `fetchBlogPosts(locale, limit, offset)` in `listings.ts`
+- Response item: `{ id, type ("articolo"|"news"|"tutorial"), title, imageUrl, path, created (Unix timestamp string) }`
+- `created` is a Unix timestamp (e.g. `"1772451555"`) — converted to ISO 8601 by `unixToIso()`
+- Revalidate: 300s
+
+**V6 — Projects**
+- URL: `/{locale}/api/v1/projects?items_per_page=N&page=N`
+- Function: `fetchProjects(locale, limit, offset)` in `listings.ts`
+- Response item: `{ id, title, imageUrl, path, category }`
+- Revalidate: 300s
+
+**V7 — Environments**
+- URL: `/{locale}/api/v1/environments?items_per_page=N&page=N`
+- Function: `fetchEnvironments(locale, limit, offset)` in `listings.ts`
+- Response item: `{ id, title, imageUrl, path }`
+- Revalidate: 300s
+
+**V8 — Showrooms**
+- URL: `/{locale}/api/v1/showrooms`
+- Function: `fetchShowrooms(locale)` in `listings.ts`
+- Response item: `{ id, title, imageUrl, path, address, city, area, phone, email, gmapsUrl, externalUrl }`
+- No pagination params used (returns all)
+- Revalidate: 300s
+
+**V9 — Documents**
+- URL: `/{locale}/api/v1/documents?items_per_page=N&page=N`
+- Function: `fetchDocuments(locale, limit, offset)` in `listings.ts`
+- Response item: `{ id, title, imageUrl, path, fileUrl, externalUrl, documentType, category }`
+- Currently returns 0 items on staging (no `node--documento` content published)
+- Revalidate: 300s
+
+**V10 — Subcategories (child node--categoria entities)**
+- URL: `/{locale}/api/v1/subcategories/{parentNid}`
+- Function: `fetchSubcategories(parentId, locale)` in `categories.ts`
+- **parentNid must be the integer NID**, not UUID. Callers pass `node._nid` from C1 response.
+- Response item: `{ id, uuid (always null), title, imageUrl, path }`
+- `path` contains full Drupal domain URL
+- Revalidate: 300s
+
+**V11 — Pages by Category (node--page filtered by field_categoria)**
+- URL: `/{locale}/api/v1/pages-by-category/{parentNid}?items_per_page=N&page=N`
+- Function: `fetchPagesByCategory(parentId, locale, limit, offset)` in `categories.ts`
+- **parentNid must be the integer NID**, not UUID. Callers pass `node._nid` from C1 response.
+- Response item: `{ id, title, imageUrl (often ""), path }`
+- `path` contains full Drupal domain URL
+- Revalidate: 300s
+
+**M1 — Menu (native Drupal menu API — NOT through `apiGet()`)**
+- URL: `/{locale}/api/menu/{menuName}`
+- Function: `fetchMenu(menuName, locale)` in `drupal/menu.ts`
+- Uses `fetch()` directly (different URL pattern: `/api/menu/` without `v1`)
+- Response: `{ id, items: [{ id, title, url, weight, children: [...recursive] }] }`
+- `url` may contain Drupal base path or `<nolink>` — normalized by `transformMenuToNavItems()`
+- Revalidate: 600s
 
 ### Domain Layer
 - `src/domain/filters/` — `registry.ts` (FILTER_REGISTRY, SLUG_OVERRIDES), `search-params.ts` (nuqs integration)

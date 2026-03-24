@@ -98,14 +98,17 @@ export function parseFiltersFromUrl(
           addFilter(filterConfig, pathSeg2, filterDefinitions, activeFilters);
         }
       } else {
-        // Collection-style: /mosaico/{slug} (only if not a color prefix)
+        // Collection-style: /mosaico/{slug} or /arredo/{parent}/{child}
         const colorConfig = Object.values(config.filters).find(
           (f) => f.type === 'path' && f.pathPrefix,
         );
         const colorPrefix =
           colorConfig?.pathPrefix?.[locale] ?? colorConfig?.pathPrefix?.['it'];
-        if (pathSeg1 && pathSeg1 !== colorPrefix && !pathSeg2) {
-          addFilter(filterConfig, pathSeg1, filterDefinitions, activeFilters);
+        if (pathSeg1 && pathSeg1 !== colorPrefix) {
+          // 3-segment subcategory: /arredo/sedute/sedie → filter by "sedie" (child)
+          // 2-segment category: /arredo/sedute → filter by "sedute" (parent)
+          const filterSlug = pathSeg2 ?? pathSeg1;
+          addFilter(filterConfig, filterSlug, filterDefinitions, activeFilters);
         }
       }
     }

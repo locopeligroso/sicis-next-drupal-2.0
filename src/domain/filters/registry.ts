@@ -25,6 +25,8 @@ export interface FilterOption {
   baseCount?: number;
   imageUrl?: string;    // preview image for category cards
   cssColor?: string;    // fallback CSS color for swatches
+  /** ID of parent category — present for children, absent for roots (from V4 parentPath depth) */
+  parentId?: string;
 }
 
 export interface ActiveFilter {
@@ -343,7 +345,7 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
     },
     listing: {
       categoryCardRatio: '4/3',
-      productCardRatio: '3/2',
+      productCardRatio: '1/1',
       categoryGroups: [
         { filterKey: 'subcategory', labelKey: 'filters.typologies', hasImage: true, hasColorSwatch: false },
       ],
@@ -389,27 +391,10 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
       type: {
         key: 'type',
         drupalField: 'field_tipologia_tessuto.name',
+        taxonomyType: 'taxonomy_term--tessuto_tipologie',
         type: 'query',
         queryKey: 'type',
         displayAs: 'buttons',
-        multiSelect: true,
-        priority: 'P1',
-      },
-      color: {
-        key: 'color',
-        drupalField: 'field_colori.name',
-        type: 'query',
-        queryKey: 'color',
-        displayAs: 'checkboxes',
-        multiSelect: true,
-        priority: 'P1',
-      },
-      finish: {
-        key: 'finish',
-        drupalField: 'field_finiture_tessuto.name',
-        type: 'query',
-        queryKey: 'finish',
-        displayAs: 'checkboxes',
         multiSelect: true,
         priority: 'P1',
       },

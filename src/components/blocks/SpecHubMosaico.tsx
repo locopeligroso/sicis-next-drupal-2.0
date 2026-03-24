@@ -7,6 +7,10 @@ import type {
   FilterGroupConfig,
   ListingConfig,
 } from "@/domain/filters/registry"
+import type { SecondaryLink } from "@/lib/navbar/types"
+import { fetchEntity } from "@/lib/api/entity"
+import { fetchFilterOptions } from "@/lib/api/filters"
+import { getDrupalImageUrl } from "@/lib/drupal"
 import { CategoryCardGrid } from "@/components/composed/CategoryCardGrid"
 import { HubSection } from "@/components/composed/HubSection"
 import { PixallHubCard } from "@/components/composed/PixallHubCard"
@@ -20,6 +24,7 @@ interface SpecHubMosaicoProps {
   listingConfig: ListingConfig
   basePath: string
   locale: string
+  deepDiveLinks?: SecondaryLink[]
 }
 
 export async function SpecHubMosaico({
@@ -28,6 +33,7 @@ export async function SpecHubMosaico({
   listingConfig,
   basePath,
   locale,
+  deepDiveLinks = [],
 }: SpecHubMosaicoProps) {
   const tFilters = await getTranslations("filters")
   const tHub = await getTranslations("hub")
@@ -80,20 +86,33 @@ export async function SpecHubMosaico({
     />
   ) : null
 
-  // ── 3. Pixall section ────────────────────────────────────────────────
-  const pixallColorSwatches = (filterOptions.color ?? []).slice(0, 8).map((c) => ({
+  // ── 3. Pixall section — data from C1 entity + V3 taxonomy ───────────
+  const pixallBasePath = `/${locale}/pixall`
+  const [pixallEntity, pixallColors] = await Promise.all([
+    fetchEntity('/pixall', locale),
+    fetchFilterOptions('taxonomy_term--mosaico_colori', locale),
+  ])
+
+  const pixallImageUrl = pixallEntity?.data
+    ? getDrupalImageUrl(pixallEntity.data.field_immagine)
+    : null
+  const pixallDescription = pixallEntity?.data?.body
+    ? (pixallEntity.data.body as { value?: string })?.value ?? null
+    : null
+
+  const pixallColorSwatches = pixallColors.slice(0, 8).map((c) => ({
     slug: c.slug,
     cssColor: c.cssColor,
-    href: `${basePath}/pixall?color=${c.slug}`,
+    href: `${pixallBasePath}?color=${c.slug}`,
   }))
 
   const pixallSection = (
     <PixallHubCard
       title="Pixall"
-      description={null}
-      imageUrl={null}
+      description={pixallDescription}
+      imageUrl={pixallImageUrl}
       colorSwatches={pixallColorSwatches}
-      exploreHref={`${basePath}/pixall`}
+      exploreHref={pixallBasePath}
       exploreLabel={tHub("explore")}
     />
   )
@@ -120,38 +139,27 @@ export async function SpecHubMosaico({
     </HubSection>
   )
 
-  // ── 5. Approfondimenti ───────────────────────────────────────────────
-  const deepDiveLinks = [
-    { slug: "mosaic-installation", title: "Mosaic Installation", subtitle: "Guides and best practices" },
-    { slug: "mosaic-maintenance", title: "Mosaic Maintenance", subtitle: "Care instructions" },
-    { slug: "mosaic-history", title: "History of Mosaic", subtitle: "From antiquity to today" },
-  ]
-
-  const deepDiveSection = (
+  // ── 5. Approfondimenti (from Filter & Find mega-menu secondary links) ──
+  const deepDiveSection = deepDiveLinks.length > 0 ? (
     <HubSection title={tHub("deepDives")}>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
         {deepDiveLinks.map((link) => (
           <Link
-            key={link.slug}
-            href="#"
+            key={link.url}
+            href={link.url}
             className="flex items-center gap-3 rounded-lg border border-border p-(--spacing-element) transition-colors hover:bg-accent"
           >
             <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-muted">
               <ArrowUpRight className="size-5 text-muted-foreground" />
             </div>
-            <div className="min-w-0">
-              <Typography textRole="body-sm" as="span" className="block truncate font-medium text-foreground">
-                {link.title}
-              </Typography>
-              <Typography textRole="caption" as="span" className="block truncate text-muted-foreground">
-                {link.subtitle}
-              </Typography>
-            </div>
+            <Typography textRole="body-sm" as="span" className="truncate font-medium text-foreground">
+              {link.title}
+            </Typography>
           </Link>
         ))}
       </div>
     </HubSection>
-  )
+  ) : null
 
   return (
     <div className="flex flex-col gap-(--spacing-section)">

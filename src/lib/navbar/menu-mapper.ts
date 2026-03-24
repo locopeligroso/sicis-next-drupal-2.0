@@ -7,7 +7,6 @@ import type {
   FilterFindCategory,
   ProjectsSection,
   InfoSection,
-  SecondaryLink,
 } from './types';
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -118,23 +117,6 @@ const INFO_CATEGORY_MAP: Record<string, 'strategic' | 'corporate' | 'professiona
   'professional': 'professional',
 };
 
-/**
- * Secondary links for FilterFind categories.
- * Key = lowercase category title. These are hardcoded pages not present
- * in the Drupal menu.
- */
-const MOSAICO_SECONDARY: SecondaryLink[] = [
-  { title: 'Libreria cataloghi', url: '/download-catalogues' },
-  { title: 'Certificazioni e manuali', url: '/certifications' },
-  { title: 'Video tutorial', url: '/tutorial-vetrite' },
-  { title: 'Soluzioni espositive', url: '/soluzioni-espositive' },
-];
-
-const FILTER_FIND_SECONDARY_LINKS: Record<string, SecondaryLink[]> = {
-  'mosaico': MOSAICO_SECONDARY,
-  'mosaic': MOSAICO_SECONDARY,
-};
-
 // ════════════════════════════════════════════════════════════════════════════
 // Helpers
 // ════════════════════════════════════════════════════════════════════════════
@@ -189,7 +171,10 @@ function buildFilterFindSection(sectionItem: MenuItem | undefined): FilterFindSe
 
   const items: FilterFindCategory[] = sectionItem.children.map((child) => ({
     item: child,
-    secondaryLinks: FILTER_FIND_SECONDARY_LINKS[lc(child.title)] ?? [],
+    secondaryLinks: (child.children ?? []).map((c) => ({
+      title: c.title,
+      url: c.url,
+    })),
   }));
 
   return { items };

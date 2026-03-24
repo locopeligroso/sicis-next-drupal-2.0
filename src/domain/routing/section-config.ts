@@ -251,13 +251,6 @@ export function getSectionConfig(
   // ── Arredo ───────────────────────────────────────────────────────────────
   if (ARREDO_SLUGS.has(s1) || ARREDO_PREFIXES.has(s1)) {
     if (!s2) return { productType: 'prodotto_arredo' };
-    if (s2 && s3) {
-      return {
-        productType: 'prodotto_arredo',
-        filterField: 'field_categoria.title',
-        filterValue: s3,
-      };
-    }
     if (!s3) {
       return {
         productType: 'prodotto_arredo',
@@ -265,6 +258,8 @@ export function getSectionConfig(
         filterValue: deslugify(decodeURIComponent(s2)),
       };
     }
+    // 3 segments: can't distinguish subcategory from product without registry
+    // Fall through to Drupal entity resolution
     return null;
   }
 
@@ -356,6 +351,26 @@ export async function getSectionConfigAsync(
           filterField: 'field_colori.name',
           filterValue: termName,
         };
+      }
+
+      // /arredo/sedute/sedie — subcategory filter (3 segments, category-based types)
+      // Only matches if s3 is a known category slug in slugToTermName or subcategoryMap.
+      // Otherwise it's a product detail page (e.g. /arredo/poltrone/alec-armchair → null).
+      if (
+        productType === 'prodotto_arredo' ||
+        productType === 'prodotto_illuminazione'
+      ) {
+        if (registry.slugToTermName.has(s3) || registry.subcategoryMap.has(s3)) {
+          const termName =
+            registry.slugToTermName.get(s3) ?? deslugify(decodeURIComponent(s3));
+          return {
+            productType,
+            filterField: 'field_categoria.title',
+            filterValue: termName,
+          };
+        }
+        // s3 not a known category → product detail page
+        return null;
       }
     }
 

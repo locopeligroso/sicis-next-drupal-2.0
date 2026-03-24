@@ -48,12 +48,10 @@ export interface PagesByCategoryResult {
  *
  * Endpoint: `/{locale}/api/v1/subcategories/{parentId}`
  *
- * NOTE: The REST Views endpoint expects a NID (integer), not UUID.
- * Currently `Categoria.tsx` passes `node.id` which is the UUID from JSON:API
- * deserialization. This will be corrected in Task 7 (C1 migration) when
- * `node.id` becomes the NID. Until then, the endpoint may return empty results.
+ * The REST Views endpoint expects a NID (integer), not UUID.
+ * Callers must pass the NID (e.g. `node._nid` from C1 entity response).
  *
- * @param parentId - ID of the parent node--categoria entity
+ * @param parentId - NID of the parent node--categoria entity
  * @param locale   - Active locale code
  */
 export const fetchSubcategories = cache(
@@ -86,9 +84,10 @@ export const fetchSubcategories = cache(
  *
  * Endpoint: `/{locale}/api/v1/pages-by-category/{parentId}`
  *
- * NOTE: Same NID caveat as fetchSubcategories — see above.
+ * The REST Views endpoint expects a NID (integer), not UUID.
+ * Callers must pass the NID (e.g. `node._nid` from C1 entity response).
  *
- * @param parentId - ID of the node--categoria entity to filter by
+ * @param parentId - NID of the node--categoria entity to filter by
  * @param locale   - Active locale code
  * @param limit    - Max items per page
  * @param offset   - Pagination offset

@@ -8,9 +8,8 @@ import { CheckboxFilter } from '@/components/composed/CheckboxFilter';
 import { ColorSwatchFilter } from '@/components/composed/ColorSwatchFilter';
 import { ImageListFilter } from '@/components/composed/ImageListFilter';
 import { Typography } from '@/components/composed/Typography';
-import { TypologyNav } from '@/components/composed/TypologyNav';
-import type { TypologyNavItem } from '@/components/composed/TypologyNav';
 import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 import type {
   FilterGroupConfig,
   FilterOption,
@@ -26,8 +25,8 @@ export interface SpecFilterSidebarContentProps {
   listingConfig: ListingConfig;
   basePath: string;
   locale: string;
-  typologyNav?: TypologyNavItem[];
-  activeTypologySlug?: string;
+  /** Subcategories of the active parent category — shown as inline filter buttons */
+  subcategories?: { slug: string; label: string }[];
   /** Key of the P0 filter active via path (e.g. 'collection' or 'color') — excluded from panel */
   activePathFilterKey?: string;
 }
@@ -40,8 +39,7 @@ export function SpecFilterSidebarContent({
   listingConfig,
   basePath,
   locale,
-  typologyNav,
-  activeTypologySlug,
+  subcategories,
   activePathFilterKey,
 }: SpecFilterSidebarContentProps) {
   const { toggleFilter, clearFilter, clearAll, isActive } = useFilterSync({
@@ -83,6 +81,38 @@ export function SpecFilterSidebarContent({
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Subcategory filter — shown when active parent has children */}
+      {subcategories && subcategories.length > 0 && (() => {
+        const activeSub = activeFilters.find((f) => f.key === 'sub')?.value;
+        return (
+          <>
+            <FilterGroup label={t('subcategories')}>
+              <div className="flex flex-col gap-0.5">
+                {subcategories.map((sc) => {
+                  const isActive = sc.slug === activeSub;
+                  return (
+                    <button
+                      key={sc.slug}
+                      type="button"
+                      onClick={() => toggleFilter('sub', sc.slug, 'query')}
+                      className={cn(
+                        'flex items-center gap-2 rounded-md px-2 py-1.5 text-left cursor-pointer transition-colors hover:bg-muted',
+                        isActive && 'bg-muted ring-1 ring-border',
+                      )}
+                    >
+                      <Typography textRole="body-sm" as="span">
+                        {sc.label}
+                      </Typography>
+                    </button>
+                  );
+                })}
+              </div>
+            </FilterGroup>
+            <Separator />
+          </>
+        );
+      })()}
+
       {/* Filter groups */}
       {visibleGroups.map((group) => {
         const options = filterOptions[group.key] ?? [];
@@ -157,18 +187,6 @@ export function SpecFilterSidebarContent({
         );
       })}
 
-      {/* Typology navigation */}
-      {typologyNav && typologyNav.length > 0 && (
-        <>
-          <Separator />
-          <div className="flex flex-col gap-3">
-            <Typography textRole="overline" as="span" className="text-muted-foreground">
-              {t('typologies')}
-            </Typography>
-            <TypologyNav items={typologyNav} activeSlug={activeTypologySlug} />
-          </div>
-        </>
-      )}
     </div>
   );
 }

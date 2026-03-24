@@ -1,4 +1,3 @@
-import Image from 'next/image'
 import Link from 'next/link'
 import { Check } from 'lucide-react'
 
@@ -68,11 +67,9 @@ export function CollectionPopoverContent({ items, mode }: CollectionPopoverConte
           )}
         >
           {item.imageUrl ? (
-            <Image
+            <img
               src={item.imageUrl}
               alt={item.label}
-              width={28}
-              height={28}
               className="size-7 shrink-0 rounded object-cover"
             />
           ) : (

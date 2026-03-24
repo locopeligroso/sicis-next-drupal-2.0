@@ -9,6 +9,7 @@ interface CategoryCardProps {
   cssColor?: string | null
   href: string
   aspectRatio: string
+  imageFit?: "cover" | "contain"
   hasColorSwatch?: boolean
   disabled?: boolean
   className?: string
@@ -25,6 +26,7 @@ export function CategoryCard({
   cssColor,
   href,
   aspectRatio,
+  imageFit = "cover",
   hasColorSwatch = false,
   disabled = false,
   className,
@@ -53,7 +55,12 @@ export function CategoryCard({
           <img
             src={imageUrl}
             alt={title}
-            className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+            className={cn(
+              "transition-transform duration-300 group-hover:scale-105",
+              imageFit === "contain"
+                ? "absolute inset-4 h-[calc(100%-2rem)] w-[calc(100%-2rem)] object-contain"
+                : "size-full object-cover"
+            )}
           />
         ) : null}
       </AspectRatio>

@@ -287,21 +287,35 @@ export default async function Categoria({ node }: CategoriaProps) {
   const { subcategories } = await fetchSubcategories(categoriaId, locale);
 
   if (subcategories.length > 0) {
-    // Fetch all prodotto_arredo whose field_categoria points to any subcategory
-    // or to the parent categoria itself. Uses IN operator with array of IDs.
-    const allCatIds = [categoriaId, ...subcategories.map((s) => s.id)];
-    const { products: allProducts, total } = await fetchProducts({
-      productType: 'prodotto_arredo',
-      locale,
-      limit: 48,
-      filters: [
-        {
-          field: 'field_categoria.id',
-          value: allCatIds,
-          operator: 'IN',
-        },
-      ],
+    // Derive productType from the parent category title; fallback to prodotto_arredo
+    const inferredType = getCategoriaProductType(title) || 'prodotto_arredo';
+    // V1 `category` param does NOT support multi-value (comma/array).
+    // Fetch products for each subcategory in parallel and merge results.
+    const allCatTitles = [title, ...subcategories.map((s) => s.title)];
+    const results = await Promise.all(
+      allCatTitles.map((catTitle) =>
+        fetchProducts({
+          productType: inferredType,
+          locale,
+          limit: 48,
+          filters: [
+            {
+              field: 'field_categoria.title',
+              value: catTitle,
+              operator: '=',
+            },
+          ],
+        }),
+      ),
+    );
+    // Merge and deduplicate by id
+    const seen = new Set<string>();
+    const allProducts = results.flatMap((r) => r.products).filter((p) => {
+      if (seen.has(p.id)) return false;
+      seen.add(p.id);
+      return true;
     });
+    const total = allProducts.length;
 
     return (
       <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '2rem' }}>

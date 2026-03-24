@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
 import { useTranslations } from "next-intl"
 import { ChevronDown, X } from "lucide-react"
@@ -38,11 +37,9 @@ export function ContextBar({
     <div className="flex items-center gap-(--spacing-element) border-b border-border bg-background mb-(--spacing-element) pb-(--spacing-element)">
       {/* Thumbnail or swatch — centered vertically with title + actions */}
       {thumbnail ? (
-        <Image
+        <img
           src={thumbnail}
           alt={title}
-          width={64}
-          height={64}
           className="size-16 shrink-0 rounded-full object-cover shadow-[inset_0_0_0_1px_rgba(128,128,128,0.25),0_0_0_1px_rgba(128,128,128,0.15)]"
         />
       ) : swatchColor ? (

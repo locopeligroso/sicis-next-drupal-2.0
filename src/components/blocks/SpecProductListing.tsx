@@ -14,6 +14,7 @@ interface SpecProductListingProps {
   locale: string
   basePath: string
   productCardRatio?: string
+  imageFit?: "cover" | "contain"
 }
 
 export function SpecProductListing({
@@ -25,6 +26,7 @@ export function SpecProductListing({
   pageSize,
   locale,
   productCardRatio,
+  imageFit,
 }: SpecProductListingProps) {
   return (
     <LoadMoreButton
@@ -37,6 +39,7 @@ export function SpecProductListing({
       initialTotal={total}
       locale={locale}
       productCardRatio={productCardRatio}
+      imageFit={imageFit}
     />
   )
 }

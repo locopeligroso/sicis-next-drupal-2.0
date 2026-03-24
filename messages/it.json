@@ -196,6 +196,7 @@
     "colors": "Colori",
     "collections": "Collezioni",
     "typologies": "Tipologie",
+    "subcategories": "Sottocategorie",
     "categories": "Categorie",
     "additionalFilters": "Filtri aggiuntivi",
     "showResults": "Mostra {count} prodotti",
@@ -209,8 +210,9 @@
   },
   "hub": {
     "exploreByColor": "Esplora per colore",
-    "solidColours": "Solid Colours",
     "exploreByCollection": "Esplora per collezione",
+    "exploreByTypology": "Esplora per tipologia",
+    "solidColours": "Solid Colours",
     "discoverAlso": "Scopri anche",
     "deepDives": "Approfondimenti",
     "explore": "Esplora"

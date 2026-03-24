@@ -12,9 +12,10 @@ export interface ProductCard {
   type: string;
   title: string;
   subtitle: string | null;
-  imageUrl: string | null;
+  imageUrl: string | null;        // field_immagine_anteprima (preview for cards)
+  imageUrlMain: string | null;    // field_immagine (full-size for detail page)
   price: string | null;
-  priceOnDemand: boolean;
+  priceOnDemand: string | null;   // Drupal returns "0", "1", or null
   path: string | null;
 }
 
@@ -23,13 +24,13 @@ export interface CountsResponse {
   counts: Record<string, number>;
 }
 
-// === V3/V4: Filter Options ===
-export interface FilterOption {
+// === V3: Taxonomy Terms ===
+// Actual REST response shape — no `path` or `slug` field
+export interface TaxonomyTermItem {
   id: string;
   name: string;
-  slug: string;
-  imageUrl: string | null;
-  weight: number;
+  imageUrl: string;  // empty string when no image
+  weight: string;    // Drupal returns weight as string
 }
 
 // === V5: Blog ===
@@ -89,7 +90,7 @@ export interface DocumentCard {
 // === V10: Subcategories ===
 export interface CategoryCard {
   id: string;
-  uuid: string;
+  uuid: string | null;  // Drupal returns null for this field
   title: string;
   imageUrl: string | null;
   path: string | null;

@@ -20,7 +20,7 @@ export function GenB({ items, className }: GenBProps) {
   return (
     <section
       className={cn(
-        'max-w-main mx-auto px-(--spacing-page)',
+        'w-full max-w-main mx-auto px-(--spacing-page)',
         className,
       )}
     >

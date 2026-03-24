@@ -1,5 +1,4 @@
 import { AspectRatio } from '@/components/ui/aspect-ratio';
-import { VimeoPlayer } from '@/components/composed/VimeoPlayer';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { cn } from '@/lib/utils';
 
@@ -27,15 +26,19 @@ export function MediaElement({
 
   return (
     <figure className={cn('flex flex-col', className)}>
-      {hasVideo ? (
-        <div className="overflow-hidden rounded-lg">
-          <VimeoPlayer videoCode={videoCode!} />
-        </div>
-      ) : (
-        <AspectRatio ratio={ratio} className="overflow-hidden rounded-lg bg-muted">
+      <AspectRatio ratio={ratio} className="overflow-hidden rounded-lg bg-muted">
+        {hasVideo ? (
+          <iframe
+            src={`https://player.vimeo.com/video/${videoCode}?background=1`}
+            className="absolute inset-0 size-full scale-150 object-cover"
+            allow="autoplay"
+            title=""
+            style={{ border: 0 }}
+          />
+        ) : (
           <img src={imageSrc!} alt={imageAlt} className="size-full object-cover" />
-        </AspectRatio>
-      )}
+        )}
+      </AspectRatio>
       {captionHtml && (
         <figcaption
           className="mt-2 text-sm text-muted-foreground"
