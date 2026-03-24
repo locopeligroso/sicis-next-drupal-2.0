@@ -4,6 +4,8 @@ import { AiryHeader } from '@/components/composed/AiryHeader';
 import { SpecListingHeader } from '@/components/blocks/SpecListingHeader';
 import { SpecFilterSidebar } from '@/components/blocks/SpecFilterSidebar';
 import { SpecCategory } from '@/components/blocks/SpecCategory';
+import { SpecHubMosaico } from '@/components/blocks/SpecHubMosaico';
+import { SpecHubArredo } from '@/components/blocks/SpecHubArredo';
 import { SpecProductListing } from '@/components/blocks/SpecProductListing';
 import type { TypologyNavItem } from '@/components/composed/TypologyNav';
 import type { ProductCard } from '@/lib/api/products';
@@ -80,6 +82,25 @@ function resolveVariant(
   return 'context-bar';
 }
 
+/**
+ * Maps P0 filter options (subcategory/category) from filterOptions
+ * to the shape expected by SpecHubArredo.
+ */
+function mapCategoriesToHubArredo(
+  filterOptions: Record<string, FilterOption[]>,
+  basePath: string,
+) {
+  // Arredo/Illuminazione use 'subcategory', Tessile uses 'category'
+  const options =
+    filterOptions.subcategory ?? filterOptions.category ?? [];
+  return options.map((opt) => ({
+    slug: opt.slug,
+    label: opt.label,
+    imageUrl: opt.imageUrl ?? null,
+    href: `${basePath}/${opt.slug}`,
+  }));
+}
+
 export function ProductListingTemplate(props: ProductListingTemplateProps) {
   const {
     title,
@@ -112,18 +133,29 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
 
   // ── Hub mode: full-width category cards, no filter panel ──────────────
   if (variant === 'hub') {
+    const isMosaicoOrVetrite =
+      productType === 'prodotto_mosaico' || productType === 'prodotto_vetrite';
+
     return (
       <div className="max-w-listing mx-auto px-(--spacing-page) pb-(--spacing-section)">
         <ListingBreadcrumb locale={locale} activeCategory={productType} />
         <SpecListingHeader title={title} description={description} />
-        <SpecCategory
-          categoryGroups={listingConfig.categoryGroups}
-          filterOptions={filterOptions}
-          filters={filters}
-          aspectRatio={listingConfig.categoryCardRatio}
-          basePath={basePath}
-          locale={locale}
-        />
+        {isMosaicoOrVetrite ? (
+          <SpecHubMosaico
+            filterOptions={filterOptions}
+            filters={filters}
+            listingConfig={listingConfig}
+            basePath={basePath}
+            locale={locale}
+          />
+        ) : (
+          <SpecHubArredo
+            categories={mapCategoriesToHubArredo(filterOptions, basePath)}
+            basePath={basePath}
+            locale={locale}
+            categoryCardRatio={listingConfig.categoryCardRatio}
+          />
+        )}
       </div>
     );
   }
