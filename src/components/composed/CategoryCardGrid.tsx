@@ -33,6 +33,7 @@ export function CategoryCardGrid({
             href={buildHref(card.slug)}
             aspectRatio={aspectRatio}
             hasColorSwatch={hasColorSwatch}
+            disabled={card.count === 0}
           />
         ))}
       </div>

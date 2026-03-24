@@ -9,6 +9,7 @@ interface CategoryCardProps {
   href: string
   aspectRatio: string
   hasColorSwatch?: boolean
+  disabled?: boolean
   className?: string
 }
 
@@ -24,19 +25,14 @@ export function CategoryCard({
   href,
   aspectRatio,
   hasColorSwatch = false,
+  disabled = false,
   className,
 }: CategoryCardProps) {
   const ratio = parseAspectRatio(aspectRatio)
 
-  return (
-    <Link
-      href={href}
-      className={cn(
-        "group flex flex-col gap-3 rounded-lg bg-card p-3 transition-opacity hover:opacity-80",
-        className,
-      )}
-    >
-      <AspectRatio ratio={ratio} className="overflow-hidden rounded-md bg-muted">
+  const content = (
+    <>
+      <AspectRatio ratio={ratio} className={cn("overflow-hidden rounded-md bg-muted", disabled && "grayscale")}>
         {hasColorSwatch ? (
           <div className="flex size-full items-center justify-center">
             {imageUrl ? (
@@ -62,6 +58,32 @@ export function CategoryCard({
       </AspectRatio>
 
       <span className="truncate text-sm text-foreground">{title}</span>
+    </>
+  )
+
+  if (disabled) {
+    return (
+      <div
+        className={cn(
+          "flex flex-col gap-3 rounded-lg bg-card p-3 opacity-40 cursor-not-allowed",
+          className,
+        )}
+        aria-disabled="true"
+      >
+        {content}
+      </div>
+    )
+  }
+
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "group flex flex-col gap-3 rounded-lg bg-card p-3 transition-opacity hover:opacity-80",
+        className,
+      )}
+    >
+      {content}
     </Link>
   )
 }

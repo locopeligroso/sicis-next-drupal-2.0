@@ -11,6 +11,7 @@ interface SpecHubArredoCategory {
   imageUrl?: string | null
   href: string
   subtitle?: string
+  count?: number
 }
 
 interface SpecHubArredoProps {
@@ -43,6 +44,7 @@ export async function SpecHubArredo({
             imageUrl={cat.imageUrl}
             href={cat.href}
             aspectRatio={categoryCardRatio}
+            disabled={cat.count === 0}
           />
         ))}
       </div>

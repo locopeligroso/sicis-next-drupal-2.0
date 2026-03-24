@@ -98,6 +98,7 @@ function mapCategoriesToHubArredo(
     label: opt.label,
     imageUrl: opt.imageUrl ?? null,
     href: `${basePath}/${opt.slug}`,
+    count: opt.count,
   }));
 }
 

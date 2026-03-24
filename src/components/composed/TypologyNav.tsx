@@ -7,6 +7,7 @@ export interface TypologyNavItem {
   label: string;
   imageUrl?: string | null;
   href: string;
+  count?: number;
 }
 
 interface TypologyNavProps {
@@ -21,6 +22,28 @@ export function TypologyNav({ items, activeSlug }: TypologyNavProps) {
     <nav className="flex flex-col gap-0.5">
       {sorted.map((item) => {
         const isActive = item.slug === activeSlug;
+        const isDisabled = !isActive && item.count === 0;
+
+        if (isDisabled) {
+          return (
+            <span
+              key={item.slug}
+              className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm opacity-40 cursor-not-allowed"
+              aria-disabled="true"
+            >
+              {item.imageUrl ? (
+                <img
+                  src={item.imageUrl}
+                  alt=""
+                  className="size-6 shrink-0 rounded object-cover grayscale"
+                />
+              ) : (
+                <div className="bg-muted size-6 shrink-0 rounded" />
+              )}
+              {item.label}
+            </span>
+          );
+        }
 
         return (
           <Link

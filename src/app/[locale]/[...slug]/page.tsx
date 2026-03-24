@@ -400,16 +400,32 @@ async function renderProductListing({
   let activeTypologySlug: string | undefined;
 
   if (TYPOLOGY_TYPES.has(productType) && variant !== 'hub') {
-    const categoryOptions = await fetchCategoryOptions(
-      config.contentType,
-      locale,
-    );
-    typologyNav = categoryOptions.map((opt) => ({
-      slug: opt.slug,
-      label: opt.label,
-      imageUrl: opt.imageUrl,
-      href: `${basePath}/${opt.slug}`,
-    }));
+    // Reuse filterOptions which already have counts merged (from State 2 above).
+    // The P0 filter key is 'subcategory' (Arredo/Illuminazione) or 'category' (Tessile).
+    const p0FilterKey = Object.values(filters).find((f) => f.priority === 'P0')?.key;
+    const existingOptions = p0FilterKey ? filterOptions[p0FilterKey] : undefined;
+
+    if (existingOptions && existingOptions.length > 0) {
+      typologyNav = existingOptions.map((opt) => ({
+        slug: opt.slug,
+        label: opt.label,
+        imageUrl: opt.imageUrl,
+        href: `${basePath}/${opt.slug}`,
+        count: opt.count,
+      }));
+    } else {
+      // Fallback: fetch category options if not available in filterOptions
+      const categoryOptions = await fetchCategoryOptions(
+        config.contentType,
+        locale,
+      );
+      typologyNav = categoryOptions.map((opt) => ({
+        slug: opt.slug,
+        label: opt.label,
+        imageUrl: opt.imageUrl,
+        href: `${basePath}/${opt.slug}`,
+      }));
+    }
 
     // Determine active typology from the P0 filter (subcategory/category key)
     const activeP0 = parsed.activeFilters.find((f) => f.type === 'path');
