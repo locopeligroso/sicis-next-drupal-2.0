@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { FilterFindSection } from '@/lib/navbar/types';
 import { Separator } from '@/components/ui/separator';
@@ -10,7 +11,7 @@ interface MegaMenuFilterFindProps {
 
 /**
  * Placeholder gradient backgrounds for each product category thumbnail.
- * Will be replaced with real images later.
+ * Used as fallback when no video is available.
  */
 const THUMB_COLORS: Record<string, string> = {
   Mosaico: 'linear-gradient(145deg, #3a6b7c, #1a3a4a)',
@@ -19,6 +20,73 @@ const THUMB_COLORS: Record<string, string> = {
   Illuminazione: 'linear-gradient(145deg, #6b5a3a, #3a2a1a)',
   Tessili: 'linear-gradient(145deg, #6b7c3a, #3a4a1a)',
 };
+
+/**
+ * Video sources for Filter & Find thumbnails.
+ * Keyed by lowercase category name fragment for flexible matching.
+ */
+const THUMB_VIDEOS: [string[], string][] = [
+  [['mosaico', 'mosaic'], '/video/filter-mosaico.mp4'],
+  [['vetrite'], '/video/filter-vetrite.mp4'],
+  [['arredo', 'furniture'], '/video/filter-arredo.mp4'],
+  [['illuminazione', 'lighting'], '/video/filter-illuminazione.mp4'],
+  [['tessili', 'textiles', 'tessuto'], '/video/filter-tessili.mp4'],
+];
+
+/** Resolve video source from category title (case-insensitive). */
+function resolveThumbVideo(title: string): string | null {
+  const lower = title.toLowerCase().trim();
+  for (const [keys, src] of THUMB_VIDEOS) {
+    if (keys.some((k) => lower.includes(k))) return src;
+  }
+  return null;
+}
+
+/**
+ * Ping-pong video: plays forward then reversed, seamlessly looping.
+ * Uses two <video> elements — one with the original, one with a
+ * pre-reversed copy (generated via ffmpeg -vf reverse).
+ * Convention: reversed file = `{name}-rev.mp4`.
+ */
+function PingPongVideo({ src }: { src: string }) {
+  const fwdRef = useRef<HTMLVideoElement>(null);
+  const revRef = useRef<HTMLVideoElement>(null);
+  const [phase, setPhase] = useState<'fwd' | 'rev'>('fwd');
+
+  const revSrc = src.replace('.mp4', '-rev.mp4');
+
+  useEffect(() => {
+    const el = phase === 'fwd' ? fwdRef.current : revRef.current;
+    if (!el) return;
+    el.currentTime = 0;
+    el.play().catch(() => {});
+  }, [phase]);
+
+  return (
+    <>
+      <video
+        ref={fwdRef}
+        src={src}
+        muted
+        playsInline
+        preload="auto"
+        onEnded={() => setPhase('rev')}
+        className="absolute inset-0 w-full h-full object-cover"
+        style={{ opacity: phase === 'fwd' ? 1 : 0 }}
+      />
+      <video
+        ref={revRef}
+        src={revSrc}
+        muted
+        playsInline
+        preload="auto"
+        onEnded={() => setPhase('fwd')}
+        className="absolute inset-0 w-full h-full object-cover"
+        style={{ opacity: phase === 'rev' ? 1 : 0 }}
+      />
+    </>
+  );
+}
 
 /**
  * Maps category title (lowercase) to the description translation key.
@@ -56,15 +124,18 @@ export function MegaMenuFilterFind({ menu }: MegaMenuFilterFindProps) {
         const titleLower = title.toLowerCase().trim();
         const descKey = DESC_KEYS[titleLower];
         const background = resolveThumbColor(title);
+        const videoSrc = resolveThumbVideo(title);
 
         return (
           <div key={category.item.id} className="flex-1 flex flex-col min-w-0">
             {/* Thumbnail */}
             <div
-              className="h-20 rounded-[10px] overflow-hidden w-full"
-              style={{ background }}
+              className="h-20 rounded-[10px] overflow-hidden w-full relative"
+              style={{ background: videoSrc ? undefined : background }}
               aria-hidden="true"
-            />
+            >
+              {videoSrc && <PingPongVideo src={videoSrc} />}
+            </div>
 
             {/* Primary link */}
             <a
