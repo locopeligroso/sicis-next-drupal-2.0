@@ -14,6 +14,7 @@ import {
 import { fetchProducts, fetchFilterCounts } from '@/lib/api/products';
 import { FILTER_REGISTRY } from '@/domain/filters/registry';
 import type { FilterOption } from '@/domain/filters/registry';
+import type { TypologyNavItem } from '@/components/composed/TypologyNav';
 import { ProductListingTemplate } from '@/templates/nodes/ProductListingTemplate';
 import ProjectListing from '@/components_legacy/ProjectListing';
 import EnvironmentListing from '@/components_legacy/EnvironmentListing';
@@ -343,6 +344,67 @@ async function renderProductListing({
     }
   }
 
+  // ── Determine layout variant ──────────────────────────────────────────
+  const CONTEXT_BAR_TYPES = new Set(['prodotto_mosaico', 'prodotto_vetrite']);
+  const TYPOLOGY_TYPES = new Set([
+    'prodotto_arredo',
+    'prodotto_illuminazione',
+    'prodotto_tessuto',
+  ]);
+
+  let variant: 'hub' | 'context-bar' | 'airy-header';
+  if (!hasActiveP0 && listing.categoryGroups.length > 0) {
+    variant = 'hub';
+  } else if (hasActiveP0 && CONTEXT_BAR_TYPES.has(productType)) {
+    variant = 'context-bar';
+  } else {
+    variant = 'airy-header';
+  }
+
+  // ── hasFilterPanel — false for hub, true when filters exist ──────────
+  const hasFilterPanel =
+    variant === 'hub' ? false : Object.keys(filters).length > 0;
+
+  // ── Context-bar props: imageUrl / swatchColor from active P0 option ──
+  let imageUrl: string | undefined;
+  let swatchColor: string | undefined;
+
+  if (variant === 'context-bar') {
+    const activeP0 = parsed.activeFilters.find((f) => f.type === 'path');
+    if (activeP0) {
+      const options = filterOptions[activeP0.key] ?? [];
+      const activeOption = options.find((o) => o.slug === activeP0.value);
+      if (activeOption?.imageUrl) {
+        imageUrl = activeOption.imageUrl;
+      } else if (activeOption?.cssColor) {
+        swatchColor = activeOption.cssColor;
+      }
+    }
+  }
+
+  // ── Typology nav for Arredo/Illuminazione/Tessile ───────────────────
+  let typologyNav: TypologyNavItem[] | undefined;
+  let activeTypologySlug: string | undefined;
+
+  if (TYPOLOGY_TYPES.has(productType) && variant !== 'hub') {
+    const categoryOptions = await fetchCategoryOptions(
+      config.contentType,
+      locale,
+    );
+    typologyNav = categoryOptions.map((opt) => ({
+      slug: opt.slug,
+      label: opt.label,
+      imageUrl: opt.imageUrl,
+      href: `${basePath}/${opt.slug}`,
+    }));
+
+    // Determine active typology from the P0 filter (subcategory/category key)
+    const activeP0 = parsed.activeFilters.find((f) => f.type === 'path');
+    if (activeP0) {
+      activeTypologySlug = activeP0.value;
+    }
+  }
+
   return (
     <ProductListingTemplate
       title={title}
@@ -359,6 +421,13 @@ async function renderProductListing({
       currentSort={parsed.sort}
       basePath={basePath}
       locale={locale}
+      variant={variant}
+      hasFilterPanel={hasFilterPanel}
+      imageUrl={imageUrl}
+      swatchColor={swatchColor}
+      backHref={basePath}
+      typologyNav={typologyNav}
+      activeTypologySlug={activeTypologySlug}
     />
   );
 }
