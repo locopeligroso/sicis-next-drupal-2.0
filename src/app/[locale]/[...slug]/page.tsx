@@ -48,6 +48,7 @@ import Categoria from '@/templates/nodes/Categoria';
 import CategoriaBlog from '@/templates/nodes/CategoriaBlog';
 import Documento from '@/templates/nodes/Documento';
 import Tag from '@/templates/nodes/Tag';
+import ProductsMasterPage from '@/templates/nodes/ProductsMasterPage';
 
 // Taxonomy components
 import MosaicoCollezione from '@/templates/taxonomy/MosaicoCollezione';
@@ -148,6 +149,18 @@ const LISTING_SLUG_OVERRIDES = new Set([
   'tissus',
   'stoffe',
   'telas',
+]);
+
+// Products master page slugs — one per locale.
+// Must be checked BEFORE LISTING_SLUG_OVERRIDES because "prodotti" is a
+// single-slug path that should render the master page, not a product listing.
+const PRODUCTS_MASTER_SLUGS = new Set([
+  'prodotti',    // IT
+  'products',    // EN
+  'produits',    // FR
+  'produkte',    // DE
+  'productos',   // ES
+  'продукция',   // RU
 ]);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -440,6 +453,14 @@ interface SlugPageProps {
 export async function generateMetadata({ params }: SlugPageProps) {
   const { locale, slug } = await params;
 
+  // Products master page — return i18n title without fetching from Drupal
+  const singleSlug = slug.length === 1 ? slug[0] : null;
+  if (singleSlug && PRODUCTS_MASTER_SLUGS.has(singleSlug)) {
+    const { getTranslations } = await import('next-intl/server');
+    const t = await getTranslations({ locale, namespace: 'breadcrumb' });
+    return { title: t('filterAndFind') };
+  }
+
   // Drupal aliases do NOT include locale prefix
   const drupalPath = `/${slug.join('/')}`;
 
@@ -474,6 +495,13 @@ export default async function SlugPage({
   const registry = await getRoutingRegistry();
 
   const singleSlug = slug.length === 1 ? slug[0] : null;
+
+  // ── Products master page interception ─────────────────────────────────────
+  // /prodotti (IT), /products (EN), etc. — static page listing all product categories.
+  // Must be checked BEFORE LISTING_SLUG_OVERRIDES to avoid falling through to Drupal.
+  if (singleSlug && PRODUCTS_MASTER_SLUGS.has(singleSlug)) {
+    return <ProductsMasterPage locale={locale} />;
+  }
 
   // Bypass translatePath per slug che devono essere listing prodotti ma hanno nodi Drupal
   // con lo stesso alias (categoria_blog, documento, page) che verrebbero renderizzati al posto.
