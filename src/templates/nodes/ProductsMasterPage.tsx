@@ -95,7 +95,7 @@ export default async function ProductsMasterPage({
   const title = tBreadcrumb('filterAndFind');
 
   return (
-    <div className="max-w-listing mx-auto px-(--spacing-page) pb-(--spacing-section)">
+    <div className="max-w-main mx-auto px-(--spacing-page) pb-(--spacing-section)">
       {/* Breadcrumb — Products is the terminal level */}
       <Breadcrumb className="pt-(--spacing-content) pb-(--spacing-element)">
         <BreadcrumbList>
@@ -106,12 +106,11 @@ export default async function ProductsMasterPage({
       </Breadcrumb>
 
       {/* Title */}
-      <Typography
-        textRole="h1"
-        className="pb-(--spacing-content)"
-      >
-        {title}
-      </Typography>
+      <div className="flex flex-col gap-(--spacing-element) pb-(--spacing-content)">
+        <Typography textRole="h1" as="h1" className="max-w-[40ch]">
+          {title}
+        </Typography>
+      </div>
 
       {/* Category cards grid */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">

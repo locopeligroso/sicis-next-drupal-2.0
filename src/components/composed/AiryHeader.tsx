@@ -18,22 +18,22 @@ export async function AiryHeader({
   const t = await getTranslations("listing")
 
   return (
-    <div className="mb-6 border-b border-border pb-5">
-      <Typography textRole="h1" as="h1">
+    <div className="flex flex-col gap-(--spacing-element) border-b border-border pb-(--spacing-content) mb-(--spacing-content)">
+      <Typography textRole="h1" as="h1" className="max-w-[40ch]">
         {title}
       </Typography>
 
       {description && (
         <Typography
           textRole="body-md"
-          className="mt-3 max-w-[600px] text-muted-foreground"
+          className="max-w-prose text-muted-foreground"
         >
           {description}
         </Typography>
       )}
 
       {(productCount != null || shareUrl) && (
-        <div className="mt-4 flex items-center gap-2">
+        <div className="flex items-center gap-2">
           {productCount != null && (
             <Typography textRole="caption" className="text-muted-foreground">
               {t("productCount", { count: productCount })}

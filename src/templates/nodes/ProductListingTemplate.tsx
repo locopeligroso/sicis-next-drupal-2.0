@@ -138,7 +138,7 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
       productType === 'prodotto_mosaico' || productType === 'prodotto_vetrite';
 
     return (
-      <div className="max-w-listing mx-auto px-(--spacing-page) pb-(--spacing-section)">
+      <div className="max-w-main mx-auto px-(--spacing-page) pb-(--spacing-section)">
         <ListingBreadcrumb locale={locale} activeCategory={productType} />
         <SpecListingHeader title={title} description={description} />
         {isMosaicoOrVetrite ? (

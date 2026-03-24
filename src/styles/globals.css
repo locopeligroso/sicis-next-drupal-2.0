@@ -51,6 +51,8 @@
 
     --underline-offset: 4px;
 
+    --container-listing: 96rem;
+
     --spacing-page: 3rem;
     --spacing-section: 3rem;
     --spacing-section-lg: 4rem;
@@ -125,7 +127,7 @@
 
 @theme {
     --container-main: var(--container-7xl);
-    --container-listing: 96rem;
+    --container-listing: var(--container-listing);
 }
 
 @theme inline {
