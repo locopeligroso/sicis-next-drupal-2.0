@@ -130,7 +130,8 @@ export default async function ProductsMasterPage({
                 {/* Placeholder — replace with real images later */}
               </AspectRatio>
 
-              {/* Overlay */}
+              {/* Overlay — raw white/black values intentional: text sits on a
+                 photo with a scrim gradient, not on a themed surface. */}
               <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/60 to-transparent p-5 transition-colors group-hover:from-black/70">
                 <Typography
                   textRole="h3"

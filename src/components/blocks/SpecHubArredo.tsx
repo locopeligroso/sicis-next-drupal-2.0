@@ -105,12 +105,12 @@ export async function SpecHubArredo({
               </svg>
             </div>
             <div className="min-w-0">
-              <span className="block truncate text-sm font-medium text-foreground">
+              <Typography textRole="body-sm" as="span" className="block truncate font-medium text-foreground">
                 {link.title}
-              </span>
-              <span className="block truncate text-xs text-muted-foreground">
+              </Typography>
+              <Typography textRole="caption" as="span" className="block truncate text-muted-foreground">
                 {link.subtitle}
-              </span>
+              </Typography>
             </div>
           </Link>
         ))}

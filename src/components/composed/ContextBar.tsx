@@ -11,6 +11,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { Separator } from "@/components/ui/separator"
+import { Typography } from "@/components/composed/Typography"
 import { ShareButton } from "@/components/composed/ShareButton"
 
 interface ContextBarProps {
@@ -52,12 +54,16 @@ export function ContextBar({
 
       {/* Title + subtitle */}
       <div className="min-w-0">
-        <p className="text-lg font-bold truncate">{title}</p>
-        <p className="text-sm text-muted-foreground truncate">{subtitle}</p>
+        <Typography textRole="body-lg" as="p" className="truncate font-bold text-foreground">
+          {title}
+        </Typography>
+        <Typography textRole="body-sm" as="p" className="truncate text-muted-foreground">
+          {subtitle}
+        </Typography>
       </div>
 
       {/* Vertical separator */}
-      <div className="h-7 w-px shrink-0 bg-border" />
+      <Separator orientation="vertical" className="h-7" />
 
       {/* Change popover */}
       <Popover>
