@@ -8,12 +8,7 @@ export default function Page({ node }: { node: Record<string, unknown> }) {
   const paragraphs = (node.field_blocchi as Record<string, unknown>[] | undefined) ?? [];
 
   return (
-    <article className="flex flex-col gap-(--spacing-section) py-(--spacing-section)">
-      {title && (
-        <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '1.5rem', lineHeight: 1.2 }}>
-          {title}
-        </h1>
-      )}
+    <article className="flex flex-col gap-(--spacing-section) overflow-x-hidden [&>*]:w-full">
       {body && (
         <div
           style={{ lineHeight: 1.7, marginBottom: '2rem' }}
@@ -21,7 +16,7 @@ export default function Page({ node }: { node: Record<string, unknown> }) {
         />
       )}
       {paragraphs.map((p, i) => (
-        <ParagraphResolver key={(p.id as string) ?? i} paragraph={p} />
+        <ParagraphResolver key={(p.id as string) ?? i} paragraph={p} pageTitle={title ?? undefined} />
       ))}
     </article>
   );

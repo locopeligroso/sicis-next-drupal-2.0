@@ -23,19 +23,6 @@ export default function Showroom({ node }: { node: Record<string, unknown> }) {
 
   return (
     <article style={{ maxWidth: '60rem', margin: '0 auto', padding: '2rem' }}>
-      {title && (
-        <h1
-          style={{
-            fontSize: '2rem',
-            fontWeight: 700,
-            marginBottom: '1.5rem',
-            lineHeight: 1.2,
-          }}
-        >
-          {title}
-        </h1>
-      )}
-
       {/* Hero image from gallery */}
       {firstImageUrl ? (
         <div

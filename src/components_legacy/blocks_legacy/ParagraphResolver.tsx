@@ -20,7 +20,6 @@ import { getDrupalImageUrl } from '@/lib/drupal/image';
 
 // ── Legacy blocks (remaining — not yet migrated to Gen*) ────────────────────
 import BloccoSliderHome from './BloccoSliderHome';
-import BloccoVideo from './BloccoVideo';
 import BloccoCorrelati from './BloccoCorrelati';
 import BloccoNewsletter from './BloccoNewsletter';
 import BloccoFormBlog from './BloccoFormBlog';
@@ -32,7 +31,6 @@ type ParagraphComponent = (props: { paragraph: Record<string, unknown> }) => any
 
 const LEGACY_MAP: Record<string, ParagraphComponent> = {
   'paragraph--blocco_slider_home': BloccoSliderHome,
-  'paragraph--blocco_video': BloccoVideo,
   'paragraph--blocco_correlati': BloccoCorrelati,
   'paragraph--blocco_newsletter': BloccoNewsletter,
   'paragraph--blocco_form_blog': BloccoFormBlog,
@@ -42,9 +40,9 @@ const LEGACY_MAP: Record<string, ParagraphComponent> = {
 
 // ── Gen adapters ────────────────────────────────────────────────────────────
 
-function adaptGenIntro(p: Record<string, unknown>) {
+function adaptGenIntro(p: Record<string, unknown>, pageTitle?: string) {
   const title = getTextValue(p.field_titolo_formattato);
-  const subtitle = getTextValue(p.field_sopratitolo_approfondiment) ?? '';
+  const subtitle = pageTitle ?? getTextValue(p.field_sopratitolo_approfondiment) ?? '';
   const bodyHtml = getProcessedText(p.field_testo);
   const imageSrc = getDrupalImageUrl(p.field_immagine);
   const imageAlt = (p.field_immagine as Record<string, unknown> | undefined)?.meta
@@ -333,13 +331,14 @@ function adaptGenC(p: Record<string, unknown>) {
 
 interface ParagraphResolverProps {
   paragraph: Record<string, unknown>;
+  pageTitle?: string;
 }
 
-export default function ParagraphResolver({ paragraph }: ParagraphResolverProps) {
+export default function ParagraphResolver({ paragraph, pageTitle }: ParagraphResolverProps) {
   const type = paragraph.type as string;
 
   // Gen blocks (DS)
-  if (type === 'paragraph--blocco_intro') return adaptGenIntro(paragraph);
+  if (type === 'paragraph--blocco_intro') return adaptGenIntro(paragraph, pageTitle);
   if (type === 'paragraph--blocco_quote') return adaptGenQuote(paragraph);
   if (type === 'paragraph--blocco_video') return adaptGenVideo(paragraph);
   if (type === 'paragraph--blocco_testo_immagine') return adaptGenTestoImmagine(paragraph);

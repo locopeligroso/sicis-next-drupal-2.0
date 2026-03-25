@@ -29,7 +29,7 @@ export function GenTestoImmagineBig({
       {hasText && (
         <div className="max-w-main mx-auto w-full px-(--spacing-page) grid grid-cols-1 md:grid-cols-2 gap-(--spacing-content)">
           {title ? (
-            <Typography textRole="h2" as="h2">
+            <Typography textRole="h2" as="h2" className="self-end">
               {title}
             </Typography>
           ) : (

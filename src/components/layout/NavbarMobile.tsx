@@ -252,7 +252,7 @@ export function NavbarMobile({ locale, menu, barOnly, overlayOnly, isOpen, setIs
   const bar = (
     <div className="flex items-center justify-between px-6 h-[56px]">
       <Link href={`/${locale}`} className="shrink-0">
-        <img src="/images/logo.png" alt="SICIS" className="h-5 w-auto" />
+        <img src="/images/logo.png" alt="SICIS" className="h-5 w-auto dark:invert" />
       </Link>
       <Button
         variant="ghost"

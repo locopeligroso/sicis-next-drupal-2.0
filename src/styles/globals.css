@@ -53,6 +53,8 @@
 
     --container-listing: 96rem;
 
+    --spacing-navbar: calc(72px + 6rem);
+
     --spacing-page: 3rem;
     --spacing-section: 3rem;
     --spacing-section-lg: 4rem;
@@ -185,6 +187,7 @@
     --color-surface-3: var(--surface-3);
     --color-surface-4: var(--surface-4);
     --color-surface-5: var(--surface-5);
+    --spacing-navbar: var(--spacing-navbar);
     --spacing-page: var(--spacing-page);
     --spacing-section: var(--spacing-section);
     --spacing-section-lg: var(--spacing-section-lg);

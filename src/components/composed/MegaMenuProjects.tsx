@@ -50,7 +50,7 @@ export function MegaMenuProjects({ menu }: MegaMenuProjectsProps) {
             <a
               key={item.id}
               href={item.url}
-              className={cn(!isLast && 'border-b border-border/60 pb-4')}
+              className={cn('group/link', !isLast && 'border-b border-border/60 pb-4')}
               onMouseEnter={() => setHoveredIndex(index)}
             >
               <div
@@ -61,7 +61,7 @@ export function MegaMenuProjects({ menu }: MegaMenuProjectsProps) {
                     : 'font-semibold text-muted-foreground',
                 )}
               >
-                {t(TITLE_KEYS[index])} <span aria-hidden="true">&rarr;</span>
+                {t(TITLE_KEYS[index])} <span aria-hidden="true" className="inline-block transition-transform duration-200 group-hover/link:translate-x-[3px]">&rarr;</span>
               </div>
               <div className="text-xs text-muted-foreground leading-[1.5] mt-1">
                 {t(DESC_KEYS[index])}

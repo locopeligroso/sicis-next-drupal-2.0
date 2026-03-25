@@ -55,19 +55,6 @@ export default function Progetto({ node }: { node: Record<string, unknown> }) {
         </p>
       )}
 
-      {title && (
-        <h1
-          style={{
-            fontSize: '2rem',
-            fontWeight: 700,
-            marginBottom: '1.5rem',
-            lineHeight: 1.2,
-          }}
-        >
-          {title}
-        </h1>
-      )}
-
       <DrupalImage
         field={node.field_immagine}
         alt={title ?? ''}
@@ -83,7 +70,7 @@ export default function Progetto({ node }: { node: Record<string, unknown> }) {
       )}
 
       {paragraphs.map((p, i) => (
-        <ParagraphResolver key={(p.id as string) ?? i} paragraph={p} />
+        <ParagraphResolver key={(p.id as string) ?? i} paragraph={p} pageTitle={title ?? undefined} />
       ))}
     </article>
   );

@@ -19,19 +19,6 @@ export default async function Documento({
 
   return (
     <article style={{ maxWidth: '60rem', margin: '0 auto', padding: '2rem' }}>
-      {title && (
-        <h1
-          style={{
-            fontSize: '2rem',
-            fontWeight: 700,
-            marginBottom: '1.5rem',
-            lineHeight: 1.2,
-          }}
-        >
-          {title}
-        </h1>
-      )}
-
       <DrupalImage
         field={node.field_immagine}
         alt={title ?? ''}

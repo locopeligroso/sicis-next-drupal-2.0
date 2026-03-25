@@ -221,16 +221,6 @@ export default async function Categoria({ node }: CategoriaProps) {
             marginBottom: '2rem',
           }}
         >
-          <h1
-            style={{
-              fontSize: '2rem',
-              fontWeight: 700,
-              margin: '0 0 0.5rem',
-              lineHeight: 1.2,
-            }}
-          >
-            {title}
-          </h1>
           {total > 0 && (
             <p style={{ margin: 0, fontSize: '0.875rem', color: '#888' }}>
               {total} prodotti
@@ -326,16 +316,6 @@ export default async function Categoria({ node }: CategoriaProps) {
             marginBottom: '2rem',
           }}
         >
-          <h1
-            style={{
-              fontSize: '2rem',
-              fontWeight: 700,
-              margin: '0 0 0.5rem',
-              lineHeight: 1.2,
-            }}
-          >
-            {title}
-          </h1>
           {total > 0 && (
             <p style={{ margin: 0, fontSize: '0.875rem', color: '#888' }}>
               {total} prodotti
@@ -391,16 +371,6 @@ export default async function Categoria({ node }: CategoriaProps) {
           marginBottom: '2rem',
         }}
       >
-        <h1
-          style={{
-            fontSize: '2rem',
-            fontWeight: 700,
-            margin: '0 0 0.5rem',
-            lineHeight: 1.2,
-          }}
-        >
-          {title}
-        </h1>
         {total > 0 && (
           <p style={{ margin: 0, fontSize: '0.875rem', color: '#888' }}>
             {total} {total === 1 ? 'pagina' : 'pagine'}
@@ -429,7 +399,7 @@ export default async function Categoria({ node }: CategoriaProps) {
             style={{ marginBottom: '2rem' }}
           />
           {paragraphs.map((p, i) => (
-            <ParagraphResolver key={(p.id as string) ?? i} paragraph={p} />
+            <ParagraphResolver key={(p.id as string) ?? i} paragraph={p} pageTitle={title ?? undefined} />
           ))}
         </div>
       )}

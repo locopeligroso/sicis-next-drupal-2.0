@@ -46,7 +46,7 @@ export default function SliderClient({ slides, autoplayMs = 5000 }: SliderClient
       onMouseLeave={() => setPaused(false)}
     >
       {/* Slide image */}
-      <div className="w-full aspect-[16/7] md:aspect-[16/6] bg-gray-900 relative">
+      <div className="w-screen h-[95vh] bg-gray-900 relative">
         {slide.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img

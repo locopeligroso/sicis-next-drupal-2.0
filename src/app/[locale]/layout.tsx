@@ -76,7 +76,7 @@ export default async function LocaleLayout({
                   <span className="hidden 2xl:inline">2xl (1536+)</span>
                 </div>
               )}
-              <main className="pt-[92px]" style={{ minHeight: '60vh' }}>{children}</main>
+              <main style={{ minHeight: '60vh' }}>{children}</main>
               <Footer locale={locale} initialMenu={footerMenuItems} />
               <Toaster />
             </NextIntlClientProvider>

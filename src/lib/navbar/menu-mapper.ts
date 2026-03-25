@@ -164,13 +164,31 @@ function buildExploreSection(sectionItem: MenuItem | undefined): ExploreSection 
   return { items: groups };
 }
 
+/** Short display titles for Filter&Find categories */
+const FILTER_FIND_SHORT_TITLES: Record<string, string> = {
+  'prodotti tessili': 'Tessili',
+  'textiles': 'Tessili',
+  'produits textiles': 'Tessili',
+  'textilien': 'Tessili',
+  'текстильные изделия': 'Tessili',
+  'lastre vetro vetrite': 'Vetrite',
+  'vetrite glass slabs': 'Vetrite',
+  'plaque en verre vetrite': 'Vetrite',
+  'glasscheibe vetrite': 'Vetrite',
+  'láminas de vidrio vetrite': 'Vetrite',
+  'cтеклянные листы vetrite': 'Vetrite',
+};
+
 function buildFilterFindSection(sectionItem: MenuItem | undefined): FilterFindSection {
   if (!sectionItem?.children?.length) {
     return { items: [] };
   }
 
   const items: FilterFindCategory[] = sectionItem.children.map((child) => ({
-    item: child,
+    item: {
+      ...child,
+      title: FILTER_FIND_SHORT_TITLES[lc(child.title)] ?? child.title,
+    },
     secondaryLinks: (child.children ?? []).map((c) => ({
       title: c.title,
       url: c.url,

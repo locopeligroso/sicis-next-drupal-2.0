@@ -27,13 +27,12 @@ export function GenIntro({
 }: GenIntroProps) {
   return (
     <section className={cn('flex flex-col gap-(--spacing-content)', className)}>
-      <div className="px-(--spacing-page)">
-        <ResponsiveImage
-          src={imageSrc}
-          alt={imageAlt}
-          ratio={16 / 3}
-        />
-      </div>
+      <ResponsiveImage
+        src={imageSrc}
+        alt={imageAlt}
+        ratio={16 / 3}
+        className="rounded-none"
+      />
 
       <div className="max-w-main mx-auto px-(--spacing-page) w-full flex flex-col gap-(--spacing-element)">
         <Typography textRole="overline" as="span" className="text-muted-foreground">

@@ -664,7 +664,7 @@ export default async function ProdottoArredo({
 
       {/* ── Paragraph blocks (Gen) ─────────────────────────────────────────── */}
       {((typedNode.field_blocchi as Record<string, unknown>[] | undefined) ?? []).map((p, i) => (
-        <ParagraphResolver key={(p.id as string) ?? i} paragraph={p} />
+        <ParagraphResolver key={(p.id as string) ?? i} paragraph={p} pageTitle={title ?? undefined} />
       ))}
     </article>
   );

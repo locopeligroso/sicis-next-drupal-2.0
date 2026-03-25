@@ -95,7 +95,7 @@ export function NavLanguageSwitcher({ locale, className }: NavLanguageSwitcherPr
                 <button
                   onClick={() => handleLocaleChange(loc)}
                   className={cn(
-                    'block w-full px-4 py-1.5 text-left text-xs tracking-widest uppercase transition-colors',
+                    'block w-full px-4 py-1.5 text-center text-xs tracking-widest uppercase transition-colors',
                     isCurrent
                       ? 'font-bold text-primary'
                       : 'text-muted-foreground hover:bg-muted hover:text-foreground',

@@ -43,46 +43,61 @@ function resolveThumbVideo(title: string): string | null {
 }
 
 /**
- * Ping-pong video: plays forward then reversed, seamlessly looping.
- * Uses two <video> elements — one with the original, one with a
- * pre-reversed copy (generated via ffmpeg -vf reverse).
- * Convention: reversed file = `{name}-rev.mp4`.
+ * Video that plays on hover, stops at end. Fades to first frame on leave.
+ * The forward video is always rendered (shows first frame at rest).
+ * On leave: pause, fade out to reveal the static first frame underneath, then reset.
  */
-function PingPongVideo({ src }: { src: string }) {
-  const fwdRef = useRef<HTMLVideoElement>(null);
-  const revRef = useRef<HTMLVideoElement>(null);
-  const [phase, setPhase] = useState<'fwd' | 'rev'>('fwd');
-
-  const revSrc = src.replace('.mp4', '-rev.mp4');
+function HoverPlayVideo({ src, isHovered }: { src: string; isHovered: boolean }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  const [faded, setFaded] = useState(false);
+  const resetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const el = phase === 'fwd' ? fwdRef.current : revRef.current;
+    const el = ref.current;
     if (!el) return;
-    el.currentTime = 0;
-    el.play().catch(() => {});
-  }, [phase]);
+
+    if (resetRef.current) {
+      clearTimeout(resetRef.current);
+      resetRef.current = null;
+    }
+
+    if (isHovered) {
+      setFaded(false);
+      el.play().catch(() => {});
+    } else if (el.currentTime > 0) {
+      // Fade out, then reset to first frame
+      el.pause();
+      setFaded(true);
+      resetRef.current = setTimeout(() => {
+        el.currentTime = 0;
+        setFaded(false);
+      }, 700);
+    }
+
+    return () => {
+      if (resetRef.current) clearTimeout(resetRef.current);
+    };
+  }, [isHovered]);
 
   return (
     <>
+      {/* Static first-frame layer (always visible behind) */}
       <video
-        ref={fwdRef}
         src={src}
         muted
         playsInline
         preload="auto"
-        onEnded={() => setPhase('rev')}
         className="absolute inset-0 w-full h-full object-cover"
-        style={{ opacity: phase === 'fwd' ? 1 : 0 }}
       />
+      {/* Playable layer on top */}
       <video
-        ref={revRef}
-        src={revSrc}
+        ref={ref}
+        src={src}
         muted
         playsInline
         preload="auto"
-        onEnded={() => setPhase('fwd')}
-        className="absolute inset-0 w-full h-full object-cover"
-        style={{ opacity: phase === 'rev' ? 1 : 0 }}
+        className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700"
+        style={{ opacity: faded ? 0 : 1 }}
       />
     </>
   );
@@ -116,6 +131,7 @@ function resolveThumbColor(title: string): string {
 
 export function MegaMenuFilterFind({ menu }: MegaMenuFilterFindProps) {
   const t = useTranslations('nav');
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   return (
     <div className="flex px-10 py-9 gap-7">
@@ -125,32 +141,38 @@ export function MegaMenuFilterFind({ menu }: MegaMenuFilterFindProps) {
         const descKey = DESC_KEYS[titleLower];
         const background = resolveThumbColor(title);
         const videoSrc = resolveThumbVideo(title);
+        const isHovered = hoveredId === category.item.id;
 
         return (
-          <div key={category.item.id} className="flex-1 flex flex-col min-w-0">
-            {/* Thumbnail */}
-            <div
-              className="h-20 rounded-[10px] overflow-hidden w-full relative"
-              style={{ background: videoSrc ? undefined : background }}
-              aria-hidden="true"
-            >
-              {videoSrc && <PingPongVideo src={videoSrc} />}
-            </div>
-
-            {/* Primary link */}
+          <div
+            key={category.item.id}
+            className="flex-1 flex flex-col min-w-0"
+            onMouseEnter={() => setHoveredId(category.item.id)}
+            onMouseLeave={() => setHoveredId(null)}
+          >
+            {/* Primary link — wraps thumbnail + title + description */}
             <a
               href={category.item.url}
-              className="text-[13px] tracking-[2px] uppercase font-bold text-foreground mt-4 block"
+              className="block group/card"
             >
-              {title} &rarr;
-            </a>
+              <div
+                className="h-20 rounded-[10px] overflow-hidden w-full relative"
+                style={{ background: videoSrc ? undefined : background }}
+                aria-hidden="true"
+              >
+                {videoSrc && <HoverPlayVideo src={videoSrc} isHovered={isHovered} />}
+              </div>
 
-            {/* Description */}
-            {descKey && (
-              <p className="text-[10px] text-muted-foreground mt-1.5">
-                {t(descKey)}
-              </p>
-            )}
+              <span className="text-[13px] tracking-[2px] uppercase font-bold text-foreground mt-4 block">
+                {title} <span className="inline-block transition-transform duration-200 group-hover/card:translate-x-[3px]">&rarr;</span>
+              </span>
+
+              {descKey && (
+                <p className="text-[10px] text-muted-foreground mt-1.5">
+                  {t(descKey)}
+                </p>
+              )}
+            </a>
 
             {/* Secondary links */}
             {category.secondaryLinks.length > 0 && (

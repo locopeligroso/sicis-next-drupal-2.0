@@ -146,12 +146,17 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
       productType === 'prodotto_mosaico' || productType === 'prodotto_vetrite';
 
     return (
-      <div className="max-w-main mx-auto px-(--spacing-page) pb-(--spacing-section)">
+      <div className="max-w-main mx-auto px-(--spacing-page) pt-(--spacing-navbar) pb-(--spacing-section)">
         <ListingBreadcrumb locale={locale} activeCategory={productType} />
         <SpecListingHeader title={title} description={description} />
         {isMosaicoOrVetrite ? (
           <SpecHubMosaico
-            filterOptions={filterOptions}
+            filterOptions={Object.fromEntries(
+              Object.entries(filterOptions).map(([key, opts]) => [
+                key,
+                opts.filter((o) => !o.label.includes(' - ')),
+              ])
+            )}
             filters={filters}
             listingConfig={listingConfig}
             basePath={basePath}
@@ -173,7 +178,7 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
 
   // ── Listing modes: context-bar or airy-header ─────────────────────────
   return (
-    <div className="flex">
+    <div className="flex pt-(--spacing-navbar)">
       {/* Panel — anchored to left edge of viewport */}
       {hasFilterPanel && (
         <SpecFilterSidebar

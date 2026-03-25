@@ -62,8 +62,7 @@ function HoverVideo({ src, isActive }: { src: string; isActive: boolean }) {
 export function MegaMenuExplore({ menu }: MegaMenuExploreProps) {
   const [hoveredGroup, setHoveredGroup] = useState<string | null>(null);
 
-  // Resolve which group image to show: hovered group, or first group as default
-  const activeGroup = hoveredGroup ?? menu.items[0]?.label ?? null;
+  const activeGroup = hoveredGroup;
 
   return (
     <div className="flex">
@@ -82,14 +81,15 @@ export function MegaMenuExplore({ menu }: MegaMenuExploreProps) {
               onMouseEnter={() => setHoveredGroup(group.label)}
             >
               {/* Column header */}
-              <div
-                className={cn(
-                  'pb-3 mb-4',
-                  isHovered
-                    ? 'border-b-2 border-foreground'
-                    : 'border-b border-muted-foreground/25',
-                )}
-              >
+              <div className="mb-4 relative pb-3 border-b border-muted-foreground/25">
+                {/* Animated active separator */}
+                <span
+                  className={cn(
+                    'absolute bottom-0 h-[2px] bg-foreground transition-[width] duration-300 ease-out',
+                    isHovered ? 'left-0' : 'right-0'
+                  )}
+                  style={{ width: isHovered ? '100%' : '0%' }}
+                />
                 <span className="text-[10px] tracking-[2.5px] uppercase font-bold text-foreground">
                   {group.label}
                 </span>
@@ -117,6 +117,14 @@ export function MegaMenuExplore({ menu }: MegaMenuExploreProps) {
         className="w-[320px] flex-shrink-0 relative overflow-hidden"
         aria-hidden="true"
       >
+        {/* Default intro video — visible when no group is hovered */}
+        <div
+          className="absolute inset-0 transition-opacity duration-[400ms]"
+          style={{ opacity: activeGroup ? 0 : 1 }}
+        >
+          <HoverVideo src="/video/intro-nav.mp4" isActive={!activeGroup} />
+        </div>
+
         {menu.items.map((group) => {
           const isActive = activeGroup === group.label;
           const videoSrc = GROUP_VIDEOS[group.label];

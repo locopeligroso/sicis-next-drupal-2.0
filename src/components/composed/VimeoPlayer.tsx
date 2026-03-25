@@ -122,12 +122,12 @@ export function VimeoPlayer({
   };
 
   return (
-    <div ref={wrapperRef} className={cn('flex flex-col', className)}>
+    <div ref={wrapperRef} className={cn('flex w-full flex-col', className)}>
       {/* Video area */}
-      <div className="relative overflow-hidden rounded-lg bg-muted">
+      <div className="relative w-full aspect-video overflow-hidden rounded-lg bg-muted">
         {/* Poster overlay */}
         {!isStarted && (
-          <div className="relative aspect-video">
+          <div className="absolute inset-0 z-10">
             {posterSrc ? (
               <img
                 src={posterSrc}
@@ -146,11 +146,11 @@ export function VimeoPlayer({
           </div>
         )}
 
-        {/* Vimeo iframe */}
+        {/* Vimeo iframe — always in DOM, sized by parent aspect-video */}
         <iframe
           ref={iframeRef}
           src={`https://player.vimeo.com/video/${videoCode}?controls=0&dnt=1&keyboard=0`}
-          className={cn('aspect-video w-full', !isStarted && 'hidden')}
+          className="absolute inset-0 size-full"
           allow="autoplay; fullscreen; picture-in-picture"
           allowFullScreen
           title="Video"

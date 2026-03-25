@@ -173,7 +173,7 @@ export default async function ProdottoMosaico({ node }: { node: Record<string, u
     .filter((img): img is ProductGalleryImage => img !== null);
 
   return (
-    <article className="flex flex-col gap-(--spacing-section) py-(--spacing-section)">
+    <article className="flex flex-col gap-(--spacing-section) pt-(--spacing-navbar) pb-(--spacing-section)">
       {/* ── Hero Block ── */}
       <SpecProductHero
           title={title ?? typedNode.title ?? ''}

@@ -489,7 +489,7 @@ async function renderProductListing({
     const isTypologyType = TYPOLOGY_TYPES.has(productType);
     const filteredPopoverOptions = isTypologyType
       ? popoverOptions.filter((opt) => !opt.parentId)
-      : popoverOptions;
+      : popoverOptions.filter((opt) => !opt.label.includes(' - '));
 
     const popoverItems = filteredPopoverOptions.map((opt) => ({
       slug: opt.slug,

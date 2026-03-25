@@ -40,6 +40,59 @@ export function NavbarDesktop({
   const [isTouch, setIsTouch] = useState(false);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [panelHeight, setPanelHeight] = useState(0);
+
+  // Crossfade state for switching between menus
+  const [displayedMenu, setDisplayedMenu] = useState<string | null>(null);
+  const [contentVisible, setContentVisible] = useState(false);
+  const switchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (switchTimerRef.current) {
+      clearTimeout(switchTimerRef.current);
+      switchTimerRef.current = null;
+    }
+
+    if (openMenu) {
+      if (!displayedMenu) {
+        // Opening from closed: show content, then fade in
+        setDisplayedMenu(openMenu);
+        requestAnimationFrame(() => setContentVisible(true));
+      } else if (openMenu !== displayedMenu) {
+        // Switching: fade out (100ms), swap, fade in (200ms)
+        // Content fully visible at ~300ms = same as height transition end
+        setContentVisible(false);
+        switchTimerRef.current = setTimeout(() => {
+          setDisplayedMenu(openMenu);
+          requestAnimationFrame(() => setContentVisible(true));
+        }, 100);
+      }
+    } else {
+      // Closing: fade out, then remove content after animation
+      setContentVisible(false);
+      switchTimerRef.current = setTimeout(() => {
+        setDisplayedMenu(null);
+      }, 300);
+    }
+
+    return () => {
+      if (switchTimerRef.current) {
+        clearTimeout(switchTimerRef.current);
+      }
+    };
+  }, [openMenu]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Measure content height after displayedMenu changes
+  useEffect(() => {
+    if (displayedMenu && contentRef.current) {
+      requestAnimationFrame(() => {
+        if (contentRef.current) {
+          setPanelHeight(contentRef.current.scrollHeight);
+        }
+      });
+    }
+  }, [displayedMenu]);
 
   // Detect touch vs pointer at mount
   useEffect(() => {
@@ -58,17 +111,9 @@ export function NavbarDesktop({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [setOpenMenu]);
 
-  // Focus first link inside panel when mega-menu opens
-  useEffect(() => {
-    if (openMenu && panelRef.current) {
-      const firstLink = panelRef.current.querySelector<HTMLElement>(
-        'a, button, [tabindex="0"]'
-      );
-      if (firstLink) {
-        firstLink.focus();
-      }
-    }
-  }, [openMenu]);
+  // Focus first link inside panel only on keyboard navigation (Tab)
+  // Mouse/touch users won't get auto-focus; keyboard users will
+  // reach the panel naturally via Tab order
 
   const clearCloseTimer = useCallback(() => {
     if (closeTimerRef.current) {
@@ -125,16 +170,16 @@ export function NavbarDesktop({
   );
 
   return (
-    <div>
+    <div onMouseLeave={handleMouseLeave}>
       {/* Nav bar row */}
       <div className="flex items-center justify-between px-9 h-[72px]">
         {/* Left — Logo */}
         <Link href={`/${locale}`} className="shrink-0">
-          <img src="/images/logo.png" alt="SICIS" className="h-5 w-auto" />
+          <img src="/images/logo.png" alt="SICIS" className="h-5 w-auto dark:invert" />
         </Link>
 
         {/* Center — Nav Items */}
-        <nav className="flex items-center gap-8">
+        <nav className="flex items-center gap-12">
           {NAV_ITEMS.map(({ key }) => {
             const isActive = openMenu === key;
             const hasOpenMenu = openMenu !== null;
@@ -146,16 +191,15 @@ export function NavbarDesktop({
                 aria-haspopup="true"
                 aria-expanded={isActive}
                 className={cn(
-                  'flex flex-col items-center text-center transition-opacity duration-150',
+                  'flex flex-col items-start text-left transition-opacity duration-150',
                   hasOpenMenu && !isActive && 'opacity-35'
                 )}
                 onMouseEnter={() => handleMouseEnter(key)}
-                onMouseLeave={handleMouseLeave}
                 onClick={(e) => handleClick(e, key)}
               >
                 <span
                   className={cn(
-                    'text-[11px] uppercase tracking-[2px]',
+                    'text-[12px] uppercase tracking-[2px]',
                     isActive
                       ? 'font-semibold text-foreground'
                       : 'text-foreground'
@@ -163,7 +207,7 @@ export function NavbarDesktop({
                 >
                   {t(`${key}Label`)}
                 </span>
-                <span className="text-[9px] text-muted-foreground mt-[3px]">
+                <span className="text-[10px] text-muted-foreground mt-[3px]">
                   {t(`${key}Desc`)}
                 </span>
               </button>
@@ -183,38 +227,35 @@ export function NavbarDesktop({
 
       {/* Mega-menu Panel Container */}
       <div
-        className="grid transition-[grid-template-rows] duration-[250ms] ease-out"
-        style={{ gridTemplateRows: openMenu ? '1fr' : '0fr' }}
+        className="overflow-hidden rounded-b-4xl transition-[height] duration-300 ease-in-out"
+        style={{ height: openMenu ? panelHeight : 0 }}
         onMouseEnter={clearCloseTimer}
-        onMouseLeave={handleMouseLeave}
       >
-        <div className="overflow-hidden">
-          <div
-            ref={panelRef}
-            className={cn(
-              'transition-opacity duration-150',
-              openMenu ? 'opacity-100 delay-150' : 'opacity-0'
-            )}
-          >
-            {openMenu && (
-              <div
-                role="region"
-                aria-label={getActiveLabel(openMenu as NavItemKey)}
-                className="border-t border-border/60 max-h-[70vh] overflow-y-auto"
-              >
-                {openMenu === 'explore' && (
-                  <MegaMenuExplore menu={menu.explore} />
-                )}
-                {openMenu === 'filterFind' && (
-                  <MegaMenuFilterFind menu={menu.filterFind} />
-                )}
-                {openMenu === 'projects' && (
-                  <MegaMenuProjects menu={menu.projects} />
-                )}
-                {openMenu === 'info' && <MegaMenuInfo menu={menu.info} />}
-              </div>
-            )}
-          </div>
+        <div
+          ref={contentRef}
+          className={cn(
+            'transition-opacity ease-in-out',
+            contentVisible ? 'opacity-100 duration-400 delay-100' : 'opacity-0 duration-100'
+          )}
+        >
+          {displayedMenu && (
+            <div
+              role="region"
+              aria-label={getActiveLabel(displayedMenu as NavItemKey)}
+              className="border-t border-border/60 max-h-[70vh] overflow-y-auto"
+            >
+              {displayedMenu === 'explore' && (
+                <MegaMenuExplore menu={menu.explore} />
+              )}
+              {displayedMenu === 'filterFind' && (
+                <MegaMenuFilterFind menu={menu.filterFind} />
+              )}
+              {displayedMenu === 'projects' && (
+                <MegaMenuProjects menu={menu.projects} />
+              )}
+              {displayedMenu === 'info' && <MegaMenuInfo menu={menu.info} />}
+            </div>
+          )}
         </div>
       </div>
     </div>
