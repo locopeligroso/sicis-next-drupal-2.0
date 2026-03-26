@@ -1337,27 +1337,34 @@ function textileToLegacyNode(
         }
       : null,
     field_colori: [],
-    field_finiture_tessuto:
-      product.finiture.length > 0
-        ? product.finiture.length === 1
-          ? {
-              // Single cardinality — legacy template expects object, not array
-              tid: product.finiture[0].tid,
-              name: product.finiture[0].name,
-              field_codice_colore: product.finiture[0].colorCode,
-              field_etichetta: product.finiture[0].label,
-              field_immagine: toImageField(product.finiture[0].imageSrc),
-              field_testo: product.finiture[0].text,
-            }
-          : product.finiture.map((f) => ({
-              tid: f.tid,
-              name: f.name,
-              field_codice_colore: f.colorCode,
-              field_etichetta: f.label,
-              field_immagine: toImageField(f.imageSrc),
-              field_testo: f.text,
+    // Flatten hierarchical finiture (parent → children) into the flat array
+    // the legacy template expects. Each child becomes a finitura item with
+    // name like "Elios - Almond", field_codice_colore, field_immagine, etc.
+    field_finiture_tessuto: (() => {
+      const flat = product.finiture.flatMap((f) =>
+        f.children.length > 0
+          ? f.children.map((c) => ({
+              tid: c.tid,
+              name: c.name,
+              field_codice_colore: c.colorCode,
+              field_etichetta: c.label,
+              field_immagine: toImageField(c.imageSrc),
+              field_testo: c.text,
             }))
-        : [],
+          : [
+              {
+                tid: f.tid,
+                name: f.name,
+                field_codice_colore: null,
+                field_etichetta: null,
+                field_immagine: null,
+                field_testo: null,
+              },
+            ],
+      );
+      // Legacy template handles single cardinality (object) vs array
+      return flat.length === 1 ? flat[0] : flat;
+    })(),
     field_tipologia_tessuto:
       product.typologies.length > 0
         ? product.typologies.length === 1

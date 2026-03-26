@@ -261,14 +261,26 @@ export interface TextileProductDocumentRest {
   field_id_video: string | null;
 }
 
-export interface TextileProductFinituraRest {
+export interface TextileProductFinituraChildRest {
   tid: number;
   name: string;
   field_codice_colore: string | null;
   field_etichetta: string | null;
   field_immagine: string | null;
   field_testo: string | null;
-  field_colore: string | null;
+  field_colore: { tid: number; name: string } | null;
+}
+
+export interface TextileProductFinituraRest {
+  tid: number;
+  name: string;
+  children?: TextileProductFinituraChildRest[];
+  // Flat fields (for backward compat if endpoint returns flat structure)
+  field_codice_colore?: string | null;
+  field_etichetta?: string | null;
+  field_immagine?: string | null;
+  field_testo?: string | null;
+  field_colore?: { tid: number; name: string } | string | null;
 }
 
 export interface TextileProductMaintenanceRest {

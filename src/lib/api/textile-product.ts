@@ -16,14 +16,20 @@ export interface TextileProductDocument {
   href: string | null;
 }
 
-export interface TextileProductFinitura {
+export interface TextileProductFinituraChild {
   tid: number;
   name: string;
   colorCode: string | null;
   label: string | null;
   imageSrc: string | null;
   text: string | null;
-  color: string | null;
+  colorName: string | null;
+}
+
+export interface TextileProductFinitura {
+  tid: number;
+  name: string;
+  children: TextileProductFinituraChild[];
 }
 
 export interface TextileProductMaintenance {
@@ -100,11 +106,18 @@ function normalizeTextileProduct(raw: TextileProductRest): TextileProduct {
     finiture: toArray(raw.field_finiture_tessuto).map((f) => ({
       tid: f.tid,
       name: f.name,
-      colorCode: f.field_codice_colore,
-      label: f.field_etichetta,
-      imageSrc: emptyToNull(f.field_immagine),
-      text: f.field_testo,
-      color: f.field_colore,
+      children: (f.children ?? []).map((c) => ({
+        tid: c.tid,
+        name: c.name,
+        colorCode: c.field_codice_colore,
+        label: c.field_etichetta,
+        imageSrc: emptyToNull(c.field_immagine),
+        text: c.field_testo,
+        colorName:
+          typeof c.field_colore === 'object' && c.field_colore
+            ? c.field_colore.name
+            : null,
+      })),
     })),
     maintenance: (raw.field_indicazioni_manutenzione ?? []).map((m) => ({
       tid: m.tid,
