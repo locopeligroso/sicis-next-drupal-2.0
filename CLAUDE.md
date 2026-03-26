@@ -2,7 +2,11 @@
 
 > **Source of truth:** The code is always the source of truth. This document may be outdated — when in doubt, read the code. For Drupal data (fields, entities, menus, paragraphs), the only real source is what Drupal returns via REST endpoints — never assume field presence or structure from this doc alone, always verify against the actual API response.
 
-> **⚠️ Recent changes (2026-03-26):** Major architecture shift in progress. Old C1 entity endpoint disabled locally — replaced by `resolve-path` (R1) + type-specific product endpoints (P1 mosaic, P2 vetrite, P3 textile). Product detail pages now route through `resolvePath()` before C1 fallback. Language switcher uses `window.location.href` (hard nav) instead of `router.push`. See `CHANGELOG.md` for full details, `docs/REFACTORING_ROADMAP.md` for planned next steps.
+> **⚠️ Cambiamenti recenti (2026-03-26):** Cambio architetturale in corso. Il vecchio endpoint C1 entity è disabilitato in locale — sostituito da `resolve-path` (R1) + endpoint prodotto per tipo (P1 mosaico, P2 vetrite, P3 tessuto). Le pagine dettaglio prodotto ora passano da `resolvePath()` prima del fallback C1. Il language switcher usa `window.location.href` (hard navigation) al posto di `router.push`. Vedi `CHANGELOG.md` per i dettagli completi, `docs/REFACTORING_ROADMAP.md` per i prossimi passi.
+>
+> **🚫 NON modificare il routing** in `src/app/[locale]/[...slug]/page.tsx` — è in fase di ristrutturazione e verrà consolidato (vedi `docs/REFACTORING_ROADMAP.md` #17). Qualsiasi modifica al routing rischia di rompere il flusso resolve-path.
+>
+> **📋 Prossimo lavoro:** I template prodotto **vetrite** (`ProdottoVetrite`) e **tessuto** (`ProdottoTessuto`) usano ancora il rendering legacy (DrupalImage, CSS modules, inline styles). Devono essere migrati ai blocchi DS (Spec\*) come è già stato fatto per mosaico (`MosaicProductPreview`). I dati normalizzati dai fetcher P2/P3 sono già pronti — serve solo costruire i template DS e rimuovere gli adapter legacy (`vetriteToLegacyNode`, `textileToLegacyNode`).
 
 ## Project Overview
 
