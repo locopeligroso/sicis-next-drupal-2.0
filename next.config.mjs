@@ -39,6 +39,11 @@ const nextConfig = {
       { protocol: 'https', hostname: 'sicis.com' },
       { protocol: 'https', hostname: 'www.sicis.com' },
     ],
+    // In dev, next/image blocks private IPs (192.168.x.x) from the optimization proxy.
+    // loaderFile bypasses this by serving the original URL directly in development.
+    ...(process.env.NODE_ENV === 'development'
+      ? { loader: 'custom', loaderFile: './src/lib/image-loader.ts' }
+      : {}),
   },
   async headers() {
     return [
