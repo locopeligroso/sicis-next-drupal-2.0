@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { cn } from '@/lib/utils';
@@ -26,7 +27,10 @@ export function MediaElement({
 
   return (
     <figure className={cn('flex flex-col', className)}>
-      <AspectRatio ratio={ratio} className="overflow-hidden rounded-lg bg-muted">
+      <AspectRatio
+        ratio={ratio}
+        className="overflow-hidden rounded-lg bg-muted"
+      >
         {hasVideo ? (
           <iframe
             src={`https://player.vimeo.com/video/${videoCode}?background=1`}
@@ -36,7 +40,13 @@ export function MediaElement({
             style={{ border: 0 }}
           />
         ) : (
-          <img src={imageSrc!} alt={imageAlt} className="size-full object-cover" />
+          <Image
+            src={imageSrc!}
+            alt={imageAlt}
+            fill
+            sizes="(max-width: 768px) 100vw, 50vw"
+            className="object-cover"
+          />
         )}
       </AspectRatio>
       {captionHtml && (

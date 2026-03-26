@@ -1,6 +1,13 @@
 import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { fetchEntity } from '@/lib/api/entity';
+import { resolvePath } from '@/lib/api/resolve-path';
+import { fetchMosaicProduct } from '@/lib/api/mosaic-product';
+import type { MosaicProduct } from '@/lib/api/mosaic-product';
+import { fetchVetriteProduct } from '@/lib/api/vetrite-product';
+import type { VetriteProduct } from '@/lib/api/vetrite-product';
+import { fetchTextileProduct } from '@/lib/api/textile-product';
+import type { TextileProduct } from '@/lib/api/textile-product';
 import { getComponentName } from '@/lib/node-resolver';
 import UnknownEntity from '@/components_legacy/UnknownEntity';
 import { getSectionConfigAsync } from '@/domain/routing/section-config';
@@ -155,12 +162,12 @@ const LISTING_SLUG_OVERRIDES = new Set([
 // Must be checked BEFORE LISTING_SLUG_OVERRIDES because "prodotti" is a
 // single-slug path that should render the master page, not a product listing.
 const PRODUCTS_MASTER_SLUGS = new Set([
-  'prodotti',    // IT
-  'products',    // EN
-  'produits',    // FR
-  'produkte',    // DE
-  'productos',   // ES
-  'продукция',   // RU
+  'prodotti', // IT
+  'products', // EN
+  'produits', // FR
+  'produkte', // DE
+  'productos', // ES
+  'продукция', // RU
 ]);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -227,7 +234,9 @@ async function renderProductListing({
   // Build basePath from the actual URL slug by matching leading segments against
   // the registry basePath. Only include slug segments that match the registry base —
   // filter segments (e.g. /textiles/bedcover) must not be included in basePath.
-  const registryBaseSegments = (config.basePaths[locale] ?? config.basePaths['it']).split('/');
+  const registryBaseSegments = (
+    config.basePaths[locale] ?? config.basePaths['it']
+  ).split('/');
   let matchCount = 0;
   for (let i = 0; i < registryBaseSegments.length && i < slug.length; i++) {
     if (slug[i] === registryBaseSegments[i]) {
@@ -252,9 +261,7 @@ async function renderProductListing({
   const p0Keys = Object.values(filters)
     .filter((f) => f.priority === 'P0')
     .map((f) => f.key);
-  const hasActiveP0 = parsed.activeFilters.some((f) =>
-    p0Keys.includes(f.key),
-  );
+  const hasActiveP0 = parsed.activeFilters.some((f) => p0Keys.includes(f.key));
 
   let products;
   let total;
@@ -270,15 +277,21 @@ async function renderProductListing({
   let subcategories: { slug: string; label: string }[] | undefined;
 
   if (TYPOLOGY_TYPES.has(productType) && hasActiveP0) {
-    const p0FilterKey = Object.values(filters).find((f) => f.priority === 'P0')?.key;
+    const p0FilterKey = Object.values(filters).find(
+      (f) => f.priority === 'P0',
+    )?.key;
     if (p0FilterKey) {
       // Pre-fetch category options to find children of active parent
       const categoryOptions = await fetchCategoryOptions(productType, locale);
       const activeP0 = parsed.activeFilters.find((f) => f.type === 'path');
       if (activeP0) {
-        const activeOption = categoryOptions.find((o) => o.slug === activeP0.value);
+        const activeOption = categoryOptions.find(
+          (o) => o.slug === activeP0.value,
+        );
         if (activeOption?.id) {
-          const children = categoryOptions.filter((o) => o.parentId === activeOption.id);
+          const children = categoryOptions.filter(
+            (o) => o.parentId === activeOption.id,
+          );
           if (children.length > 0) {
             subcategories = children.map((child) => ({
               slug: child.slug,
@@ -288,7 +301,9 @@ async function renderProductListing({
             // If ?sub=slug is active, override the category filter to the subcategory
             const subParam = Array.isArray(sp?.sub) ? sp.sub[0] : sp?.sub;
             if (subParam && subcategories.some((sc) => sc.slug === subParam)) {
-              const subLabel = subcategories.find((sc) => sc.slug === subParam)!.label;
+              const subLabel = subcategories.find(
+                (sc) => sc.slug === subParam,
+              )!.label;
               const catFieldIndex = parsed.filterDefinitions.findIndex(
                 (fd) => fd.field === 'field_categoria.title',
               );
@@ -298,7 +313,12 @@ async function renderProductListing({
                   value: subLabel,
                 };
               }
-              parsed.activeFilters.push({ key: 'sub', value: subParam, type: 'query', label: subLabel });
+              parsed.activeFilters.push({
+                key: 'sub',
+                value: subParam,
+                type: 'query',
+                label: subLabel,
+              });
             }
           }
         }
@@ -327,17 +347,21 @@ async function renderProductListing({
       }
     }
     const resolved = await Promise.all(
-      optionPromises.map(async ([key, promise]) => [key, await promise] as [string, FilterOption[]]),
+      optionPromises.map(
+        async ([key, promise]) =>
+          [key, await promise] as [string, FilterOption[]],
+      ),
     );
     filterOptions = Object.fromEntries(resolved);
 
     // Fetch counts for each P0 group (no active filters = total products per option)
     const countPromises = listing.categoryGroups.map(async (group) => {
       const filterConfig = filters[group.filterKey];
-      if (!filterConfig) return [group.filterKey, {} as Record<string, number>] as const;
+      if (!filterConfig)
+        return [group.filterKey, {} as Record<string, number>] as const;
       const counts = await fetchFilterCounts(
         productType,
-        [],  // no active filters in state 1
+        [], // no active filters in state 1
         group.filterKey,
         filterConfig.drupalField,
         locale,
@@ -403,7 +427,6 @@ async function renderProductListing({
         }
       }
     }
-
   }
 
   // ── Determine layout variant ──────────────────────────────────────────
@@ -502,9 +525,8 @@ async function renderProductListing({
       isActive: opt.slug === activePathP0.value,
     }));
 
-    const { CollectionPopoverContent } = await import(
-      '@/components/composed/CollectionPopoverContent'
-    );
+    const { CollectionPopoverContent } =
+      await import('@/components/composed/CollectionPopoverContent');
     changePopoverContent = (
       <CollectionPopoverContent
         items={popoverItems}
@@ -590,7 +612,8 @@ export default async function SlugPage({
   // Full path with locale (used for ProductListing basePath and logging)
   const path = `/${locale}/${slug.join('/')}`;
   // Drupal aliases do NOT include locale prefix — strip it for translate-path
-  const drupalPath = `/${slug.join('/')}`;
+  // decodeURIComponent handles non-Latin scripts (e.g. Cyrillic мозаика, French mosaïque)
+  const drupalPath = decodeURIComponent(`/${slug.join('/')}`);
 
   // Menu-derived routing registry (null when Drupal menu unavailable)
   const registry = await getRoutingRegistry();
@@ -625,6 +648,38 @@ export default async function SlugPage({
     notFound();
   }
 
+  // ── Product detail page interception (new REST endpoints) ────────────────
+  // For URLs with 2+ segments, try resolve-path FIRST to detect product detail
+  // pages before the listing interception claims them as filtered listings.
+  // This handles paths like /mosaico/neocolibrì-barrels/515-barrels which would
+  // otherwise be intercepted as a collection filter.
+  if (slug.length > 1) {
+    const resolved = await resolvePath(drupalPath, locale);
+    if (resolved) {
+      if (resolved.bundle === 'prodotto_mosaico') {
+        const product = await fetchMosaicProduct(resolved.nid, locale);
+        if (product) {
+          return <MosaicProductPreview product={product} locale={locale} />;
+        }
+      }
+      if (resolved.bundle === 'prodotto_vetrite') {
+        const product = await fetchVetriteProduct(resolved.nid, locale);
+        if (product) {
+          const legacyNode = vetriteToLegacyNode(product, locale);
+          return <ProdottoVetrite node={legacyNode} />;
+        }
+      }
+      if (resolved.bundle === 'prodotto_tessuto') {
+        const product = await fetchTextileProduct(resolved.nid, locale);
+        if (product) {
+          const legacyNode = textileToLegacyNode(product, locale);
+          return <ProdottoTessuto node={legacyNode} />;
+        }
+      }
+      // Future: add more product bundles here
+    }
+  }
+
   // ── Multi-slug listing interception ──────────────────────────────────────
   // When the URL has 2+ segments (e.g. /mosaico/murano-smalto, /mosaico/colori/rosso),
   // check if it's a product listing with an active P0 filter. If so, render
@@ -635,12 +690,17 @@ export default async function SlugPage({
     if (sectionConfig) {
       // Check if this is a product detail page (3+ segments after base for some types)
       // by verifying getSectionConfig returns a productType (it returns null for detail pages)
-      const parsed = parseFiltersFromUrl(slug, sp as Record<string, string> ?? {}, locale);
+      const parsed = parseFiltersFromUrl(
+        slug,
+        (sp as Record<string, string>) ?? {},
+        locale,
+      );
       if (parsed.activeFilters.length > 0) {
         // Title = the active P0 filter's label (e.g. "Murano Smalto", "Rosso", "Seats")
         // Falls back to deslugify of the filter value or last slug segment
         const activeP0 = parsed.activeFilters.find((f) => f.type === 'path');
-        const listingTitle = activeP0?.label ?? deslugify(slug[slug.length - 1]);
+        const listingTitle =
+          activeP0?.label ?? deslugify(slug[slug.length - 1]);
         return renderProductListing({
           productType: sectionConfig.productType,
           title: listingTitle,
@@ -665,8 +725,21 @@ export default async function SlugPage({
     );
   }
 
-  // Fallback: if no Drupal node found, try as a section listing page
+  // Fallback: if no Drupal node found via C1, try resolve-path + type-specific endpoint
   if (!resource) {
+    const resolved = await resolvePath(drupalPath, locale);
+    if (resolved) {
+      if (resolved.bundle === 'prodotto_mosaico') {
+        const product = await fetchMosaicProduct(resolved.nid, locale);
+        if (product) {
+          return <MosaicProductPreview product={product} locale={locale} />;
+        }
+      }
+      // Future: add more bundle handlers here as endpoints are built
+      // if (resolved.bundle === 'prodotto_vetrite') { ... }
+    }
+
+    // If resolve-path also failed, try as a section listing page
     const sectionConfig = await getSectionConfigAsync(slug, locale);
     if (sectionConfig) {
       return renderProductListing({
@@ -867,3 +940,442 @@ export default async function SlugPage({
 }
 
 export const revalidate = 60;
+
+// ── Product page using DS Spec* blocks (data from P1 mosaic-product endpoint) ─
+// Uses the same SpecProductHero, SpecProductDetails, SpecProductSpecs,
+// SpecProductResources, SpecProductGallery as the full ProdottoMosaico template.
+// Renders all blocks when collection data is available; gracefully omits blocks
+// when relations are not yet included in the endpoint response.
+
+async function MosaicProductPreview({
+  product,
+  locale,
+}: {
+  product: MosaicProduct;
+  locale: string;
+}) {
+  const { SpecProductHero } =
+    await import('@/components/blocks/SpecProductHero');
+  const { SpecProductDetails } =
+    await import('@/components/blocks/SpecProductDetails');
+  const { SpecProductSpecs } =
+    await import('@/components/blocks/SpecProductSpecs');
+  const { SpecProductResources } =
+    await import('@/components/blocks/SpecProductResources');
+  const { SpecProductGallery } =
+    await import('@/components/blocks/SpecProductGallery');
+  const { sanitizeHtml } = await import('@/lib/sanitize');
+  const { formatRetinatura } = await import('@/lib/product-helpers');
+  const { getTranslations } = await import('next-intl/server');
+
+  const t = await getTranslations('products');
+
+  type ProductCarouselSlide =
+    import('@/components/composed/ProductCarousel').ProductCarouselSlide;
+  type ProductGalleryImage =
+    import('@/components/blocks/SpecProductGallery').ProductGalleryImage;
+  type AttributeItem =
+    import('@/components/composed/AttributeGrid').AttributeItem;
+  type SpecsRow = import('@/components/composed/SpecsTable').SpecsRow;
+  type DocumentCardItem =
+    import('@/components/composed/DocumentCard').DocumentCardItem;
+
+  const col = product.collection;
+
+  // ── Build carousel slides (same pattern as ProdottoMosaico) ──
+  const heroSlides: ProductCarouselSlide[] = [];
+  if (product.imageUrl) {
+    heroSlides.push({
+      type: 'image',
+      src: product.imageUrl,
+      alt: product.title,
+    });
+  }
+  if (product.imageSampleUrl) {
+    heroSlides.push({
+      type: 'image',
+      src: product.imageSampleUrl,
+      alt: `${product.title} – campione`,
+    });
+  }
+  if (product.videoUrl) {
+    heroSlides.push({ type: 'video', src: product.videoUrl });
+  }
+  heroSlides.push({
+    type: 'static',
+    src: '/images/usa-mosaic-quality.jpg',
+    alt: 'Quality certification',
+  });
+
+  // ── Price ──
+  const heroPrice = product.priceUsaSqft
+    ? `$${product.priceUsaSqft}`
+    : product.priceUsaSheet
+      ? `$${product.priceUsaSheet}`
+      : product.priceEu
+        ? `€${product.priceEu}`
+        : null;
+  const heroPriceUnit = product.priceUsaSqft
+    ? '/sqft'
+    : product.priceUsaSheet
+      ? '/sheet'
+      : product.priceEu
+        ? '/m²'
+        : undefined;
+
+  // ── Details block data (from collection) ──
+  const detailAttributes: AttributeItem[] = col
+    ? [
+        ...(col.sheetSizeInch
+          ? [{ label: 'Sheet size', value: col.sheetSizeInch }]
+          : []),
+        ...(col.chipSizeInch
+          ? [{ label: 'Chip size', value: col.chipSizeInch }]
+          : []),
+        ...(col.thicknessInch
+          ? [{ label: 'Thickness', value: col.thicknessInch }]
+          : []),
+      ]
+    : [];
+
+  // ── Specs block data (from collection) ──
+  const boolLabel = (v: boolean | undefined) =>
+    v === true ? t('resistant') : v === false ? t('absent') : null;
+  const specsRows: SpecsRow[] = col
+    ? [
+        { label: t('leadContent'), value: boolLabel(col.leadContent) },
+        { label: t('waterAbsorption'), value: col.waterAbsorption ?? null },
+        { label: t('lightResistance'), value: boolLabel(col.lightResistance) },
+        {
+          label: t('chemicalResistance'),
+          value: boolLabel(col.chemicalResistance),
+        },
+        { label: t('thermalExpansion'), value: col.thermalExpansion ?? null },
+        {
+          label: t('thermalShockResistance'),
+          value: boolLabel(col.thermalShockResistance),
+        },
+        { label: t('frostResistance'), value: boolLabel(col.frostResistance) },
+        { label: t('surfaceAbrasion'), value: col.surfaceAbrasion ?? null },
+        { label: t('massAbrasion'), value: col.massAbrasion ?? null },
+        { label: t('stainResistance'), value: boolLabel(col.stainResistance) },
+        { label: t('slipResistance'), value: boolLabel(col.slipResistance) },
+        {
+          label: t('slipResistanceGrip'),
+          value: boolLabel(col.slipResistanceGrip),
+        },
+      ].filter((r): r is SpecsRow => r.value !== null)
+    : [];
+
+  // ── Resources block data (from collection documents) ──
+  const usesHtml = col?.usesHtml ? sanitizeHtml(col.usesHtml) : undefined;
+  const maintenanceHtml = col?.maintenanceHtml
+    ? sanitizeHtml(col.maintenanceHtml)
+    : undefined;
+  let maintenanceGuideHref: string | undefined;
+  let discoverHref: string | undefined;
+  const documentItems: DocumentCardItem[] = [];
+
+  if (col) {
+    for (const doc of col.documents) {
+      if (doc.isGuide && doc.href) {
+        maintenanceGuideHref = doc.href;
+      } else if (doc.isDiscover && doc.href) {
+        discoverHref = doc.href;
+        documentItems.push({
+          title: doc.title,
+          imageSrc: doc.imageSrc,
+          href: doc.href,
+        });
+      } else {
+        documentItems.push({
+          title: doc.title,
+          imageSrc: doc.imageSrc,
+          href: doc.href,
+        });
+      }
+    }
+  }
+
+  // ── Gallery block data ──
+  const galleryImages: ProductGalleryImage[] = product.gallery.map(
+    (url, i) => ({
+      src: url,
+      alt: `${product.title} gallery ${i + 1}`,
+    }),
+  );
+
+  return (
+    <article className="flex flex-col gap-(--spacing-section) pt-(--spacing-navbar) pb-(--spacing-section)">
+      {/* ── Hero Block ── */}
+      <SpecProductHero
+        title={product.title}
+        collection={col?.name}
+        description={product.body ? sanitizeHtml(product.body) : undefined}
+        slides={heroSlides}
+        hasSample={product.hasSample}
+        price={product.priceOnDemand ? undefined : heroPrice}
+        priceUnit={product.priceOnDemand ? undefined : heroPriceUnit}
+        inStock={!product.noUsaStock}
+        shippingWarehouse={
+          !product.noUsaStock ? 'North America Warehouse' : undefined
+        }
+        shippingTime={!product.noUsaStock ? '2-3 weeks' : undefined}
+        discoverUrl={discoverHref}
+      />
+
+      {/* ── Details Block ── */}
+      {detailAttributes.length > 0 && (
+        <SpecProductDetails attributes={detailAttributes} />
+      )}
+
+      {/* ── Specs Block ── */}
+      {specsRows.length > 0 && (
+        <SpecProductSpecs
+          specs={specsRows}
+          assemblyValue={
+            col?.meshType ? formatRetinatura(col.meshType) : undefined
+          }
+          assemblyImageSrc={
+            col?.meshType
+              ? '/images/Retinatura-mosaico-rete.jpg.webp'
+              : undefined
+          }
+          groutingValue={
+            product.grouts.length > 0 ? product.grouts[0].name : undefined
+          }
+          groutingImageSrc={
+            product.grouts.length > 0 ? product.grouts[0].imageSrc : undefined
+          }
+          groutConsumption={
+            col?.groutConsumptionM2 != null
+              ? `${col.groutConsumptionM2} kg/m²`
+              : undefined
+          }
+          maintenanceHtml={maintenanceHtml}
+          maintenanceLabel="Maintenance and installation"
+          maintenanceGuideHref={maintenanceGuideHref ?? '#'}
+          maintenanceGuideLabel="View guide"
+        />
+      )}
+
+      {/* ── Resources Block ── */}
+      {documentItems.length > 0 && (
+        <SpecProductResources
+          title="Get inspired through catalogs"
+          documents={documentItems}
+          downloadLabel="Scopri"
+        />
+      )}
+
+      {/* ── Gallery Block ── */}
+      {galleryImages.length > 0 && (
+        <SpecProductGallery images={galleryImages} />
+      )}
+
+      {/* Debug: raw data (dev only) */}
+      {process.env.NODE_ENV === 'development' && (
+        <details className="mx-auto max-w-main px-[var(--spacing-page)] rounded-lg border p-4">
+          <summary className="cursor-pointer text-sm text-muted-foreground">
+            Debug: Raw product data (NID {product.nid})
+          </summary>
+          <pre className="mt-2 text-xs overflow-auto">
+            {JSON.stringify(product, null, 2)}
+          </pre>
+        </details>
+      )}
+    </article>
+  );
+}
+
+// ── Adapter: P2 normalized VetriteProduct → C1-like Record for legacy template ─
+// The legacy ProdottoVetrite template expects raw Drupal C1 field shapes.
+// This adapter reconstructs that shape from the normalized P2 endpoint data,
+// so the legacy template renders without modification.
+
+function vetriteToLegacyNode(
+  product: VetriteProduct,
+  locale: string,
+): Record<string, unknown> {
+  const col = product.collection;
+  const toImageField = (url: string | null) =>
+    url
+      ? {
+          type: 'file--file',
+          uri: { url },
+          meta: { alt: '', width: 0, height: 0 },
+        }
+      : null;
+
+  return {
+    type: 'node--prodotto_vetrite',
+    langcode: locale,
+    title: product.title,
+    field_titolo_main: product.title,
+    field_testo_main: product.body
+      ? { value: product.body, processed: product.body }
+      : null,
+    field_immagine: toImageField(product.imageUrl),
+    field_gallery: product.gallery.map((url) => toImageField(url)),
+    field_dimensioni_cm: product.dimensionsCm,
+    field_dimensioni_inch: product.dimensionsInch,
+    field_dimensione_pattern_cm: product.patternCm,
+    field_dimensione_pattern_inch: product.patternInch,
+    field_prezzo_eu: product.priceEu ? { value: product.priceEu } : null,
+    field_prezzo_usa: product.priceUsa ? { value: product.priceUsa } : null,
+    field_prezzo_on_demand: product.priceOnDemand,
+    field_no_usa_stock: product.noUsaStock,
+    field_campione: product.hasSample,
+    field_formato_campione: product.sampleFormat,
+    field_collezione: col
+      ? {
+          name: col.name,
+          field_testo: col.body
+            ? { value: col.body, processed: col.body }
+            : null,
+          field_immagine: toImageField(col.imageSrc),
+          field_dimensioni_cm: col.dimensionsCm,
+          field_dimensioni_inch: col.dimensionsInch,
+          field_dimensioni_extra_cm: col.dimensionsExtraCm,
+          field_dimensioni_extra_inch: col.dimensionsExtraInch,
+          field_spessore_mm: col.thicknessMm,
+          field_spessore_inch: col.thicknessInch,
+          field_spessore_extra_mm: col.thicknessExtraMm,
+          field_spessore_extra_inch: col.thicknessExtraInch,
+          field_formato_campione: col.sampleFormat,
+          field_formato_extra_cm: col.formatExtraCm,
+          field_formato_extra_inch: col.formatExtraInch,
+          field_utilizzi: col.usesHtml
+            ? { value: col.usesHtml, processed: col.usesHtml }
+            : null,
+          field_manutenzione: col.maintenanceHtml
+            ? { value: col.maintenanceHtml, processed: col.maintenanceHtml }
+            : null,
+          field_trattamenti_extra: col.treatmentsExtraHtml
+            ? {
+                value: col.treatmentsExtraHtml,
+                processed: col.treatmentsExtraHtml,
+              }
+            : null,
+          field_lastre_speciali: col.specialSlabsHtml
+            ? { value: col.specialSlabsHtml, processed: col.specialSlabsHtml }
+            : null,
+          field_vetri_speciali: col.specialGlassHtml
+            ? { value: col.specialGlassHtml, processed: col.specialGlassHtml }
+            : null,
+          field_documenti: (col.documents ?? []).map((doc) => ({
+            field_titolo_main: doc.title,
+            field_tipologia_documento: null,
+            field_collegamento_esterno: doc.href,
+            field_immagine: toImageField(doc.imageSrc),
+            field_allegato: null,
+          })),
+        }
+      : null,
+    // Fields not yet available from P2 — legacy template handles null gracefully
+    field_colori: [],
+    field_finiture: [],
+    field_texture: [],
+  };
+}
+
+// ── Adapter: P3 normalized TextileProduct → C1-like Record for legacy template ─
+
+function textileToLegacyNode(
+  product: TextileProduct,
+  locale: string,
+): Record<string, unknown> {
+  const toImageField = (url: string | null) =>
+    url
+      ? {
+          type: 'file--file',
+          uri: { url },
+          meta: { alt: '', width: 0, height: 0 },
+        }
+      : null;
+  // Strip HTML tags from simple value fields (Drupal wraps them in <p>)
+  const stripHtml = (val: string | null) =>
+    val
+      ? val
+          .replace(/<[^>]*>/g, '')
+          .replace(/&nbsp;/g, ' ')
+          .trim()
+      : null;
+
+  return {
+    type: 'node--prodotto_tessuto',
+    langcode: locale,
+    title: product.title,
+    field_titolo_main: product.title,
+    field_testo_main: product.body
+      ? { value: product.body, processed: product.body }
+      : null,
+    field_composizione: product.composition
+      ? { value: product.composition, processed: product.composition }
+      : null,
+    field_altezza_cm: stripHtml(product.heightCm),
+    field_altezza_inch: stripHtml(product.heightInch),
+    field_peso: product.weight,
+    field_utilizzo: product.usage,
+    field_densita_annodatura: product.knottingDensity,
+    field_dimensioni_cm: product.dimensionsCm,
+    field_dimensioni_inch: product.dimensionsInch,
+    field_spessore: product.thickness,
+    field_prezzo_eu: product.priceEu,
+    field_prezzo_usa: product.priceUsa,
+    field_immagine_anteprima:
+      product.galleryIntro.length > 0
+        ? toImageField(product.galleryIntro[0])
+        : null,
+    field_gallery: product.gallery.map((url) => toImageField(url)),
+    field_gallery_intro: product.galleryIntro.map((url) => toImageField(url)),
+    field_categoria: product.category
+      ? {
+          field_titolo_main: product.category.title,
+          title: product.category.title,
+          path: { alias: null },
+        }
+      : null,
+    field_colori: [],
+    field_finiture_tessuto:
+      product.finiture.length > 0
+        ? product.finiture.length === 1
+          ? {
+              // Single cardinality — legacy template expects object, not array
+              tid: product.finiture[0].tid,
+              name: product.finiture[0].name,
+              field_codice_colore: product.finiture[0].colorCode,
+              field_etichetta: product.finiture[0].label,
+              field_immagine: toImageField(product.finiture[0].imageSrc),
+              field_testo: product.finiture[0].text,
+            }
+          : product.finiture.map((f) => ({
+              tid: f.tid,
+              name: f.name,
+              field_codice_colore: f.colorCode,
+              field_etichetta: f.label,
+              field_immagine: toImageField(f.imageSrc),
+              field_testo: f.text,
+            }))
+        : [],
+    field_tipologia_tessuto:
+      product.typologies.length > 0
+        ? product.typologies.length === 1
+          ? { tid: product.typologies[0].tid, name: product.typologies[0].name }
+          : product.typologies.map((t) => ({ tid: t.tid, name: t.name }))
+        : [],
+    field_indicazioni_manutenzione: product.maintenance.map((m) => ({
+      tid: m.tid,
+      name: m.name,
+      field_immagine: toImageField(m.imageSrc),
+    })),
+    field_documenti: product.documents.map((doc) => ({
+      field_titolo_main: doc.title,
+      title: doc.title,
+      field_tipologia_documento: null,
+      field_collegamento_esterno: doc.href,
+      field_immagine: toImageField(doc.imageSrc),
+      field_allegato: null,
+    })),
+  };
+}

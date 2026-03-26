@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Typography } from '@/components/composed/Typography';
@@ -21,7 +22,12 @@ interface GalleryCarouselProps {
   header?: React.ReactNode;
 }
 
-export function GalleryCarousel({ slides, slideClassName, className, header }: GalleryCarouselProps) {
+export function GalleryCarousel({
+  slides,
+  slideClassName,
+  className,
+  header,
+}: GalleryCarouselProps) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -48,11 +54,19 @@ export function GalleryCarousel({ slides, slideClassName, className, header }: G
     const slide = el.querySelector<HTMLElement>('[data-gallery-slide]');
     if (!slide) return;
     const gap = parseFloat(getComputedStyle(slide.parentElement!).gap) || 0;
-    el.scrollBy({ left: direction * (slide.offsetWidth + gap), behavior: 'smooth' });
+    el.scrollBy({
+      left: direction * (slide.offsetWidth + gap),
+      behavior: 'smooth',
+    });
   }
 
   return (
-    <div className={cn('relative flex flex-col gap-(--spacing-content)', className)}>
+    <div
+      className={cn(
+        'relative flex flex-col gap-(--spacing-content)',
+        className,
+      )}
+    >
       {/* Header row: title + arrows */}
       {header && (
         <div className="flex items-end justify-between max-w-main mx-auto w-full px-(--spacing-page)">
@@ -86,13 +100,17 @@ export function GalleryCarousel({ slides, slideClassName, className, header }: G
         className="flex overflow-x-scroll [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [-webkit-overflow-scrolling:touch]"
         style={{
           scrollSnapType: 'x mandatory',
-          scrollPadding: '0 max(var(--spacing-page), calc((100vw - var(--container-main)) / 2 + var(--spacing-page)))',
+          scrollPadding:
+            '0 max(var(--spacing-page), calc((100vw - var(--container-main)) / 2 + var(--spacing-page)))',
         }}
       >
         {/* Track — padding aligns slides to max-w-main container edge */}
         <div
           className="flex gap-(--spacing-element) min-w-fit"
-          style={{ padding: '0 max(var(--spacing-page), calc((100vw - var(--container-main)) / 2 + var(--spacing-page)))' }}
+          style={{
+            padding:
+              '0 max(var(--spacing-page), calc((100vw - var(--container-main)) / 2 + var(--spacing-page)))',
+          }}
         >
           {slides.map((slide, i) => (
             <div
@@ -106,18 +124,35 @@ export function GalleryCarousel({ slides, slideClassName, className, header }: G
               )}
             >
               <div
-                className={cn('rounded-xl overflow-hidden', slideClassName)}
-                style={slide.width && slide.height ? { '--slide-ratio': `${slide.width / slide.height}` } as React.CSSProperties : undefined}
+                className={cn(
+                  'relative rounded-xl overflow-hidden',
+                  slideClassName,
+                )}
+                style={
+                  slide.width && slide.height
+                    ? ({
+                        '--slide-ratio': `${slide.width / slide.height}`,
+                      } as React.CSSProperties)
+                    : undefined
+                }
               >
-                <img
-                  src={slide.src}
-                  alt={slide.alt}
-                  className="size-full object-cover"
-                />
+                {slide.src && (
+                  <Image
+                    src={slide.src}
+                    alt={slide.alt}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                  />
+                )}
               </div>
               {slide.caption && (
                 <div className="pt-(--spacing-element)">
-                  <Typography textRole="body-sm" as="p" className="text-muted-foreground">
+                  <Typography
+                    textRole="body-sm"
+                    as="p"
+                    className="text-muted-foreground"
+                  >
                     {slide.caption}
                   </Typography>
                 </div>

@@ -1,26 +1,27 @@
-"use client"
+'use client';
 
-import * as React from "react"
+import * as React from 'react';
+import Image from 'next/image';
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
   type CarouselApi,
-} from "@/components/ui/carousel"
-import { AspectRatio } from "@/components/ui/aspect-ratio"
-import { ResponsiveImage } from "@/components/composed/ResponsiveImage"
-import { cn } from "@/lib/utils"
-import { PlayIcon, ArrowLeftRightIcon } from "lucide-react"
+} from '@/components/ui/carousel';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { ResponsiveImage } from '@/components/composed/ResponsiveImage';
+import { cn } from '@/lib/utils';
+import { PlayIcon, ArrowLeftRightIcon } from 'lucide-react';
 
 export type ProductCarouselSlide =
-  | { type: "image"; src: string; alt: string; thumbSrc?: string }
-  | { type: "video"; src: string; thumbSrc?: string }
-  | { type: "static"; src: string; alt: string; thumbSrc?: string }
+  | { type: 'image'; src: string; alt: string; thumbSrc?: string }
+  | { type: 'video'; src: string; thumbSrc?: string }
+  | { type: 'static'; src: string; alt: string; thumbSrc?: string };
 
 interface ProductCarouselProps {
-  slides: ProductCarouselSlide[]
-  ratio?: number
-  className?: string
+  slides: ProductCarouselSlide[];
+  ratio?: number;
+  className?: string;
 }
 
 export function ProductCarousel({
@@ -28,27 +29,30 @@ export function ProductCarousel({
   ratio = 4 / 3,
   className,
 }: ProductCarouselProps) {
-  const [api, setApi] = React.useState<CarouselApi>()
-  const [current, setCurrent] = React.useState(0)
-  const [count, setCount] = React.useState(0)
+  const [api, setApi] = React.useState<CarouselApi>();
+  const [current, setCurrent] = React.useState(0);
+  const [count, setCount] = React.useState(0);
 
   React.useEffect(() => {
-    if (!api) return
-    setCount(api.scrollSnapList().length)
-    setCurrent(api.selectedScrollSnap())
-    api.on("select", () => {
-      setCurrent(api.selectedScrollSnap())
-    })
-  }, [api])
+    if (!api) return;
+    setCount(api.scrollSnapList().length);
+    setCurrent(api.selectedScrollSnap());
+    api.on('select', () => {
+      setCurrent(api.selectedScrollSnap());
+    });
+  }, [api]);
 
   return (
-    <div className={cn("relative", className)}>
+    <div className={cn('relative', className)}>
       <Carousel setApi={setApi} opts={{ loop: true }} className="w-full">
         <CarouselContent>
           {slides.map((slide, i) => (
             <CarouselItem key={i}>
-              {slide.type === "video" ? (
-                <AspectRatio ratio={ratio} className="overflow-hidden rounded-lg bg-muted">
+              {slide.type === 'video' ? (
+                <AspectRatio
+                  ratio={ratio}
+                  className="overflow-hidden rounded-lg bg-muted"
+                >
                   <video
                     src={slide.src}
                     controls
@@ -73,27 +77,31 @@ export function ProductCarousel({
           {slides.map((slide, i) => {
             const thumbSrc =
               slide.thumbSrc ??
-              (slide.type === "image" ? slide.src : undefined)
+              (slide.type === 'image' ? slide.src : undefined);
             const thumbIcon =
-              slide.type === "video" ? <PlayIcon className="size-5 text-muted-foreground" />
-              : slide.type === "static" ? <ArrowLeftRightIcon className="size-5 text-muted-foreground" />
-              : null
+              slide.type === 'video' ? (
+                <PlayIcon className="size-5 text-muted-foreground" />
+              ) : slide.type === 'static' ? (
+                <ArrowLeftRightIcon className="size-5 text-muted-foreground" />
+              ) : null;
             return (
               <button
                 key={i}
                 onClick={() => api?.scrollTo(i)}
                 className={cn(
-                  "relative shrink-0 md:shrink size-14 rounded-md overflow-hidden bg-surface-2 ring-2 ring-offset-2 ring-offset-background transition-all",
+                  'relative shrink-0 md:shrink size-14 rounded-md overflow-hidden bg-surface-2 ring-2 ring-offset-2 ring-offset-background transition-all',
                   i === current
-                    ? "ring-primary"
-                    : "ring-transparent opacity-60 hover:opacity-100"
+                    ? 'ring-primary'
+                    : 'ring-transparent opacity-60 hover:opacity-100',
                 )}
               >
                 {thumbSrc ? (
-                  <img
+                  <Image
                     src={thumbSrc}
                     alt=""
-                    className="size-full object-cover"
+                    fill
+                    className="object-cover"
+                    sizes="56px"
                   />
                 ) : (
                   <div className="size-full flex items-center justify-center">
@@ -102,10 +110,10 @@ export function ProductCarousel({
                 )}
                 <span className="sr-only">Slide {i + 1}</span>
               </button>
-            )
+            );
           })}
         </div>
       )}
     </div>
-  )
+  );
 }

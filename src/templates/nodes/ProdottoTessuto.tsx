@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import DrupalImage from '@/components_legacy/DrupalImage';
+import { getDrupalImageUrl } from '@/lib/drupal/image';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { sanitizeHtml } from '@/lib/sanitize';
 import styles from '@/styles/product.module.css';
@@ -521,20 +522,40 @@ export default async function ProdottoTessuto({
               gap: '0.75rem',
             }}
           >
-            {manutenzione.map((m, i) => (
-              <li
-                key={i}
-                style={{
-                  fontSize: '0.8125rem',
-                  padding: '0.375rem 0.75rem',
-                  border: '0.0625rem solid #e0e0e0',
-                  color: '#444',
-                  lineHeight: 1.4,
-                }}
-              >
-                {m.name}
-              </li>
-            ))}
+            {manutenzione.map((m, i) => {
+              const imgUrl = getDrupalImageUrl(
+                (m as Record<string, unknown>).field_immagine,
+              );
+              return (
+                <li
+                  key={i}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.8125rem',
+                    padding: '0.375rem 0.75rem',
+                    border: '0.0625rem solid #e0e0e0',
+                    color: '#444',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {imgUrl && (
+                    <img
+                      src={imgUrl}
+                      alt=""
+                      style={{
+                        width: '1.25rem',
+                        height: '1.25rem',
+                        objectFit: 'contain',
+                        flexShrink: 0,
+                      }}
+                    />
+                  )}
+                  {m.name}
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}

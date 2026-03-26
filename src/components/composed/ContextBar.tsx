@@ -1,26 +1,26 @@
-"use client"
+'use client';
 
-import Link from "next/link"
-import { useTranslations } from "next-intl"
-import { ChevronDown, X } from "lucide-react"
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { ChevronDown, X } from 'lucide-react';
 
-import { Button } from "@/components/ui/button"
+import { Button } from '@/components/ui/button';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
-import { Separator } from "@/components/ui/separator"
-import { Typography } from "@/components/composed/Typography"
-import { ShareButton } from "@/components/composed/ShareButton"
+} from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
+import { Typography } from '@/components/composed/Typography';
+import { ShareButton } from '@/components/composed/ShareButton';
 
 interface ContextBarProps {
-  thumbnail?: string | null
-  swatchColor?: string | null
-  title: string
-  subtitle: string
-  changePopoverContent: React.ReactNode
-  backHref: string
+  thumbnail?: string | null;
+  swatchColor?: string | null;
+  title: string;
+  subtitle: string;
+  changePopoverContent: React.ReactNode;
+  backHref: string;
 }
 
 export function ContextBar({
@@ -31,12 +31,13 @@ export function ContextBar({
   changePopoverContent,
   backHref,
 }: ContextBarProps) {
-  const t = useTranslations("breadcrumb")
+  const t = useTranslations('breadcrumb');
 
   return (
     <div className="flex items-center gap-(--spacing-element) border-b border-border bg-background mb-(--spacing-element) pb-(--spacing-element)">
       {/* Thumbnail or swatch — centered vertically with title + actions */}
       {thumbnail ? (
+        // next/image skipped: context bar thumbnail, size-16 = 64px — below 80px threshold
         <img
           src={thumbnail}
           alt={title}
@@ -60,16 +61,26 @@ export function ContextBar({
             <PopoverTrigger
               render={
                 <Button variant="outline" size="sm">
-                  {t("change")}
+                  {t('change')}
                   <ChevronDown data-icon="inline-end" />
                 </Button>
               }
             />
-            <PopoverContent align="start" className="w-64 max-h-72 overflow-y-auto">{changePopoverContent}</PopoverContent>
+            <PopoverContent
+              align="start"
+              className="w-64 max-h-72 overflow-y-auto"
+            >
+              {changePopoverContent}
+            </PopoverContent>
           </Popover>
 
           {/* Close / back link */}
-          <Button variant="outline" size="icon-sm" nativeButton={false} render={<Link href={backHref} />}>
+          <Button
+            variant="outline"
+            size="icon-sm"
+            nativeButton={false}
+            render={<Link href={backHref} />}
+          >
             <X />
           </Button>
         </div>
@@ -80,5 +91,5 @@ export function ContextBar({
         <ShareButton />
       </div>
     </div>
-  )
+  );
 }

@@ -23,7 +23,7 @@ const securityHeaders = [
       "connect-src 'self' http://192.168.86.201 https://www.sicis-stage.com https://sicis-stage.com",
       "frame-src 'self' https://player.vimeo.com https://www.youtube.com",
       "frame-ancestors 'none'",
-      "media-src 'self' https://www.sicis-stage.com",
+      "media-src 'self' http://192.168.86.201 https://www.sicis-stage.com https://www.sicis.com",
     ].join('; '),
   },
 ];
@@ -37,6 +37,7 @@ const nextConfig = {
       { protocol: 'https', hostname: 'www.sicis-stage.com' },
       { protocol: 'https', hostname: 'sicis-stage.com' },
       { protocol: 'https', hostname: 'sicis.com' },
+      { protocol: 'https', hostname: 'www.sicis.com' },
     ],
   },
   async headers() {

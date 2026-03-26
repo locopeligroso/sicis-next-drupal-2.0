@@ -45,8 +45,8 @@ storybook-static
 .claude/
 reports/
 
-# Documentation (managed locally, not tracked)
-*.md
+# Documentation — tracked (CLAUDE.md, CHANGELOG.md, README.md, docs/*.md)
+# Only ignore markdown in node_modules (already covered by node_modules/ rule)
 
 # Screenshot analysis files
 prodotto-mosaico-black-full.png

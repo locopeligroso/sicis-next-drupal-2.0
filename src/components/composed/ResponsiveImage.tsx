@@ -1,11 +1,13 @@
-import { AspectRatio } from "@/components/ui/aspect-ratio"
-import { cn } from "@/lib/utils"
+import Image from 'next/image';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { cn } from '@/lib/utils';
 
 interface ResponsiveImageProps {
-  src: string
-  alt: string
-  ratio?: number
-  className?: string
+  src: string;
+  alt: string;
+  ratio?: number;
+  className?: string;
+  sizes?: string;
 }
 
 export function ResponsiveImage({
@@ -13,14 +15,14 @@ export function ResponsiveImage({
   alt,
   ratio = 1,
   className,
+  sizes = '100vw',
 }: ResponsiveImageProps) {
   return (
-    <AspectRatio ratio={ratio} className={cn("overflow-hidden rounded-lg bg-muted", className)}>
-      <img
-        src={src}
-        alt={alt}
-        className="size-full object-cover"
-      />
+    <AspectRatio
+      ratio={ratio}
+      className={cn('overflow-hidden rounded-lg bg-muted', className)}
+    >
+      <Image src={src} alt={alt} fill sizes={sizes} className="object-cover" />
     </AspectRatio>
-  )
+  );
 }

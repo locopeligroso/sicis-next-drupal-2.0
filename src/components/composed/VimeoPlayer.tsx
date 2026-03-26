@@ -5,7 +5,14 @@ import Player from '@vimeo/player';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Typography } from '@/components/composed/Typography';
-import { PlayIcon, PauseIcon, Volume2Icon, VolumeOffIcon, MaximizeIcon, MinimizeIcon } from 'lucide-react';
+import {
+  PlayIcon,
+  PauseIcon,
+  Volume2Icon,
+  VolumeOffIcon,
+  MaximizeIcon,
+  MinimizeIcon,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface VimeoPlayerProps {
@@ -75,7 +82,8 @@ export function VimeoPlayer({
       setIsFullscreen(!!document.fullscreenElement);
     };
     document.addEventListener('fullscreenchange', handleFsChange);
-    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+    return () =>
+      document.removeEventListener('fullscreenchange', handleFsChange);
   }, []);
 
   useEffect(() => {
@@ -129,6 +137,7 @@ export function VimeoPlayer({
         {!isStarted && (
           <div className="absolute inset-0 z-10">
             {posterSrc ? (
+              // next/image skipped: poster frame is transient — replaced by Vimeo iframe on play
               <img
                 src={posterSrc}
                 alt={posterAlt}
@@ -139,7 +148,12 @@ export function VimeoPlayer({
             )}
 
             <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-              <Button variant="outline" size="icon" onClick={initPlayer} className="size-20 rounded-full bg-background/80 text-primary shadow-lg backdrop-blur-sm hover:bg-background/90 hover:text-primary">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={initPlayer}
+                className="size-20 rounded-full bg-background/80 text-primary shadow-lg backdrop-blur-sm hover:bg-background/90 hover:text-primary"
+              >
                 <PlayIcon data-icon />
               </Button>
             </div>
@@ -158,7 +172,12 @@ export function VimeoPlayer({
       </div>
 
       {/* Custom controls — always in DOM to reserve space */}
-      <div className={cn('flex items-center gap-2 rounded-b-lg bg-card px-4 py-2', !isStarted && 'invisible')}>
+      <div
+        className={cn(
+          'flex items-center gap-2 rounded-b-lg bg-card px-4 py-2',
+          !isStarted && 'invisible',
+        )}
+      >
         <Button
           variant="ghost"
           size="icon"
@@ -166,14 +185,14 @@ export function VimeoPlayer({
           aria-label={isPlaying ? 'Pause' : 'Play'}
           tabIndex={isStarted ? 0 : -1}
         >
-          {isPlaying ? (
-            <PauseIcon data-icon />
-          ) : (
-            <PlayIcon data-icon />
-          )}
+          {isPlaying ? <PauseIcon data-icon /> : <PlayIcon data-icon />}
         </Button>
 
-        <Typography textRole="caption" as="span" className="min-w-[4.5rem] tabular-nums text-muted-foreground">
+        <Typography
+          textRole="caption"
+          as="span"
+          className="min-w-[4.5rem] tabular-nums text-muted-foreground"
+        >
           {formatTime(currentTime)} / {formatTime(duration)}
         </Typography>
 
@@ -194,11 +213,7 @@ export function VimeoPlayer({
           aria-label={isMuted ? 'Unmute' : 'Mute'}
           tabIndex={isStarted ? 0 : -1}
         >
-          {isMuted ? (
-            <VolumeOffIcon data-icon />
-          ) : (
-            <Volume2Icon data-icon />
-          )}
+          {isMuted ? <VolumeOffIcon data-icon /> : <Volume2Icon data-icon />}
         </Button>
 
         <div className="w-20 shrink-0">

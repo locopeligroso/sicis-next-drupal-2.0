@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useTransition, useEffect, useRef, useCallback } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
 import { locales } from '@/i18n/config';
 import { getTranslatedPath } from '@/lib/get-translated-path';
 import { Button } from '@/components/ui/button';
@@ -12,10 +12,12 @@ interface NavLanguageSwitcherProps {
   className?: string;
 }
 
-export function NavLanguageSwitcher({ locale, className }: NavLanguageSwitcherProps) {
-  const router = useRouter();
+export function NavLanguageSwitcher({
+  locale,
+  className,
+}: NavLanguageSwitcherProps) {
   const pathname = usePathname();
-  const [isPending, startTransition] = useTransition();
+  const [isNavigating, setIsNavigating] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -26,7 +28,10 @@ export function NavLanguageSwitcher({ locale, className }: NavLanguageSwitcherPr
     if (!isOpen) return;
 
     function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         close();
       }
     }
@@ -55,16 +60,25 @@ export function NavLanguageSwitcher({ locale, className }: NavLanguageSwitcherPr
       return;
     }
     close();
+    setIsNavigating(true);
 
     // Strip current locale prefix from pathname to get the Drupal path
     const drupalPath = pathname.replace(new RegExp(`^/${locale}`), '') || '/';
 
-    const translatedPath = await getTranslatedPath(drupalPath, locale, targetLocale);
-    const targetUrl = translatedPath ?? `/${targetLocale}${drupalPath === '/' ? '' : drupalPath}`;
+    const translatedPath = await getTranslatedPath(
+      drupalPath,
+      locale,
+      targetLocale,
+    );
+    const targetUrl =
+      translatedPath ??
+      `/${targetLocale}${drupalPath === '/' ? '' : drupalPath}`;
 
-    startTransition(() => {
-      router.push(targetUrl);
-    });
+    // Hard navigation — forces full server re-render with new locale.
+    // router.push() does soft navigation that reuses the cached layout RSC
+    // payload, which keeps NextIntlClientProvider initialized with the old
+    // locale's messages. window.location.href forces a full page load.
+    window.location.href = targetUrl;
   };
 
   return (
@@ -77,7 +91,7 @@ export function NavLanguageSwitcher({ locale, className }: NavLanguageSwitcherPr
         aria-expanded={isOpen}
         className={cn(
           'text-xs font-bold tracking-widest uppercase',
-          isPending && 'opacity-50',
+          isNavigating && 'opacity-50',
         )}
       >
         {locale.toUpperCase()}

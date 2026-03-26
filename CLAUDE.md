@@ -34,6 +34,10 @@ One exception: `ProdottoArredo` and `ProdottoIlluminazione` templates use a JSON
 - `categories.ts` — `fetchSubcategories` (V10), `fetchPagesByCategory` (V11)
 - `translate-path.ts` — `getTranslatedPath` (C2)
 - `image-fallback.ts` — `enrichWithFallbackImages` (extracts images from C1 entity for items missing imageUrl)
+- `resolve-path.ts` — `resolvePath` (R1) — resolves URL alias → `{ nid, bundle, locale, aliases }`. Foundation for all new REST routing.
+- `mosaic-product.ts` — `fetchMosaicProduct` (P1) — single mosaic product by NID, normalized with collection + grouts + documents
+- `vetrite-product.ts` — `fetchVetriteProduct` (P2) — single vetrite product by NID, normalized with collection + documents
+- `textile-product.ts` — `fetchTextileProduct` (P3) — single textile product by NID, normalized with finiture + maintenance + documents
 
 **Drupal utilities (`src/lib/drupal/`):**
 - `config.ts` — DRUPAL_BASE_URL (single source of truth)
@@ -52,7 +56,36 @@ All data from Drupal flows through these endpoints. This is the **sole source of
 - Paths in Views responses contain the full Drupal domain URL — normalize with `stripDomain()` + `stripLocalePrefix()`
 - Image URLs: empty string `""` when no image (not `null`) — normalize with `emptyToNull()`
 
-**C1 — Entity (single entity by path)**
+**R1 — Resolve Path (URL alias → entity metadata + multilingual aliases)**
+- URL: `/{locale}/api/v1/resolve-path?path={pathWithoutLocale}`
+- Function: `resolvePath(path, locale)` in `resolve-path.ts`
+- Response: `{ nid, type, bundle, locale, aliases: { it: "/mosaico/...", en: "/mosaic/...", ... } }`
+- Foundation for all new REST routing — replaces C1's path resolution role
+- Also used as fallback for language switching when C2 is unavailable
+- Revalidate: 3600s
+
+**P1 — Mosaic Product (single product by NID)**
+- URL: `/{locale}/api/v1/mosaic-product/{nid}`
+- Function: `fetchMosaicProduct(nid, locale)` in `mosaic-product.ts`
+- Response: array with single item, unwrapped by fetcher. Includes collection with specs, documents, grouts.
+- Rendered via `MosaicProductPreview` (DS Spec* blocks)
+- Revalidate: 60s
+
+**P2 — Vetrite Product (single product by NID)**
+- URL: `/{locale}/api/v1/vetrite-product/{nid}`
+- Function: `fetchVetriteProduct(nid, locale)` in `vetrite-product.ts`
+- Response: array with single item. Includes collection with dimensions, thickness, treatments, documents.
+- Rendered via legacy `ProdottoVetrite` template with `vetriteToLegacyNode` adapter
+- Revalidate: 60s
+
+**P3 — Textile Product (single product by NID)**
+- URL: `/{locale}/api/v1/textile-product/{nid}`
+- Function: `fetchTextileProduct(nid, locale)` in `textile-product.ts`
+- Response: array with single item. Includes category, finiture, maintenance instructions (with icons), typology, documents.
+- Rendered via legacy `ProdottoTessuto` template with `textileToLegacyNode` adapter
+- Revalidate: 60s
+
+**C1 — Entity (single entity by path) — LEGACY, disabled locally**
 - URL: `/{locale}/api/v1/entity?path={pathWithoutLocale}`
 - Function: `fetchEntity(path, locale)` in `entity.ts`
 - Response: `{ meta: { type, bundle, id (NID), uuid, locale, path }, data: { ...allFields } }`
@@ -173,6 +206,9 @@ Entry point: `src/app/[locale]/[...slug]/page.tsx`
 
 **Stage 1 — LISTING_SLUG_OVERRIDES**
 Set of hardcoded product slugs (mosaico, mosaic, arredo, furniture-and-accessories, pixall, illuminazione, vetrite variants, tessile variants, etc.) that bypass `translatePath`. These slugs have Drupal nodes (categoria_blog, documento, page) with the same alias that would be rendered instead of the correct product listing. `getSectionConfigAsync` resolves the `productType` → `renderProductListing()`.
+
+**Stage 1.5 — Product detail via resolve-path (NEW)**
+URLs with 2+ segments. `resolvePath()` is called BEFORE the listing interception. If the path resolves to a product bundle (`prodotto_mosaico`, `prodotto_vetrite`, `prodotto_tessuto`), the type-specific fetcher is called and the product page rendered. Mosaico uses DS Spec* blocks; vetrite and tessuto use legacy templates with adapter functions (`vetriteToLegacyNode`, `textileToLegacyNode`).
 
 **Stage 2 — Multi-slug interception**
 URLs with 2+ segments (e.g. `/mosaico/murano-smalto`). `getSectionConfigAsync` runs first; if a config is found and `parseFiltersFromUrl` detects at least one active filter → `renderProductListing()` with filter active.
@@ -455,6 +491,11 @@ Source: `src/styles/globals.css`
 9. **Primary-text token** for text on primary color — different from primary base, optimized per theme
 10. **Surface tokens** (1-5) for elevation instead of opacity hacks
 11. **Document filtering** — installation guides extracted from catalogs, linked in Maintenance card
+12. **`next/image` for content images > 100px** — All DS composed components use `<Image>` from `next/image` with `fill` + `sizes` for Drupal content images. Exceptions: logos, CSS swatches, decorative thumbnails < 80px, video posters, legacy templates. See `CHANGELOG.md` for migration details.
+
+## Changelog
+
+Project changelog is maintained in `CHANGELOG.md` at the repo root, organized by date with per-feature detail.
 
 ## Data Layer Architecture — Uniformity Analysis
 
@@ -472,15 +513,16 @@ The system has a **uniform API client core** with a **heterogeneous template lay
 
 ### Heterogeneous Dimensions (5 problem areas)
 
-#### 1. Image URL Access — 3 different patterns
+#### 1. Image URL Access — 4 patterns (3 legacy + 1 standard)
 
 | Pattern | Where | How |
 |---------|-------|-----|
+| `next/image` `<Image>` with `fill` | DS composed components (ProductCard, CategoryCard, GalleryCarousel, MediaElement, etc.) | Standard for content images > 100px. Uses `sizes` prop for responsive srcset. |
 | `getDrupalImageUrl(field)` | ProdottoMosaico, ParagraphResolver adapters | Extracts `uri.url` from C1 image shape `{ type: "file--file", uri: { url } }` |
-| `DrupalImage` component | ProdottoVetrite, Arredo, Tessuto, Pixall, Illuminazione, Articolo, News, Tutorial | Legacy component wrapping entire image field |
-| Normalized `imageUrl` string | ProductListingTemplate, all listing cards | Pre-normalized by REST fetcher via `emptyToNull(item.imageUrl)` |
+| `DrupalImage` component | ProdottoVetrite, Arredo, Tessuto, Pixall, Illuminazione, Articolo, News, Tutorial | Legacy component wrapping entire image field — to be replaced during DS migration |
+| Normalized `imageUrl` string → `<Image>` | ProductListingTemplate, all listing cards | Pre-normalized by REST fetcher via `emptyToNull(item.imageUrl)`, rendered via `next/image` |
 
-**Risk**: When Drupal image field structure changes, 3 codepaths need updating instead of 1.
+**Risk**: When Drupal image field structure changes, 3 legacy codepaths need updating. DS components use pre-normalized URLs and are immune.
 
 #### 2. Price Field Shape — Inconsistent across product types
 

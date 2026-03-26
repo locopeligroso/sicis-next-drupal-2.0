@@ -1,25 +1,28 @@
-import Link from 'next/link'
-import { Check } from 'lucide-react'
+import Link from 'next/link';
+import { Check } from 'lucide-react';
 
-import { Typography } from '@/components/composed/Typography'
-import { cn } from '@/lib/utils'
+import { Typography } from '@/components/composed/Typography';
+import { cn } from '@/lib/utils';
 
 interface CollectionPopoverItem {
-  slug: string
-  label: string
-  imageUrl?: string | null
-  cssColor?: string | null
-  href: string
-  isActive?: boolean
+  slug: string;
+  label: string;
+  imageUrl?: string | null;
+  cssColor?: string | null;
+  href: string;
+  isActive?: boolean;
 }
 
 interface CollectionPopoverContentProps {
-  items: CollectionPopoverItem[]
+  items: CollectionPopoverItem[];
   /** 'list' = vertical list with thumbnails (collections), 'swatches' = grid of color circles */
-  mode: 'list' | 'swatches'
+  mode: 'list' | 'swatches';
 }
 
-export function CollectionPopoverContent({ items, mode }: CollectionPopoverContentProps) {
+export function CollectionPopoverContent({
+  items,
+  mode,
+}: CollectionPopoverContentProps) {
   if (mode === 'swatches') {
     return (
       <div className="grid grid-cols-4 gap-2 p-2">
@@ -40,19 +43,27 @@ export function CollectionPopoverContent({ items, mode }: CollectionPopoverConte
               )}
               style={
                 item.imageUrl
-                  ? { backgroundImage: `url(${item.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                  ? {
+                      backgroundImage: `url(${item.imageUrl})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                    }
                   : item.cssColor
                     ? { backgroundColor: item.cssColor }
                     : undefined
               }
             />
-            <Typography textRole="caption" as="span" className="truncate w-full text-center text-muted-foreground">
+            <Typography
+              textRole="caption"
+              as="span"
+              className="truncate w-full text-center text-muted-foreground"
+            >
               {item.label}
             </Typography>
           </Link>
         ))}
       </div>
-    )
+    );
   }
 
   return (
@@ -67,6 +78,7 @@ export function CollectionPopoverContent({ items, mode }: CollectionPopoverConte
           )}
         >
           {item.imageUrl ? (
+            // next/image skipped: list-mode thumbnail, size-7 = 28px — below 80px threshold
             <img
               src={item.imageUrl}
               alt={item.label}
@@ -75,10 +87,14 @@ export function CollectionPopoverContent({ items, mode }: CollectionPopoverConte
           ) : (
             <span className="size-7 shrink-0 rounded bg-muted" />
           )}
-          <Typography textRole="body-sm" as="span">{item.label}</Typography>
-          {item.isActive && <Check className="ml-auto size-4 text-muted-foreground" />}
+          <Typography textRole="body-sm" as="span">
+            {item.label}
+          </Typography>
+          {item.isActive && (
+            <Check className="ml-auto size-4 text-muted-foreground" />
+          )}
         </Link>
       ))}
     </div>
-  )
+  );
 }

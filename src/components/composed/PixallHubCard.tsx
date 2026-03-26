@@ -1,16 +1,17 @@
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Typography } from "@/components/composed/Typography"
-import { cn } from "@/lib/utils"
+import Image from 'next/image';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Typography } from '@/components/composed/Typography';
+import { cn } from '@/lib/utils';
 
 interface PixallHubCardProps {
-  title: string
-  description?: string | null
-  imageUrl?: string | null
-  colorSwatches: { slug: string; cssColor?: string; href: string }[]
-  exploreHref: string
-  exploreLabel: string
-  className?: string
+  title: string;
+  description?: string | null;
+  imageUrl?: string | null;
+  colorSwatches: { slug: string; cssColor?: string; href: string }[];
+  exploreHref: string;
+  exploreLabel: string;
+  className?: string;
 }
 
 export function PixallHubCard({
@@ -25,18 +26,23 @@ export function PixallHubCard({
   return (
     <div
       className={cn(
-        "flex flex-col gap-6 rounded-xl border border-border p-4 md:flex-row",
+        'flex flex-col gap-6 rounded-xl border border-border p-4 md:flex-row',
         className,
       )}
     >
       {/* Image column */}
       <div className="w-full shrink-0 md:w-1/2">
-        <div className="overflow-hidden rounded-lg bg-muted" style={{ aspectRatio: "4/3" }}>
+        <div
+          className="relative overflow-hidden rounded-lg bg-muted"
+          style={{ aspectRatio: '4/3' }}
+        >
           {imageUrl ? (
-            <img
+            <Image
               src={imageUrl}
               alt={title}
-              className="size-full object-cover"
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover"
             />
           ) : null}
         </div>
@@ -44,7 +50,9 @@ export function PixallHubCard({
 
       {/* Text column */}
       <div className="flex flex-col justify-center gap-2">
-        <Typography textRole="h3" as="h2">{title}</Typography>
+        <Typography textRole="h3" as="h2">
+          {title}
+        </Typography>
 
         {description ? (
           <Typography textRole="body-md" className="text-muted-foreground">
@@ -66,10 +74,16 @@ export function PixallHubCard({
           </div>
         ) : null}
 
-        <Button variant="outline" size="sm" className="mt-2 w-fit" nativeButton={false} render={<Link href={exploreHref} />}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-2 w-fit"
+          nativeButton={false}
+          render={<Link href={exploreHref} />}
+        >
           {exploreLabel}
         </Button>
       </div>
     </div>
-  )
+  );
 }
