@@ -22,6 +22,7 @@ Next 16.1.7 | React 19.2.4 | Tailwind 4.2.2 | Storybook 10.3.1 | next-intl | nuq
 ### Data Layer
 
 All Drupal data comes exclusively from the REST endpoints below. No other data source is used.
+One exception: `ProdottoArredo` and `ProdottoIlluminazione` templates use a JSON:API fallback to fetch English tessuti taxonomy terms when current locale data is missing — this is the only JSON:API usage in the project.
 
 **REST API client (`src/lib/api/`):**
 - `client.ts` — `apiGet` (base fetcher), `stripDomain`, `stripLocalePrefix`, `emptyToNull` (normalizers)
@@ -32,10 +33,11 @@ All Drupal data comes exclusively from the REST endpoints below. No other data s
 - `listings.ts` — `fetchBlogPosts` (V5), `fetchProjects` (V6), `fetchEnvironments` (V7), `fetchShowrooms` (V8), `fetchDocuments` (V9)
 - `categories.ts` — `fetchSubcategories` (V10), `fetchPagesByCategory` (V11)
 - `translate-path.ts` — `getTranslatedPath` (C2)
+- `image-fallback.ts` — `enrichWithFallbackImages` (extracts images from C1 entity for items missing imageUrl)
 
 **Drupal utilities (`src/lib/drupal/`):**
 - `config.ts` — DRUPAL_BASE_URL (single source of truth)
-- `menu.ts` — `fetchMenu` (M1), `transformMenuToNavItems`
+- `menu.ts` — `fetchMenu` (M1), `transformMenuToNavItems` — uses `fetch()` directly (NOT `apiGet`), different URL pattern (`/api/menu/` without `v1`)
 - `image.ts` — `getDrupalImageUrl` (extracts `uri.url` from C1 image shape)
 - `index.ts` — barrel re-export
 
@@ -71,7 +73,8 @@ All data from Drupal flows through these endpoints. This is the **sole source of
 - Filter query params (mapped from Drupal fields via `DRUPAL_FIELD_TO_REST_PARAM`): `collection`, `color`, `shape`, `finish`, `grout`, `texture`, `fabric`, `category`, `type`
 - `category_id` (NID-based filtering) is NOT supported — the V1 endpoint silently ignores it. Use `category` (title-based) instead.
 - `category` does NOT support multi-value (comma-separated or array) — only single value per request
-- Response item: `{ id, type, title, subtitle, imageUrl, price, priceOnDemand ("0"|"1"|null), path }`
+- Response item: `{ id, type, title, subtitle, imageUrl, imageUrlMain, price, priceOnDemand ("0"|"1"|null), path }`
+- `imageUrlMain` is the full-size image (field_immagine), `imageUrl` is the preview (field_immagine_anteprima)
 - `type` comes without `node--` prefix (e.g. `"prodotto_arredo"`)
 - `path` contains full Drupal domain URL
 - Revalidate: 60s
@@ -175,7 +178,7 @@ Set of hardcoded product slugs (mosaico, mosaic, arredo, furniture-and-accessori
 URLs with 2+ segments (e.g. `/mosaico/murano-smalto`). `getSectionConfigAsync` runs first; if a config is found and `parseFiltersFromUrl` detects at least one active filter → `renderProductListing()` with filter active.
 
 **Stage 3 — Drupal entity resolution**
-`fetchEntity` (C1 endpoint) resolves path to a fully pre-resolved entity in one call. No INCLUDE_MAP or secondary fetches needed. Rendered via `COMPONENT_MAP[getComponentName(entityType)]`.
+`fetchEntity` (C1 endpoint) resolves path to a fully pre-resolved entity in one call. All relationships and paragraphs are inline — no secondary fetches needed. Rendered via `COMPONENT_MAP[getComponentName(entityType)]`.
 
 **Interception: node--categoria**
 If `translatePath` resolves to `node--categoria` AND `getSectionConfigAsync` returns a config with `filterField` set → the node is a subcategory listing, not a hub category. Renders via `renderProductListing()` using the Drupal node title for the heading.
@@ -231,7 +234,7 @@ Scan with: `node /Users/nicolagasco/.claude/skills/ds/scripts/inventory.js compo
 
 Scan with: `node /Users/nicolagasco/.claude/skills/ds/scripts/inventory.js blocks`
 
-**Gen blocks built — `blocco_*` → `Gen*` mapping:**
+**Gen blocks built (12) — `blocco_*` → `Gen*` mapping:**
 
 | Drupal paragraph type | Gen block |
 |-----------------------|-----------|
@@ -244,12 +247,15 @@ Scan with: `node /Users/nicolagasco/.claude/skills/ds/scripts/inventory.js block
 | `paragraph--blocco_gallery` | `GenGallery` |
 | `paragraph--blocco_gallery_intro` | `GenGalleryIntro` |
 | `paragraph--blocco_documenti` | `GenDocumenti` |
+| `paragraph--blocco_a` | `GenA` |
+| `paragraph--blocco_b` | `GenB` |
+| `paragraph--blocco_c` | `GenC` |
 
 **Gen blocks remaining to build** (still using legacy `Blocco*` in LEGACY_MAP):
 
 `GenCorrelati`, `GenNewsletter`, `GenFormBlog`, `GenSliderHome`, `GenAnni`, `GenTutorial`
 
-**Deleted legacy Blocco\* files** (replaced by Gen* equivalents): BloccoIntro, BloccoQuote, BloccoGallery, BloccoTestoImmagine, BloccoTestoImmagineBig, BloccoTestoImmagineBlog, BloccoGalleryIntro, BloccoDocumenti
+**Deleted legacy Blocco\* files** (replaced by Gen* equivalents): BloccoIntro, BloccoQuote, BloccoVideo, BloccoGallery, BloccoTestoImmagine, BloccoTestoImmagineBig, BloccoTestoImmagineBlog, BloccoGalleryIntro, BloccoDocumenti
 
 ---
 
@@ -269,7 +275,7 @@ Async server component. Maps incoming `paragraph--{type}` data to either a DS `G
 **Templates using ParagraphResolver:**
 Page, LandingPage, Articolo, News, Tutorial, Ambiente, Progetto, CategoriaBlog, Tag, ProdottoArredo, Categoria
 
-**Current wiring status:** Gen adapters active for all built Gen blocks; BloccoSliderHome, BloccoVideo, BloccoCorrelati, BloccoNewsletter, BloccoFormBlog, BloccoAnni, BloccoTutorial remain in `LEGACY_MAP`.
+**Current wiring status:** Gen adapters active for all 12 built Gen blocks; BloccoSliderHome, BloccoCorrelati, BloccoNewsletter, BloccoFormBlog, BloccoAnni, BloccoTutorial remain in `LEGACY_MAP`.
 
 ---
 
@@ -382,14 +388,14 @@ Zero React/Next.js dependencies — 100% unit-testable.
 
 ### 6 product types — filter priority levels
 
-| Product Type | P0 (Hub cards, path-based) | P1 (Sidebar, query-param) | P2 (Advanced) | Product card ratio |
+| Product Type | P0 (Hub cards, path-based) | P1 (Sidebar, query-param) | P2 (Advanced) | Category card ratio | Product card ratio |
 |---|---|---|---|---|
-| prodotto_mosaico | collection, color | shape, finish | grout | 1/1 |
-| prodotto_vetrite | collection, color | finish, texture | — | 1/2 |
-| prodotto_arredo | subcategory | finish, fabric | — | 3/2 |
-| prodotto_tessuto | category | type, color, finish | — | 1/1 |
-| prodotto_pixall | — | color, shape | grout | 1/1 |
-| prodotto_illuminazione | subcategory | — | — | 1/1 |
+| prodotto_mosaico | collection, color | shape, finish | grout | 1/1 | 1/1 |
+| prodotto_vetrite | collection, color | finish, texture | — | 1/1 | 1/2 |
+| prodotto_arredo | subcategory | finish, fabric | — | 4/3 | 1/1 |
+| prodotto_tessuto | category | type, color, finish | — | 4/3 | 1/1 |
+| prodotto_pixall | — | color, shape | grout | 1/1 | 1/1 |
+| prodotto_illuminazione | subcategory | — | — | 4/3 | 1/1 |
 
 **Priority semantics:**
 - **P0** — hub category cards; single-select; path-based routing (e.g. `/mosaico/murano-smalto`)
@@ -443,12 +449,108 @@ Source: `src/styles/globals.css`
 3. **Product-level overrides collection** — e.g. `body = product.field_testo_main || collection.field_testo`
 4. **Translations for all static text** — messages/*.json, future migration planned
 5. **Static images** in `public/images/` (flat structure): `usa-mosaic-quality.jpg`, `Retinatura-mosaico-rete.jpg.webp`
-6. **Deserializer preserves meta** — relationship meta (alt, width, height) flows through to templates
+6. **C1 entity pre-resolves all data** — relationships, paragraphs, and image meta (alt, width, height) flow inline in a single response; no secondary fetches needed for rendering
 7. **Blocks import only Composed, never Primitives** — enforced by /ds skill
 8. **Block naming convention** — `Spec*` = template-specific, `Gen*` = paragraph-driven transversal. Gen names derived mechanically from Drupal machine name: `blocco_{name}` → `Gen{PascalCase(name)}`
 9. **Primary-text token** for text on primary color — different from primary base, optimized per theme
 10. **Surface tokens** (1-5) for elevation instead of opacity hacks
 11. **Document filtering** — installation guides extracted from catalogs, linked in Maintenance card
+
+## Data Layer Architecture — Uniformity Analysis
+
+The system has a **uniform API client core** with a **heterogeneous template layer**. The split is clear: everything inside `src/lib/api/` follows consistent patterns; everything inside `src/templates/` implements ad-hoc field extraction.
+
+### Uniform Dimensions (working well)
+
+| Dimension | Pattern | Evidence |
+|-----------|---------|----------|
+| **Fetcher pattern** | All use `apiGet()` | 10/10 REST fetchers; menu is the sole exception (uses `fetch()` directly) |
+| **Error handling** | 404 → `null`, error → `console.error` + `null` | Identical across all 14 endpoints |
+| **Caching** | `React.cache()` wrapper + `next: { revalidate: N }` | All fetchers; 3 tiers: 60s/300s/3600s |
+| **Pagination** | `items_per_page` + `page` (0-based) | All Views endpoints (V1, V5–V11) |
+| **Type safety (fetcher)** | `apiGet<T>()` with explicit interfaces | All response shapes in `types.ts` |
+
+### Heterogeneous Dimensions (5 problem areas)
+
+#### 1. Image URL Access — 3 different patterns
+
+| Pattern | Where | How |
+|---------|-------|-----|
+| `getDrupalImageUrl(field)` | ProdottoMosaico, ParagraphResolver adapters | Extracts `uri.url` from C1 image shape `{ type: "file--file", uri: { url } }` |
+| `DrupalImage` component | ProdottoVetrite, Arredo, Tessuto, Pixall, Illuminazione, Articolo, News, Tutorial | Legacy component wrapping entire image field |
+| Normalized `imageUrl` string | ProductListingTemplate, all listing cards | Pre-normalized by REST fetcher via `emptyToNull(item.imageUrl)` |
+
+**Risk**: When Drupal image field structure changes, 3 codepaths need updating instead of 1.
+
+#### 2. Price Field Shape — Inconsistent across product types
+
+| Product Type | `field_prezzo_eu` shape | `field_prezzo_usa` shape | Access pattern |
+|---|---|---|---|
+| Mosaico, Tessuto, Pixall | `string` | `string` | `node.field_prezzo_eu ?? null` |
+| Vetrite, Arredo, Illuminazione | `{ value: string }` | `{ value: string }` | `node.field_prezzo_eu?.value ?? null` |
+
+**Root cause**: Different Drupal field types (decimal vs formatted text). No frontend normalizer exists — each template implements its own access.
+
+#### 3. Link Field Polymorphism — 4+ access patterns
+
+`field_collegamento_esterno` can be either `string` (plain URI) or `{ uri: string, title: string }` (link field object). Every template that uses it implements its own type check:
+
+```typescript
+// Pattern seen in ProdottoArredo, ProdottoIlluminazione, VetriteCollezione, etc.
+const extLinkRaw = doc.field_collegamento_esterno;
+const link = typeof extLinkRaw === 'string'
+  ? extLinkRaw
+  : extLinkRaw?.uri ?? null;
+```
+
+No shared `normalizeLink()` function exists — the typeof check is duplicated in 6+ templates.
+
+#### 4. Secondary Fetches — Chaotic, no unified pattern
+
+| Template | Secondary Fetch | Protocol | Why |
+|----------|----------------|----------|-----|
+| ProdottoArredo | English tessuti terms | **JSON:API** (not REST) | Current locale returns stubs without name data |
+| ProdottoIlluminazione | English tessuti terms | **JSON:API** (not REST) | Same as Arredo |
+| Categoria | V10, V1, V11 | REST | 3-branch logic: products / subcategories / pages |
+| MosaicoCollezione/Colore | V3 + V1 | REST | Filter options + filtered products |
+| VetriteCollezione/Colore | V3 + V1 | REST | Same as Mosaico |
+
+The Arredo/Illuminazione JSON:API fallback is the **only JSON:API usage** in the entire project — everything else is REST. Templates decide when and what to fetch secondarily with no shared abstraction.
+
+#### 5. C1 Entity Normalization — Delegated to templates
+
+`fetchEntity()` returns raw `{ meta, data: Record<string, unknown> }`. Unlike Views fetchers (V1–V11) which normalize before returning, C1 passes raw Drupal field shapes to templates. Each template then does its own:
+- Field extraction via optional chaining
+- Fallback chains (product → collection → null)
+- Array normalization (single-cardinality Drupal fields arriving as objects instead of arrays)
+- HTML sanitization
+- Boolean-to-label translation
+
+**Result**: 26 templates each implement ad-hoc field extraction logic instead of a shared mapper layer.
+
+### Field Cardinality Anomalies
+
+Some Drupal fields have cardinality=1 but are sometimes serialized as objects instead of arrays. Templates must defensively normalize:
+
+```typescript
+// ProdottoTessuto: field_finiture_tessuto / field_tipologia_tessuto
+const finiture = Array.isArray(node.field_finiture_tessuto)
+  ? node.field_finiture_tessuto
+  : node.field_finiture_tessuto ? [node.field_finiture_tessuto] : [];
+```
+
+### Entities Without `field_blocchi`
+
+`Showroom` and `Documento` node types do **NOT** have `field_blocchi`. Including this field in a C1 request for these entities causes Drupal to return HTTP 400. Templates must never pass these through ParagraphResolver.
+
+### Detailed Documentation
+
+Comprehensive reports in `docs/`:
+- `API_QUICK_REFERENCE.md` — Endpoint cheat sheet with gotchas
+- `DRUPAL_API_CATALOG.md` — Full endpoint reference (URL, params, response shapes, normalization, TTL)
+- `DRUPAL_CONTENT_MAP.md` — Entity types, taxonomy, paragraphs, field shapes, migration status
+- `DRUPAL_FIELD_INVENTORY.md` — Per-template field access map with types and patterns
+- `STRATEGIC_IMPROVEMENTS.md` — 15 improvement recommendations in 5 phases with priority matrix
 
 ## Drupal Schema Reference
 
@@ -471,7 +573,7 @@ Source: `src/styles/globals.css`
 
 ### Paragraph Types
 
-`blocco_intro`, `blocco_quote`, `blocco_video`, `blocco_testo_immagine`, `blocco_testo_immagine_big`, `blocco_testo_immagine_blog`, `blocco_gallery`, `blocco_gallery_intro`, `blocco_documenti`, `blocco_correlati`, `blocco_newsletter`, `blocco_form_blog`, `blocco_slider_home`, `blocco_anni`, `blocco_tutorial`
+`blocco_intro`, `blocco_quote`, `blocco_video`, `blocco_testo_immagine`, `blocco_testo_immagine_big`, `blocco_testo_immagine_blog`, `blocco_gallery`, `blocco_gallery_intro`, `blocco_documenti`, `blocco_a`, `blocco_b`, `blocco_c`, `blocco_correlati`, `blocco_newsletter`, `blocco_form_blog`, `blocco_slider_home`, `blocco_anni`, `blocco_tutorial`
 
 ## Current State
 
@@ -486,6 +588,7 @@ Source: `src/styles/globals.css`
 
 ### Component Coverage
 
+- **Gen blocks built**: 12 (GenIntro, GenQuote, GenVideo, GenTestoImmagine, GenTestoImmagineBig, GenTestoImmagineBlog, GenGallery, GenGalleryIntro, GenDocumenti, GenA, GenB, GenC)
 - **Gen blocks remaining to build**: GenCorrelati, GenNewsletter, GenFormBlog, GenSliderHome, GenAnni, GenTutorial
 - **ParagraphResolver**: source of truth for Gen vs legacy wiring — check `LEGACY_MAP` in `src/components_legacy/blocks_legacy/ParagraphResolver.tsx`
 
