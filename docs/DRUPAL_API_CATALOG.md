@@ -8,7 +8,8 @@
 ## Table of Contents
 
 1. [Overview](#1-overview)
-2. [Entity Endpoints — C1, C2](#2-entity-endpoints--c1-c2)
+   1.5. [New REST Endpoints — R1, P1–P3](#15-new-rest-endpoints--r1-p1p3)
+2. [Entity Endpoints — C1, C2 (legacy)](#2-entity-endpoints--c1-c2)
 3. [Views Endpoints — Product Listings — V1, V2](#3-views-endpoints--product-listings--v1-v2)
 4. [Views Endpoints — Taxonomy & Categories — V3, V4](#4-views-endpoints--taxonomy--categories--v3-v4)
 5. [Views Endpoints — Content Listings — V5–V9](#5-views-endpoints--content-listings--v5v9)
@@ -28,14 +29,14 @@ All Drupal data for the Sicis Next.js frontend flows exclusively through custom 
 
 **Endpoint categories:**
 
-| Category | Codes | Purpose |
-|---|---|---|
-| Entity endpoints | C1, C2 | Single-entity resolution and cross-locale path translation |
-| Views — Products | V1, V2 | Paginated product listing and aggregated filter counts |
-| Views — Taxonomy/Categories | V3, V4 | Taxonomy vocabulary terms and node--categoria options |
-| Views — Content | V5–V9 | Blog, projects, environments, showrooms, documents |
-| Views — Relations | V10, V11 | Subcategories and pages filtered by parent categoria |
-| Menu | M1 | Drupal native menu API (different URL pattern) |
+| Category                    | Codes    | Purpose                                                    |
+| --------------------------- | -------- | ---------------------------------------------------------- |
+| Entity endpoints            | C1, C2   | Single-entity resolution and cross-locale path translation |
+| Views — Products            | V1, V2   | Paginated product listing and aggregated filter counts     |
+| Views — Taxonomy/Categories | V3, V4   | Taxonomy vocabulary terms and node--categoria options      |
+| Views — Content             | V5–V9    | Blog, projects, environments, showrooms, documents         |
+| Views — Relations           | V10, V11 | Subcategories and pages filtered by parent categoria       |
+| Menu                        | M1       | Drupal native menu API (different URL pattern)             |
 
 ### Base URL Pattern
 
@@ -46,12 +47,14 @@ All Drupal data for the Sicis Next.js frontend flows exclusively through custom 
 The `apiGet()` function inserts `/api/v1` automatically. Callers pass paths as `/{locale}/{endpoint}`.
 
 **Example transformation:**
+
 ```
 Input:  /it/products/prodotto_mosaico
 Output: https://drupal.example.com/it/api/v1/products/prodotto_mosaico
 ```
 
 **Menu exception** — uses a different pattern, NOT through `apiGet()`:
+
 ```
 /{locale}/api/menu/{menuName}
 ```
@@ -82,7 +85,86 @@ Pagination params: `items_per_page` (Drupal Views native) + `page` (0-based).
 
 ---
 
-## 2. Entity Endpoints — C1, C2
+## 1.5. New REST Endpoints — R1, P1–P3
+
+These endpoints replace the old C1 entity endpoint for product detail pages. Each product type has its own dedicated endpoint. The `resolve-path` endpoint (R1) is the foundation for all routing.
+
+### R1 — Resolve Path
+
+**Function:** `resolvePath(path, locale)` in `src/lib/api/resolve-path.ts`
+**URL:** `/{locale}/api/v1/resolve-path?path={pathWithoutLocale}`
+**Revalidate:** 3600s
+
+Resolves a Drupal path alias to entity metadata + multilingual aliases. Foundation for all new REST routing — replaces C1's path resolution role.
+
+**Response:**
+
+```typescript
+{
+  nid: number;
+  type: 'node' | 'taxonomy_term';
+  bundle: string;          // e.g. "prodotto_mosaico", "prodotto_vetrite"
+  locale: string;
+  aliases: {               // All locale variants of this path
+    it: "/mosaico/glimmer/116-mangostan",
+    en: "/mosaic/glimmer/116-mangostan",
+    fr: "/mosaïque/glimmer/116-mangostan",
+    de: "/mosaik/glimmer/116-mangostan",
+    es: "/mosaico/glimmer/116-mangostan",
+    ru: "/мозаика/glimmer/116-mangostan"
+  }
+}
+```
+
+### P1 — Mosaic Product
+
+**Function:** `fetchMosaicProduct(nid, locale)` in `src/lib/api/mosaic-product.ts`
+**URL:** `/{locale}/api/v1/mosaic-product/{nid}`
+**Revalidate:** 60s
+
+Single mosaic product with collection (specs, resistance data, documents) and grouts.
+Rendered via **MosaicProductPreview** (DS Spec\* blocks).
+
+### P2 — Vetrite Product
+
+**Function:** `fetchVetriteProduct(nid, locale)` in `src/lib/api/vetrite-product.ts`
+**URL:** `/{locale}/api/v1/vetrite-product/{nid}`
+**Revalidate:** 60s
+
+Single vetrite product with collection (dimensions, thickness, treatments, special slabs/glass, documents).
+Rendered via legacy **ProdottoVetrite** template with `vetriteToLegacyNode` adapter.
+
+### P3 — Textile Product
+
+**Function:** `fetchTextileProduct(nid, locale)` in `src/lib/api/textile-product.ts`
+**URL:** `/{locale}/api/v1/textile-product/{nid}`
+**Revalidate:** 60s
+
+Single textile product with category, finiture, maintenance instructions (with icons), typology, documents.
+Rendered via legacy **ProdottoTessuto** template with `textileToLegacyNode` adapter.
+
+### Routing Flow
+
+```
+URL → resolvePath(path, locale) → { nid, bundle }
+  → bundle === 'prodotto_mosaico'  → fetchMosaicProduct(nid)  → MosaicProductPreview (DS)
+  → bundle === 'prodotto_vetrite'  → fetchVetriteProduct(nid) → ProdottoVetrite (legacy + adapter)
+  → bundle === 'prodotto_tessuto'  → fetchTextileProduct(nid) → ProdottoTessuto (legacy + adapter)
+  → other bundles                  → fallback to C1 or notFound()
+```
+
+### Common Response Pattern
+
+All P1–P3 endpoints return an **array with a single element** (Drupal Views convention). The fetcher unwraps `result[0]`. Each includes a normalizer that:
+
+- Coerces boolean strings ("1"/"0" or "On"/"Off") to native booleans
+- Converts empty strings to null via `emptyToNull()`
+- Extracts document href from `field_collegamento_esterno || field_allegato`
+- Returns a clean typed domain model (not raw Drupal field names)
+
+---
+
+## 2. Entity Endpoints — C1, C2 (legacy, disabled locally)
 
 ### C1 — Entity (Single Entity by Path)
 
@@ -94,22 +176,22 @@ Resolves any Drupal path alias to its fully pre-resolved entity. All relationshi
 
 **Query Parameters:**
 
-| Name | Type | Required | Description |
-|---|---|---|---|
-| path | string | yes | Drupal path alias without locale prefix (e.g. `/mosaico/pluma/01-bora`) |
+| Name | Type   | Required | Description                                                             |
+| ---- | ------ | -------- | ----------------------------------------------------------------------- |
+| path | string | yes      | Drupal path alias without locale prefix (e.g. `/mosaico/pluma/01-bora`) |
 
 **Response:**
 
 ```typescript
 {
   meta: {
-    type: string;       // "node" | "taxonomy_term"
-    bundle: string;     // e.g. "prodotto_mosaico", "articolo"
-    id: number;         // Drupal NID (integer)
+    type: string; // "node" | "taxonomy_term"
+    bundle: string; // e.g. "prodotto_mosaico", "articolo"
+    id: number; // Drupal NID (integer)
     uuid: string;
     locale: string;
     path: string;
-  };
+  }
   data: Record<string, unknown>; // All entity fields, fully resolved
 }
 ```
@@ -118,9 +200,15 @@ Resolves any Drupal path alias to its fully pre-resolved entity. All relationshi
 
 ```typescript
 {
-  type: "file--file";
-  uri: { url: "https://drupal.example.com/sites/default/files/..." };
-  meta: { alt: string; width: number; height: number };
+  type: 'file--file';
+  uri: {
+    url: 'https://drupal.example.com/sites/default/files/...';
+  }
+  meta: {
+    alt: string;
+    width: number;
+    height: number;
+  }
 }
 ```
 
@@ -142,11 +230,11 @@ Resolves a path from one locale to the equivalent path in another locale. Used b
 
 **Query Parameters:**
 
-| Name | Type | Required | Description |
-|---|---|---|---|
-| path | string | yes | Source path (without locale prefix) |
-| from | string | yes | Source locale code (e.g. `it`) |
-| to | string | yes | Target locale code (e.g. `en`) |
+| Name | Type   | Required | Description                         |
+| ---- | ------ | -------- | ----------------------------------- |
+| path | string | yes      | Source path (without locale prefix) |
+| from | string | yes      | Source locale code (e.g. `it`)      |
+| to   | string | yes      | Target locale code (e.g. `en`)      |
 
 **Response:**
 
@@ -170,27 +258,27 @@ Returns a paginated list of products for a given content type, with optional fil
 
 **Path Parameters:**
 
-| Name | Values |
-|---|---|
-| locale | `it`, `en`, `fr`, `de`, `es`, `ru` |
+| Name        | Values                                                                                                                     |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------- |
+| locale      | `it`, `en`, `fr`, `de`, `es`, `ru`                                                                                         |
 | productType | `prodotto_mosaico`, `prodotto_vetrite`, `prodotto_arredo`, `prodotto_tessuto`, `prodotto_pixall`, `prodotto_illuminazione` |
 
 **Query Parameters:**
 
-| Name | Type | Description |
-|---|---|---|
-| items_per_page | number | Page size (default: 24) |
-| page | number | 0-based page index |
-| sort | string | Field name; prefix with `-` for descending (e.g. `-title`) |
-| collection | string | Filter by collection name |
-| color | string | Filter by color name |
-| shape | string | Filter by shape name |
-| finish | string | Filter by finish name |
-| grout | string | Filter by grout name |
-| texture | string | Filter by texture name |
-| fabric | string | Filter by fabric name |
-| category | string | Filter by hub category title (single value only — see limitations) |
-| type | string | Filter by typology name |
+| Name           | Type   | Description                                                        |
+| -------------- | ------ | ------------------------------------------------------------------ |
+| items_per_page | number | Page size (default: 24)                                            |
+| page           | number | 0-based page index                                                 |
+| sort           | string | Field name; prefix with `-` for descending (e.g. `-title`)         |
+| collection     | string | Filter by collection name                                          |
+| color          | string | Filter by color name                                               |
+| shape          | string | Filter by shape name                                               |
+| finish         | string | Filter by finish name                                              |
+| grout          | string | Filter by grout name                                               |
+| texture        | string | Filter by texture name                                             |
+| fabric         | string | Filter by fabric name                                              |
+| category       | string | Filter by hub category title (single value only — see limitations) |
+| type           | string | Filter by typology name                                            |
 
 **Known Limitations:**
 
@@ -202,14 +290,14 @@ Returns a paginated list of products for a given content type, with optional fil
 ```typescript
 {
   id: string;
-  type: string;            // with "node--" prefix added by normalizer
+  type: string; // with "node--" prefix added by normalizer
   title: string;
   subtitle: string | null;
   imageUrl: string | null; // field_immagine_anteprima (preview); falls back to imageUrlMain
   imageUrlMain: string | null; // field_immagine (full-size)
   price: string | null;
-  priceOnDemand: boolean;  // REST returns "0"/"1"; cast to boolean by normalizer
-  path: string | null;     // domain and locale prefix stripped
+  priceOnDemand: boolean; // REST returns "0"/"1"; cast to boolean by normalizer
+  path: string | null; // domain and locale prefix stripped
 }
 ```
 
@@ -218,30 +306,30 @@ Returns a paginated list of products for a given content type, with optional fil
 ```typescript
 {
   id: string;
-  type: string;           // without "node--" prefix
+  type: string; // without "node--" prefix
   title: string;
   subtitle: string | null;
-  imageUrl: string;       // "" when empty
-  imageUrlMain: string;   // "" or relative path when empty
+  imageUrl: string; // "" when empty
+  imageUrlMain: string; // "" or relative path when empty
   price: string | null;
-  priceOnDemand: "0" | "1" | null;
-  path: string;           // full Drupal domain URL
+  priceOnDemand: '0' | '1' | null;
+  path: string; // full Drupal domain URL
 }
 ```
 
 **`DRUPAL_FIELD_TO_REST_PARAM` Mapping:**
 
-| REST Param | Drupal Field | Product Types |
-|---|---|---|
-| `collection` | `field_collezione.name` | Mosaico, Vetrite |
-| `color` | `field_colori.name` / `field_colore.name` | Mosaico, Vetrite, Tessuto |
-| `shape` | `field_forma.name` | Mosaico, Pixall |
-| `finish` | `field_finitura.name` / `field_finitura_tessuto.name` | Mosaico, Vetrite, Tessuto |
-| `grout` | `field_stucco.name` | Mosaico, Pixall |
-| `texture` | `field_texture.name` | Vetrite |
-| `fabric` | `field_tessuto.name` | Arredo |
-| `category` | `field_categoria.title` | All (hub categories) |
-| `type` | `field_tipologia.name` / `field_tipologia_tessuto.name` | Tessuto |
+| REST Param   | Drupal Field                                            | Product Types             |
+| ------------ | ------------------------------------------------------- | ------------------------- |
+| `collection` | `field_collezione.name`                                 | Mosaico, Vetrite          |
+| `color`      | `field_colori.name` / `field_colore.name`               | Mosaico, Vetrite, Tessuto |
+| `shape`      | `field_forma.name`                                      | Mosaico, Pixall           |
+| `finish`     | `field_finitura.name` / `field_finitura_tessuto.name`   | Mosaico, Vetrite, Tessuto |
+| `grout`      | `field_stucco.name`                                     | Mosaico, Pixall           |
+| `texture`    | `field_texture.name`                                    | Vetrite                   |
+| `fabric`     | `field_tessuto.name`                                    | Arredo                    |
+| `category`   | `field_categoria.title`                                 | All (hub categories)      |
+| `type`       | `field_tipologia.name` / `field_tipologia_tessuto.name` | Tessuto                   |
 
 ---
 
@@ -255,20 +343,20 @@ Returns server-side aggregated counts for each value of a given filter facet. Ac
 
 **Path Parameters:**
 
-| Name | Values |
-|---|---|
-| productType | Same as V1 |
-| filterKey | `collection`, `color`, `shape`, `finish`, `grout`, `texture`, `fabric`, `category`, `type` |
+| Name        | Values                                                                                     |
+| ----------- | ------------------------------------------------------------------------------------------ |
+| productType | Same as V1                                                                                 |
+| filterKey   | `collection`, `color`, `shape`, `finish`, `grout`, `texture`, `fabric`, `category`, `type` |
 
 **Function Parameters:**
 
-| Name | Type | Description |
-|---|---|---|
-| productType | string | Drupal content type |
-| activeFilters | FilterDefinition[] | Currently active filters (the counted one is excluded) |
-| filterKey | string | Registry filter key (e.g. `subcategory`) — NOT used in URL |
-| drupalField | string | Drupal field path (e.g. `field_categoria.title`) — mapped to REST param for URL |
-| locale | string | Current locale |
+| Name          | Type               | Description                                                                     |
+| ------------- | ------------------ | ------------------------------------------------------------------------------- |
+| productType   | string             | Drupal content type                                                             |
+| activeFilters | FilterDefinition[] | Currently active filters (the counted one is excluded)                          |
+| filterKey     | string             | Registry filter key (e.g. `subcategory`) — NOT used in URL                      |
+| drupalField   | string             | Drupal field path (e.g. `field_categoria.title`) — mapped to REST param for URL |
+| locale        | string             | Current locale                                                                  |
 
 **Response:**
 
@@ -292,19 +380,19 @@ Returns all terms for a given Drupal taxonomy vocabulary. Vocabulary name is ext
 
 **All Supported Vocabularies:**
 
-| Vocabulary | Product Type | Status |
-|---|---|---|
-| `mosaico_collezioni` | Mosaico | Active |
-| `mosaico_colori` | Mosaico | Active |
-| `vetrite_collezioni` | Vetrite | Active |
-| `vetrite_colori` | Vetrite | Active |
-| `vetrite_finiture` | Vetrite | Active |
-| `vetrite_textures` | Vetrite | Active |
-| `arredo_finiture` | Arredo | Empty (0 terms in Drupal) |
-| `tessuto_colori` | Tessuto | Active |
-| `tessuto_finiture` | Tessuto | Empty (0 terms in Drupal) |
-| `tessuto_tipologie` | Tessuto | Active |
-| `tessuto_manutenzione` | Tessuto | Active |
+| Vocabulary             | Product Type | Status                    |
+| ---------------------- | ------------ | ------------------------- |
+| `mosaico_collezioni`   | Mosaico      | Active                    |
+| `mosaico_colori`       | Mosaico      | Active                    |
+| `vetrite_collezioni`   | Vetrite      | Active                    |
+| `vetrite_colori`       | Vetrite      | Active                    |
+| `vetrite_finiture`     | Vetrite      | Active                    |
+| `vetrite_textures`     | Vetrite      | Active                    |
+| `arredo_finiture`      | Arredo       | Empty (0 terms in Drupal) |
+| `tessuto_colori`       | Tessuto      | Active                    |
+| `tessuto_finiture`     | Tessuto      | Empty (0 terms in Drupal) |
+| `tessuto_tipologie`    | Tessuto      | Active                    |
+| `tessuto_manutenzione` | Tessuto      | Active                    |
 
 **Raw REST response item:**
 
@@ -312,7 +400,7 @@ Returns all terms for a given Drupal taxonomy vocabulary. Vocabulary name is ext
 {
   id: string;
   name: string;
-  weight: string;   // Drupal returns weight as string (e.g. "0", "10")
+  weight: string; // Drupal returns weight as string (e.g. "0", "10")
   imageUrl: string; // "" when no image — NOT null
 }
 ```
@@ -336,6 +424,7 @@ Returns all terms for a given Drupal taxonomy vocabulary. Vocabulary name is ext
 
 **Function:** `fetchCategoryOptions(productType, locale)` in `src/lib/api/filters.ts`
 **URLs:**
+
 - `/{locale}/api/v1/category-options/{productType}` — categories with products for this type
 - `/{locale}/api/v1/category-options/categoria` — all node--categoria (includes hubs without products)
 
@@ -407,7 +496,7 @@ All content listing endpoints share these conventions:
 ```typescript
 {
   id: string;
-  type: "articolo" | "news" | "tutorial";
+  type: 'articolo' | 'news' | 'tutorial';
   title: string;
   imageUrl: string;
   path: string;
@@ -420,7 +509,7 @@ All content listing endpoints share these conventions:
 ```typescript
 {
   id: string;
-  type: "articolo" | "news" | "tutorial";
+  type: 'articolo' | 'news' | 'tutorial';
   title: string;
   imageUrl: string | null;
   path: string | null;
@@ -494,7 +583,7 @@ No pagination params are used — all showrooms are returned in one response.
   area: string | null;
   phone: string | null;
   email: string | null;
-  gmapsUrl: string | null;   // renamed to mapsUrl in normalization
+  gmapsUrl: string | null; // renamed to mapsUrl in normalization
   externalUrl: string | null;
 }
 ```
@@ -512,7 +601,7 @@ No pagination params are used — all showrooms are returned in one response.
   area: string | null;
   phone: string | null;
   email: string | null;
-  mapsUrl: string | null;    // renamed from gmapsUrl for legacy component compat
+  mapsUrl: string | null; // renamed from gmapsUrl for legacy component compat
 }
 ```
 
@@ -564,10 +653,10 @@ Returns child `node--categoria` entities for a given parent categoria.
 ```typescript
 {
   id: string;
-  uuid: null;     // always null in this endpoint's response
+  uuid: null; // always null in this endpoint's response
   title: string;
   imageUrl: string;
-  path: string;   // full Drupal domain URL
+  path: string; // full Drupal domain URL
 }
 ```
 
@@ -578,7 +667,7 @@ Returns child `node--categoria` entities for a given parent categoria.
   id: string;
   title: string;
   imageUrl: string | null;
-  path: string | null;      // domain and locale prefix stripped
+  path: string | null; // domain and locale prefix stripped
 }
 ```
 
@@ -602,8 +691,8 @@ Returns published `node--page` entities whose `field_categoria` references the g
 {
   id: string;
   title: string;
-  imageUrl: string | null;  // often "" in Drupal — normalized to null
-  path: string | null;      // domain and locale prefix stripped
+  imageUrl: string | null; // often "" in Drupal — normalized to null
+  path: string | null; // domain and locale prefix stripped
 }
 ```
 
@@ -621,9 +710,9 @@ Returns published `node--page` entities whose `field_categoria` references the g
 
 **Path Parameters:**
 
-| Name | Values |
-|---|---|
-| locale | `it`, `en`, `fr`, `de`, `es`, `ru` |
+| Name     | Values                                                |
+| -------- | ----------------------------------------------------- |
+| locale   | `it`, `en`, `fr`, `de`, `es`, `ru`                    |
 | menuName | `main`, `footer`, and other Drupal menu machine names |
 
 **Raw response:**
@@ -656,15 +745,15 @@ interface MenuItem {
 
 All normalizers live in `src/lib/api/` and `src/lib/drupal/`. They are pure functions with no side effects.
 
-| Function | Location | Purpose | Input → Output |
-|---|---|---|---|
-| `stripDomain` | `client.ts` | Remove Drupal domain and base path from URLs | `"https://drupal.example.com/it/path"` → `"/it/path"` |
-| `stripLocalePrefix` | `client.ts` | Remove `/xx/` locale prefix from path | `"/it/path"` → `"/path"` |
-| `emptyToNull` | `client.ts` | Normalize empty strings to null | `""` → `null` |
-| `toAbsoluteUrl` | `products.ts` | Ensure image URL is absolute | `"/sites/default/..."` → `"https://drupal.example.com/sites/..."` |
-| `unixToIso` | `listings.ts` | Convert Unix timestamp string to ISO 8601 | `"1772451555"` → `"2026-03-01T..."` |
-| `deriveSlug` | `filters.ts` | Derive URL slug from path last segment or name | `"Colibrì"` → `"colibri"` (via `SLUG_OVERRIDES`) |
-| `getDrupalImageUrl` | `drupal/image.ts` | Extract image URL from C1 file field shape | `{ uri: { url: "..." } }` → `"https://..."` |
+| Function            | Location          | Purpose                                        | Input → Output                                                    |
+| ------------------- | ----------------- | ---------------------------------------------- | ----------------------------------------------------------------- |
+| `stripDomain`       | `client.ts`       | Remove Drupal domain and base path from URLs   | `"https://drupal.example.com/it/path"` → `"/it/path"`             |
+| `stripLocalePrefix` | `client.ts`       | Remove `/xx/` locale prefix from path          | `"/it/path"` → `"/path"`                                          |
+| `emptyToNull`       | `client.ts`       | Normalize empty strings to null                | `""` → `null`                                                     |
+| `toAbsoluteUrl`     | `products.ts`     | Ensure image URL is absolute                   | `"/sites/default/..."` → `"https://drupal.example.com/sites/..."` |
+| `unixToIso`         | `listings.ts`     | Convert Unix timestamp string to ISO 8601      | `"1772451555"` → `"2026-03-01T..."`                               |
+| `deriveSlug`        | `filters.ts`      | Derive URL slug from path last segment or name | `"Colibrì"` → `"colibri"` (via `SLUG_OVERRIDES`)                  |
+| `getDrupalImageUrl` | `drupal/image.ts` | Extract image URL from C1 file field shape     | `{ uri: { url: "..." } }` → `"https://..."`                       |
 
 **`deriveSlug` priority order:**
 
@@ -676,22 +765,22 @@ All normalizers live in `src/lib/api/` and `src/lib/drupal/`. They are pure func
 
 ## 9. Revalidation Summary
 
-| Endpoint | Code | Function | TTL |
-|---|---|---|---|
-| Entity by path | C1 | `fetchEntity` | 60s |
-| Translate path | C2 | `getTranslatedPath` | 3600s |
-| Products listing | V1 | `fetchProducts` | 60s |
-| Filter counts | V2 | `fetchFilterCounts` | 60s |
-| Taxonomy terms | V3 | `fetchFilterOptions` | 3600s |
-| Category options | V4 | `fetchCategoryOptions` | 3600s |
-| Blog posts | V5 | `fetchBlogPosts` | 300s |
-| Projects | V6 | `fetchProjects` | 300s |
-| Environments | V7 | `fetchEnvironments` | 300s |
-| Showrooms | V8 | `fetchShowrooms` | 300s |
-| Documents | V9 | `fetchDocuments` | 300s |
-| Subcategories | V10 | `fetchSubcategories` | 300s |
-| Pages by category | V11 | `fetchPagesByCategory` | 300s |
-| Menu | M1 | `fetchMenu` | 600s |
+| Endpoint          | Code | Function               | TTL   |
+| ----------------- | ---- | ---------------------- | ----- |
+| Entity by path    | C1   | `fetchEntity`          | 60s   |
+| Translate path    | C2   | `getTranslatedPath`    | 3600s |
+| Products listing  | V1   | `fetchProducts`        | 60s   |
+| Filter counts     | V2   | `fetchFilterCounts`    | 60s   |
+| Taxonomy terms    | V3   | `fetchFilterOptions`   | 3600s |
+| Category options  | V4   | `fetchCategoryOptions` | 3600s |
+| Blog posts        | V5   | `fetchBlogPosts`       | 300s  |
+| Projects          | V6   | `fetchProjects`        | 300s  |
+| Environments      | V7   | `fetchEnvironments`    | 300s  |
+| Showrooms         | V8   | `fetchShowrooms`       | 300s  |
+| Documents         | V9   | `fetchDocuments`       | 300s  |
+| Subcategories     | V10  | `fetchSubcategories`   | 300s  |
+| Pages by category | V11  | `fetchPagesByCategory` | 300s  |
+| Menu              | M1   | `fetchMenu`            | 600s  |
 
 ---
 
@@ -699,13 +788,13 @@ All normalizers live in `src/lib/api/` and `src/lib/drupal/`. They are pure func
 
 All fetchers follow a consistent resilient pattern — they never throw.
 
-| Scenario | Behavior |
-|---|---|
-| HTTP 404 | Returns `null` immediately |
-| Other HTTP error (4xx/5xx) | Logs `console.error` with status + URL, returns `null` |
-| Network failure / timeout | Catches exception, logs `console.error`, returns `null` |
-| Empty response body | Returns `null` |
-| Missing items in paginated response | Returns `{ items/products/etc: [], total: 0 }` |
+| Scenario                            | Behavior                                                |
+| ----------------------------------- | ------------------------------------------------------- |
+| HTTP 404                            | Returns `null` immediately                              |
+| Other HTTP error (4xx/5xx)          | Logs `console.error` with status + URL, returns `null`  |
+| Network failure / timeout           | Catches exception, logs `console.error`, returns `null` |
+| Empty response body                 | Returns `null`                                          |
+| Missing items in paginated response | Returns `{ items/products/etc: [], total: 0 }`          |
 
 **Error log format:**
 
@@ -720,16 +809,16 @@ All callers are expected to handle `null` returns gracefully. Templates and list
 
 ## Source Files
 
-| File | Endpoints |
-|---|---|
-| `src/lib/api/client.ts` | Base fetcher (`apiGet`), normalizers (`stripDomain`, `stripLocalePrefix`, `emptyToNull`) |
-| `src/lib/api/types.ts` | Response interfaces (source of truth for REST response shapes) |
-| `src/lib/api/entity.ts` | C1 |
-| `src/lib/api/translate-path.ts` | C2 |
-| `src/lib/api/products.ts` | V1, V2 |
-| `src/lib/api/filters.ts` | V3, V4 |
-| `src/lib/api/listings.ts` | V5, V6, V7, V8, V9 |
-| `src/lib/api/categories.ts` | V10, V11 |
-| `src/lib/drupal/menu.ts` | M1 |
-| `src/lib/drupal/config.ts` | `DRUPAL_BASE_URL` constant |
-| `src/lib/drupal/image.ts` | `getDrupalImageUrl` |
+| File                            | Endpoints                                                                                |
+| ------------------------------- | ---------------------------------------------------------------------------------------- |
+| `src/lib/api/client.ts`         | Base fetcher (`apiGet`), normalizers (`stripDomain`, `stripLocalePrefix`, `emptyToNull`) |
+| `src/lib/api/types.ts`          | Response interfaces (source of truth for REST response shapes)                           |
+| `src/lib/api/entity.ts`         | C1                                                                                       |
+| `src/lib/api/translate-path.ts` | C2                                                                                       |
+| `src/lib/api/products.ts`       | V1, V2                                                                                   |
+| `src/lib/api/filters.ts`        | V3, V4                                                                                   |
+| `src/lib/api/listings.ts`       | V5, V6, V7, V8, V9                                                                       |
+| `src/lib/api/categories.ts`     | V10, V11                                                                                 |
+| `src/lib/drupal/menu.ts`        | M1                                                                                       |
+| `src/lib/drupal/config.ts`      | `DRUPAL_BASE_URL` constant                                                               |
+| `src/lib/drupal/image.ts`       | `getDrupalImageUrl`                                                                      |
