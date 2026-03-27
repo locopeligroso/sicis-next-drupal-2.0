@@ -322,6 +322,48 @@ export interface TextileProductRest {
     | TextileProductTypologyRest[];
 }
 
+// === P4: Pixall Product (single product by NID) ===
+export interface PixallProductGroutRest {
+  tid: number;
+  name: string;
+  field_immagine: string | null;
+  field_prezzo_2_5kg: string | null;
+  field_prezzo_5kg: string | null;
+}
+
+export interface PixallProductDocumentRest {
+  nid: number;
+  field_titolo_main: string;
+  field_immagine: string | null;
+  field_allegato: string | null;
+  field_collegamento_esterno: string | null;
+  field_id_video: string | null;
+}
+
+export interface PixallProductRest {
+  nid: string;
+  field_titolo_main: string;
+  field_testo_main: string;
+  field_composizione: string;
+  field_utilizzi: string;
+  field_manutenzione: string;
+  field_retinatura: string;
+  field_immagine: string | null;
+  field_immagine_moduli: string;
+  field_gallery: string[];
+  field_gallery_intro: string[];
+  field_dimensione_foglio_mm: string;
+  field_dimensione_foglio_inch: string;
+  field_dimensione_tessera_mm: string;
+  field_dimensione_tessera_inch: string;
+  field_numero_moduli: string;
+  field_dimensione_moduli: string;
+  field_consumo_stucco_m2: string;
+  field_consumo_stucco_sqft: string;
+  field_stucco?: PixallProductGroutRest[];
+  field_documenti?: PixallProductDocumentRest[];
+}
+
 // === C2: Translate Path ===
 export interface TranslatePathResponse {
   translatedPath: string | null;

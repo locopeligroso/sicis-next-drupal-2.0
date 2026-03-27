@@ -8,6 +8,8 @@ import { fetchVetriteProduct } from '@/lib/api/vetrite-product';
 import type { VetriteProduct } from '@/lib/api/vetrite-product';
 import { fetchTextileProduct } from '@/lib/api/textile-product';
 import type { TextileProduct } from '@/lib/api/textile-product';
+import { fetchPixallProduct } from '@/lib/api/pixall-product';
+import type { PixallProduct } from '@/lib/api/pixall-product';
 import { getComponentName } from '@/lib/node-resolver';
 import UnknownEntity from '@/components_legacy/UnknownEntity';
 import { getSectionConfigAsync } from '@/domain/routing/section-config';
@@ -676,7 +678,14 @@ export default async function SlugPage({
           return <ProdottoTessuto node={legacyNode} />;
         }
       }
-      // Future: add more product bundles here
+      if (resolved.bundle === 'prodotto_pixall') {
+        const product = await fetchPixallProduct(resolved.nid, locale);
+        if (product) {
+          const legacyNode = pixallToLegacyNode(product, locale);
+          return <ProdottoPixall node={legacyNode} />;
+        }
+      }
+      // Future: add more product bundles here (prodotto_arredo, prodotto_illuminazione)
     }
   }
 
@@ -1384,5 +1393,68 @@ function textileToLegacyNode(
       field_immagine: toImageField(doc.imageSrc),
       field_allegato: null,
     })),
+  };
+}
+
+// ── Adapter: P4 normalized PixallProduct → C1-like Record for legacy template ─
+
+function pixallToLegacyNode(
+  product: PixallProduct,
+  locale: string,
+): Record<string, unknown> {
+  const toImageField = (url: string | null) =>
+    url
+      ? {
+          type: 'file--file',
+          uri: { url },
+          meta: { alt: '', width: 0, height: 0 },
+        }
+      : null;
+
+  return {
+    type: 'node--prodotto_pixall',
+    langcode: locale,
+    title: product.title,
+    field_titolo_main: product.title,
+    field_testo_main: product.body
+      ? { value: product.body, processed: product.body }
+      : null,
+    field_composizione: product.composition
+      ? { value: product.composition, processed: product.composition }
+      : null,
+    field_utilizzi: product.usesHtml
+      ? { value: product.usesHtml, processed: product.usesHtml }
+      : null,
+    field_manutenzione: product.maintenanceHtml
+      ? { value: product.maintenanceHtml, processed: product.maintenanceHtml }
+      : null,
+    field_retinatura: product.meshType,
+    field_immagine: toImageField(product.imageUrl),
+    field_immagine_moduli: toImageField(product.imageModulesUrl),
+    field_gallery: product.gallery.map((url) => toImageField(url)),
+    field_gallery_intro: product.galleryIntro.map((url) => toImageField(url)),
+    field_dimensione_foglio_mm: product.sheetSizeMm,
+    field_dimensione_foglio_inch: product.sheetSizeInch,
+    field_dimensione_tessera_mm: product.chipSizeMm,
+    field_dimensione_tessera_inch: product.chipSizeInch,
+    field_numero_moduli: product.modulesCount,
+    field_dimensione_moduli: product.modulesSize,
+    field_consumo_stucco_m2: product.groutConsumptionM2,
+    field_consumo_stucco_sqft: product.groutConsumptionSqft,
+    field_stucco: product.grouts.map((g) => ({
+      name: g.name,
+      field_immagine: toImageField(g.imageSrc),
+    })),
+    field_documenti: product.documents.map((doc) => ({
+      field_titolo_main: doc.title,
+      title: doc.title,
+      field_tipologia_documento: null,
+      field_collegamento_esterno: doc.href,
+      field_immagine: toImageField(doc.imageSrc),
+      field_allegato: null,
+    })),
+    // Fields not yet available from P4
+    field_colori: [],
+    field_forma: [],
   };
 }

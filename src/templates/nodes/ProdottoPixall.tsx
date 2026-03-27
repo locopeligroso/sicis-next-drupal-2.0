@@ -3,6 +3,7 @@ import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { getColorSwatch, formatRetinatura } from '@/lib/product-helpers';
 import DrupalImage from '@/components_legacy/DrupalImage';
+import { getDrupalImageUrl } from '@/lib/drupal/image';
 import styles from '@/styles/product.module.css';
 import type { ProdottoPixall as ProdottoPixallType } from '@/types/drupal/entities';
 
@@ -363,22 +364,43 @@ export default async function ProdottoPixall({
           <h2 id="stucchi-heading" className={styles.sectionHeading}>
             {t('recommendedGrout')}
           </h2>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-            {stucchi.map((s, i) => (
-              <span
-                key={i}
-                style={{
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-                  padding: '0.25em 0.75em',
-                  border: '0.0625rem solid #ccc',
-                  color: '#444',
-                  lineHeight: 1.5,
-                }}
-              >
-                {s.name}
-              </span>
-            ))}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+            {stucchi.map((s, i) => {
+              const imgUrl = getDrupalImageUrl(
+                (s as Record<string, unknown>).field_immagine,
+              );
+              return (
+                <div
+                  key={i}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.875rem',
+                    fontWeight: 500,
+                    padding: '0.25em 0.75em',
+                    border: '0.0625rem solid #ccc',
+                    color: '#444',
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {imgUrl && (
+                    <img
+                      src={imgUrl}
+                      alt={s.name ?? ''}
+                      style={{
+                        width: '1.5rem',
+                        height: '1.5rem',
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        flexShrink: 0,
+                      }}
+                    />
+                  )}
+                  {s.name}
+                </div>
+              );
+            })}
           </div>
         </section>
       )}
