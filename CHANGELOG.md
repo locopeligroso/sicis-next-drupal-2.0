@@ -36,6 +36,41 @@ Replaced the static main product image on `ProdottoVetrite` with an interactive 
 
 ---
 
+#### Mosaico Hub — Colori & Collezioni listings from Drupal Views
+
+Replaced the old SpecHubMosaico implementation (which used V3 taxonomy endpoints) with data fetched directly from two Drupal Views REST exports: `mosaic-colors` and `mosaic-collections`.
+
+**New fetcher:** `src/lib/api/mosaic-hub.ts`
+- `fetchMosaicColors(locale)` — `/{locale}/api/v1/mosaic-colors` → `MosaicTermItem[]`
+- `fetchMosaicCollections(locale)` — `/{locale}/api/v1/mosaic-collections` → `MosaicTermItem[]`
+- Response shape: `{ name, field_immagine, view_taxonomy_term }` → normalized to `{ name, imageUrl, href }`
+- `href` derived via `stripDomain()` from `view_taxonomy_term` (full Drupal URL → relative path)
+- Revalidate: 3600s
+
+**SpecHubMosaico rewrite:**
+- Uses DS blocks: `HubSection` (h2 + hr wrapper) + `CategoryCard` (image + title link)
+- Colors rendered with `hasColorSwatch` (circular 64px swatch)
+- Collections rendered with full image (`object-cover`)
+- Removed: Pixall section, "Scopri anche", "Approfondimenti" — hub now shows only the two term listings
+
+**i18n — missing hub keys added to 5 locales:**
+
+| Key | EN | FR | DE | ES | RU |
+|-----|----|----|----|----|-----|
+| `hub.exploreByColor` | Explore by colour | Explorer par couleur | Nach Farbe entdecken | Explorar por color | По цвету |
+| `hub.exploreByCollection` | Explore by collection | Explorer par collection | Nach Kollektion entdecken | Explorar por colección | По коллекции |
+| `hub.exploreByTypology` | Explore by typology | Explorer par typologie | Nach Typologie entdecken | Explorar por tipología | По типологии |
+| `hub.solidColours` | Solid Colours | Couleurs unies | Unifarben | Colores sólidos | Однотонные цвета |
+
+**Encoded slug routing fix (FR `mosaïque`, RU `мозаика`):**
+- `page.tsx`: `singleSlug` now decoded + NFC-normalized before `LISTING_SLUG_OVERRIDES.has()` check
+- `section-config.ts`: both `getSectionConfig()` and `getSectionConfigAsync()` decode + NFC-normalize slug segments
+- `registry.ts`: `deslugify()` decodes URL-encoded slugs before `SLUG_OVERRIDES` lookup
+
+**Files changed:** 9 modified + 1 new (`src/lib/api/mosaic-hub.ts`)
+
+---
+
 #### US Locale (`/us/`) — Regional variant for the American market
 
 Added `us` as a 7th locale. It mirrors `en` entirely (same Drupal endpoints, same translations) with US-specific conditional rendering on product pages.
