@@ -157,10 +157,11 @@ export const SLUG_OVERRIDES: Record<string, string> = {
  * deslugify('unknown-slug')    // → 'Unknown Slug'
  */
 export function deslugify(slug: string): string {
-  // Normalize to NFC at the boundary — macOS/Safari can produce NFD-encoded
-  // strings (e.g. "neocolibrì" as i + combining grave) which would silently
-  // miss SLUG_OVERRIDES keys that are stored as NFC (U+00EC precomposed).
-  const normalized = slug.normalize('NFC');
+  // Decode URL-encoded characters first — Next.js passes slug segments encoded
+  // (e.g. "vert-fonc%C3%A9" instead of "vert-foncé"), then normalize to NFC
+  // so SLUG_OVERRIDES keys (stored as NFC precomposed) match correctly.
+  const decoded = decodeURIComponent(slug);
+  const normalized = decoded.normalize('NFC');
   if (SLUG_OVERRIDES[normalized]) return SLUG_OVERRIDES[normalized];
   return normalized.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }

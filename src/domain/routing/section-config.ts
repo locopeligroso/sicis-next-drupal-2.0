@@ -167,8 +167,12 @@ export function getSectionConfig(
   slugs: string[],
   locale: string,
 ): SectionConfig | null {
-  const [s1, s2, s3] = slugs;
-  if (!s1) return null;
+  // Decode + NFC-normalize so encoded slugs match literal entries in slug Sets.
+  const [s1Raw, s2Raw, s3Raw] = slugs;
+  if (!s1Raw) return null;
+  const s1 = decodeURIComponent(s1Raw).normalize('NFC');
+  const s2 = s2Raw ? decodeURIComponent(s2Raw).normalize('NFC') : undefined;
+  const s3 = s3Raw ? decodeURIComponent(s3Raw).normalize('NFC') : undefined;
 
   // ── Tessuto ──────────────────────────────────────────────────────────────
   if (TESSILI_SLUGS.has(s1) && !s2) {
@@ -300,8 +304,13 @@ export async function getSectionConfigAsync(
   const registry = await getRoutingRegistry();
   if (!registry) return getSectionConfig(slugs, locale);
 
-  const [s1, s2, s3] = slugs;
-  if (!s1) return null;
+  // Decode + NFC-normalize so encoded slugs (mosa%C3%AFque, Cyrillic, accented)
+  // match the literal entries in registry maps and slug Sets.
+  const [s1Raw, s2Raw, s3Raw] = slugs;
+  if (!s1Raw) return null;
+  const s1 = decodeURIComponent(s1Raw).normalize('NFC');
+  const s2 = s2Raw ? decodeURIComponent(s2Raw).normalize('NFC') : undefined;
+  const s3 = s3Raw ? decodeURIComponent(s3Raw).normalize('NFC') : undefined;
 
   // Check if first segment is a listing hub
   const productType = registry.slugToProductType.get(s1);

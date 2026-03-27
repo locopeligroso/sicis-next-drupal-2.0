@@ -207,6 +207,10 @@
     "change": "Изменить"
   },
   "hub": {
+    "exploreByColor": "По цвету",
+    "exploreByCollection": "По коллекции",
+    "exploreByTypology": "По типологии",
+    "solidColours": "Однотонные цвета",
     "discoverAlso": "Откройте также",
     "deepDives": "Подробнее",
     "explore": "Исследовать"

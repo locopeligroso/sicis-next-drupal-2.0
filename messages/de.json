@@ -207,6 +207,10 @@
     "change": "Ändern"
   },
   "hub": {
+    "exploreByColor": "Nach Farbe entdecken",
+    "exploreByCollection": "Nach Kollektion entdecken",
+    "exploreByTypology": "Nach Typologie entdecken",
+    "solidColours": "Unifarben",
     "discoverAlso": "Entdecken Sie auch",
     "deepDives": "Mehr erfahren",
     "explore": "Entdecken"

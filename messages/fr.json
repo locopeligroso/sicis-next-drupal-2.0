@@ -207,6 +207,10 @@
     "change": "Changer"
   },
   "hub": {
+    "exploreByColor": "Explorer par couleur",
+    "exploreByCollection": "Explorer par collection",
+    "exploreByTypology": "Explorer par typologie",
+    "solidColours": "Couleurs unies",
     "discoverAlso": "Découvrez aussi",
     "deepDives": "En savoir plus",
     "explore": "Explorer"

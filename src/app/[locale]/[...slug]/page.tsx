@@ -11,6 +11,9 @@ import type { TextileProduct } from '@/lib/api/textile-product';
 import { fetchPixallProduct } from '@/lib/api/pixall-product';
 import type { PixallProduct } from '@/lib/api/pixall-product';
 import { fetchMosaicProductListing } from '@/lib/api/mosaic-product-listing';
+import { fetchVetriteProductListing } from '@/lib/api/vetrite-product-listing';
+import { fetchPixallProductListing } from '@/lib/api/pixall-product-listing';
+import { fetchTextileProductListing } from '@/lib/api/textile-product-listing';
 import { getComponentName } from '@/lib/node-resolver';
 import UnknownEntity from '@/components_legacy/UnknownEntity';
 import { getSectionConfigAsync } from '@/domain/routing/section-config';
@@ -224,6 +227,7 @@ async function renderProductListing({
   locale,
   resolvedTid,
   resolvedColorTid,
+  resolvedCategoryNid,
 }: {
   productType: string;
   title: string;
@@ -235,6 +239,8 @@ async function renderProductListing({
   resolvedTid?: number;
   /** Color TID from resolve-path — for mosaic-products/all/{colorTid} */
   resolvedColorTid?: number;
+  /** Category NID from resolve-path — for textile-products/{categoryNid} */
+  resolvedCategoryNid?: number;
 }) {
   const config = FILTER_REGISTRY[productType];
   if (!config) return null;
@@ -337,7 +343,12 @@ async function renderProductListing({
     }
   }
 
-  if (!hasActiveP0 && listing.categoryGroups.length > 0) {
+  // When resolvedCategoryNid is set, a specific category is selected via resolve-path
+  // even if parseFiltersFromUrl didn't detect it (e.g. EN basePath = 'textiles/fabrics'
+  // where the category IS the basePath). Skip hub mode and go to product grid.
+  const forceProductGrid = resolvedCategoryNid != null;
+
+  if (!hasActiveP0 && listing.categoryGroups.length > 0 && !forceProductGrid) {
     // ── State 1: Hub mode — show category cards, no product grid ──────────
     // Fetch only the filter options needed for category card groups + sidebar
     const optionPromises: [string, Promise<FilterOption[]>][] = [];
@@ -398,19 +409,39 @@ async function renderProductListing({
     const offset = (currentPage - 1) * listing.pageSize;
 
     // When resolvedTid or resolvedColorTid is available (from resolve-path),
-    // use the new mosaic-products endpoint directly — avoids the broken V1
+    // use the new TID-based listing endpoints directly — avoids the broken V1
     // endpoint and the extra V3 name→TID lookup.
-    const useMosaicEndpoint =
-      productType === 'prodotto_mosaico' &&
-      (resolvedTid != null || resolvedColorTid != null);
+    const hasResolvedTid = resolvedTid != null || resolvedColorTid != null;
+    const useNewListingEndpoint =
+      productType === 'prodotto_pixall' ||
+      (productType === 'prodotto_tessuto' && resolvedCategoryNid != null) ||
+      (hasResolvedTid &&
+        (productType === 'prodotto_mosaico' || productType === 'prodotto_vetrite'));
+
+    const newListingFetcher = () => {
+      if (productType === 'prodotto_pixall') {
+        return fetchPixallProductListing(locale);
+      }
+      if (productType === 'prodotto_tessuto') {
+        return fetchTextileProductListing(locale, resolvedCategoryNid ?? 'all');
+      }
+      if (productType === 'prodotto_vetrite') {
+        return fetchVetriteProductListing(
+          locale,
+          resolvedTid ?? 'all',
+          resolvedColorTid ?? 'all',
+        );
+      }
+      return fetchMosaicProductListing(
+        locale,
+        resolvedTid ?? 'all',
+        resolvedColorTid ?? 'all',
+      );
+    };
 
     const [productResult, allFilterOptions] = await Promise.all([
-      useMosaicEndpoint
-        ? fetchMosaicProductListing(
-            locale,
-            resolvedTid ?? 'all',
-            resolvedColorTid ?? 'all',
-          )
+      useNewListingEndpoint
+        ? newListingFetcher()
         : fetchProducts({
             productType,
             locale,
@@ -455,9 +486,9 @@ async function renderProductListing({
 
   // ── Determine layout variant ──────────────────────────────────────────
   let variant: 'hub' | 'context-bar' | 'airy-header';
-  if (!hasActiveP0 && listing.categoryGroups.length > 0) {
+  if (!hasActiveP0 && listing.categoryGroups.length > 0 && !forceProductGrid) {
     variant = 'hub';
-  } else if (hasActiveP0) {
+  } else if (hasActiveP0 || forceProductGrid) {
     variant = 'context-bar';
   } else {
     variant = 'airy-header';
@@ -642,7 +673,12 @@ export default async function SlugPage({
   // Menu-derived routing registry (null when Drupal menu unavailable)
   const registry = await getRoutingRegistry();
 
-  const singleSlug = slug.length === 1 ? slug[0] : null;
+  const singleSlugRaw = slug.length === 1 ? slug[0] : null;
+  // Decode + NFC-normalize so encoded slugs (mosa%C3%AFque, %D0%BC%D0%BE%D0%B7%D0%B0%D0%B8%D0%BA%D0%B0)
+  // match the literal entries in LISTING_SLUG_OVERRIDES / PRODUCTS_MASTER_SLUGS.
+  const singleSlug = singleSlugRaw
+    ? decodeURIComponent(singleSlugRaw).normalize('NFC')
+    : null;
 
   // ── Products master page interception ─────────────────────────────────────
   // /prodotti (IT), /products (EN), etc. — static page listing all product categories.
@@ -729,6 +765,47 @@ export default async function SlugPage({
           locale,
           resolvedColorTid: resolved.nid,
         });
+      }
+      // ── Taxonomy terms: vetrite_collezioni / vetrite_colori → vetrite-products endpoint ──
+      if (resolved.bundle === 'vetrite_collezioni') {
+        return renderProductListing({
+          productType: 'prodotto_vetrite',
+          title: deslugify(slug[slug.length - 1]),
+          slug,
+          searchParams: sp,
+          locale,
+          resolvedTid: resolved.nid,
+        });
+      }
+      if (resolved.bundle === 'vetrite_colori') {
+        return renderProductListing({
+          productType: 'prodotto_vetrite',
+          title: deslugify(slug[slug.length - 1]),
+          slug,
+          searchParams: sp,
+          locale,
+          resolvedColorTid: resolved.nid,
+        });
+      }
+      // ── node--categoria for textile → textile-products endpoint ──
+      // Textile categories share the generic 'categoria' bundle with arredo/illuminazione.
+      // Match the first slug segment against prodotto_tessuto basePaths to distinguish.
+      if (resolved.bundle === 'categoria') {
+        const tessutoConfig = FILTER_REGISTRY['prodotto_tessuto'];
+        if (tessutoConfig) {
+          const tessutoBase = (tessutoConfig.basePaths[locale] ?? tessutoConfig.basePaths['it']).split('/')[0];
+          const firstSlug = decodeURIComponent(slug[0]).normalize('NFC');
+          if (firstSlug === tessutoBase) {
+            return renderProductListing({
+              productType: 'prodotto_tessuto',
+              title: deslugify(slug[slug.length - 1]),
+              slug,
+              searchParams: sp,
+              locale,
+              resolvedCategoryNid: resolved.nid,
+            });
+          }
+        }
       }
       // Future: add more product bundles here (prodotto_arredo, prodotto_illuminazione)
     }
