@@ -53,6 +53,25 @@ const nextConfig = {
       },
     ];
   },
+  async rewrites() {
+    const drupalBase =
+      process.env.DRUPAL_BASE_URL ||
+      process.env.NEXT_PUBLIC_DRUPAL_BASE_URL ||
+      'http://localhost';
+    return [
+      {
+        // Proxy Drupal images to same-origin for WebGL texture loading (avoids CORS)
+        source: '/drupal-images/:path*',
+        destination: `${drupalBase}/www.sicis.com_aiweb/httpdocs/sites/default/files/:path*`,
+      },
+    ];
+  },
+  transpilePackages: [
+    'three',
+    '@react-three/fiber',
+    '@react-three/drei',
+    'maath',
+  ],
 };
 
 export default withNextIntl(nextConfig);

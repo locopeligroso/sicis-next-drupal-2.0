@@ -2,6 +2,8 @@ import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import { getTranslations, getLocale } from 'next-intl/server';
 import DrupalImage from '@/components_legacy/DrupalImage';
+import VetriteCanvasLoader from '@/r3f/vetrite/VetriteCanvasLoader';
+import { getDrupalImageUrl } from '@/lib/drupal/image';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { sanitizeHtml } from '@/lib/sanitize';
 import styles from '@/styles/product.module.css';
@@ -142,13 +144,32 @@ export default async function ProdottoVetrite({
         </h1>
       )}
 
-      {/* ── 2. Main image ────────────────────────────────────────────────────── */}
-      <DrupalImage
-        field={typedNode.field_immagine}
-        alt={title ?? ''}
-        aspectRatio="4/3"
-        style={{ marginBottom: '2rem' }}
-      />
+      {/* ── 2. Main image / 3D Canvas ─────────────────────────────────────── */}
+      {(() => {
+        const rawUrl = getDrupalImageUrl(typedNode.field_immagine);
+        // Proxy Drupal image through API route to avoid CORS for WebGL textures
+        const textureUrl = rawUrl
+          ? `/api/texture?url=${encodeURIComponent(rawUrl)}`
+          : null;
+        return textureUrl ? (
+          <div
+            style={{
+              aspectRatio: '4/3',
+              marginBottom: '2rem',
+              position: 'relative',
+            }}
+          >
+            <VetriteCanvasLoader textureUrl={textureUrl} alt={title ?? ''} />
+          </div>
+        ) : (
+          <DrupalImage
+            field={typedNode.field_immagine}
+            alt={title ?? ''}
+            aspectRatio="4/3"
+            style={{ marginBottom: '2rem' }}
+          />
+        );
+      })()}
 
       {/* ── 3. Testo descrittivo (prodotto o fallback collezione) ─────────────── */}
       {body && (

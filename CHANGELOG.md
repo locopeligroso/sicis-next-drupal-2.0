@@ -6,6 +6,36 @@ All notable changes to this project will be documented in this file.
 
 ### 2026-03-27
 
+#### R3F 3D Glass Slab Viewer — Interactive canvas on vetrite product pages
+
+Replaced the static main product image on `ProdottoVetrite` with an interactive React Three Fiber canvas showing a 3D glass slab. Ported from the standalone `sicis-vetrite-next` proof-of-concept.
+
+**Architecture:**
+
+- Full TypeScript port of the material system (Solid, Chrome, OpalOff, OpalOn, Glass finishes)
+- Self-contained module at `src/r3f/vetrite/` (27 files: config, materials, stores, hooks, components)
+- `VetriteCanvasLoader` — client component wrapper with `next/dynamic` + `ssr: false`
+- Texture proxy via `/api/texture` route (avoids CORS for WebGL texture loading from Drupal)
+- Default HDRI environment (RR.hdr) at `public/assets/hdri/vetrite/`
+- Product image from Drupal used as diffuse texture (10% zoom crop)
+
+**Canvas features (identical to sicis-vetrite-next):**
+
+- Slab geometry with mouse-tracking rotation (quaternion slerp)
+- Finish Selector (Solid / Chrome / Opalescent OFF / Opalescent ON)
+- Mirror toggle with smooth animation (maath/easing damp)
+- Opal toggle (pill switch, disabled when Solid/Chrome active)
+- Backlight presets (Neutral / Warm / Cold) for Opal ON
+- Fullscreen mode with editorial sidebar ("Luxury Atelier Panel")
+- Material pre-warming on mount (prevents shader jank)
+- RendererSync (tone mapping, exposure, clear color from Zustand store)
+
+**Dependencies added:** three, @react-three/fiber, @react-three/drei, zustand, maath, @types/three
+
+**New files:** `src/r3f/vetrite/` (27 TS files), `src/app/api/texture/route.ts`, `public/assets/hdri/vetrite/RR.hdr`, `public/assets/vetrite/` (4 finish thumbnails), `docs/SICIS_VETRITE_NEXT.md`
+
+---
+
 #### US Locale (`/us/`) — Regional variant for the American market
 
 Added `us` as a 7th locale. It mirrors `en` entirely (same Drupal endpoints, same translations) with US-specific conditional rendering on product pages.

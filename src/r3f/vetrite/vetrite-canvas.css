@@ -1,0 +1,714 @@
+/* vetrite-canvas.css
+ * Scoped styles for the VetriteCanvas R3F component.
+ * All rules are namespaced under .hs-product-canvas to avoid global leakage.
+ * Source: sicis-vetrite-next/app/globals.css lines 383–1243 + backlight-selector.
+ */
+
+/* ─── Design Tokens (scoped to canvas container) ─────────────────────────── */
+.hs-product-canvas {
+  --hs-accent: #0d9488;
+  --hs-accent-high: #0f766e;
+  --hs-surface: #fafaf8;
+  --hs-surface-on: #1c1c1a;
+  --hs-surface-on-muted: #5c5c56;
+  --hs-surface-high-2: #e8e8e3;
+  --hs-surface-high-3: #d4d4cd;
+  --hs-surface-high-4: #a8a89f;
+  --hs-surface-high: #f5f5f2;
+  --hs-radius: 8px;
+  --hs-radius-lg: 16px;
+  --hs-radius-full: 9999px;
+  --hs-font-body: var(--font-body, 'Outfit', sans-serif);
+  --hs-font-heading: var(--font-heading, 'Geist', sans-serif);
+  --hs-caption: 12px;
+  --hs-overline: 12px;
+  --hs-body-sm: 14px;
+  --hs-body-lg: 18px;
+  --hs-label: 14px;
+  --hs-action-sm: 12px;
+  --hs-card-padding: 32px;
+  --hs-fsc-sidebar-width: 28rem;
+  --hs-finish-selector-width: 440px;
+  --hs-stack-gap: 8px;
+  --hs-grid-gutter: 16px;
+}
+
+/* ─── FinishSelector ──────────────────────────────────────────────────────── */
+
+.hs-finish-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+  overflow: hidden;
+  flex-shrink: 0;
+  width: var(--hs-finish-selector-width, 440px);
+  border: none;
+  min-inline-size: 0;
+}
+
+.hs-finish-selector__label {
+  font-family: var(--hs-font-heading);
+  font-size: var(--hs-overline);
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--hs-surface-on-muted);
+  font-style: normal;
+  white-space: nowrap;
+}
+
+.hs-finish-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: flex-start;
+  width: 100%;
+}
+
+/* Individual finish swatch */
+.hs-finish-option {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.hs-finish-option:focus-visible .hs-thumb-ring {
+  outline: 2px solid var(--hs-accent);
+  outline-offset: 2px;
+}
+
+.hs-thumb-ring {
+  background-color: white;
+  border: 1px solid var(--hs-surface-high-2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: var(--hs-radius-full);
+  flex-shrink: 0;
+  width: 96px;
+  height: 96px;
+  position: relative;
+  transition: border-color 0.15s ease;
+}
+
+.hs-thumb-ring--selected {
+  border: 2px solid var(--hs-accent);
+}
+
+.hs-thumb {
+  flex: 1 0 0;
+  min-height: 1px;
+  min-width: 1px;
+  position: relative;
+  border-radius: var(--hs-radius-full);
+  width: 100%;
+  overflow: hidden;
+}
+
+.hs-thumb--fixed {
+  flex: none;
+  width: 88px;
+  height: 88px;
+  border-radius: var(--hs-radius-full);
+  position: relative;
+  overflow: hidden;
+}
+
+.hs-thumb img,
+.hs-thumb--fixed img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  pointer-events: none;
+  border-radius: var(--hs-radius-full);
+}
+
+/* Stacked thumb layers (Satin, Opalescent ON) */
+.hs-thumb__layers {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: var(--hs-radius-full);
+}
+
+.hs-thumb__layers img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  border-radius: var(--hs-radius-full);
+}
+
+.hs-thumb__bg {
+  position: absolute;
+  inset: 0;
+  background-color: var(--hs-surface-high-2);
+  border-radius: var(--hs-radius-full);
+}
+
+/* Chip badge (OFF / ON) */
+.hs-chip {
+  position: absolute;
+  top: 6px;
+  right: -2px;
+  background-color: var(--hs-surface);
+  border: 1px solid var(--hs-surface-high-4);
+  border-radius: var(--hs-radius-full);
+  padding: 6px 12px;
+  font-family: var(--hs-font-body);
+  font-size: var(--hs-action-sm);
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--hs-surface-on-muted);
+  white-space: nowrap;
+  font-style: normal;
+  z-index: 1;
+}
+
+.hs-chip--on-pos {
+  top: 7px;
+  right: -1px;
+}
+
+.hs-finish-option__name {
+  font-family: var(--hs-font-body);
+  font-size: var(--hs-caption);
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--hs-surface-on-muted);
+  text-align: center;
+  white-space: nowrap;
+  font-style: normal;
+}
+
+/* ─── MirrorButton ────────────────────────────────────────────────────────── */
+/*
+ * Riga editoriale: trattino teal + "Mirror view" italic + icona SVG a destra.
+ * Nessun wrapper card, nessun frosted glass.
+ * Dimensione cliccabile: 2.75rem minimo (touch target).
+ * Hover: teal color sull'intera area.
+ *
+ * Structure:
+ *   .hs-mirror-btn           — button semantico (flex row, align center)
+ *   .hs-mirror-btn__dash     — "—" trattino teal fisso
+ *   .hs-mirror-btn__label    — "Mirror view" italic muted
+ *   .hs-mirror-btn svg       — icona 1.125rem × 1.125rem a destra
+ */
+
+.hs-mirror-btn {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 3.25rem;
+  padding: 0.375rem 0;
+  padding-left: 0;
+  background: transparent;
+  border: none;
+  border-left: 2px solid transparent;
+  cursor: pointer;
+  color: var(--hs-surface-on-muted);
+  transition:
+    color 0.18s ease,
+    border-left-color 0.18s ease,
+    padding-left 0.18s ease,
+    transform 0.18s ease;
+  outline: none;
+  text-align: left;
+}
+
+.hs-mirror-btn:hover {
+  color: var(--hs-accent);
+  border-left-color: var(--hs-accent);
+  padding-left: 0.75rem;
+  transform: translateX(0.125rem);
+}
+
+.hs-mirror-btn:active {
+  opacity: 0.75;
+}
+
+.hs-mirror-btn:focus-visible {
+  outline: 2px solid var(--hs-accent);
+  outline-offset: 0.25rem;
+  border-radius: 0.25rem;
+}
+
+/* Em-dash — teal accent fisso, non eredita il colore hover */
+.hs-mirror-btn__dash {
+  font-family: var(--hs-font-body);
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--hs-accent);
+  flex-shrink: 0;
+  user-select: none;
+  pointer-events: none;
+  transition: none;
+}
+
+/* "Mirror view" — italic, muted, eredita colore hover dal button */
+.hs-mirror-btn__label {
+  font-family: var(--hs-font-body);
+  font-size: 0.8125rem;
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  user-select: none;
+  pointer-events: none;
+  flex: 1;
+}
+
+/* Icona SVG — a destra, dimensione leggermente più grande */
+.hs-mirror-btn svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  display: block;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* ─── OpalToggle ──────────────────────────────────────────────────────────── */
+/*
+ * Pill toggle (OFF → ON) — singolo pulsante scorrevole.
+ * Pill: 3.5rem × 1.75rem, border-radius 0.875rem.
+ * Knob: 1.25rem × 1.25rem bianco con shadow, scorre da sinistra a destra.
+ * Stato ON:  sfondo teal, knob translateX(1.75rem).
+ * Stato OFF: sfondo rgba(28,28,26,0.12), knob translateX(0).
+ * Disabilitato (Solid/Chrome): opacity 0.3, pointer-events none.
+ *
+ * Structure:
+ *   .hs-opal-toggle              — wrapper (flex row, align center, gap)
+ *   .hs-opal-toggle--disabled    — stato disabilitato
+ *   .hs-opal-toggle__pill        — button role="switch" (pill track)
+ *   .hs-opal-toggle__pill--on    — stato ON (teal)
+ *   .hs-opal-toggle__knob        — pallino scorrevole
+ *   .hs-opal-toggle__state-label — "Off" / "On" label testuale accanto
+ */
+
+.hs-opal-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  transition: opacity 0.2s ease;
+}
+
+.hs-opal-toggle--disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.hs-opal-toggle__pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 3.75rem;
+  height: 1.875rem;
+  border-radius: 0.9375rem;
+  background: rgba(28, 28, 26, 0.12);
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: background 200ms ease;
+  outline: none;
+  flex-shrink: 0;
+}
+
+.hs-opal-toggle__pill--on {
+  background: var(--hs-accent);
+}
+
+.hs-opal-toggle__pill:focus-visible {
+  outline: 2px solid var(--hs-accent);
+  outline-offset: 0.1875rem;
+  box-shadow: 0 0 0 0.25rem rgba(13, 148, 136, 0.15);
+}
+
+.hs-opal-toggle__knob {
+  display: block;
+  width: 1.375rem;
+  height: 1.375rem;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 0.0625rem 0.1875rem rgba(0, 0, 0, 0.18);
+  transform: translateX(0);
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+}
+
+/* Knob translateX = pill-width(3.75rem) - knob-width(1.375rem) - 2×padding(0.5rem) = 1.875rem */
+.hs-opal-toggle__pill--on .hs-opal-toggle__knob {
+  transform: translateX(1.875rem);
+}
+
+.hs-opal-toggle__state-label {
+  font-family: var(--hs-font-body);
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: var(--hs-surface-on-muted);
+  line-height: 1;
+  user-select: none;
+  min-width: 1.25rem;
+}
+
+/* ─── Fullscreen button ───────────────────────────────────────────────────── */
+
+.hs-canvas-fullscreen-btn {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--hs-surface-high-2);
+  border-radius: var(--hs-radius);
+  cursor: pointer;
+  color: var(--hs-surface-on-muted);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+  z-index: 10;
+  padding: 0;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.hs-canvas-fullscreen-btn:hover,
+.hs-canvas-fullscreen-btn:focus-visible {
+  background-color: white;
+  color: var(--hs-surface-on);
+  outline: none;
+}
+
+.hs-canvas-fullscreen-btn svg {
+  width: 1.125rem;
+  height: 1.125rem;
+  display: block;
+  flex-shrink: 0;
+}
+
+/* In fullscreen: sfondo body sul container — evita il nero di default del browser */
+:fullscreen .hs-product-canvas,
+:-webkit-full-screen .hs-product-canvas {
+  background-color: var(--hs-surface, #fafaf8);
+}
+
+/* ::backdrop — pseudo-elemento del browser sotto l'elemento fullscreen.
+   Senza questo, il browser renderizza un rettangolo NERO sotto il canvas.
+   Deve essere impostato sull'elemento che chiama requestFullscreen(). */
+.hs-product-canvas::backdrop {
+  background-color: var(--hs-surface, #fafaf8);
+}
+.hs-product-canvas::-webkit-backdrop {
+  background-color: var(--hs-surface, #fafaf8);
+}
+
+/* In fullscreen: bottone fisso in alto a destra */
+:fullscreen .hs-canvas-fullscreen-btn,
+:-webkit-full-screen .hs-canvas-fullscreen-btn {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 9999;
+}
+
+/* ─── HUD Fullscreen Controls (.hs-fsc) ──────────────────────────────────── */
+/*
+ * HUD overlay system — sidebar editoriale sinistra.
+ *
+ * Design direction: "Luxury Atelier Panel"
+ * Principi:
+ *   - Linea teal verticale con gradiente (::before) — firma visiva sfumata
+ *   - Numerazione sezioni 01/02/03 — gerarchia editoriale raffinata
+ *   - Sfondo con gradiente verticale + backdrop-filter — profondità vetro
+ *   - Finish attivo: bold + indicatore "—" teal — stato marcato
+ *   - Thumbnail 4.75rem — presenza iconica, co-protagoniste del canvas
+ *   - Mirror: nota a piè di pagina — gesto editoriale con nudge hover
+ *
+ * Layout:
+ *   - .hs-fsc__sidebar   — colonna sinistra 28rem, top-left-bottom
+ *       1. .hs-fsc__identity   — identity block (GG-07, Reef, collection)
+ *       2. .hs-fsc__divider    — <hr> separatore sottile
+ *       3. .hs-fsc__section    — finish selector (thumbnail 4.75rem)
+ *       4. .hs-fsc__divider    — <hr> separatore sottile
+ *       5. .hs-fsc__section    — opal pill toggle
+ *       6. .hs-fsc__divider    — <hr> separatore sottile
+ *       7. .hs-fsc__section    — mirror button (nota editoriale)
+ *   - TOP-RIGHT: FullscreenButton (non gestita qui)
+ *
+ * Wrapper (.hs-fsc): position: absolute; inset: 0; pointer-events: none
+ * Animation: opacity fade (wrapper) + translateX slide-in (sidebar)
+ * Visibility: driven by [aria-hidden] attribute selector
+ */
+
+/* ── Wrapper — full-canvas overlay, non-interactive by default ── */
+.hs-fsc {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.hs-fsc[aria-hidden='true'] {
+  opacity: 0;
+}
+
+.hs-fsc[aria-hidden='false'] {
+  opacity: 1;
+}
+
+/* ── Sidebar — colonna verticale ancorata top-left-bottom ── */
+/*
+ * Sfondo: gradiente verticale leggermente più caldo — profondità atelier.
+ * backdrop-filter: blur(12px) — glass-morphism quando contenuto scorre dietro.
+ * Linea teal verticale con gradiente: ::before pseudo-element, 3px, full height.
+ * Bordo destro sottile come separatore editoriale.
+ * pointer-events: auto — zona interattiva.
+ * Transizione: translateX slide-in da sinistra.
+ */
+.hs-fsc__sidebar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: var(--hs-fsc-sidebar-width, 28rem);
+  background: linear-gradient(
+    to bottom,
+    rgba(250, 250, 248, 0.97) 0%,
+    rgba(240, 237, 230, 0.97) 100%
+  );
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-right: 1px solid rgba(28, 28, 26, 0.08);
+  padding: 3rem 2rem 3rem 2.75rem;
+  display: grid;
+  grid-template-rows: auto;
+  grid-template-columns: 1fr;
+  row-gap: 0;
+  overflow-y: auto;
+  pointer-events: auto;
+  transform: translateX(-100%);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Linea teal verticale con gradiente — firma visiva sfumata verso il basso */
+.hs-fsc__sidebar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(
+    to bottom,
+    var(--hs-accent) 0%,
+    rgba(13, 148, 136, 0.3) 100%
+  );
+  pointer-events: none;
+}
+
+.hs-fsc[aria-hidden='false'] .hs-fsc__sidebar {
+  transform: translateX(0);
+}
+
+/* ── Identity block ── */
+/*
+ * Nessun bordo sinistro proprio — la linea ::before della sidebar fa da ancora.
+ * "Reef" come elemento tipografico dominante — peso 800, tracking stretto.
+ * Regola orizzontale sotto la collezione — separatore editoriale sottile.
+ */
+.hs-fsc__identity {
+  padding-left: 0;
+  margin-bottom: 2.75rem;
+}
+
+/* "GG — 07" — overline teal, tracking più ampio */
+.hs-fsc__index {
+  font-family: var(--hs-font-body);
+  font-size: 0.625rem;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--hs-accent);
+  display: block;
+  margin-bottom: 0.75rem;
+}
+
+/* Nome prodotto — elemento tipografico dominante della sidebar */
+.hs-fsc__title {
+  font-family: var(--hs-font-heading);
+  font-size: 4.25rem;
+  font-weight: 800;
+  line-height: 0.88;
+  letter-spacing: -0.05em;
+  color: var(--hs-surface-on);
+  margin: 0 0 0.625rem 0;
+  padding: 0;
+  overflow: visible;
+}
+
+/* Nome collezione — label secondaria */
+.hs-fsc__collection {
+  font-family: var(--hs-font-body);
+  font-size: 0.6875rem;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: 0.04em;
+  color: var(--hs-surface-on-muted);
+  display: block;
+  text-transform: uppercase;
+}
+
+/* Regola orizzontale sotto la collezione — separatore editoriale sottile */
+.hs-fsc__identity::after {
+  content: '';
+  display: block;
+  border-top: 1px solid rgba(28, 28, 26, 0.06);
+  margin-top: 1.25rem;
+}
+
+/* ── Divisore ── */
+.hs-fsc__divider {
+  border: none;
+  border-top: 1px solid rgba(28, 28, 26, 0.08);
+  margin: 0.75rem 0 1.75rem;
+}
+
+/* Sezione Backlight — sempre nel DOM per evitare layout shift.
+ * Quando opal è off: collassata (height 0, overflow hidden, invisible).
+ * Quando opal è on: visibile con transizione fluida. */
+.hs-fsc__section--backlight {
+  overflow: hidden;
+  transition:
+    max-height 0.25s ease,
+    opacity 0.2s ease;
+  max-height: 8rem; /* abbondante per contenere i pill */
+  opacity: 1;
+}
+.hs-fsc__section--backlight-hidden {
+  max-height: 0;
+  opacity: 0;
+  margin-bottom: 0;
+  pointer-events: none;
+}
+
+/* ── Sezione generica ── */
+.hs-fsc__section {
+  display: grid;
+  grid-template-columns: 1fr;
+  row-gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Mirror section: spinta in fondo, nessun margin-bottom */
+.hs-fsc__section--mirror {
+  margin-bottom: 0;
+  align-self: end;
+}
+
+/* ── Section label — numerata editorialmente ── */
+/*
+ * Struttura: <span class="hs-fsc__section-label">
+ *              <span class="hs-fsc__section-num">01</span>
+ *              Select Finish
+ *            </span>
+ * Il numero è teal, tabular-nums, leggermente più piccolo.
+ * Il testo label è uppercase tracking ampio, muted.
+ */
+.hs-fsc__section-label {
+  font-family: var(--hs-font-body);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--hs-surface-on-muted);
+  line-height: 1;
+  user-select: none;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+/* Numero progressivo — teal, tabular, stesso corpo del label */
+.hs-fsc__section-num {
+  font-family: var(--hs-font-body);
+  font-size: 0.625rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+  color: var(--hs-accent);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* ─── BacklightSelector ───────────────────────────────────────────────────── */
+/*
+ * Pill selector per preset retroilluminazione Opal ON.
+ * Struttura:
+ *   .hs-backlight-selector          — wrapper flex row
+ *   .hs-backlight-selector__pill    — singolo pill button
+ *   .hs-backlight-selector__pill--active — stato selezionato (teal)
+ */
+
+.hs-backlight-selector {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+}
+
+.hs-backlight-selector__pill {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--hs-surface-high-3, #d4d4cd);
+  background: transparent;
+  color: var(--hs-surface-on-muted, #5c5c56);
+  font-family: var(--hs-font-body);
+  font-size: 0.8125rem;
+  font-weight: 400;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.hs-backlight-selector__pill:hover {
+  border-color: var(--hs-surface-high-4, #a8a89f);
+  color: var(--hs-surface-on, #1c1c1a);
+  background: var(--hs-surface-high, #f5f5f2);
+}
+
+.hs-backlight-selector__pill--active {
+  background: var(--hs-accent, #0d9488);
+  border-color: var(--hs-accent, #0d9488);
+  color: #ffffff;
+}
+
+.hs-backlight-selector__pill:focus-visible {
+  outline: 2px solid var(--hs-accent, #0d9488);
+  outline-offset: 2px;
+}
