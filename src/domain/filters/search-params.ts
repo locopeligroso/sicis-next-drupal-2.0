@@ -70,21 +70,26 @@ export function parseFiltersFromUrl(
   let contentType: string | null = null;
   const sort = searchParams['sort'] || undefined;
 
+  // Decode + normalize slug segments — Next.js may pass URL-encoded segments
+  // (e.g. 'mosa%C3%AFque' instead of 'mosaïque') and browsers may use NFD
+  // for accented characters. Both would fail === against NFC registry basePaths.
+  const normalizedSlug = slug.map((s) => decodeURIComponent(s).normalize('NFC'));
+
   // Find matching product type config from slug segments
   for (const [ct, config] of Object.entries(FILTER_REGISTRY)) {
     const basePath = config.basePaths[locale] ?? config.basePaths['it'];
     const baseSegments = basePath.split('/');
 
     // Check if slug starts with basePath segments (full match)
-    const fullMatch = baseSegments.every((seg, i) => slug[i] === seg);
+    const fullMatch = baseSegments.every((seg, i) => normalizedSlug[i] === seg);
     // Also try partial match: first segment matches but second doesn't
     // (handles /en/textiles/bedcover where registry says textiles/fabrics)
-    const partialMatch = !fullMatch && baseSegments.length > 1 && slug[0] === baseSegments[0];
+    const partialMatch = !fullMatch && baseSegments.length > 1 && normalizedSlug[0] === baseSegments[0];
     if (!fullMatch && !partialMatch) continue;
 
     contentType = ct;
     const matchedSegments = fullMatch ? baseSegments.length : 1;
-    const afterBase = slug.slice(matchedSegments);
+    const afterBase = normalizedSlug.slice(matchedSegments);
     const [pathSeg1, pathSeg2] = afterBase;
 
     // Detect path-based filters

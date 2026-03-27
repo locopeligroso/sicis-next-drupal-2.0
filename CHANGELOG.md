@@ -4,6 +4,64 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### 2026-03-27
+
+#### New REST View Integration: `mosaic-products` Listing Endpoint
+
+Integrated the new Drupal REST View `mosaic-products/{collectionTid}/{colorTid}` for mosaic product listings, replacing the broken V1 `products/prodotto_mosaico` endpoint for collection pages.
+
+**New fetcher:**
+
+| Fetcher | Endpoint | File |
+| --- | --- | --- |
+| `fetchMosaicProductListing` | `/{locale}/api/v1/mosaic-products/{tid}/{tid}` | `src/lib/api/mosaic-product-listing.ts` |
+
+- Uses `"all"` as wildcard for either filter (e.g. `mosaic-products/58/all` = all products in collection 58)
+- Normalizes `view_node` (full Drupal URL) to relative path via `stripDomain()` + `stripLocalePrefix()`
+- `field_prezzo_on_demand` mapped from `"Off"`/`"On"` to boolean
+- No server-side pagination — endpoint returns all matching items
+
+**Hybrid routing approach (resolve-path TID + renderProductListing UX):**
+
+- `resolvePath()` returns the collection TID directly (e.g. 58 for Murano Smalto) — no extra V3 taxonomy fetch needed
+- New `resolvedTid` parameter on `renderProductListing()` — when set with `prodotto_mosaico`, uses `fetchMosaicProductListing` instead of V1
+- Full `ProductListingTemplate` UX preserved: filter sidebar, context bar, collection popover
+- Single fetch chain: resolve-path (cached 3600s) → mosaic-products/{tid}/all (60s) + filter options (parallel)
+
+**Endpoint shape (`mosaic-products`):**
+
+```
+Response: MosaicProductListingItemRest[]
+Item: { nid, field_titolo_main, field_immagine, field_prezzo_eu, field_prezzo_usa_sheet, field_prezzo_usa_sqft, field_prezzo_on_demand, view_node }
+```
+
+**Files changed:**
+
+- `src/lib/api/mosaic-product-listing.ts` — new fetcher + normalizer
+- `src/app/[locale]/[...slug]/page.tsx` — `mosaico_collezioni` handler in resolve-path intercept, `resolvedTid` param on `renderProductListing`, conditional mosaic endpoint in State 2
+
+---
+
+#### Bug Fix: URL-encoded Slug Segments Breaking FR and RU Locales
+
+French (`/fr/mosaïque/murano-smalto`) and Russian (`/ru/мозаика/murano-smalto`) collection pages rendered in hub mode (category cards only, 0 products) instead of product grid mode.
+
+**Root cause:** Next.js passes `slug[]` params URL-encoded (`mosa%C3%AFque`, `%D0%BC%D0%BE%D0%B7%D0%B0%D0%B8%D0%BA%D0%B0`), not decoded. The `===` comparison against decoded NFC strings in `FILTER_REGISTRY.basePaths` failed silently → `parseFiltersFromUrl` returned no active P0 filter → hub mode.
+
+**Fix:** `decodeURIComponent(s).normalize('NFC')` applied in two places:
+
+- `src/domain/filters/search-params.ts` — slug segments normalized before matching against registry basePaths
+- `src/app/[locale]/[...slug]/page.tsx` — `renderProductListing` basePath matchCount calculation
+
+**Impact:** All 6 locales now render collection pages correctly. This was a latent bug affecting any locale with non-ASCII characters in the URL path (FR `ï`, RU Cyrillic, ES `á`).
+
+**Files changed:**
+
+- `src/domain/filters/search-params.ts`
+- `src/app/[locale]/[...slug]/page.tsx`
+
+---
+
 ### 2026-03-26
 
 #### New REST Endpoint Integration: `resolve-path` + Product Endpoints

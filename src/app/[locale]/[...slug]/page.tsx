@@ -10,6 +10,7 @@ import { fetchTextileProduct } from '@/lib/api/textile-product';
 import type { TextileProduct } from '@/lib/api/textile-product';
 import { fetchPixallProduct } from '@/lib/api/pixall-product';
 import type { PixallProduct } from '@/lib/api/pixall-product';
+import { fetchMosaicProductListing } from '@/lib/api/mosaic-product-listing';
 import { getComponentName } from '@/lib/node-resolver';
 import UnknownEntity from '@/components_legacy/UnknownEntity';
 import { getSectionConfigAsync } from '@/domain/routing/section-config';
@@ -221,6 +222,8 @@ async function renderProductListing({
   slug,
   searchParams: sp,
   locale,
+  resolvedTid,
+  resolvedColorTid,
 }: {
   productType: string;
   title: string;
@@ -228,6 +231,10 @@ async function renderProductListing({
   slug: string[];
   searchParams: Record<string, string | string[]> | undefined;
   locale: string;
+  /** Collection TID from resolve-path — skips V3 name→TID lookup for mosaic-products endpoint */
+  resolvedTid?: number;
+  /** Color TID from resolve-path — for mosaic-products/all/{colorTid} */
+  resolvedColorTid?: number;
 }) {
   const config = FILTER_REGISTRY[productType];
   if (!config) return null;
@@ -241,7 +248,7 @@ async function renderProductListing({
   ).split('/');
   let matchCount = 0;
   for (let i = 0; i < registryBaseSegments.length && i < slug.length; i++) {
-    if (slug[i] === registryBaseSegments[i]) {
+    if (decodeURIComponent(slug[i]).normalize('NFC') === registryBaseSegments[i]) {
       matchCount++;
     } else {
       break;
@@ -388,18 +395,31 @@ async function renderProductListing({
     const currentPage = Math.max(1, parseInt((pageStr as string) ?? '1', 10));
     const offset = (currentPage - 1) * listing.pageSize;
 
+    // When resolvedTid or resolvedColorTid is available (from resolve-path),
+    // use the new mosaic-products endpoint directly — avoids the broken V1
+    // endpoint and the extra V3 name→TID lookup.
+    const useMosaicEndpoint =
+      productType === 'prodotto_mosaico' &&
+      (resolvedTid != null || resolvedColorTid != null);
+
     const [productResult, allFilterOptions] = await Promise.all([
-      fetchProducts({
-        productType,
-        locale,
-        limit: listing.pageSize,
-        offset,
-        filters:
-          parsed.filterDefinitions.length > 0
-            ? parsed.filterDefinitions
-            : undefined,
-        sort: parsed.sort || undefined,
-      }),
+      useMosaicEndpoint
+        ? fetchMosaicProductListing(
+            locale,
+            resolvedTid ?? 'all',
+            resolvedColorTid ?? 'all',
+          )
+        : fetchProducts({
+            productType,
+            locale,
+            limit: listing.pageSize,
+            offset,
+            filters:
+              parsed.filterDefinitions.length > 0
+                ? parsed.filterDefinitions
+                : undefined,
+            sort: parsed.sort || undefined,
+          }),
       fetchAllFilterOptions(productType, locale),
     ]);
     products = productResult.products;
@@ -684,6 +704,29 @@ export default async function SlugPage({
           const legacyNode = pixallToLegacyNode(product, locale);
           return <ProdottoPixall node={legacyNode} />;
         }
+      }
+      // ── Taxonomy terms: mosaico_collezioni / mosaico_colori → mosaic-products endpoint ──
+      // resolve-path gives us the TID directly — pass it to renderProductListing
+      // so it uses the new endpoint without an extra V3 name→TID fetch.
+      if (resolved.bundle === 'mosaico_collezioni') {
+        return renderProductListing({
+          productType: 'prodotto_mosaico',
+          title: deslugify(slug[slug.length - 1]),
+          slug,
+          searchParams: sp,
+          locale,
+          resolvedTid: resolved.nid,
+        });
+      }
+      if (resolved.bundle === 'mosaico_colori') {
+        return renderProductListing({
+          productType: 'prodotto_mosaico',
+          title: deslugify(slug[slug.length - 1]),
+          slug,
+          searchParams: sp,
+          locale,
+          resolvedColorTid: resolved.nid,
+        });
       }
       // Future: add more product bundles here (prodotto_arredo, prodotto_illuminazione)
     }
