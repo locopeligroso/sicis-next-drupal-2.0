@@ -13,7 +13,7 @@
 
 import { cache } from 'react';
 import { DRUPAL_BASE_URL } from '@/lib/drupal';
-import { locales, defaultLocale } from '@/i18n/config';
+import { locales, defaultLocale, toDrupalLocale } from '@/i18n/config';
 import type { Locale } from '@/i18n/config';
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -139,7 +139,7 @@ const MENU_REVALIDATE_S = 600;
 async function fetchMenuForLocale(
   locale: string,
 ): Promise<MenuApiResponse | null> {
-  const url = `${DRUPAL_BASE_URL}/${locale}/api/menu/main`;
+  const url = `${DRUPAL_BASE_URL}/${toDrupalLocale(locale)}/api/menu/main`;
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);

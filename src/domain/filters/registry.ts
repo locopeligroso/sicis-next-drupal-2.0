@@ -23,8 +23,8 @@ export interface FilterOption {
   count?: number;
   /** Count with only P0 filter active — used to distinguish "not in collection" (0) from "filtered out by P1" (0 count but baseCount > 0) */
   baseCount?: number;
-  imageUrl?: string;    // preview image for category cards
-  cssColor?: string;    // fallback CSS color for swatches
+  imageUrl?: string; // preview image for category cards
+  cssColor?: string; // fallback CSS color for swatches
   /** ID of parent category — present for children, absent for roots (from V4 parentPath depth) */
   parentId?: string;
 }
@@ -51,7 +51,7 @@ export interface FilterGroupConfig {
 
 export interface ListingConfig {
   categoryCardRatio: string;
-  productCardRatio: string;   // e.g. "1/1", "1/2"
+  productCardRatio: string; // e.g. "1/1", "1/2"
   categoryGroups: CategoryGroupDef[];
   sortOptions: SortOptionDef[];
   pageSize: number;
@@ -183,6 +183,7 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
       de: 'mosaik',
       es: 'mosaico',
       ru: 'мозаика',
+      us: 'mosaic',
     },
     includes: [
       'field_categoria',
@@ -214,6 +215,7 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
           de: 'farben',
           es: 'colores',
           ru: 'цвета',
+          us: 'colors',
         },
         taxonomyType: 'taxonomy_term--mosaico_colori',
         displayAs: 'buttons',
@@ -245,12 +247,26 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
       categoryCardRatio: '1/1',
       productCardRatio: '1/1',
       categoryGroups: [
-        { filterKey: 'color', labelKey: 'filters.colors', hasImage: false, hasColorSwatch: true },
-        { filterKey: 'collection', labelKey: 'filters.collections', hasImage: true, hasColorSwatch: false },
+        {
+          filterKey: 'color',
+          labelKey: 'filters.colors',
+          hasImage: false,
+          hasColorSwatch: true,
+        },
+        {
+          filterKey: 'collection',
+          labelKey: 'filters.collections',
+          hasImage: true,
+          hasColorSwatch: false,
+        },
       ],
       sortOptions: [
         { labelKey: 'sort.name', field: 'title', direction: 'ASC' },
-        { labelKey: 'sort.collection', field: 'field_collezione.name', direction: 'ASC' },
+        {
+          labelKey: 'sort.collection',
+          field: 'field_collezione.name',
+          direction: 'ASC',
+        },
       ],
       pageSize: 48,
     },
@@ -265,6 +281,7 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
       de: 'glasscheibe-vetrite',
       es: 'láminas-de-vidrio-vetrite',
       ru: 'стеклянные-листы-vetrite',
+      us: 'vetrite-glass-slabs',
     },
     includes: [
       'field_collezione',
@@ -294,6 +311,7 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
           de: 'farben',
           es: 'colores',
           ru: 'цвета',
+          us: 'colors',
         },
         taxonomyType: 'taxonomy_term--vetrite_colori',
         displayAs: 'buttons',
@@ -305,12 +323,26 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
       categoryCardRatio: '1/1',
       productCardRatio: '1/2',
       categoryGroups: [
-        { filterKey: 'color', labelKey: 'filters.colors', hasImage: false, hasColorSwatch: true },
-        { filterKey: 'collection', labelKey: 'filters.collections', hasImage: true, hasColorSwatch: false },
+        {
+          filterKey: 'color',
+          labelKey: 'filters.colors',
+          hasImage: false,
+          hasColorSwatch: true,
+        },
+        {
+          filterKey: 'collection',
+          labelKey: 'filters.collections',
+          hasImage: true,
+          hasColorSwatch: false,
+        },
       ],
       sortOptions: [
         { labelKey: 'sort.name', field: 'title', direction: 'ASC' },
-        { labelKey: 'sort.collection', field: 'field_collezione.name', direction: 'ASC' },
+        {
+          labelKey: 'sort.collection',
+          field: 'field_collezione.name',
+          direction: 'ASC',
+        },
       ],
       pageSize: 48,
     },
@@ -325,6 +357,7 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
       de: 'einrichtung',
       es: 'mueble',
       ru: 'обстановка',
+      us: 'furniture-and-accessories',
     },
     includes: [
       'field_categoria',
@@ -347,11 +380,20 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
       categoryCardRatio: '4/3',
       productCardRatio: '1/1',
       categoryGroups: [
-        { filterKey: 'subcategory', labelKey: 'filters.typologies', hasImage: true, hasColorSwatch: false },
+        {
+          filterKey: 'subcategory',
+          labelKey: 'filters.typologies',
+          hasImage: true,
+          hasColorSwatch: false,
+        },
       ],
       sortOptions: [
         { labelKey: 'sort.name', field: 'title', direction: 'ASC' },
-        { labelKey: 'sort.typology', field: 'field_categoria.title', direction: 'ASC' },
+        {
+          labelKey: 'sort.typology',
+          field: 'field_categoria.title',
+          direction: 'ASC',
+        },
       ],
       pageSize: 48,
     },
@@ -369,6 +411,7 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
       de: 'textilien/stoffe',
       es: 'textiles/telas',
       ru: 'текстильные-изделия/ткани',
+      us: 'textiles/fabrics',
     },
     includes: [
       'field_categoria',
@@ -403,11 +446,20 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
       categoryCardRatio: '4/3',
       productCardRatio: '1/1',
       categoryGroups: [
-        { filterKey: 'category', labelKey: 'filters.categories', hasImage: true, hasColorSwatch: false },
+        {
+          filterKey: 'category',
+          labelKey: 'filters.categories',
+          hasImage: true,
+          hasColorSwatch: false,
+        },
       ],
       sortOptions: [
         { labelKey: 'sort.name', field: 'title', direction: 'ASC' },
-        { labelKey: 'sort.category', field: 'field_categoria.title', direction: 'ASC' },
+        {
+          labelKey: 'sort.category',
+          field: 'field_categoria.title',
+          direction: 'ASC',
+        },
       ],
       pageSize: 48,
     },
@@ -422,6 +474,7 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
       de: 'pixall',
       es: 'pixall',
       ru: 'pixall',
+      us: 'pixall',
     },
     includes: ['field_colori', 'field_forma', 'field_stucco', 'field_immagine'],
     filters: {
@@ -464,6 +517,7 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
       de: 'beleuchtung',
       es: 'iluminacion',
       ru: 'освещение',
+      us: 'lighting',
     },
     includes: ['field_categoria', 'field_finiture', 'field_immagine'],
     filters: {
@@ -481,11 +535,20 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
       categoryCardRatio: '4/3',
       productCardRatio: '1/1',
       categoryGroups: [
-        { filterKey: 'subcategory', labelKey: 'filters.subcategories', hasImage: true, hasColorSwatch: false },
+        {
+          filterKey: 'subcategory',
+          labelKey: 'filters.subcategories',
+          hasImage: true,
+          hasColorSwatch: false,
+        },
       ],
       sortOptions: [
         { labelKey: 'sort.name', field: 'title', direction: 'ASC' },
-        { labelKey: 'sort.subcategory', field: 'field_categoria.title', direction: 'ASC' },
+        {
+          labelKey: 'sort.subcategory',
+          field: 'field_categoria.title',
+          direction: 'ASC',
+        },
       ],
       pageSize: 48,
     },

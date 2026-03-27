@@ -6,14 +6,51 @@ All notable changes to this project will be documented in this file.
 
 ### 2026-03-27
 
+#### US Locale (`/us/`) — Regional variant for the American market
+
+Added `us` as a 7th locale. It mirrors `en` entirely (same Drupal endpoints, same translations) with US-specific conditional rendering on product pages.
+
+**Core infrastructure:**
+
+- `toDrupalLocale()` in `src/i18n/config.ts` — maps `us → en` for all Drupal API calls
+- Applied in 5 API entry points: `apiGet()`, `fetchMenu()`, `fetchMenuForLocale()`, `getTranslatedPath()`, `resolvePath()`
+- `resolvePath()` expands aliases post-response: `aliases.us = aliases.en`
+- `messages/us.json` — copy of `en.json`
+- Filter registry: `basePaths.us` + `pathPrefix.us` for all 6 product types
+
+**Conditional rendering (mosaico + vetrite):**
+
+| Element                                  | `/us/`                           | Other locales |
+| ---------------------------------------- | -------------------------------- | ------------- |
+| Price                                    | `$` (USD) or `$-----` if not set | Hidden        |
+| PricingCard (stock, warehouse, shipping) | Visible                          | Hidden        |
+| Request Sample button                    | Visible                          | Hidden        |
+| Get a Quote button                       | Visible                          | Visible       |
+| Sample image (field_immagine_campione)   | Visible                          | Hidden        |
+| Measurements                             | Inch only                        | mm only       |
+| Grout consumption                        | kg/sqft                          | kg/m²         |
+
+**Components modified:**
+
+- `SpecProductHero` — `isUs` prop gates PricingCard + Request Sample
+- `ProductCta` — `showRequestSample` prop
+- `ProductPricingCard` — unchanged (gated by parent)
+- `MosaicProductPreview` (page.tsx) — locale-aware price cascade, mm/inch branching, sample image gating
+- `ProdottoMosaico` — `getLocale()` for route locale, same conditional logic
+- `ProdottoVetrite` — price section US-only, inch/cm dimension gating
+
+**Files changed:** 14 modified + 3 new (messages/us.json, e2e/us-locale.spec.ts, playwright.config.ts)
+
+---
+
 #### New REST View Integration: `mosaic-products` Listing Endpoint
 
 Integrated the new Drupal REST View `mosaic-products/{collectionTid}/{colorTid}` for mosaic product listings, replacing the broken V1 `products/prodotto_mosaico` endpoint for collection pages.
 
 **New fetcher:**
 
-| Fetcher | Endpoint | File |
-| --- | --- | --- |
+| Fetcher                     | Endpoint                                       | File                                    |
+| --------------------------- | ---------------------------------------------- | --------------------------------------- |
 | `fetchMosaicProductListing` | `/{locale}/api/v1/mosaic-products/{tid}/{tid}` | `src/lib/api/mosaic-product-listing.ts` |
 
 - Uses `"all"` as wildcard for either filter (e.g. `mosaic-products/58/all` = all products in collection 58)

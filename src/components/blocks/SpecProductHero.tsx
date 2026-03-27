@@ -1,30 +1,34 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import Link from "next/link"
-import { Typography } from "@/components/composed/Typography"
-import { ProductCarousel, type ProductCarouselSlide } from "@/components/composed/ProductCarousel"
-import { ProductCta } from "@/components/composed/ProductCta"
-import { ProductPricingCard } from "@/components/composed/ProductPricingCard"
-import { ArrowLink } from "@/components/composed/ArrowLink"
-import { cn } from "@/lib/utils"
+import * as React from 'react';
+import Link from 'next/link';
+import { Typography } from '@/components/composed/Typography';
+import {
+  ProductCarousel,
+  type ProductCarouselSlide,
+} from '@/components/composed/ProductCarousel';
+import { ProductCta } from '@/components/composed/ProductCta';
+import { ProductPricingCard } from '@/components/composed/ProductPricingCard';
+import { ArrowLink } from '@/components/composed/ArrowLink';
+import { cn } from '@/lib/utils';
 
 export interface SpecProductHeroProps {
-  title: string
-  collection?: string
-  collectionHref?: string
-  description?: string
-  slides: ProductCarouselSlide[]
-  hasSample?: boolean
-  onRequestSample?: () => void
-  onGetQuote?: () => void
-  price?: string | null
-  priceUnit?: string
-  inStock?: boolean
-  shippingWarehouse?: string
-  shippingTime?: string
-  discoverUrl?: string
-  discoverLabel?: string
+  title: string;
+  collection?: string;
+  collectionHref?: string;
+  description?: string;
+  slides: ProductCarouselSlide[];
+  hasSample?: boolean;
+  onRequestSample?: () => void;
+  onGetQuote?: () => void;
+  price?: string | null;
+  priceUnit?: string;
+  inStock?: boolean;
+  shippingWarehouse?: string;
+  shippingTime?: string;
+  discoverUrl?: string;
+  discoverLabel?: string;
+  isUs?: boolean;
 }
 
 export function SpecProductHero({
@@ -42,26 +46,35 @@ export function SpecProductHero({
   shippingWarehouse,
   shippingTime,
   discoverUrl,
-  discoverLabel = "Scopri cosa rende i nostri Mosaici Unici",
+  discoverLabel = 'Scopri cosa rende i nostri Mosaici Unici',
+  isUs = false,
 }: SpecProductHeroProps) {
-  const inFlowCtaRef = React.useRef<HTMLDivElement>(null)
-  const [ctaVisible, setCtaVisible] = React.useState(false)
+  const inFlowCtaRef = React.useRef<HTMLDivElement>(null);
+  const [ctaVisible, setCtaVisible] = React.useState(false);
 
   React.useEffect(() => {
-    const el = inFlowCtaRef.current
-    if (!el) return
+    const el = inFlowCtaRef.current;
+    if (!el) return;
     const observer = new IntersectionObserver(
       ([entry]) => setCtaVisible(entry.isIntersecting),
-      { threshold: 0.5 }
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
+      { threshold: 0.5 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
-  const collectionLabel = collection && (
-    collectionHref ? (
-      <Link href={collectionHref} className="hover:underline decoration-primary-text underline-offset-(--underline-offset)">
-        <Typography textRole="subtitle-2" as="span" className="text-primary-text">
+  const collectionLabel =
+    collection &&
+    (collectionHref ? (
+      <Link
+        href={collectionHref}
+        className="hover:underline decoration-primary-text underline-offset-(--underline-offset)"
+      >
+        <Typography
+          textRole="subtitle-2"
+          as="span"
+          className="text-primary-text"
+        >
           {collection}
         </Typography>
       </Link>
@@ -69,8 +82,7 @@ export function SpecProductHero({
       <Typography textRole="subtitle-2" className="text-muted-foreground">
         {collection}
       </Typography>
-    )
-  )
+    ));
 
   return (
     <>
@@ -105,19 +117,22 @@ export function SpecProductHero({
             <div ref={inFlowCtaRef}>
               <ProductCta
                 hasSample={hasSample}
+                showRequestSample={isUs}
                 onRequestSample={onRequestSample}
                 onGetQuote={onGetQuote}
               />
             </div>
 
-            {/* Pricing + Stock Card */}
-            <ProductPricingCard
-              price={price}
-              priceUnit={priceUnit}
-              inStock={inStock}
-              shippingWarehouse={shippingWarehouse}
-              shippingTime={shippingTime}
-            />
+            {/* Pricing + Stock Card — US only */}
+            {isUs && (
+              <ProductPricingCard
+                price={price}
+                priceUnit={priceUnit}
+                inStock={inStock}
+                shippingWarehouse={shippingWarehouse}
+                shippingTime={shippingTime}
+              />
+            )}
 
             {/* Discover link */}
             {discoverUrl && (
@@ -136,16 +151,17 @@ export function SpecProductHero({
       {/* Sticky CTA bar — mobile only, hides when in-flow CTAs are visible */}
       <div
         className={cn(
-          "fixed bottom-0 inset-x-0 z-40 bg-background/95 backdrop-blur-sm border-t px-(--spacing-page) py-3 md:hidden transition-transform duration-300",
-          ctaVisible ? "translate-y-full" : "translate-y-0"
+          'fixed bottom-0 inset-x-0 z-40 bg-background/95 backdrop-blur-sm border-t px-(--spacing-page) py-3 md:hidden transition-transform duration-300',
+          ctaVisible ? 'translate-y-full' : 'translate-y-0',
         )}
       >
         <ProductCta
           hasSample={hasSample}
+          showRequestSample={isUs}
           onRequestSample={onRequestSample}
           onGetQuote={onGetQuote}
         />
       </div>
     </>
-  )
+  );
 }

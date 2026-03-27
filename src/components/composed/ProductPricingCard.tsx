@@ -1,48 +1,60 @@
-import { Typography } from "@/components/composed/Typography"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { CheckCircleIcon, TruckIcon, ClockIcon } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { Typography } from '@/components/composed/Typography';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { CheckCircleIcon, TruckIcon, ClockIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface ProductPricingCardProps {
-  price?: string | null
-  priceUnit?: string
-  inStock?: boolean
-  shippingWarehouse?: string
-  shippingTime?: string
-  className?: string
+  price?: string | null;
+  priceUnit?: string;
+  inStock?: boolean;
+  shippingWarehouse?: string;
+  shippingTime?: string;
+  className?: string;
 }
 
 export function ProductPricingCard({
   price,
-  priceUnit = "/sqft",
+  priceUnit = '/sqft',
   inStock = false,
   shippingWarehouse,
   shippingTime,
   className,
 }: ProductPricingCardProps) {
-  if (!price && !inStock) return null
+  if (!price && !inStock) return null;
 
   return (
-    <Card className={cn("md:max-w-sm", className)}>
+    <Card className={cn('md:max-w-sm', className)}>
       <CardContent className="flex flex-col gap-4">
         {/* Price */}
         {price ? (
           <div className="flex flex-col gap-0.5">
-            <Typography textRole="body-sm" as="span" className="text-muted-foreground">
+            <Typography
+              textRole="body-sm"
+              as="span"
+              className="text-muted-foreground"
+            >
               Starting at
             </Typography>
             <div className="flex items-baseline gap-2">
-              <Typography textRole="h3" as="span">{price}</Typography>
+              <Typography textRole="h3" as="span">
+                {price}
+              </Typography>
               {priceUnit && (
-                <Typography textRole="body-sm" as="span" className="text-muted-foreground">{priceUnit}</Typography>
+                <Typography
+                  textRole="body-sm"
+                  as="span"
+                  className="text-muted-foreground"
+                >
+                  {priceUnit}
+                </Typography>
               )}
             </div>
           </div>
         ) : null}
 
-        {/* Stock + Shipping (only when in stock) */}
+        {/* Stock + Shipping */}
         {inStock ? (
           <>
             {price && <Separator />}
@@ -54,7 +66,11 @@ export function ProductPricingCard({
               {shippingWarehouse && (
                 <div className="flex items-center gap-2">
                   <TruckIcon className="size-4 text-muted-foreground" />
-                  <Typography textRole="body-sm" as="span" className="text-muted-foreground">
+                  <Typography
+                    textRole="body-sm"
+                    as="span"
+                    className="text-muted-foreground"
+                  >
                     {shippingWarehouse}
                   </Typography>
                 </div>
@@ -62,7 +78,11 @@ export function ProductPricingCard({
               {shippingTime && (
                 <div className="flex items-center gap-2">
                   <ClockIcon className="size-4 text-muted-foreground" />
-                  <Typography textRole="body-sm" as="span" className="text-muted-foreground">
+                  <Typography
+                    textRole="body-sm"
+                    as="span"
+                    className="text-muted-foreground"
+                  >
                     {shippingTime}
                   </Typography>
                 </div>
@@ -79,5 +99,5 @@ export function ProductPricingCard({
         )}
       </CardContent>
     </Card>
-  )
+  );
 }

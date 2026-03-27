@@ -248,7 +248,9 @@ async function renderProductListing({
   ).split('/');
   let matchCount = 0;
   for (let i = 0; i < registryBaseSegments.length && i < slug.length; i++) {
-    if (decodeURIComponent(slug[i]).normalize('NFC') === registryBaseSegments[i]) {
+    if (
+      decodeURIComponent(slug[i]).normalize('NFC') === registryBaseSegments[i]
+    ) {
       matchCount++;
     } else {
       break;
@@ -1033,6 +1035,7 @@ async function MosaicProductPreview({
     import('@/components/composed/DocumentCard').DocumentCardItem;
 
   const col = product.collection;
+  const isUs = locale === 'us';
 
   // ── Build carousel slides (same pattern as ProdottoMosaico) ──
   const heroSlides: ProductCarouselSlide[] = [];
@@ -1043,7 +1046,7 @@ async function MosaicProductPreview({
       alt: product.title,
     });
   }
-  if (product.imageSampleUrl) {
+  if (isUs && product.imageSampleUrl) {
     heroSlides.push({
       type: 'image',
       src: product.imageSampleUrl,
@@ -1059,35 +1062,52 @@ async function MosaicProductPreview({
     alt: 'Quality certification',
   });
 
-  // ── Price ──
-  const heroPrice = product.priceUsaSqft
-    ? `$${product.priceUsaSqft}`
-    : product.priceUsaSheet
-      ? `$${product.priceUsaSheet}`
-      : product.priceEu
-        ? `€${product.priceEu}`
-        : null;
-  const heroPriceUnit = product.priceUsaSqft
-    ? '/sqft'
-    : product.priceUsaSheet
-      ? '/sheet'
-      : product.priceEu
-        ? '/m²'
-        : undefined;
+  // ── Price — US: USD fields, fallback $-----; other locales: EUR only ──
+  const heroPrice = isUs
+    ? product.priceUsaSqft
+      ? `$${product.priceUsaSqft}`
+      : product.priceUsaSheet
+        ? `$${product.priceUsaSheet}`
+        : '$-----'
+    : product.priceEu
+      ? `€${product.priceEu}`
+      : null;
+  const heroPriceUnit = isUs
+    ? product.priceUsaSqft
+      ? '/sqft'
+      : product.priceUsaSheet
+        ? '/sheet'
+        : undefined
+    : product.priceEu
+      ? '/m²'
+      : undefined;
 
   // ── Details block data (from collection) ──
+  // US: inch only; other locales: mm only
   const detailAttributes: AttributeItem[] = col
-    ? [
-        ...(col.sheetSizeInch
-          ? [{ label: 'Sheet size', value: col.sheetSizeInch }]
-          : []),
-        ...(col.chipSizeInch
-          ? [{ label: 'Chip size', value: col.chipSizeInch }]
-          : []),
-        ...(col.thicknessInch
-          ? [{ label: 'Thickness', value: col.thicknessInch }]
-          : []),
-      ]
+    ? isUs
+      ? [
+          ...(col.sheetSizeInch
+            ? [{ label: 'Sheet size', value: col.sheetSizeInch }]
+            : []),
+          ...(col.chipSizeInch
+            ? [{ label: 'Chip size', value: col.chipSizeInch }]
+            : []),
+          ...(col.thicknessInch
+            ? [{ label: 'Thickness', value: col.thicknessInch }]
+            : []),
+        ]
+      : [
+          ...(col.sheetSizeMm
+            ? [{ label: 'Sheet size', value: col.sheetSizeMm }]
+            : []),
+          ...(col.chipSizeMm
+            ? [{ label: 'Chip size', value: col.chipSizeMm }]
+            : []),
+          ...(col.thicknessMm
+            ? [{ label: 'Thickness', value: col.thicknessMm }]
+            : []),
+        ]
     : [];
 
   // ── Specs block data (from collection) ──
@@ -1174,6 +1194,7 @@ async function MosaicProductPreview({
         }
         shippingTime={!product.noUsaStock ? '2-3 weeks' : undefined}
         discoverUrl={discoverHref}
+        isUs={isUs}
       />
 
       {/* ── Details Block ── */}
@@ -1200,9 +1221,13 @@ async function MosaicProductPreview({
             product.grouts.length > 0 ? product.grouts[0].imageSrc : undefined
           }
           groutConsumption={
-            col?.groutConsumptionM2 != null
-              ? `${col.groutConsumptionM2} kg/m²`
-              : undefined
+            isUs
+              ? col?.groutConsumptionSqft != null
+                ? `${col.groutConsumptionSqft} kg/sqft`
+                : undefined
+              : col?.groutConsumptionM2 != null
+                ? `${col.groutConsumptionM2} kg/m²`
+                : undefined
           }
           maintenanceHtml={maintenanceHtml}
           maintenanceLabel="Maintenance and installation"

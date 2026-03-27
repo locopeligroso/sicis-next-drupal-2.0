@@ -3,7 +3,7 @@
 // ════════════════════════════════════════════════════════════════════════════
 
 import { cache } from 'react';
-import { locales } from '@/i18n/config';
+import { locales, toDrupalLocale } from '@/i18n/config';
 import { DRUPAL_BASE_URL } from './config';
 
 export interface MenuItem {
@@ -24,26 +24,35 @@ export interface Menu {
  * Passing the locale prefix ensures Drupal returns path aliases in the
  * correct language (e.g. /mosaic/... for EN, /mosaico/... for IT).
  */
-export const fetchMenu = cache(async (menuName: string, locale?: string): Promise<Menu | null> => {
-  try {
-    const localePrefix = locale ? `/${locale}` : '';
-    const url = `${DRUPAL_BASE_URL}${localePrefix}/api/menu/${menuName}`;
+export const fetchMenu = cache(
+  async (menuName: string, locale?: string): Promise<Menu | null> => {
+    try {
+      const drupalLocale = locale ? toDrupalLocale(locale) : undefined;
+      const localePrefix = drupalLocale ? `/${drupalLocale}` : '';
+      const url = `${DRUPAL_BASE_URL}${localePrefix}/api/menu/${menuName}`;
 
-    const res = await fetch(url, {
-      next: { revalidate: 600 }, // Cache for 10 minutes
-    });
+      const res = await fetch(url, {
+        next: { revalidate: 600 }, // Cache for 10 minutes
+      });
 
-    if (!res.ok) {
-      console.error(`[fetchMenu] HTTP ${res.status} for "${menuName}"`, { locale, url });
+      if (!res.ok) {
+        console.error(`[fetchMenu] HTTP ${res.status} for "${menuName}"`, {
+          locale,
+          url,
+        });
+        return null;
+      }
+
+      return res.json();
+    } catch (error) {
+      console.error(`[fetchMenu] Network error for "${menuName}"`, {
+        locale,
+        error: error instanceof Error ? error.message : error,
+      });
       return null;
     }
-
-    return res.json();
-  } catch (error) {
-    console.error(`[fetchMenu] Network error for "${menuName}"`, { locale, error: error instanceof Error ? error.message : error });
-    return null;
-  }
-});
+  },
+);
 
 /**
  * Recursively transforms a single menu item and all its descendants.
@@ -53,7 +62,9 @@ function transformItemRecursive(item: MenuItem, locale: string): MenuItem {
   return {
     ...item,
     url: normalizeUrl(item.url, locale),
-    children: item.children.map((child) => transformItemRecursive(child, locale)),
+    children: item.children.map((child) =>
+      transformItemRecursive(child, locale),
+    ),
   };
 }
 
@@ -63,7 +74,7 @@ function transformItemRecursive(item: MenuItem, locale: string): MenuItem {
  */
 export function transformMenuToNavItems(
   menu: Menu | null,
-  locale: string
+  locale: string,
 ): MenuItem[] {
   if (!menu?.items) return [];
   return menu.items.map((item) => transformItemRecursive(item, locale));
@@ -87,8 +98,8 @@ function normalizeUrl(url: string, locale: string): string {
     try {
       return new URL(
         process.env.DRUPAL_BASE_URL ||
-        process.env.NEXT_PUBLIC_DRUPAL_BASE_URL ||
-        'http://localhost'
+          process.env.NEXT_PUBLIC_DRUPAL_BASE_URL ||
+          'http://localhost',
       ).pathname.replace(/\/$/, '');
     } catch {
       return '';

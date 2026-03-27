@@ -1,4 +1,5 @@
 import { DRUPAL_BASE_URL } from '@/lib/drupal/config';
+import { toDrupalLocale } from '@/i18n/config';
 
 /**
  * Drupal REST endpoints require locale prefix BEFORE /api/v1:
@@ -14,7 +15,10 @@ export async function apiGet<T>(
 ): Promise<T | null> {
   // path comes in as "/{locale}/endpoint" — insert /api/v1 after locale
   // e.g. "/it/entity" → "/it/api/v1/entity"
-  const pathWithApi = path.replace(/^\/([a-z]{2})\//, '/$1/api/v1/');
+  const pathWithApi = path.replace(
+    /^\/([a-z]{2})\//,
+    (_match, loc: string) => `/${toDrupalLocale(loc)}/api/v1/`,
+  );
   const url = new URL(`${DRUPAL_BASE_URL}${pathWithApi}`);
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== null) {
@@ -30,7 +34,9 @@ export async function apiGet<T>(
 
     if (!res.ok) {
       if (res.status === 404) return null;
-      console.error(`API error: ${res.status} ${res.statusText} for ${url.pathname}`);
+      console.error(
+        `API error: ${res.status} ${res.statusText} for ${url.pathname}`,
+      );
       return null;
     }
 

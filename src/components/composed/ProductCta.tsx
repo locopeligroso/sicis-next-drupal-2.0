@@ -1,17 +1,19 @@
-"use client"
+'use client';
 
-import { Button } from "@/components/ui/button"
-import { PackageIcon, FileTextIcon } from "lucide-react"
+import { Button } from '@/components/ui/button';
+import { PackageIcon, FileTextIcon } from 'lucide-react';
 
 interface ProductCtaProps {
-  hasSample?: boolean
-  onRequestSample?: () => void
-  onGetQuote?: () => void
-  className?: string
+  hasSample?: boolean;
+  showRequestSample?: boolean;
+  onRequestSample?: () => void;
+  onGetQuote?: () => void;
+  className?: string;
 }
 
 export function ProductCta({
   hasSample = true,
+  showRequestSample = true,
   onRequestSample,
   onGetQuote,
   className,
@@ -19,8 +21,13 @@ export function ProductCta({
   return (
     <div className={className}>
       <div className="flex gap-3 md:max-w-sm">
-        {hasSample && (
-          <Button size="lg" variant="outline" className="flex-1" onClick={onRequestSample}>
+        {hasSample && showRequestSample && (
+          <Button
+            size="lg"
+            variant="outline"
+            className="flex-1"
+            onClick={onRequestSample}
+          >
             <PackageIcon data-icon="inline-start" />
             Request Sample
           </Button>
@@ -31,5 +38,5 @@ export function ProductCta({
         </Button>
       </div>
     </div>
-  )
+  );
 }

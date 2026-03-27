@@ -2,6 +2,7 @@
 
 import { getTranslatedPath as _getTranslatedPath } from '@/lib/api/translate-path';
 import { resolvePath } from '@/lib/api/resolve-path';
+import { toDrupalLocale } from '@/i18n/config';
 
 /**
  * Server Action wrapper for getTranslatedPath.
@@ -19,32 +20,36 @@ export async function getTranslatedPath(
   // Browser pathname arrives encoded; Drupal expects decoded UTF-8 aliases.
   const decodedPath = decodeURIComponent(drupalPath);
 
+  // Map locales to Drupal equivalents for API calls (e.g. us → en)
+  const drupalCurrentLocale = toDrupalLocale(currentLocale);
+  const drupalTargetLocale = toDrupalLocale(targetLocale);
+
   // Try C2 first (legacy endpoint)
   const c2Result = await _getTranslatedPath(
     decodedPath,
-    currentLocale,
-    targetLocale,
+    drupalCurrentLocale,
+    drupalTargetLocale,
   );
   if (c2Result) {
-    console.log(
-      `[getTranslatedPath] C2 hit: ${decodedPath} (${currentLocale}→${targetLocale}) = ${c2Result}`,
-    );
-    return c2Result;
+    // C2 returns a path with the Drupal locale prefix (e.g. /en/mosaic/...).
+    // If targetLocale differs from drupalTargetLocale (e.g. us vs en),
+    // replace the Drupal locale prefix with the actual Next.js locale.
+    const normalizedC2 =
+      drupalTargetLocale !== targetLocale
+        ? c2Result.replace(
+            new RegExp(`^/${drupalTargetLocale}(/|$)`),
+            `/${targetLocale}$1`,
+          )
+        : c2Result;
+    return normalizedC2;
   }
 
   // Fallback: use R1 resolve-path aliases
   const resolved = await resolvePath(decodedPath, currentLocale);
-  console.log(
-    `[getTranslatedPath] R1 fallback: ${drupalPath} (${currentLocale}→${targetLocale}), resolved=${!!resolved}, aliases=${JSON.stringify(resolved?.aliases)}`,
-  );
   if (resolved?.aliases?.[targetLocale]) {
     const result = `/${targetLocale}${resolved.aliases[targetLocale]}`;
-    console.log(`[getTranslatedPath] R1 result: ${result}`);
     return result;
   }
 
-  console.log(
-    `[getTranslatedPath] FAILED: ${drupalPath} (${currentLocale}→${targetLocale})`,
-  );
   return null;
 }

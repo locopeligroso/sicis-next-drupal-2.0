@@ -1,5 +1,6 @@
 import { cache } from 'react';
 import { apiGet } from './client';
+import { locales, toDrupalLocale } from '@/i18n/config';
 import type { ResolvePathResponse } from './types';
 
 /**
@@ -18,10 +19,30 @@ import type { ResolvePathResponse } from './types';
  */
 export const resolvePath = cache(
   async (path: string, locale: string): Promise<ResolvePathResponse | null> => {
-    return apiGet<ResolvePathResponse>(
+    const data = await apiGet<ResolvePathResponse>(
       `/${locale}/resolve-path`,
       { path },
       3600, // Path aliases rarely change
     );
+
+    if (!data) return null;
+
+    // Expand aliases for locales that alias to a Drupal locale (e.g. us → en).
+    // Drupal has no 'us' locale, so aliases will never include a 'us' key.
+    // Mirror the Drupal locale's alias so callers can look up by Next.js locale.
+    if (data.aliases) {
+      for (const loc of locales) {
+        const drupalLoc = toDrupalLocale(loc);
+        if (
+          drupalLoc !== loc &&
+          data.aliases[drupalLoc] &&
+          !data.aliases[loc]
+        ) {
+          data.aliases[loc] = data.aliases[drupalLoc];
+        }
+      }
+    }
+
+    return data;
   },
 );

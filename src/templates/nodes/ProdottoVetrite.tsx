@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, getLocale } from 'next-intl/server';
 import DrupalImage from '@/components_legacy/DrupalImage';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { sanitizeHtml } from '@/lib/sanitize';
@@ -51,7 +51,8 @@ export default async function ProdottoVetrite({
   const tCommon = await getTranslations('common');
 
   const title = getTextValue(typedNode.field_titolo_main) || typedNode.title;
-  const locale = typedNode.langcode ?? 'it';
+  const locale = await getLocale();
+  const isUs = locale === 'us';
 
   // ── Collezione parent ─────────────────────────────────────────────────────
   const collezioneData = typedNode.field_collezione;
@@ -238,22 +239,22 @@ export default async function ProdottoVetrite({
               gap: '1.25rem',
             }}
           >
-            {collSpessoreMm && (
+            {!isUs && collSpessoreMm && (
               <LabeledValue label={t('thicknessMm')} value={collSpessoreMm} />
             )}
-            {collSpessoreInch && (
+            {isUs && collSpessoreInch && (
               <LabeledValue
                 label={t('thicknessInch')}
                 value={collSpessoreInch}
               />
             )}
-            {collSpessoreExtraMm && (
+            {!isUs && collSpessoreExtraMm && (
               <LabeledValue
                 label={t('thicknessExtraMm')}
                 value={collSpessoreExtraMm}
               />
             )}
-            {collSpessoreExtraInch && (
+            {isUs && collSpessoreExtraInch && (
               <LabeledValue
                 label={t('thicknessExtraInch')}
                 value={collSpessoreExtraInch}
@@ -279,26 +280,28 @@ export default async function ProdottoVetrite({
               gap: '1.25rem',
             }}
           >
-            {dimCm && <LabeledValue label={t('dimensionsCm')} value={dimCm} />}
-            {dimInch && (
+            {!isUs && dimCm && (
+              <LabeledValue label={t('dimensionsCm')} value={dimCm} />
+            )}
+            {isUs && dimInch && (
               <LabeledValue label={t('dimensionsInch')} value={dimInch} />
             )}
-            {collDimensioniExtraCm && (
+            {!isUs && collDimensioniExtraCm && (
               <LabeledValue
                 label={t('dimensionsExtraCm')}
                 value={collDimensioniExtraCm}
               />
             )}
-            {collDimensioniExtraInch && (
+            {isUs && collDimensioniExtraInch && (
               <LabeledValue
                 label={t('dimensionsExtraInch')}
                 value={collDimensioniExtraInch}
               />
             )}
-            {prodPatternCm && (
+            {!isUs && prodPatternCm && (
               <LabeledValue label={t('patternCm')} value={prodPatternCm} />
             )}
-            {prodPatternInch && (
+            {isUs && prodPatternInch && (
               <LabeledValue label={t('patternInch')} value={prodPatternInch} />
             )}
             {formatoCampione && (
@@ -468,8 +471,8 @@ export default async function ProdottoVetrite({
         </section>
       )}
 
-      {/* ── 14. Prezzi ───────────────────────────────────────────────────────── */}
-      {(prezzoEu || prezzoUsa || prezzoOnDemand) && (
+      {/* ── 14. Prezzi — visible only on /us/ ───────────────────────────────── */}
+      {isUs && (
         <section className={styles.section} aria-labelledby="prezzo-heading">
           <h2 id="prezzo-heading" className={styles.sectionHeading}>
             {t('price')}
@@ -480,16 +483,9 @@ export default async function ProdottoVetrite({
             </p>
           ) : (
             <div style={{ display: 'flex', gap: '2rem' }}>
-              {prezzoEu && (
-                <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>
-                  {prezzoEu}€
-                </p>
-              )}
-              {prezzoUsa && !noUsaStock && (
-                <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>
-                  {prezzoUsa}$
-                </p>
-              )}
+              <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>
+                {prezzoUsa ? `$${prezzoUsa}` : '$-----'}
+              </p>
             </div>
           )}
         </section>

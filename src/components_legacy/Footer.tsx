@@ -51,6 +51,14 @@ const PRODUCT_LINKS: Record<string, { label: string; href: string }[]> = {
     { label: 'Pixall', href: '/ru/pixall' },
     { label: 'Освещение', href: '/ru/категория/освещение' },
   ],
+  us: [
+    { label: 'Mosaic', href: '/us/mosaic' },
+    { label: 'Vetrite', href: '/us/vetrite-glass-slabs' },
+    { label: 'Furniture', href: '/us/furniture-and-accessories' },
+    { label: 'Textile', href: '/us/textiles/fabrics' },
+    { label: 'Pixall', href: '/us/pixall' },
+    { label: 'Lighting', href: '/us/category/lighting' },
+  ],
 };
 
 const COMPANY_LINKS: Record<string, { label: string; href: string }[]> = {
@@ -89,6 +97,12 @@ const COMPANY_LINKS: Record<string, { label: string; href: string }[]> = {
     { label: 'Новости', href: '/ru/news' },
     { label: 'Шоурум', href: '/ru/showroom' },
     { label: 'Контакты', href: '/ru/contatti' },
+  ],
+  us: [
+    { label: 'Projects', href: '/us/projects' },
+    { label: 'News', href: '/us/news' },
+    { label: 'Showroom', href: '/us/showroom' },
+    { label: 'Contact', href: '/us/contatti' },
   ],
 };
 
@@ -147,7 +161,9 @@ export default function Footer({ locale, initialMenu }: FooterProps) {
               ? 'Produkte'
               : locale === 'es'
                 ? 'Productos'
-                : 'Продукция',
+                : locale === 'us'
+                  ? 'Products'
+                  : 'Продукция',
     company:
       locale === 'it'
         ? 'Azienda'
@@ -159,7 +175,9 @@ export default function Footer({ locale, initialMenu }: FooterProps) {
               ? 'Unternehmen'
               : locale === 'es'
                 ? 'Empresa'
-                : 'Компания',
+                : locale === 'us'
+                  ? 'Company'
+                  : 'Компания',
   };
 
   return (
@@ -193,19 +211,41 @@ export default function Footer({ locale, initialMenu }: FooterProps) {
           >
             SICIS
           </p>
-          <p style={{ fontSize: '0.875rem', color: '#aaa', margin: 0, lineHeight: 1.6 }}>
+          <p
+            style={{
+              fontSize: '0.875rem',
+              color: '#aaa',
+              margin: 0,
+              lineHeight: 1.6,
+            }}
+          >
             The Art of Mosaic
           </p>
         </div>
 
         <div>
-          <p style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#888', margin: '0 0 1rem' }}>
+          <p
+            style={{
+              fontSize: '0.75rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              color: '#888',
+              margin: '0 0 1rem',
+            }}
+          >
             {labels.products}
           </p>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
             {products.map((item) => (
               <li key={item.href} style={{ marginBottom: '0.5rem' }}>
-                <Link href={item.href} style={{ fontSize: '0.875rem', color: '#ccc', textDecoration: 'none' }}>
+                <Link
+                  href={item.href}
+                  style={{
+                    fontSize: '0.875rem',
+                    color: '#ccc',
+                    textDecoration: 'none',
+                  }}
+                >
                   {item.label}
                 </Link>
               </li>
@@ -214,13 +254,28 @@ export default function Footer({ locale, initialMenu }: FooterProps) {
         </div>
 
         <div>
-          <p style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#888', margin: '0 0 1rem' }}>
+          <p
+            style={{
+              fontSize: '0.75rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              color: '#888',
+              margin: '0 0 1rem',
+            }}
+          >
             {labels.company}
           </p>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
             {company.map((item) => (
               <li key={item.href} style={{ marginBottom: '0.5rem' }}>
-                <Link href={item.href} style={{ fontSize: '0.875rem', color: '#ccc', textDecoration: 'none' }}>
+                <Link
+                  href={item.href}
+                  style={{
+                    fontSize: '0.875rem',
+                    color: '#ccc',
+                    textDecoration: 'none',
+                  }}
+                >
                   {item.label}
                 </Link>
               </li>
