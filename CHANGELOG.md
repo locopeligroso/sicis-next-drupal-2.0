@@ -4,6 +4,37 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### 2026-03-28
+
+#### Endpoint nomenclature overhaul — descriptive names replace opaque codes
+
+Replaced all shorthand endpoint codes (P1, V3, R1, C1, etc.) with self-describing names throughout documentation and source comments. Convention: **singular = detail** (`mosaic-product`), **plural = listing** (`mosaic-products`). The name matches the Drupal endpoint path.
+
+**Endpoint status classification:**
+
+- **11 NEW definitive endpoints** (type-specific, NID/TID path params, no pagination): `resolve-path`, `mosaic-product`, `vetrite-product`, `textile-product`, `pixall-product`, `mosaic-products`, `vetrite-products`, `textile-products`, `pixall-products`, `mosaic-colors`, `mosaic-collections`
+- **14 LEGACY endpoints** (generic Drupal Views, to be rewritten as dedicated endpoints): `entity`, `translate-path`, `products`, `product-counts`, `taxonomy`, `category-options`, `blog`, `projects`, `environments`, `showrooms`, `documents`, `subcategories`, `pages-by-category`, `menu`
+
+**Files changed:** 24 (9 docs, 14 source comments, 1 new script). No runtime code modified — comments and documentation only.
+
+**Verification script:** `scripts/check-endpoints.sh` — curls all 25 endpoints against Drupal and reports HTTP status. Run when local database is online to verify which LEGACY views are active vs disabled.
+
+#### CLAUDE.md reduction — extracted 4 sections to docs/
+
+Reduced `CLAUDE.md` from 56K to 18K chars by extracting large reference sections:
+
+- `docs/ARCHITECTURE.md` (22K) — data layer, endpoint reference, routing pipeline, revalidation
+- `docs/DESIGN_SYSTEM.md` (5K) — blocks, composed, primitives, ParagraphResolver
+- `docs/TEMPLATES_MIGRATION.md` (6K) — node/taxonomy template status matrix
+- `docs/DATA_LAYER_ANALYSIS.md` (8K) — uniformity analysis, 5 heterogeneous problem areas
+
+Each extracted section replaced with 3-5 bullet summary + link in CLAUDE.md.
+
+#### Project configuration initialized
+
+- Created project-specific `CLAUDE.md` at `~/.claude/projects/` with stack, agent routing, critical rules, endpoint architecture overview
+- Initialized project memory index at `~/.claude/projects/.../memory/MEMORY.md`
+
 ### 2026-03-27
 
 #### R3F 3D Glass Slab Viewer — Interactive canvas on vetrite product pages
@@ -41,6 +72,7 @@ Replaced the static main product image on `ProdottoVetrite` with an interactive 
 Replaced the old SpecHubMosaico implementation (which used V3 taxonomy endpoints) with data fetched directly from two Drupal Views REST exports: `mosaic-colors` and `mosaic-collections`.
 
 **New fetcher:** `src/lib/api/mosaic-hub.ts`
+
 - `fetchMosaicColors(locale)` — `/{locale}/api/v1/mosaic-colors` → `MosaicTermItem[]`
 - `fetchMosaicCollections(locale)` — `/{locale}/api/v1/mosaic-collections` → `MosaicTermItem[]`
 - Response shape: `{ name, field_immagine, view_taxonomy_term }` → normalized to `{ name, imageUrl, href }`
@@ -48,6 +80,7 @@ Replaced the old SpecHubMosaico implementation (which used V3 taxonomy endpoints
 - Revalidate: 3600s
 
 **SpecHubMosaico rewrite:**
+
 - Uses DS blocks: `HubSection` (h2 + hr wrapper) + `CategoryCard` (image + title link)
 - Colors rendered with `hasColorSwatch` (circular 64px swatch)
 - Collections rendered with full image (`object-cover`)
@@ -55,14 +88,15 @@ Replaced the old SpecHubMosaico implementation (which used V3 taxonomy endpoints
 
 **i18n — missing hub keys added to 5 locales:**
 
-| Key | EN | FR | DE | ES | RU |
-|-----|----|----|----|----|-----|
-| `hub.exploreByColor` | Explore by colour | Explorer par couleur | Nach Farbe entdecken | Explorar por color | По цвету |
-| `hub.exploreByCollection` | Explore by collection | Explorer par collection | Nach Kollektion entdecken | Explorar por colección | По коллекции |
-| `hub.exploreByTypology` | Explore by typology | Explorer par typologie | Nach Typologie entdecken | Explorar por tipología | По типологии |
-| `hub.solidColours` | Solid Colours | Couleurs unies | Unifarben | Colores sólidos | Однотонные цвета |
+| Key                       | EN                    | FR                      | DE                        | ES                     | RU               |
+| ------------------------- | --------------------- | ----------------------- | ------------------------- | ---------------------- | ---------------- |
+| `hub.exploreByColor`      | Explore by colour     | Explorer par couleur    | Nach Farbe entdecken      | Explorar por color     | По цвету         |
+| `hub.exploreByCollection` | Explore by collection | Explorer par collection | Nach Kollektion entdecken | Explorar por colección | По коллекции     |
+| `hub.exploreByTypology`   | Explore by typology   | Explorer par typologie  | Nach Typologie entdecken  | Explorar por tipología | По типологии     |
+| `hub.solidColours`        | Solid Colours         | Couleurs unies          | Unifarben                 | Colores sólidos        | Однотонные цвета |
 
 **Encoded slug routing fix (FR `mosaïque`, RU `мозаика`):**
+
 - `page.tsx`: `singleSlug` now decoded + NFC-normalized before `LISTING_SLUG_OVERRIDES.has()` check
 - `section-config.ts`: both `getSectionConfig()` and `getSectionConfigAsync()` decode + NFC-normalize slug segments
 - `registry.ts`: `deslugify()` decodes URL-encoded slugs before `SLUG_OVERRIDES` lookup
