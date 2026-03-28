@@ -1,7 +1,10 @@
 import { cache } from 'react';
 import { DRUPAL_BASE_URL } from '@/lib/drupal/config';
 import { apiGet, stripDomain, stripLocalePrefix, emptyToNull } from './client';
-import type { PaginatedResponse, ProductCard as RestProductCard } from './types';
+import type {
+  PaginatedResponse,
+  ProductCard as RestProductCard,
+} from './types';
 import type { FilterDefinition } from '@/domain/filters/search-params';
 
 // ── Re-export ProductCard from the old interface shape ──────────────────────
@@ -15,8 +18,8 @@ export interface ProductCard {
   type: string;
   title: string;
   subtitle: string | null;
-  imageUrl: string | null;        // field_immagine_anteprima (preview for cards)
-  imageUrlMain: string | null;    // field_immagine (full-size for detail page)
+  imageUrl: string | null; // field_immagine_anteprima (preview for cards)
+  imageUrlMain: string | null; // field_immagine (full-size for detail page)
   price: string | null;
   priceOnDemand: boolean;
   path: string | null;
@@ -57,7 +60,7 @@ const DRUPAL_FIELD_TO_REST_PARAM: Record<string, string> = {
   'field_texture.name': 'texture',
   'field_tessuto.name': 'fabric',
   'field_categoria.title': 'category',
-  // 'field_categoria.id' → 'category_id' — NOT supported by V1 Views endpoint (ignored silently)
+  // 'field_categoria.id' → 'category_id' — NOT supported by products (legacy) Views endpoint (ignored silently)
   'field_tipologia.name': 'type',
   'field_tipologia_tessuto.name': 'type',
   'field_colore.name': 'color',
@@ -75,7 +78,9 @@ function filtersToQueryParams(
   for (const filter of filters) {
     const paramKey = DRUPAL_FIELD_TO_REST_PARAM[filter.field];
     if (!paramKey) {
-      console.warn(`[filtersToQueryParams] No REST param mapping for field: ${filter.field}`);
+      console.warn(
+        `[filtersToQueryParams] No REST param mapping for field: ${filter.field}`,
+      );
       continue;
     }
     // REST endpoint accepts comma-separated values for multi-value filters
@@ -124,7 +129,7 @@ function normalizeProduct(item: RestProductCard): ProductCard {
 // ── Public API ──────────────────────────────────────────────────────────────
 
 /**
- * Fetches products from the REST V1 endpoint.
+ * Fetches products from the products endpoint ⚠️ LEGACY.
  * Drop-in replacement for the old JSON:API-based `fetchProducts`.
  *
  * Endpoint: `/{locale}/products/{productType}`
@@ -180,7 +185,7 @@ export const fetchProducts = cache(
 );
 
 /**
- * Fetches product counts per filter value from the REST V2 endpoint.
+ * Fetches product counts per filter value from the product-counts endpoint.
  * The server does aggregation — no more client-side pagination loops.
  *
  * Endpoint: `/{locale}/products/{productType}/counts/{restParam}`
@@ -199,22 +204,21 @@ export async function fetchFilterCounts(
   drupalField: string,
   locale: string,
 ): Promise<Record<string, number>> {
-  // V2 URL uses the REST param name (e.g. "category"), not the registry key (e.g. "subcategory")
+  // product-counts URL uses the REST param name (e.g. "category"), not the registry key (e.g. "subcategory")
   const restParam = DRUPAL_FIELD_TO_REST_PARAM[drupalField];
   if (!restParam) {
-    console.warn(`[fetchFilterCounts] No REST param for field: ${drupalField} (key: ${filterKey})`);
+    console.warn(
+      `[fetchFilterCounts] No REST param for field: ${drupalField} (key: ${filterKey})`,
+    );
     return {};
   }
 
   // Exclude the filter we're counting from active filters
-  const otherFilters = activeFilters.filter(
-    (f) => f.field !== drupalField,
-  );
+  const otherFilters = activeFilters.filter((f) => f.field !== drupalField);
 
   // Convert remaining active filters to REST query params
-  const filterParams = otherFilters.length > 0
-    ? filtersToQueryParams(otherFilters)
-    : {};
+  const filterParams =
+    otherFilters.length > 0 ? filtersToQueryParams(otherFilters) : {};
 
   const result = await apiGet<{ counts: Record<string, number> }>(
     `/${locale}/products/${productType}/counts/${restParam}`,
@@ -228,49 +232,49 @@ export async function fetchFilterCounts(
 // ── Pure utility (migrated from src/lib/drupal/products.ts) ─────────────────
 
 /** Maps categoria title (all 6 locales) to Drupal product type.
- *  Titles verified against C1 entity endpoint 2026-03-24. */
+ *  Titles verified against entity endpoint 2026-03-24. */
 export function getCategoriaProductType(categoriaTitle: string): string | null {
   const map: Record<string, string> = {
     // Mosaico — IT+ES share "Mosaico"
-    'Mosaico': 'prodotto_mosaico',       // IT + ES
-    'Mosaic': 'prodotto_mosaico',        // EN
-    'Mosaïque': 'prodotto_mosaico',      // FR
-    'Mosaik': 'prodotto_mosaico',        // DE
-    'Мозаика': 'prodotto_mosaico',       // RU
+    Mosaico: 'prodotto_mosaico', // IT + ES
+    Mosaic: 'prodotto_mosaico', // EN
+    Mosaïque: 'prodotto_mosaico', // FR
+    Mosaik: 'prodotto_mosaico', // DE
+    Мозаика: 'prodotto_mosaico', // RU
     // Vetrite
-    'Lastre vetro Vetrite': 'prodotto_vetrite',        // IT
-    'Vetrite glass slabs': 'prodotto_vetrite',         // EN
-    'Plaque en verre Vetrite': 'prodotto_vetrite',     // FR
-    'Glasscheibe Vetrite': 'prodotto_vetrite',         // DE
-    'Láminas de vidrio Vetrite': 'prodotto_vetrite',   // ES
-    'Cтеклянные листы Vetrite': 'prodotto_vetrite',   // RU
-    'Vetrite': 'prodotto_vetrite',                     // short form fallback
+    'Lastre vetro Vetrite': 'prodotto_vetrite', // IT
+    'Vetrite glass slabs': 'prodotto_vetrite', // EN
+    'Plaque en verre Vetrite': 'prodotto_vetrite', // FR
+    'Glasscheibe Vetrite': 'prodotto_vetrite', // DE
+    'Láminas de vidrio Vetrite': 'prodotto_vetrite', // ES
+    'Cтеклянные листы Vetrite': 'prodotto_vetrite', // RU
+    Vetrite: 'prodotto_vetrite', // short form fallback
     // Arredo
-    'Arredo': 'prodotto_arredo',                       // IT
-    'Furniture and Accessories': 'prodotto_arredo',    // EN
-    'Ameublement': 'prodotto_arredo',                  // FR
-    'Einrichtung': 'prodotto_arredo',                  // DE
-    'Mueble': 'prodotto_arredo',                       // ES
-    'Обстановка': 'prodotto_arredo',                   // RU
-    'Furniture': 'prodotto_arredo',                    // short form fallback
+    Arredo: 'prodotto_arredo', // IT
+    'Furniture and Accessories': 'prodotto_arredo', // EN
+    Ameublement: 'prodotto_arredo', // FR
+    Einrichtung: 'prodotto_arredo', // DE
+    Mueble: 'prodotto_arredo', // ES
+    Обстановка: 'prodotto_arredo', // RU
+    Furniture: 'prodotto_arredo', // short form fallback
     // Tessuto
-    'Prodotti Tessili': 'prodotto_tessuto',            // IT
-    'Textiles': 'prodotto_tessuto',                    // EN + ES
-    'Produits textiles': 'prodotto_tessuto',           // FR
-    'Textilien': 'prodotto_tessuto',                   // DE
-    'текстильные изделия': 'prodotto_tessuto',         // RU
-    'Tessuto': 'prodotto_tessuto',                     // legacy
-    'Tessile': 'prodotto_tessuto',                     // legacy
-    'Fabrics': 'prodotto_tessuto',                     // legacy
+    'Prodotti Tessili': 'prodotto_tessuto', // IT
+    Textiles: 'prodotto_tessuto', // EN + ES
+    'Produits textiles': 'prodotto_tessuto', // FR
+    Textilien: 'prodotto_tessuto', // DE
+    'текстильные изделия': 'prodotto_tessuto', // RU
+    Tessuto: 'prodotto_tessuto', // legacy
+    Tessile: 'prodotto_tessuto', // legacy
+    Fabrics: 'prodotto_tessuto', // legacy
     // Pixall
-    'Pixall': 'prodotto_pixall',
+    Pixall: 'prodotto_pixall',
     // Illuminazione
-    'Illuminazione': 'prodotto_illuminazione',         // IT
-    'Lighting': 'prodotto_illuminazione',              // EN
-    'Éclairage': 'prodotto_illuminazione',             // FR
-    'Beleuchtung': 'prodotto_illuminazione',           // DE
-    'Iluminación': 'prodotto_illuminazione',           // ES
-    'Освещение': 'prodotto_illuminazione',             // RU
+    Illuminazione: 'prodotto_illuminazione', // IT
+    Lighting: 'prodotto_illuminazione', // EN
+    Éclairage: 'prodotto_illuminazione', // FR
+    Beleuchtung: 'prodotto_illuminazione', // DE
+    Iluminación: 'prodotto_illuminazione', // ES
+    Освещение: 'prodotto_illuminazione', // RU
   };
   return map[categoriaTitle] ?? null;
 }

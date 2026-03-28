@@ -12,6 +12,7 @@ The Sicis Next.js frontend has a functional data layer serving 6 product types a
 All recommendations are **frontend-only** — the Drupal REST API is not changed. The improvements are organized across 5 phases ordered by impact-to-effort ratio, allowing incremental delivery without disrupting active development.
 
 Key findings:
+
 - NID/UUID confusion at fetch boundaries is a silent runtime bug waiting to happen
 - Missing `error.tsx` boundaries means any fetch failure kills the entire page
 - Normalizer logic is scattered across 4+ files, creating drift risk
@@ -24,7 +25,7 @@ Key findings:
 
 ### 1a. Branded Types for NID vs UUID
 
-**Problem.** `fetchSubcategories` and `fetchPagesByCategory` (endpoints V10, V11) require an integer NID — the Drupal node ID — not a UUID. The function signatures accept a plain `string | number`, meaning any caller can silently pass a UUID string and receive an empty 200 response. There is no compile-time guard.
+**Problem.** `fetchSubcategories` and `fetchPagesByCategory` (endpoints subcategories, pages-by-category) require an integer NID — the Drupal node ID — not a UUID. The function signatures accept a plain `string | number`, meaning any caller can silently pass a UUID string and receive an empty 200 response. There is no compile-time guard.
 
 ```typescript
 // current — nothing prevents UUID here
@@ -38,7 +39,7 @@ fetchPagesByCategory(parentId: string | number, locale: string, ...)
 // src/types/drupal/ids.ts
 type Brand<T, B extends string> = T & { readonly __brand: B };
 
-export type Nid  = Brand<number, 'Nid'>;
+export type Nid = Brand<number, 'Nid'>;
 export type Uuid = Brand<string, 'Uuid'>;
 
 export function asNid(value: unknown): Nid {
@@ -50,7 +51,7 @@ export function asNid(value: unknown): Nid {
 }
 ```
 
-Apply `asNid()` at the call sites where C1 response data is first read (`node._nid`), then thread `Nid` through to both fetch functions. TypeScript will reject any attempt to pass a UUID where an NID is required at compile time, with zero runtime overhead.
+Apply `asNid()` at the call sites where entity endpoint response data is first read (`node._nid`), then thread `Nid` through to both fetch functions. TypeScript will reject any attempt to pass a UUID where an NID is required at compile time, with zero runtime overhead.
 
 **Scope:** 1 hour, 3-5 call sites in templates and the routing layer.
 
@@ -59,6 +60,7 @@ Apply `asNid()` at the call sites where C1 response data is first read (`node._n
 ### 1b. Result Type for Fetch Functions
 
 **Problem.** `fetchEntity` currently returns `EntityResponse | null`. This conflates three distinct outcomes:
+
 - The node exists → render it
 - The node does not exist (404) → call `notFound()`
 - A network or parse failure occurred → surface an error boundary
@@ -71,12 +73,12 @@ Callers must guess which case `null` represents, and network errors are silently
 // src/lib/api/result.ts
 export type ApiError =
   | { kind: 'not_found' }
-  | { kind: 'network';  message: string }
+  | { kind: 'network'; message: string }
   | { kind: 'timeout' }
-  | { kind: 'parse';   cause: unknown };
+  | { kind: 'parse'; cause: unknown };
 
 export type ApiResult<T> =
-  | { ok: true;  data: T }
+  | { ok: true; data: T }
   | { ok: false; error: ApiError };
 ```
 
@@ -103,10 +105,11 @@ The CLAUDE.md documents an explicit no-Zod decision. This analysis confirms that
 
 - Drupal is a controlled, internal data source — field shapes change infrequently
 - Branded types + `ApiResult<T>` + entity mappers provide 80% of the safety at 20% of the effort
-- Zod parse overhead on server components is non-trivial for paginated endpoints (V1, V5-V11)
+- Zod parse overhead on server components is non-trivial for paginated endpoints (products, blog, projects, environments, showrooms, documents, subcategories, pages-by-category)
 - The dev team is familiar with TypeScript interfaces; Zod schemas would be a context switch
 
 **Revisit Zod if:**
+
 - Drupal fields change frequently due to active CMS work
 - A second team independently modifies the Drupal backend
 - Consumer-driven contract testing is introduced
@@ -118,6 +121,7 @@ The CLAUDE.md documents an explicit no-Zod decision. This analysis confirms that
 ### 2a. Consolidate Normalizers
 
 **Problem.** Normalization logic is currently spread across multiple files:
+
 - `stripDomain`, `stripLocalePrefix`, `emptyToNull` live in `client.ts`
 - `unixToIso` is inlined in `listings.ts`
 - `getDrupalImageUrl` lives in `drupal/image.ts`
@@ -146,7 +150,7 @@ export function unixToIso(timestamp: string): string {
   return new Date(Number(timestamp) * 1000).toISOString();
 }
 
-/** Extract image URL from C1 image shape. Handles both string and object forms. */
+/** Extract image URL from entity image shape. Handles both string and object forms. */
 export function extractImageUrl(
   image: unknown
 ): string | null {
@@ -154,7 +158,7 @@ export function extractImageUrl(
   if (typeof image === 'string') return emptyToNull(image);
   if (typeof image === 'object' && image !== null) {
     const obj = image as Record<string, unknown>;
-    // C1 entity shape: { uri: { url: "https://..." } }
+    // entity endpoint shape: { uri: { url: "https://..." } }
     if (obj.uri && typeof (obj.uri as Record<string, unknown>).url === 'string') {
       return emptyToNull((obj.uri as Record<string, unknown>).url as string);
     }
@@ -178,7 +182,7 @@ export function normalizeLink(
     return link;
   }
 
-  // Object form (C1 entity: { uri: string, title: string })
+  // Object form (entity endpoint: { uri: string, title: string })
   if (typeof link === 'object' && link !== null) {
     const obj = link as Record<string, unknown>;
     if (typeof obj.uri === 'string') return normalizeLink(obj.uri, baseUrl);
@@ -215,9 +219,10 @@ After extraction, update `client.ts`, `drupal/image.ts`, and `listings.ts` to im
 ### 2b. Entity Mapper Layer
 
 **Problem.** Every template currently receives `node` as `Record<string, unknown>` and individually casts and accesses fields with optional chaining. This means:
+
 - The same field access logic (`node.field_testo_main as string ?? ''`) is repeated across templates
 - Bugs (e.g. wrong field name) reproduce across multiple templates
-- There is no single place to verify the C1 response shape
+- There is no single place to verify the entity response shape
 
 **Solution.** One mapper function per entity family that transforms `Record<string, unknown>` into a fully typed domain model.
 
@@ -241,37 +246,37 @@ export interface MappedProdottoMosaico {
 
 export function mapProdottoMosaico(
   raw: Record<string, unknown>,
-  locale: string
+  locale: string,
 ): MappedProdottoMosaico {
   const node = raw as ProdottoMosaico;
   return {
-    title:          String(node.title ?? ''),
-    subtitle:       emptyToNull(String(node.field_sottotitolo ?? '')),
-    imageUrl:       extractImageUrl(node.field_immagine),
-    price:          node.field_prezzo ? Number(node.field_prezzo) : null,
-    priceOnDemand:  node.field_prezzo_su_richiesta === '1',
-    body:           emptyToNull(String(node.field_testo_main ?? '')),
-    path:           normalizePath(node.path, locale) ?? '',
+    title: String(node.title ?? ''),
+    subtitle: emptyToNull(String(node.field_sottotitolo ?? '')),
+    imageUrl: extractImageUrl(node.field_immagine),
+    price: node.field_prezzo ? Number(node.field_prezzo) : null,
+    priceOnDemand: node.field_prezzo_su_richiesta === '1',
+    body: emptyToNull(String(node.field_testo_main ?? '')),
+    path: normalizePath(node.path, locale) ?? '',
     collectionTitle: emptyToNull(String(node.field_collezione?.title ?? '')),
-    _raw:           node,
+    _raw: node,
   };
 }
 ```
 
 **Entity families to cover (in migration order):**
 
-| Family | Mapper file | Feeds template(s) |
-|---|---|---|
-| `product-mosaico` | `product-mosaico.mapper.ts` | ProdottoMosaico |
-| `product-vetrite` | `product-vetrite.mapper.ts` | ProdottoVetrite |
-| `product-arredo` | `product-arredo.mapper.ts` | ProdottoArredo |
-| `product-tessuto` | `product-tessuto.mapper.ts` | ProdottoTessuto |
-| `product-pixall` | `product-pixall.mapper.ts` | ProdottoPixall |
-| `product-illuminazione` | `product-illuminazione.mapper.ts` | ProdottoIlluminazione |
-| `article` | `article.mapper.ts` | Articolo, News, Tutorial |
-| `category` | `category.mapper.ts` | Categoria, CategoriaBlog |
-| `page` | `page.mapper.ts` | Page, LandingPage |
-| `listing-item` | `listing-item.mapper.ts` | Shared listing response items |
+| Family                  | Mapper file                       | Feeds template(s)             |
+| ----------------------- | --------------------------------- | ----------------------------- |
+| `product-mosaico`       | `product-mosaico.mapper.ts`       | ProdottoMosaico               |
+| `product-vetrite`       | `product-vetrite.mapper.ts`       | ProdottoVetrite               |
+| `product-arredo`        | `product-arredo.mapper.ts`        | ProdottoArredo                |
+| `product-tessuto`       | `product-tessuto.mapper.ts`       | ProdottoTessuto               |
+| `product-pixall`        | `product-pixall.mapper.ts`        | ProdottoPixall                |
+| `product-illuminazione` | `product-illuminazione.mapper.ts` | ProdottoIlluminazione         |
+| `article`               | `article.mapper.ts`               | Articolo, News, Tutorial      |
+| `category`              | `category.mapper.ts`              | Categoria, CategoriaBlog      |
+| `page`                  | `page.mapper.ts`                  | Page, LandingPage             |
+| `listing-item`          | `listing-item.mapper.ts`          | Shared listing response items |
 
 **Migration path:** Start with `ProdottoMosaico` (already DS-complete, highest-confidence baseline), then `ProductListingTemplate`, then editorial types, and finally legacy templates.
 
@@ -377,14 +382,14 @@ export async function fetchEntity(path: string, locale: string): Promise<...> {
 
 **Tag convention:**
 
-| Tag pattern | Scope | Example |
-|---|---|---|
-| `entity:{nid}` | Single entity | `entity:42` |
-| `type:{bundle}` | All entities of a type | `type:prodotto_mosaico` |
-| `locale:{locale}` | All cached data for a locale | `locale:it` |
-| `menu:{name}` | A specific menu | `menu:main` |
-| `listing:{productType}` | A product listing | `listing:prodotto_mosaico` |
-| `taxonomy:{vocabulary}` | Taxonomy terms | `taxonomy:mosaico_collezioni` |
+| Tag pattern             | Scope                        | Example                       |
+| ----------------------- | ---------------------------- | ----------------------------- |
+| `entity:{nid}`          | Single entity                | `entity:42`                   |
+| `type:{bundle}`         | All entities of a type       | `type:prodotto_mosaico`       |
+| `locale:{locale}`       | All cached data for a locale | `locale:it`                   |
+| `menu:{name}`           | A specific menu              | `menu:main`                   |
+| `listing:{productType}` | A product listing            | `listing:prodotto_mosaico`    |
+| `taxonomy:{vocabulary}` | Taxonomy terms               | `taxonomy:mosaico_collezioni` |
 
 **Revalidation endpoint:**
 
@@ -416,7 +421,7 @@ import { unstable_cache } from 'next/cache';
 export const getCachedSectionConfig = unstable_cache(
   async (slug: string, locale: string) => getSectionConfigAsync(slug, locale),
   ['section-config'],
-  { revalidate: 600, tags: ['section-config'] }
+  { revalidate: 600, tags: ['section-config'] },
 );
 ```
 
@@ -493,19 +498,19 @@ export default function LocaleError({
 Pages that require multiple parallel fetches (e.g. Categoria: entity + subcategories + filter options) should not fail entirely if one ancillary fetch fails. Use `Promise.allSettled` for non-critical data.
 
 ```typescript
-const [entityResult, subcategoriesResult, filtersResult] = await Promise.allSettled([
-  fetchEntity(path, locale),
-  fetchSubcategories(nid, locale),
-  fetchAllFilterOptions(productType, locale),
-]);
+const [entityResult, subcategoriesResult, filtersResult] =
+  await Promise.allSettled([
+    fetchEntity(path, locale),
+    fetchSubcategories(nid, locale),
+    fetchAllFilterOptions(productType, locale),
+  ]);
 
 // Entity is critical — hard fail
 if (entityResult.status === 'rejected') throw entityResult.reason;
 
 // Subcategories and filters degrade gracefully
-const subcategories = subcategoriesResult.status === 'fulfilled'
-  ? subcategoriesResult.value
-  : [];
+const subcategories =
+  subcategoriesResult.status === 'fulfilled' ? subcategoriesResult.value : [];
 ```
 
 ### 6c. Integration: Result Type + Error Boundaries
@@ -521,23 +526,23 @@ The `ApiResult<T>` type from Section 1b integrates directly with this pattern:
 
 ## Section 7: Priority Matrix
 
-| # | Recommendation | Impact (1-5) | Effort (1-5) | Risk (1-5) | Dependencies | Phase |
-|---|---|---|---|---|---|---|
-| 1 | Branded types (NID/UUID) | 3 | 1 | 1 | None | Phase 1 |
-| 2 | `error.tsx` boundaries | 4 | 1 | 1 | None | Phase 1 |
-| 3 | Filter batching (`useQueryStates`) | 2 | 1 | 1 | None | Phase 1 |
-| 4 | SEO canonical for filtered URLs | 3 | 1 | 1 | None | Phase 1 |
-| 5 | Result type for fetch functions | 5 | 2 | 2 | None | Phase 2 |
-| 6 | Normalizer consolidation | 3 | 2 | 1 | None | Phase 2 |
-| 7 | Entity mapper (ProdottoMosaico) | 4 | 3 | 3 | #6 | Phase 3 |
-| 8 | Entity mapper (remaining products) | 4 | 4 | 3 | #7 | Phase 3 |
-| 9 | ParagraphResolver discriminated union | 3 | 2 | 2 | None | Phase 3 |
-| 10 | Paragraph adapter extraction | 2 | 2 | 1 | #9 | Phase 3 |
-| 11 | Cache tag infrastructure | 3 | 2 | 1 | None | Phase 4 |
-| 12 | `unstable_cache` for derived data | 2 | 2 | 2 | None | Phase 4 |
-| 13 | Entity mapper (editorial + metadata) | 3 | 3 | 2 | #7 | Phase 4 |
-| 14 | Tessuti JSON:API encapsulation | 2 | 1 | 1 | #7 | Phase 4 |
-| 15 | Optimistic UI for filters | 2 | 3 | 2 | #3 | Phase 5 |
+| #   | Recommendation                        | Impact (1-5) | Effort (1-5) | Risk (1-5) | Dependencies | Phase   |
+| --- | ------------------------------------- | ------------ | ------------ | ---------- | ------------ | ------- |
+| 1   | Branded types (NID/UUID)              | 3            | 1            | 1          | None         | Phase 1 |
+| 2   | `error.tsx` boundaries                | 4            | 1            | 1          | None         | Phase 1 |
+| 3   | Filter batching (`useQueryStates`)    | 2            | 1            | 1          | None         | Phase 1 |
+| 4   | SEO canonical for filtered URLs       | 3            | 1            | 1          | None         | Phase 1 |
+| 5   | Result type for fetch functions       | 5            | 2            | 2          | None         | Phase 2 |
+| 6   | Normalizer consolidation              | 3            | 2            | 1          | None         | Phase 2 |
+| 7   | Entity mapper (ProdottoMosaico)       | 4            | 3            | 3          | #6           | Phase 3 |
+| 8   | Entity mapper (remaining products)    | 4            | 4            | 3          | #7           | Phase 3 |
+| 9   | ParagraphResolver discriminated union | 3            | 2            | 2          | None         | Phase 3 |
+| 10  | Paragraph adapter extraction          | 2            | 2            | 1          | #9           | Phase 3 |
+| 11  | Cache tag infrastructure              | 3            | 2            | 1          | None         | Phase 4 |
+| 12  | `unstable_cache` for derived data     | 2            | 2            | 2          | None         | Phase 4 |
+| 13  | Entity mapper (editorial + metadata)  | 3            | 3            | 2          | #7           | Phase 4 |
+| 14  | Tessuti JSON:API encapsulation        | 2            | 1            | 1          | #7           | Phase 4 |
+| 15  | Optimistic UI for filters             | 2            | 3            | 2          | #3           | Phase 5 |
 
 **Score key:** 1 = low, 5 = high. Risk measures regression potential, not implementation complexity.
 
@@ -595,15 +600,15 @@ The `ApiResult<T>` type from Section 1b integrates directly with this pattern:
 
 ## Conditions That Change Priority
 
-| Condition | Adjustment |
-|---|---|
-| Drupal fields change frequently (active CMS work) | Add Zod schemas to mapper layer; move to Phase 2 |
-| SEO is top priority | Move canonical work to immediate action + add JSON-LD structured data |
-| Drupal team can deliver webhooks quickly | Move cache tag infrastructure from Phase 4 to Phase 2 |
+| Condition                                                             | Adjustment                                                                             |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Drupal fields change frequently (active CMS work)                     | Add Zod schemas to mapper layer; move to Phase 2                                       |
+| SEO is top priority                                                   | Move canonical work to immediate action + add JSON-LD structured data                  |
+| Drupal team can deliver webhooks quickly                              | Move cache tag infrastructure from Phase 4 to Phase 2                                  |
 | Remaining Gen blocks are imminent (GenCorrelati, GenNewsletter, etc.) | Complete ParagraphResolver discriminated union (item 9) before building new Gen blocks |
-| Second team begins touching Drupal backend | Activate Zod regardless of phase schedule |
-| Product template DS migration begins | Ensure entity mapper for that product type is complete first |
+| Second team begins touching Drupal backend                            | Activate Zod regardless of phase schedule                                              |
+| Product template DS migration begins                                  | Ensure entity mapper for that product type is complete first                           |
 
 ---
 
-*Generated by Clio (Technical Documentation Writer) — Sicis Next.js frontend, 2026-03-25.*
+_Generated by Clio (Technical Documentation Writer) — Sicis Next.js frontend, 2026-03-25._

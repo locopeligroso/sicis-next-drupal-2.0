@@ -198,7 +198,7 @@ export default async function Categoria({ node }: CategoriaProps) {
   const title =
     getTextValue(node.field_titolo_main) || getTextValue(node.title) || '';
   const locale = (node.langcode as string) || 'it';
-  // C1 entity endpoint provides NID via _nid; fall back to id for legacy compat
+  // entity endpoint provides NID via _nid; fall back to id for legacy compat
   const categoriaId = String(node._nid ?? node.id);
   const paragraphs =
     (node.field_blocchi as Record<string, unknown>[] | undefined) ?? [];
@@ -279,7 +279,7 @@ export default async function Categoria({ node }: CategoriaProps) {
   if (subcategories.length > 0) {
     // Derive productType from the parent category title; fallback to prodotto_arredo
     const inferredType = getCategoriaProductType(title) || 'prodotto_arredo';
-    // V1 `category` param does NOT support multi-value (comma/array).
+    // products (legacy) `category` param does NOT support multi-value (comma/array).
     // Fetch products for each subcategory in parallel and merge results.
     const allCatTitles = [title, ...subcategories.map((s) => s.title)];
     const results = await Promise.all(
@@ -300,11 +300,13 @@ export default async function Categoria({ node }: CategoriaProps) {
     );
     // Merge and deduplicate by id
     const seen = new Set<string>();
-    const allProducts = results.flatMap((r) => r.products).filter((p) => {
-      if (seen.has(p.id)) return false;
-      seen.add(p.id);
-      return true;
-    });
+    const allProducts = results
+      .flatMap((r) => r.products)
+      .filter((p) => {
+        if (seen.has(p.id)) return false;
+        seen.add(p.id);
+        return true;
+      });
     const total = allProducts.length;
 
     return (
@@ -356,11 +358,7 @@ export default async function Categoria({ node }: CategoriaProps) {
 
   // ── Content category (Mosaico Artistico, Mosaico in Marmo, etc.) ──
   // Fetch node--page entities that have field_categoria pointing to this categoria
-  const { pages, total } = await fetchPagesByCategory(
-    categoriaId,
-    locale,
-    48,
-  );
+  const { pages, total } = await fetchPagesByCategory(categoriaId, locale, 48);
 
   return (
     <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '2rem' }}>
@@ -399,7 +397,11 @@ export default async function Categoria({ node }: CategoriaProps) {
             style={{ marginBottom: '2rem' }}
           />
           {paragraphs.map((p, i) => (
-            <ParagraphResolver key={(p.id as string) ?? i} paragraph={p} pageTitle={title ?? undefined} />
+            <ParagraphResolver
+              key={(p.id as string) ?? i}
+              paragraph={p}
+              pageTitle={title ?? undefined}
+            />
           ))}
         </div>
       )}

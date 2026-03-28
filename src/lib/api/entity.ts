@@ -5,7 +5,7 @@ import type { EntityResponse } from './types';
 /**
  * Fetches a fully-resolved entity by its Drupal path alias.
  *
- * C1 endpoint: `/{locale}/api/v1/entity?path={path}`
+ * entity endpoint ⚠️ LEGACY: `/{locale}/api/v1/entity?path={path}`
  *
  * Replaces the two-step translatePath + fetchJsonApiResource pattern.
  * The response includes pre-resolved relationships and paragraphs —
@@ -18,10 +18,6 @@ import type { EntityResponse } from './types';
  */
 export const fetchEntity = cache(
   async (path: string, locale: string): Promise<EntityResponse | null> => {
-    return apiGet<EntityResponse>(
-      `/${locale}/entity`,
-      { path },
-      60,
-    );
+    return apiGet<EntityResponse>(`/${locale}/entity`, { path }, 60);
   },
 );

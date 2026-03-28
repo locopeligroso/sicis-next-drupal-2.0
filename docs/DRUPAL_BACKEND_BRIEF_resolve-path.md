@@ -20,7 +20,7 @@ Il frontend utilizza un pattern a due stadi per il rendering delle pagine:
 1. **Stadio 1 — Routing**: dato un URL (es. `/mosaico/pluma/01-bora`), capire a quale entità Drupal corrisponde e di che tipo è.
 2. **Stadio 2 — Dati**: recuperare i dati completi dell'entità usando un endpoint dedicato per quel content type (es. `mosaic-product/{nid}`, `arredo-product/{nid}`, ecc.).
 
-Attualmente questi due passi sono gestiti da un unico endpoint (`C1 entity`) che fa sia il routing che il fetch dei dati. La nuova architettura separa le responsabilità: `resolve-path` gestisce il routing, e gli endpoint dedicati per content type gestiranno i dati.
+Attualmente questi due passi sono gestiti da un unico endpoint (`entity`) che fa sia il routing che il fetch dei dati. La nuova architettura separa le responsabilità: `resolve-path` gestisce il routing, e gli endpoint dedicati per content type gestiranno i dati.
 
 `resolve-path` deve essere implementato prima di qualsiasi endpoint di dettaglio: è il punto di ingresso condiviso per tutti i content type.
 
@@ -39,6 +39,7 @@ Il parametro `path` **non** deve includere il prefisso di locale. Il locale è g
 ### Esempi di Richiesta e Risposta
 
 **Prodotto mosaico (IT):**
+
 ```
 GET /it/api/v1/resolve-path?path=/mosaico/neocolibrì-barrels/515-barrels
 
@@ -52,6 +53,7 @@ HTTP 200 OK
 ```
 
 **Stesso prodotto, versione inglese:**
+
 ```
 GET /en/api/v1/resolve-path?path=/mosaic/pluma/01-bora
 
@@ -65,6 +67,7 @@ HTTP 200 OK
 ```
 
 **Prodotto arredo:**
+
 ```
 GET /it/api/v1/resolve-path?path=/arredo/sedie/poltrona-luna
 
@@ -78,6 +81,7 @@ HTTP 200 OK
 ```
 
 **Articolo blog:**
+
 ```
 GET /it/api/v1/resolve-path?path=/blog/titolo-articolo
 
@@ -91,6 +95,7 @@ HTTP 200 OK
 ```
 
 **Percorso inesistente:**
+
 ```
 GET /it/api/v1/resolve-path?path=/path-inesistente
 
@@ -116,12 +121,12 @@ HTTP 404 Not Found
 }
 ```
 
-| Campo | Tipo | Descrizione |
-|-------|------|-------------|
-| `nid` | integer | ID numerico dell'entità (NID per i nodi, TID per i termini di tassonomia). Il frontend usa il campo `nid` per entrambi i casi — usare un nome generico `id` è accettabile se preferito, purché documentato. |
-| `type` | string | Tipo di entità Drupal: `"node"` oppure `"taxonomy_term"` |
-| `bundle` | string | Bundle dell'entità (es. `"prodotto_mosaico"`, `"articolo"`, `"mosaico_collezioni"`) |
-| `locale` | string | Codice lingua corrente (es. `"it"`, `"en"`, `"fr"`) |
+| Campo    | Tipo    | Descrizione                                                                                                                                                                                                 |
+| -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `nid`    | integer | ID numerico dell'entità (NID per i nodi, TID per i termini di tassonomia). Il frontend usa il campo `nid` per entrambi i casi — usare un nome generico `id` è accettabile se preferito, purché documentato. |
+| `type`   | string  | Tipo di entità Drupal: `"node"` oppure `"taxonomy_term"`                                                                                                                                                    |
+| `bundle` | string  | Bundle dell'entità (es. `"prodotto_mosaico"`, `"articolo"`, `"mosaico_collezioni"`)                                                                                                                         |
+| `locale` | string  | Codice lingua corrente (es. `"it"`, `"en"`, `"fr"`)                                                                                                                                                         |
 
 ### Errore — HTTP 404
 
@@ -220,14 +225,14 @@ public function get(Request $request): JsonResponse {
 
 ## Requisiti Non Funzionali
 
-| Requisito | Specifica |
-|-----------|-----------|
-| **Autenticazione** | Nessuna — accessibile anonimamente |
-| **Content-Type risposta** | `application/json` per tutte le risposte (200, 400, 404) |
-| **Cache** | `Cache-Control: public, max-age=3600` — gli alias Drupal cambiano raramente |
-| **Negoziazione lingua** | Deve rispettare la negoziazione lingua nativa di Drupal; il locale nel pattern URL (`/it/`, `/en/`, ecc.) determina il langcode usato per la risoluzione dell'alias |
-| **Parametro `path`** | NON deve includere il prefisso di locale (es. `/mosaico/pluma` non `/it/mosaico/pluma`) |
-| **Pattern URL** | Conforme agli altri endpoint custom: `/{locale}/api/v1/resolve-path` |
+| Requisito                 | Specifica                                                                                                                                                           |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Autenticazione**        | Nessuna — accessibile anonimamente                                                                                                                                  |
+| **Content-Type risposta** | `application/json` per tutte le risposte (200, 400, 404)                                                                                                            |
+| **Cache**                 | `Cache-Control: public, max-age=3600` — gli alias Drupal cambiano raramente                                                                                         |
+| **Negoziazione lingua**   | Deve rispettare la negoziazione lingua nativa di Drupal; il locale nel pattern URL (`/it/`, `/en/`, ecc.) determina il langcode usato per la risoluzione dell'alias |
+| **Parametro `path`**      | NON deve includere il prefisso di locale (es. `/mosaico/pluma` non `/it/mosaico/pluma`)                                                                             |
+| **Pattern URL**           | Conforme agli altri endpoint custom: `/{locale}/api/v1/resolve-path`                                                                                                |
 
 ---
 
@@ -236,15 +241,19 @@ public function get(Request $request): JsonResponse {
 L'endpoint è completamente generico — non contiene logica specifica per content type. Deve funzionare per tutti i bundle Drupal presenti nel sito:
 
 **Nodi — Prodotti (6):**
+
 - `prodotto_mosaico`, `prodotto_vetrite`, `prodotto_arredo`, `prodotto_tessuto`, `prodotto_pixall`, `prodotto_illuminazione`
 
 **Nodi — Editoriale (8):**
+
 - `page`, `landing_page`, `articolo`, `news`, `tutorial`, `progetto`, `ambiente`, `showroom`
 
 **Nodi — Metadati (4):**
+
 - `categoria`, `categoria_blog`, `documento`, `tag`
 
 **Termini di tassonomia (11 vocabolari):**
+
 - `mosaico_collezioni`, `mosaico_colori`, `vetrite_collezioni`, `vetrite_colori`, `vetrite_finiture`, `vetrite_textures`, `arredo_finiture`, `tessuto_colori`, `tessuto_finiture`, `tessuto_tipologie`, `tessuto_manutenzione`
 
 Non è necessario alcun trattamento speciale per nessuno di questi tipi — la logica è identica per tutti.
@@ -255,12 +264,12 @@ Non è necessario alcun trattamento speciale per nessuno di questi tipi — la l
 
 Questo endpoint si integra nel catalogo API esistente come segue:
 
-| Codice | Endpoint | Ruolo |
-|--------|----------|-------|
-| **R1** (nuovo) | `GET /{locale}/api/v1/resolve-path?path=...` | Risolve un alias → metadati entità |
-| C1 (esistente) | `GET /{locale}/api/v1/entity?path=...` | Restituisce l'entità completa con tutti i campi |
+| Endpoint                                             | Ruolo                                           |
+| ---------------------------------------------------- | ----------------------------------------------- |
+| `GET /{locale}/api/v1/resolve-path?path=...` (nuovo) | Risolve un alias → metadati entità              |
+| `GET /{locale}/api/v1/entity?path=...` (esistente)   | Restituisce l'entità completa con tutti i campi |
 
-Il frontend chiamerà prima `R1` per scoprire il bundle, poi sceglierà l'endpoint di dettaglio appropriato (da definire) in base al bundle restituito.
+Il frontend chiamerà prima `resolve-path` per scoprire il bundle, poi sceglierà l'endpoint di dettaglio appropriato (da definire) in base al bundle restituito.
 
 **Flusso frontend previsto:**
 
@@ -268,7 +277,7 @@ Il frontend chiamerà prima `R1` per scoprire il bundle, poi sceglierà l'endpoi
 URL: /mosaico/pluma/01-bora
   │
   ▼
-R1: GET /it/api/v1/resolve-path?path=/mosaico/pluma/01-bora
+resolve-path: GET /it/api/v1/resolve-path?path=/mosaico/pluma/01-bora
   → { nid: 1667, type: "node", bundle: "prodotto_mosaico", locale: "it" }
   │
   ▼
@@ -306,4 +315,4 @@ GET /it/api/v1/mosaic-product/1667
 
 ---
 
-*Documento generato dal team frontend — riferirsi a `docs/DRUPAL_API_CATALOG.md` nel repository Next.js per il catalogo completo degli endpoint esistenti.*
+_Documento generato dal team frontend — riferirsi a `docs/DRUPAL_API_CATALOG.md` nel repository Next.js per il catalogo completo degli endpoint esistenti._

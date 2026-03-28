@@ -75,7 +75,7 @@ import TaxonomyTerm from '@/templates/taxonomy/TaxonomyTerm';
  * Both generateMetadata() and SlugPage() call this with the same args,
  * so the second call returns the cached result — eliminating the double fetch.
  *
- * Uses the C1 entity endpoint which returns pre-resolved relationships and
+ * Uses the entity endpoint which returns pre-resolved relationships and
  * paragraphs — no INCLUDE_MAP or secondary fetches needed.
  */
 const getPageData = cache(async (locale: string, drupalPath: string) => {
@@ -92,7 +92,7 @@ const getPageData = cache(async (locale: string, drupalPath: string) => {
     type: entityType,
     // Inject UUID as `id` for backward compatibility with templates
     id: entity.meta.uuid,
-    // NID for V10/V11 REST endpoints (subcategories, pages-by-category)
+    // NID for subcategories/pages-by-category REST endpoints
     _nid: entity.meta.id,
   } as Record<string, unknown>;
 });
@@ -235,7 +235,7 @@ async function renderProductListing({
   slug: string[];
   searchParams: Record<string, string | string[]> | undefined;
   locale: string;
-  /** Collection TID from resolve-path — skips V3 name→TID lookup for mosaic-products endpoint */
+  /** Collection TID from resolve-path — skips taxonomy name→TID lookup for mosaic-products endpoint */
   resolvedTid?: number;
   /** Color TID from resolve-path — for mosaic-products/all/{colorTid} */
   resolvedColorTid?: number;
@@ -409,14 +409,15 @@ async function renderProductListing({
     const offset = (currentPage - 1) * listing.pageSize;
 
     // When resolvedTid or resolvedColorTid is available (from resolve-path),
-    // use the new TID-based listing endpoints directly — avoids the broken V1
-    // endpoint and the extra V3 name→TID lookup.
+    // use the new TID-based listing endpoints directly — avoids the broken products (legacy)
+    // endpoint and the extra taxonomy name→TID lookup.
     const hasResolvedTid = resolvedTid != null || resolvedColorTid != null;
     const useNewListingEndpoint =
       productType === 'prodotto_pixall' ||
       (productType === 'prodotto_tessuto' && resolvedCategoryNid != null) ||
       (hasResolvedTid &&
-        (productType === 'prodotto_mosaico' || productType === 'prodotto_vetrite'));
+        (productType === 'prodotto_mosaico' ||
+          productType === 'prodotto_vetrite'));
 
     const newListingFetcher = () => {
       if (productType === 'prodotto_pixall') {
@@ -459,7 +460,7 @@ async function renderProductListing({
     total = productResult.total;
     filterOptions = allFilterOptions;
 
-    // Live counts per filter value — REST V2 endpoint does server-side aggregation
+    // Live counts per filter value — product-counts endpoint does server-side aggregation
     // (no more client-side pagination loops that caused 27s+ page loads with JSON:API)
     const countPromises = Object.entries(filters)
       .filter(([, cfg]) => !cfg.nodeType)
@@ -745,7 +746,7 @@ export default async function SlugPage({
       }
       // ── Taxonomy terms: mosaico_collezioni / mosaico_colori → mosaic-products endpoint ──
       // resolve-path gives us the TID directly — pass it to renderProductListing
-      // so it uses the new endpoint without an extra V3 name→TID fetch.
+      // so it uses the new endpoint without an extra taxonomy name→TID fetch.
       if (resolved.bundle === 'mosaico_collezioni') {
         return renderProductListing({
           productType: 'prodotto_mosaico',
@@ -793,7 +794,9 @@ export default async function SlugPage({
       if (resolved.bundle === 'categoria') {
         const tessutoConfig = FILTER_REGISTRY['prodotto_tessuto'];
         if (tessutoConfig) {
-          const tessutoBase = (tessutoConfig.basePaths[locale] ?? tessutoConfig.basePaths['it']).split('/')[0];
+          const tessutoBase = (
+            tessutoConfig.basePaths[locale] ?? tessutoConfig.basePaths['it']
+          ).split('/')[0];
           const firstSlug = decodeURIComponent(slug[0]).normalize('NFC');
           if (firstSlug === tessutoBase) {
             return renderProductListing({
@@ -856,7 +859,7 @@ export default async function SlugPage({
     );
   }
 
-  // Fallback: if no Drupal node found via C1, try resolve-path + type-specific endpoint
+  // Fallback: if no Drupal node found via entity (legacy), try resolve-path + type-specific endpoint
   if (!resource) {
     const resolved = await resolvePath(drupalPath, locale);
     if (resolved) {
@@ -1342,9 +1345,9 @@ async function MosaicProductPreview({
   );
 }
 
-// ── Adapter: P2 normalized VetriteProduct → C1-like Record for legacy template ─
-// The legacy ProdottoVetrite template expects raw Drupal C1 field shapes.
-// This adapter reconstructs that shape from the normalized P2 endpoint data,
+// ── Adapter: vetrite-product normalized → entity-like Record for legacy template ─
+// The legacy ProdottoVetrite template expects raw Drupal entity field shapes.
+// This adapter reconstructs that shape from the normalized vetrite-product endpoint data,
 // so the legacy template renders without modification.
 
 function vetriteToLegacyNode(
@@ -1426,14 +1429,14 @@ function vetriteToLegacyNode(
           })),
         }
       : null,
-    // Fields not yet available from P2 — legacy template handles null gracefully
+    // Fields not yet available from vetrite-product — legacy template handles null gracefully
     field_colori: [],
     field_finiture: [],
     field_texture: [],
   };
 }
 
-// ── Adapter: P3 normalized TextileProduct → C1-like Record for legacy template ─
+// ── Adapter: textile-product normalized → entity-like Record for legacy template ─
 
 function textileToLegacyNode(
   product: TextileProduct,
@@ -1541,7 +1544,7 @@ function textileToLegacyNode(
   };
 }
 
-// ── Adapter: P4 normalized PixallProduct → C1-like Record for legacy template ─
+// ── Adapter: pixall-product normalized → entity-like Record for legacy template ─
 
 function pixallToLegacyNode(
   product: PixallProduct,
@@ -1598,7 +1601,7 @@ function pixallToLegacyNode(
       field_immagine: toImageField(doc.imageSrc),
       field_allegato: null,
     })),
-    // Fields not yet available from P4
+    // Fields not yet available from pixall-product
     field_colori: [],
     field_forma: [],
   };

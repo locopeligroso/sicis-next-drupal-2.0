@@ -6,7 +6,7 @@ export interface PaginatedResponse<T> {
   pageSize: number;
 }
 
-// === V1: Products ===
+// === products: Products ===
 export interface ProductCard {
   id: string;
   type: string;
@@ -19,12 +19,12 @@ export interface ProductCard {
   path: string | null;
 }
 
-// === V2: Filter Counts ===
+// === product-counts: Filter Counts ===
 export interface CountsResponse {
   counts: Record<string, number>;
 }
 
-// === V3: Taxonomy Terms ===
+// === taxonomy: Taxonomy Terms ===
 // Actual REST response shape — no `path` or `slug` field
 export interface TaxonomyTermItem {
   id: string;
@@ -33,7 +33,7 @@ export interface TaxonomyTermItem {
   weight: string; // Drupal returns weight as string
 }
 
-// === V5: Blog ===
+// === blog: Blog ===
 export interface BlogCard {
   id: string;
   type: 'articolo' | 'news' | 'tutorial';
@@ -43,7 +43,7 @@ export interface BlogCard {
   created: string;
 }
 
-// === V6: Projects ===
+// === projects: Projects ===
 export interface ProjectCard {
   id: string;
   title: string;
@@ -52,7 +52,7 @@ export interface ProjectCard {
   category: string | null;
 }
 
-// === V7: Environments ===
+// === environments: Environments ===
 export interface EnvironmentCard {
   id: string;
   title: string;
@@ -60,7 +60,7 @@ export interface EnvironmentCard {
   path: string | null;
 }
 
-// === V8: Showrooms ===
+// === showrooms: Showrooms ===
 export interface ShowroomCard {
   id: string;
   title: string;
@@ -75,7 +75,7 @@ export interface ShowroomCard {
   externalUrl: string | null;
 }
 
-// === V9: Documents ===
+// === documents: Documents ===
 export interface DocumentCard {
   id: string;
   title: string;
@@ -87,7 +87,7 @@ export interface DocumentCard {
   category: string | null;
 }
 
-// === V10: Subcategories ===
+// === subcategories: Subcategories ===
 export interface CategoryCard {
   id: string;
   uuid: string | null; // Drupal returns null for this field
@@ -96,7 +96,7 @@ export interface CategoryCard {
   path: string | null;
 }
 
-// === V11: Pages by Category ===
+// === pages-by-category: Pages by Category ===
 export interface PageCard {
   id: string;
   title: string;
@@ -104,7 +104,7 @@ export interface PageCard {
   path: string | null;
 }
 
-// === C1: Entity ===
+// === entity: Entity ===
 export interface EntityResponse {
   meta: {
     type: 'node' | 'taxonomy_term';
@@ -117,7 +117,7 @@ export interface EntityResponse {
   data: Record<string, unknown>;
 }
 
-// === R1: Resolve Path ===
+// === resolve-path: Resolve Path ===
 export interface ResolvePathResponse {
   nid: number;
   type: 'node' | 'taxonomy_term';
@@ -126,7 +126,7 @@ export interface ResolvePathResponse {
   aliases?: Record<string, string>;
 }
 
-// === P1: Mosaic Product (single product by NID) ===
+// === mosaic-product endpoint: Mosaic Product (single product by NID) ===
 export interface MosaicProductDocumentRest {
   nid: number;
   field_titolo_main: string;
@@ -193,7 +193,7 @@ export interface MosaicProductRest {
   field_collezione?: MosaicProductCollectionRest;
 }
 
-// === P2: Vetrite Product (single product by NID) ===
+// === vetrite-product endpoint: Vetrite Product (single product by NID) ===
 export interface VetriteProductDocumentRest {
   nid: number;
   field_titolo_main: string;
@@ -246,7 +246,7 @@ export interface VetriteProductRest {
   field_collezione?: VetriteProductCollectionRest;
 }
 
-// === P3: Textile Product (single product by NID) ===
+// === textile-product endpoint: Textile Product (single product by NID) ===
 export interface TextileProductCategoryRest {
   nid: number;
   field_titolo_main: string;
@@ -322,7 +322,7 @@ export interface TextileProductRest {
     | TextileProductTypologyRest[];
 }
 
-// === P4: Pixall Product (single product by NID) ===
+// === pixall-product endpoint: Pixall Product (single product by NID) ===
 export interface PixallProductGroutRest {
   tid: number;
   name: string;
@@ -364,7 +364,7 @@ export interface PixallProductRest {
   field_documenti?: PixallProductDocumentRest[];
 }
 
-// === C2: Translate Path ===
+// === translate-path: Translate Path ===
 export interface TranslatePathResponse {
   translatedPath: string | null;
 }

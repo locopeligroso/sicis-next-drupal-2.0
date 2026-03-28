@@ -40,7 +40,7 @@ export interface PagesByCategoryResult {
   total: number;
 }
 
-// ── V10: Subcategories ──────────────────────────────────────────────────────
+// ── subcategories endpoint ──────────────────────────────────────────────────
 
 /**
  * Fetches child node--categoria entities for a given parent categoria.
@@ -49,7 +49,7 @@ export interface PagesByCategoryResult {
  * Endpoint: `/{locale}/api/v1/subcategories/{parentId}`
  *
  * The REST Views endpoint expects a NID (integer), not UUID.
- * Callers must pass the NID (e.g. `node._nid` from C1 entity response).
+ * Callers must pass the NID (e.g. `node._nid` from entity response).
  *
  * @param parentId - NID of the parent node--categoria entity
  * @param locale   - Active locale code
@@ -65,18 +65,20 @@ export const fetchSubcategories = cache(
     if (!result) return { subcategories: [], total: 0 };
 
     return {
-      subcategories: result.items.map((item): SubcategoryCard => ({
-        id: item.id,
-        title: item.title,
-        imageUrl: emptyToNull(item.imageUrl),
-        path: stripLocalePrefix(stripDomain(item.path)),
-      })),
+      subcategories: result.items.map(
+        (item): SubcategoryCard => ({
+          id: item.id,
+          title: item.title,
+          imageUrl: emptyToNull(item.imageUrl),
+          path: stripLocalePrefix(stripDomain(item.path)),
+        }),
+      ),
       total: result.total,
     };
   },
 );
 
-// ── V11: Pages by Category ──────────────────────────────────────────────────
+// ── pages-by-category endpoint ──────────────────────────────────────────────
 
 /**
  * Fetches published node--page entities filtered by field_categoria.
@@ -85,7 +87,7 @@ export const fetchSubcategories = cache(
  * Endpoint: `/{locale}/api/v1/pages-by-category/{parentId}`
  *
  * The REST Views endpoint expects a NID (integer), not UUID.
- * Callers must pass the NID (e.g. `node._nid` from C1 entity response).
+ * Callers must pass the NID (e.g. `node._nid` from entity response).
  *
  * @param parentId - NID of the node--categoria entity to filter by
  * @param locale   - Active locale code
@@ -109,12 +111,14 @@ export const fetchPagesByCategory = cache(
     if (!result) return { pages: [], total: 0 };
 
     return {
-      pages: result.items.map((item): PageCard => ({
-        id: item.id,
-        title: item.title,
-        imageUrl: emptyToNull(item.imageUrl),
-        path: stripLocalePrefix(stripDomain(item.path)),
-      })),
+      pages: result.items.map(
+        (item): PageCard => ({
+          id: item.id,
+          title: item.title,
+          imageUrl: emptyToNull(item.imageUrl),
+          path: stripLocalePrefix(stripDomain(item.path)),
+        }),
+      ),
       total: result.total,
     };
   },

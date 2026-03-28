@@ -29,7 +29,7 @@ export interface ShowroomCard {
   mapsUrl: string | null;
 }
 
-// V7: Environments
+// environments endpoint
 export const fetchEnvironments = cache(
   async (locale = 'it', limit = 48, offset = 0) => {
     const page = Math.floor(offset / limit);
@@ -50,7 +50,7 @@ export const fetchEnvironments = cache(
   },
 );
 
-// V8: Showrooms
+// showrooms endpoint
 export const fetchShowrooms = cache(
   async (locale = 'it', limit = 48, offset = 0) => {
     const result = await apiGet<PaginatedResponse<RestShowroomCard>>(
@@ -60,18 +60,20 @@ export const fetchShowrooms = cache(
     );
     if (!result) return { showrooms: [] as ShowroomCard[], total: 0 };
     return {
-      showrooms: result.items.map((item): ShowroomCard => ({
-        id: item.id,
-        title: item.title,
-        path: stripLocalePrefix(stripDomain(item.path)),
-        imageUrl: emptyToNull(item.imageUrl),
-        address: item.address,
-        city: item.city,
-        area: item.area,
-        phone: item.phone,
-        email: item.email ?? null,
-        mapsUrl: item.gmapsUrl ?? null,
-      })),
+      showrooms: result.items.map(
+        (item): ShowroomCard => ({
+          id: item.id,
+          title: item.title,
+          path: stripLocalePrefix(stripDomain(item.path)),
+          imageUrl: emptyToNull(item.imageUrl),
+          address: item.address,
+          city: item.city,
+          area: item.area,
+          phone: item.phone,
+          email: item.email ?? null,
+          mapsUrl: item.gmapsUrl ?? null,
+        }),
+      ),
       total: result.total,
     };
   },
@@ -134,7 +136,7 @@ export interface DocumentsResult {
   total: number;
 }
 
-// ── V5: Blog ────────────────────────────────────────────────────────────────
+// ── blog endpoint ───────────────────────────────────────────────────────────
 
 /**
  * Convert Unix timestamp string to ISO 8601 string.
@@ -157,20 +159,22 @@ export const fetchBlogPosts = cache(
     );
     if (!result) return { posts: [], total: 0 };
     return {
-      posts: result.items.map((item): BlogCard => ({
-        id: item.id,
-        title: item.title,
-        imageUrl: emptyToNull(item.imageUrl),
-        path: stripLocalePrefix(stripDomain(item.path)),
-        type: item.type,
-        created: unixToIso(item.created),
-      })),
+      posts: result.items.map(
+        (item): BlogCard => ({
+          id: item.id,
+          title: item.title,
+          imageUrl: emptyToNull(item.imageUrl),
+          path: stripLocalePrefix(stripDomain(item.path)),
+          type: item.type,
+          created: unixToIso(item.created),
+        }),
+      ),
       total: result.total,
     };
   },
 );
 
-// ── V6: Projects ────────────────────────────────────────────────────────────
+// ── projects endpoint ───────────────────────────────────────────────────────
 
 export const fetchProjects = cache(
   async (locale = 'it', limit = 48, offset = 0): Promise<ProjectsResult> => {
@@ -182,18 +186,20 @@ export const fetchProjects = cache(
     );
     if (!result) return { projects: [], total: 0 };
     return {
-      projects: result.items.map((item): ProgettoCard => ({
-        id: item.id,
-        title: item.title,
-        imageUrl: emptyToNull(item.imageUrl),
-        path: stripLocalePrefix(stripDomain(item.path)),
-      })),
+      projects: result.items.map(
+        (item): ProgettoCard => ({
+          id: item.id,
+          title: item.title,
+          imageUrl: emptyToNull(item.imageUrl),
+          path: stripLocalePrefix(stripDomain(item.path)),
+        }),
+      ),
       total: result.total,
     };
   },
 );
 
-// ── V9: Documents ───────────────────────────────────────────────────────────
+// ── documents endpoint ──────────────────────────────────────────────────────
 
 export const fetchDocuments = cache(
   async (locale = 'it', limit = 48, offset = 0): Promise<DocumentsResult> => {
@@ -205,15 +211,17 @@ export const fetchDocuments = cache(
     );
     if (!result) return { documents: [], total: 0 };
     return {
-      documents: result.items.map((item): DocumentCard => ({
-        id: item.id,
-        title: item.title,
-        imageUrl: emptyToNull(item.imageUrl),
-        path: stripLocalePrefix(stripDomain(item.path)),
-        externalUrl: item.externalUrl ?? null,
-        documentType: item.documentType ?? null,
-        category: item.category ?? null,
-      })),
+      documents: result.items.map(
+        (item): DocumentCard => ({
+          id: item.id,
+          title: item.title,
+          imageUrl: emptyToNull(item.imageUrl),
+          path: stripLocalePrefix(stripDomain(item.path)),
+          externalUrl: item.externalUrl ?? null,
+          documentType: item.documentType ?? null,
+          category: item.category ?? null,
+        }),
+      ),
       total: result.total,
     };
   },

@@ -6,10 +6,10 @@ import type { ResolvePathResponse } from './types';
 /**
  * Resolves a Drupal path alias to entity metadata (NID, type, bundle).
  *
- * R1 endpoint: `/{locale}/api/v1/resolve-path?path={alias}`
+ * resolve-path endpoint: `/{locale}/api/v1/resolve-path?path={alias}`
  *
  * This is the foundational routing endpoint — every page render starts here.
- * It replaces C1's routing function (path → entity identification) without
+ * It replaces entity's routing function (path → entity identification) without
  * fetching the full entity data. The NID returned is then used to call
  * type-specific data endpoints (e.g. mosaic-product/{nid}).
  *

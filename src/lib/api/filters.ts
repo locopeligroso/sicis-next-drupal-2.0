@@ -5,15 +5,15 @@ import { FILTER_REGISTRY, SLUG_OVERRIDES } from '@/domain/filters/registry';
 
 // ── Raw REST response shapes ─────────────────────────────────────────────
 
-/** V3 taxonomy endpoint response item — no `path` or `slug` field; slug derived from `name` */
+/** taxonomy endpoint response item — no `path` or `slug` field; slug derived from `name` */
 interface TaxonomyItem {
   id: string;
   name: string;
   imageUrl: string;
-  weight: string;  // Drupal returns weight as string
+  weight: string; // Drupal returns weight as string
 }
 
-/** V4 category-options endpoint response item */
+/** category-options endpoint response item */
 interface CategoryOptionItem {
   id: string;
   name: string;
@@ -59,7 +59,7 @@ function deriveSlug(path: string | null, name: string): string {
 // ── Public API ───────────────────────────────────────────────────────────
 
 /**
- * Fetches all terms for a given taxonomy vocabulary via the REST V3 endpoint.
+ * Fetches all terms for a given taxonomy vocabulary via the taxonomy endpoint.
  * Returns FilterOption[] (domain shape) sorted by weight then name.
  *
  * @param taxonomyType - e.g. `"taxonomy_term--mosaico_collezioni"` — vocabulary extracted by splitting on `--`
@@ -106,11 +106,14 @@ export async function fetchFilterOptions(
 }
 
 /**
- * Converts a V4 CategoryOptionItem to a FilterOption, determining parent vs child
+ * Converts a category-options CategoryOptionItem to a FilterOption, determining parent vs child
  * using parentPath depth (1 segment after locale = root, 2+ = child).
  * Children get `parentId` set to the ID of their immediate parent in the items list.
  */
-function toFilterOption(item: CategoryOptionItem, allItems: CategoryOptionItem[]): FilterOption {
+function toFilterOption(
+  item: CategoryOptionItem,
+  allItems: CategoryOptionItem[],
+): FilterOption {
   const imageUrl = emptyToNull(item.imageUrl);
 
   let resolvedParentId: string | undefined;
@@ -138,9 +141,9 @@ function toFilterOption(item: CategoryOptionItem, allItems: CategoryOptionItem[]
 }
 
 /**
- * Fetches category options (node--categoria) for a product type via the REST V4 endpoint.
+ * Fetches category options (node--categoria) for a product type via the category-options endpoint.
  *
- * Also fetches V4/categoria (all node--categoria) to include hub categories that
+ * Also fetches category-options/categoria (all node--categoria) to include hub categories that
  * have no direct products (e.g. "Complementi e accessori", "Complementi notte"
  * under Arredo). These hubs are direct children of the product type's root
  * categoria and must appear in the listing even without products.
@@ -153,8 +156,8 @@ export async function fetchCategoryOptions(
   locale: string,
 ): Promise<FilterOption[]> {
   // Fetch both endpoints in parallel:
-  // - V4/productType: categories with products for this content type
-  // - V4/categoria: all node--categoria (includes hubs without products)
+  // - category-options/productType: categories with products for this content type
+  // - category-options/categoria: all node--categoria (includes hubs without products)
   const [productResult, allResult] = await Promise.all([
     apiGet<{ items: CategoryOptionItem[] }>(
       `/${locale}/category-options/${productType}`,
@@ -187,7 +190,7 @@ export async function fetchCategoryOptions(
     }
   }
 
-  // From V4/categoria, find hub categories that are direct children of the root
+  // From category-options/categoria, find hub categories that are direct children of the root
   // but missing from the product-specific endpoint (no direct products).
   const productIds = new Set(productItems.map((i) => i.id));
   const hubItems = (allResult?.items ?? []).filter(
@@ -236,9 +239,13 @@ export const fetchAllFilterOptions = cache(
           : false;
 
         if (filterConfig.taxonomyType) {
-          options = await fetchFilterOptions(filterConfig.taxonomyType, locale, {
-            includeImage,
-          });
+          options = await fetchFilterOptions(
+            filterConfig.taxonomyType,
+            locale,
+            {
+              includeImage,
+            },
+          );
         } else if (filterConfig.nodeType === 'node--categoria') {
           options = await fetchCategoryOptions(contentType, locale);
         }

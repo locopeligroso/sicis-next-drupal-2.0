@@ -2,11 +2,11 @@
 
 > **Source of truth:** The code is always the source of truth. This document may be outdated — when in doubt, read the code. For Drupal data (fields, entities, menus, paragraphs), the only real source is what Drupal returns via REST endpoints — never assume field presence or structure from this doc alone, always verify against the actual API response.
 
-> **⚠️ Cambiamenti recenti (2026-03-26):** Cambio architetturale in corso. Il vecchio endpoint C1 entity è disabilitato in locale — sostituito da `resolve-path` (R1) + endpoint prodotto per tipo (P1 mosaico, P2 vetrite, P3 tessuto). Le pagine dettaglio prodotto ora passano da `resolvePath()` prima del fallback C1. Il language switcher usa `window.location.href` (hard navigation) al posto di `router.push`. Vedi `CHANGELOG.md` per i dettagli completi, `docs/REFACTORING_ROADMAP.md` per i prossimi passi.
+> **⚠️ Cambiamenti recenti (2026-03-28):** Migrazione architetturale in corso. I vecchi endpoint generici (entity, products, taxonomy, ecc.) sono ⚠️ LEGACY e vengono riscritti come endpoint dedicati tipo-specifici. Gli endpoint nuovi definitivi usano NID/TID nei path params, non hanno paginazione, e ritornano array flat. Vedi le tabelle "✅ NEW" e "⚠️ LEGACY" nella sezione Endpoint Reference. Le pagine dettaglio prodotto passano da `resolvePath()` + endpoint tipo-specifico (`mosaic-product`, `vetrite-product`, `textile-product`, `pixall-product`). Il language switcher usa `window.location.href` (hard navigation) al posto di `router.push`. Vedi `CHANGELOG.md` per i dettagli completi, `docs/REFACTORING_ROADMAP.md` per i prossimi passi.
 >
 > **🚫 NON modificare il routing** in `src/app/[locale]/[...slug]/page.tsx` — è in fase di ristrutturazione e verrà consolidato (vedi `docs/REFACTORING_ROADMAP.md` #17). Qualsiasi modifica al routing rischia di rompere il flusso resolve-path.
 >
-> **📋 Prossimo lavoro:** I template prodotto **vetrite** (`ProdottoVetrite`) e **tessuto** (`ProdottoTessuto`) usano ancora il rendering legacy (DrupalImage, CSS modules, inline styles). Devono essere migrati ai blocchi DS (Spec\*) come è già stato fatto per mosaico (`MosaicProductPreview`). I dati normalizzati dai fetcher P2/P3 sono già pronti — serve solo costruire i template DS e rimuovere gli adapter legacy (`vetriteToLegacyNode`, `textileToLegacyNode`).
+> **📋 Prossimo lavoro:** I template prodotto **vetrite** (`ProdottoVetrite`) e **tessuto** (`ProdottoTessuto`) usano ancora il rendering legacy (DrupalImage, CSS modules, inline styles). Devono essere migrati ai blocchi DS (Spec\*) come è già stato fatto per mosaico (`MosaicProductPreview`). I dati normalizzati dai fetcher `vetrite-product`/`textile-product` sono già pronti — serve solo costruire i template DS e rimuovere gli adapter legacy (`vetriteToLegacyNode`, `textileToLegacyNode`).
 
 ## Project Overview
 
@@ -36,23 +36,28 @@ One exception: `ProdottoArredo` and `ProdottoIlluminazione` templates use a JSON
 
 - `client.ts` — `apiGet` (base fetcher), `stripDomain`, `stripLocalePrefix`, `emptyToNull` (normalizers)
 - `types.ts` — Response interfaces for all endpoints (source of truth for REST response shapes)
-- `entity.ts` — `fetchEntity` (C1)
-- `products.ts` — `fetchProducts` (V1), `fetchFilterCounts` (V2), `getCategoriaProductType`
-- `filters.ts` — `fetchFilterOptions` (V3), `fetchCategoryOptions` (V4), `fetchAllFilterOptions`
-- `listings.ts` — `fetchBlogPosts` (V5), `fetchProjects` (V6), `fetchEnvironments` (V7), `fetchShowrooms` (V8), `fetchDocuments` (V9)
-- `categories.ts` — `fetchSubcategories` (V10), `fetchPagesByCategory` (V11)
-- `translate-path.ts` — `getTranslatedPath` (C2)
-- `image-fallback.ts` — `enrichWithFallbackImages` (extracts images from C1 entity for items missing imageUrl)
-- `resolve-path.ts` — `resolvePath` (R1) — resolves URL alias → `{ nid, bundle, locale, aliases }`. Foundation for all new REST routing.
-- `mosaic-product.ts` — `fetchMosaicProduct` (P1) — single mosaic product by NID, normalized with collection + grouts + documents
-- `vetrite-product.ts` — `fetchVetriteProduct` (P2) — single vetrite product by NID, normalized with collection + documents
-- `textile-product.ts` — `fetchTextileProduct` (P3) — single textile product by NID, normalized with finiture + maintenance + documents
+- `entity.ts` — `fetchEntity` (entity ⚠️ LEGACY)
+- `products.ts` — `fetchProducts` (products ⚠️ LEGACY), `fetchFilterCounts` (product-counts ⚠️ LEGACY), `getCategoriaProductType`
+- `filters.ts` — `fetchFilterOptions` (taxonomy ⚠️ LEGACY), `fetchCategoryOptions` (category-options ⚠️ LEGACY), `fetchAllFilterOptions`
+- `listings.ts` — `fetchBlogPosts` (blog ⚠️ LEGACY), `fetchProjects` (projects ⚠️ LEGACY), `fetchEnvironments` (environments ⚠️ LEGACY), `fetchShowrooms` (showrooms ⚠️ LEGACY), `fetchDocuments` (documents ⚠️ LEGACY)
+- `categories.ts` — `fetchSubcategories` (subcategories ⚠️ LEGACY), `fetchPagesByCategory` (pages-by-category ⚠️ LEGACY)
+- `translate-path.ts` — `getTranslatedPath` (translate-path ⚠️ LEGACY — Drupal view to be rewritten)
+- `image-fallback.ts` — `enrichWithFallbackImages` (extracts images from entity endpoint for items missing imageUrl)
+- `resolve-path.ts` — `resolvePath` (resolve-path) — resolves URL alias → `{ nid, bundle, locale, aliases }`. Foundation for all new REST routing.
+- `mosaic-product.ts` — `fetchMosaicProduct` (mosaic-product) — single mosaic product by NID, normalized with collection + grouts + documents
+- `vetrite-product.ts` — `fetchVetriteProduct` (vetrite-product) — single vetrite product by NID, normalized with collection + documents
+- `textile-product.ts` — `fetchTextileProduct` (textile-product) — single textile product by NID, normalized with finiture + maintenance + documents
+- `pixall-product.ts` — `fetchPixallProduct` (pixall-product) — single pixall product by NID
+- `mosaic-product-listing.ts` — `fetchMosaicProductListing` (mosaic-products) — TID-based listing, no pagination
+- `vetrite-product-listing.ts` — `fetchVetriteProductListing` (vetrite-products) — TID-based listing, no pagination
+- `textile-product-listing.ts` — `fetchTextileProductListing` (textile-products) — NID-based listing
+- `pixall-product-listing.ts` — `fetchPixallProductListing` (pixall-products) — listing, no filters
 
 **Drupal utilities (`src/lib/drupal/`):**
 
 - `config.ts` — DRUPAL_BASE_URL (single source of truth)
-- `menu.ts` — `fetchMenu` (M1), `transformMenuToNavItems` — uses `fetch()` directly (NOT `apiGet`), different URL pattern (`/api/menu/` without `v1`)
-- `image.ts` — `getDrupalImageUrl` (extracts `uri.url` from C1 image shape)
+- `menu.ts` — `fetchMenu` (menu ⚠️ LEGACY), `transformMenuToNavItems` — uses `fetch()` directly (NOT `apiGet`), different URL pattern (`/api/menu/` without `v1`)
+- `image.ts` — `getDrupalImageUrl` (extracts `uri.url` from entity endpoint image shape)
 - `index.ts` — barrel re-export
 
 #### Drupal REST Endpoint Reference
@@ -62,21 +67,60 @@ All data from Drupal flows through these endpoints. This is the **sole source of
 **Conventions:**
 
 - Custom endpoints go through `apiGet()` which inserts `/api/v1/` after locale: `/{locale}/api/v1/{endpoint}`
-- Paginated responses (V1, V5–V11) wrap items: `{ items: T[], total: number, page: number, pageSize: number }`
+- Paginated responses (products, blog, projects, environments, showrooms, documents, subcategories, pages-by-category) wrap items: `{ items: T[], total: number, page: number, pageSize: number }`
 - Pagination param: `items_per_page` (Drupal Views native) + `page` (0-based)
 - Paths in Views responses contain the full Drupal domain URL — normalize with `stripDomain()` + `stripLocalePrefix()`
 - Image URLs: empty string `""` when no image (not `null`) — normalize with `emptyToNull()`
 
-**R1 — Resolve Path (URL alias → entity metadata + multilingual aliases)**
+**Endpoint status overview:**
+
+The project is migrating from generic Drupal Views endpoints to dedicated type-specific endpoints. **NEW endpoints are definitive.** Old endpoints use generic Views with string-based query params and server-side pagination; new endpoints use NID/TID path params, return flat arrays, and have no pagination. Old Drupal views are being rewritten — the frontend still references them but they will be replaced by new dedicated endpoints following the same pattern as the product endpoints.
+
+**✅ NEW — Definitive endpoints (type-specific, NID/TID-based, no pagination):**
+
+| Endpoint           | Purpose                     | URL pattern                                   |
+| ------------------ | --------------------------- | --------------------------------------------- |
+| resolve-path       | URL alias → entity metadata | `resolve-path?path=...`                       |
+| mosaic-product     | Single mosaic by NID        | `mosaic-product/{nid}`                        |
+| vetrite-product    | Single vetrite by NID       | `vetrite-product/{nid}`                       |
+| textile-product    | Single textile by NID       | `textile-product/{nid}`                       |
+| pixall-product     | Single pixall by NID        | `pixall-product/{nid}`                        |
+| mosaic-products    | Mosaic listing by TID       | `mosaic-products/{collectionTid}/{colorTid}`  |
+| vetrite-products   | Vetrite listing by TID      | `vetrite-products/{collectionTid}/{colorTid}` |
+| textile-products   | Textile listing by NID      | `textile-products/{categoryNid}`              |
+| pixall-products    | All pixall products         | `pixall-products`                             |
+| mosaic-colors      | Hub mosaic colors           | `mosaic-colors`                               |
+| mosaic-collections | Hub mosaic collections      | `mosaic-collections`                          |
+
+**⚠️ LEGACY — Old generic Views (to be rewritten as dedicated endpoints on Drupal):**
+
+| Endpoint          | Purpose                 | URL pattern                                   |
+| ----------------- | ----------------------- | --------------------------------------------- |
+| entity            | Full entity by path     | `entity?path=...`                             |
+| translate-path    | Cross-locale path       | `translate-path?path=...&from=...&to=...`     |
+| products          | Generic product listing | `products/{type}?items_per_page=...&page=...` |
+| product-counts    | Filter value counts     | `products/{type}/counts/{key}`                |
+| taxonomy          | Taxonomy terms          | `taxonomy/{vocabulary}`                       |
+| category-options  | Category nodes          | `category-options/{type}`                     |
+| blog              | Blog posts              | `blog?items_per_page=...&page=...`            |
+| projects          | Projects                | `projects?items_per_page=...&page=...`        |
+| environments      | Environments            | `environments?items_per_page=...&page=...`    |
+| showrooms         | Showrooms               | `showrooms`                                   |
+| documents         | Documents               | `documents?items_per_page=...&page=...`       |
+| subcategories     | Child categories        | `subcategories/{parentNid}`                   |
+| pages-by-category | Pages by category       | `pages-by-category/{parentNid}`               |
+| menu              | Navigation menu         | `/api/menu/{name}` (no `v1`, uses `fetch()`)  |
+
+**resolve-path — Resolve Path (URL alias → entity metadata + multilingual aliases)**
 
 - URL: `/{locale}/api/v1/resolve-path?path={pathWithoutLocale}`
 - Function: `resolvePath(path, locale)` in `resolve-path.ts`
 - Response: `{ nid, type, bundle, locale, aliases: { it: "/mosaico/...", en: "/mosaic/...", ... } }`
-- Foundation for all new REST routing — replaces C1's path resolution role
-- Also used as fallback for language switching when C2 is unavailable
+- Foundation for all new REST routing — replaces entity endpoint's path resolution role
+- Also used for language switching (replaces translate-path)
 - Revalidate: 3600s
 
-**P1 — Mosaic Product (single product by NID)**
+**mosaic-product — Mosaic Product (single product by NID)**
 
 - URL: `/{locale}/api/v1/mosaic-product/{nid}`
 - Function: `fetchMosaicProduct(nid, locale)` in `mosaic-product.ts`
@@ -84,7 +128,7 @@ All data from Drupal flows through these endpoints. This is the **sole source of
 - Rendered via `MosaicProductPreview` (DS Spec\* blocks)
 - Revalidate: 60s
 
-**P2 — Vetrite Product (single product by NID)**
+**vetrite-product — Vetrite Product (single product by NID)**
 
 - URL: `/{locale}/api/v1/vetrite-product/{nid}`
 - Function: `fetchVetriteProduct(nid, locale)` in `vetrite-product.ts`
@@ -92,7 +136,7 @@ All data from Drupal flows through these endpoints. This is the **sole source of
 - Rendered via legacy `ProdottoVetrite` template with `vetriteToLegacyNode` adapter
 - Revalidate: 60s
 
-**P3 — Textile Product (single product by NID)**
+**textile-product — Textile Product (single product by NID)**
 
 - URL: `/{locale}/api/v1/textile-product/{nid}`
 - Function: `fetchTextileProduct(nid, locale)` in `textile-product.ts`
@@ -100,7 +144,14 @@ All data from Drupal flows through these endpoints. This is the **sole source of
 - Rendered via legacy `ProdottoTessuto` template with `textileToLegacyNode` adapter
 - Revalidate: 60s
 
-**C1 — Entity (single entity by path) — LEGACY, disabled locally**
+**pixall-product — Pixall Product (single product by NID)**
+
+- URL: `/{locale}/api/v1/pixall-product/{nid}`
+- Function: `fetchPixallProduct(nid, locale)` in `pixall-product.ts`
+- Response: array with single item.
+- Revalidate: 60s
+
+**entity — Entity (single entity by path) — ⚠️ LEGACY — Drupal view to be rewritten.**
 
 - URL: `/{locale}/api/v1/entity?path={pathWithoutLocale}`
 - Function: `fetchEntity(path, locale)` in `entity.ts`
@@ -109,20 +160,20 @@ All data from Drupal flows through these endpoints. This is the **sole source of
 - Image shape inside `data`: `{ type: "file--file", uri: { url: "https://..." }, meta: { alt, width, height } }`
 - Revalidate: 60s
 
-**C2 — Translate Path (cross-locale path resolution)**
+**translate-path — Translate Path (cross-locale path resolution) — ⚠️ LEGACY — Drupal view to be rewritten**
 
 - URL: `/{locale}/api/v1/translate-path?path={path}&from={locale}&to={targetLocale}`
 - Function: `getTranslatedPath(path, fromLocale, toLocale)` in `translate-path.ts`
 - Response: `{ translatedPath: "/en/mosaic" | null }`
 - Revalidate: 3600s
 
-**V1 — Products (paginated product listing)**
+**products — Products (paginated product listing) — ⚠️ LEGACY — Drupal view to be rewritten. Being replaced by type-specific listing endpoints.**
 
 - URL: `/{locale}/api/v1/products/{productType}?items_per_page=N&page=N&sort=...&{filterParams}`
 - Function: `fetchProducts(options)` in `products.ts`
 - productType: `prodotto_mosaico` | `prodotto_vetrite` | `prodotto_arredo` | `prodotto_tessuto` | `prodotto_pixall` | `prodotto_illuminazione`
 - Filter query params (mapped from Drupal fields via `DRUPAL_FIELD_TO_REST_PARAM`): `collection`, `color`, `shape`, `finish`, `grout`, `texture`, `fabric`, `category`, `type`
-- `category_id` (NID-based filtering) is NOT supported — the V1 endpoint silently ignores it. Use `category` (title-based) instead.
+- `category_id` (NID-based filtering) is NOT supported — the products endpoint silently ignores it. Use `category` (title-based) instead.
 - `category` does NOT support multi-value (comma-separated or array) — only single value per request
 - Response item: `{ id, type, title, subtitle, imageUrl, imageUrlMain, price, priceOnDemand ("0"|"1"|null), path }`
 - `imageUrlMain` is the full-size image (field_immagine), `imageUrl` is the preview (field_immagine_anteprima)
@@ -130,7 +181,7 @@ All data from Drupal flows through these endpoints. This is the **sole source of
 - `path` contains full Drupal domain URL
 - Revalidate: 60s
 
-**V2 — Filter Counts (aggregated counts per filter value)**
+**product-counts — Filter Counts (aggregated counts per filter value) — ⚠️ LEGACY — Drupal view to be rewritten**
 
 - URL: `/{locale}/api/v1/products/{productType}/counts/{filterKey}?{activeFilterParams}`
 - Function: `fetchFilterCounts(productType, activeFilters, filterKey, drupalField, locale)` in `products.ts`
@@ -139,7 +190,35 @@ All data from Drupal flows through these endpoints. This is the **sole source of
 - Active filters (excluding the one being counted) are passed as query params to get cross-filtered counts
 - Revalidate: 60s
 
-**V3 — Taxonomy Terms (vocabulary listing)**
+**mosaic-products — Mosaic Product Listing (TID-based, all products in a collection/color)**
+
+- URL: `/{locale}/api/v1/mosaic-products/{collectionTid}/{colorTid}`
+- Function: `fetchMosaicProductListing()` in `mosaic-product-listing.ts`
+- TID-based filtering (taxonomy term IDs). No pagination — returns all matching products.
+- Revalidate: 60s
+
+**vetrite-products — Vetrite Product Listing (TID-based, all products in a collection/color)**
+
+- URL: `/{locale}/api/v1/vetrite-products/{collectionTid}/{colorTid}`
+- Function: `fetchVetriteProductListing()` in `vetrite-product-listing.ts`
+- TID-based filtering (taxonomy term IDs). No pagination — returns all matching products.
+- Revalidate: 60s
+
+**textile-products — Textile Product Listing (NID-based, all products in a category)**
+
+- URL: `/{locale}/api/v1/textile-products/{categoryNid}`
+- Function: `fetchTextileProductListing()` in `textile-product-listing.ts`
+- NID-based filtering (category node ID). No pagination.
+- Revalidate: 60s
+
+**pixall-products — Pixall Product Listing (no filters)**
+
+- URL: `/{locale}/api/v1/pixall-products`
+- Function: `fetchPixallProductListing()` in `pixall-product-listing.ts`
+- No filter parameters. Returns all pixall products.
+- Revalidate: 60s
+
+**taxonomy — Taxonomy Terms (vocabulary listing) — ⚠️ LEGACY — Drupal view to be rewritten**
 
 - URL: `/{locale}/api/v1/taxonomy/{vocabulary}`
 - Function: `fetchFilterOptions(taxonomyType, locale)` in `filters.ts`
@@ -150,7 +229,7 @@ All data from Drupal flows through these endpoints. This is the **sole source of
 - Empty vocabularies (0 terms in Drupal): `arredo_finiture`, `tessuto_finiture`
 - Revalidate: 3600s
 
-**V4 — Category Options (node--categoria listing for a product type)**
+**category-options — Category Options (node--categoria listing for a product type) — ⚠️ LEGACY — Drupal view to be rewritten**
 
 - URL: `/{locale}/api/v1/category-options/{productType}`
 - Function: `fetchCategoryOptions(productType, locale)` in `filters.ts`
@@ -160,7 +239,7 @@ All data from Drupal flows through these endpoints. This is the **sole source of
 - `parentId`/`parentPath` present when the categoria has a parent (hub) categoria
 - Revalidate: 3600s
 
-**V5 — Blog Posts**
+**blog — Blog Posts — ⚠️ LEGACY — Drupal view to be rewritten**
 
 - URL: `/{locale}/api/v1/blog?items_per_page=N&page=N`
 - Function: `fetchBlogPosts(locale, limit, offset)` in `listings.ts`
@@ -168,21 +247,21 @@ All data from Drupal flows through these endpoints. This is the **sole source of
 - `created` is a Unix timestamp (e.g. `"1772451555"`) — converted to ISO 8601 by `unixToIso()`
 - Revalidate: 300s
 
-**V6 — Projects**
+**projects — Projects — ⚠️ LEGACY — Drupal view to be rewritten**
 
 - URL: `/{locale}/api/v1/projects?items_per_page=N&page=N`
 - Function: `fetchProjects(locale, limit, offset)` in `listings.ts`
 - Response item: `{ id, title, imageUrl, path, category }`
 - Revalidate: 300s
 
-**V7 — Environments**
+**environments — Environments — ⚠️ LEGACY — Drupal view to be rewritten**
 
 - URL: `/{locale}/api/v1/environments?items_per_page=N&page=N`
 - Function: `fetchEnvironments(locale, limit, offset)` in `listings.ts`
 - Response item: `{ id, title, imageUrl, path }`
 - Revalidate: 300s
 
-**V8 — Showrooms**
+**showrooms — Showrooms — ⚠️ LEGACY — Drupal view to be rewritten**
 
 - URL: `/{locale}/api/v1/showrooms`
 - Function: `fetchShowrooms(locale)` in `listings.ts`
@@ -190,7 +269,7 @@ All data from Drupal flows through these endpoints. This is the **sole source of
 - No pagination params used (returns all)
 - Revalidate: 300s
 
-**V9 — Documents**
+**documents — Documents — ⚠️ LEGACY — Drupal view to be rewritten**
 
 - URL: `/{locale}/api/v1/documents?items_per_page=N&page=N`
 - Function: `fetchDocuments(locale, limit, offset)` in `listings.ts`
@@ -198,25 +277,25 @@ All data from Drupal flows through these endpoints. This is the **sole source of
 - Currently returns 0 items on staging (no `node--documento` content published)
 - Revalidate: 300s
 
-**V10 — Subcategories (child node--categoria entities)**
+**subcategories — Subcategories (child node--categoria entities) — ⚠️ LEGACY — Drupal view to be rewritten**
 
 - URL: `/{locale}/api/v1/subcategories/{parentNid}`
 - Function: `fetchSubcategories(parentId, locale)` in `categories.ts`
-- **parentNid must be the integer NID**, not UUID. Callers pass `node._nid` from C1 response.
+- **parentNid must be the integer NID**, not UUID. Callers pass `node._nid` from entity endpoint response.
 - Response item: `{ id, uuid (always null), title, imageUrl, path }`
 - `path` contains full Drupal domain URL
 - Revalidate: 300s
 
-**V11 — Pages by Category (node--page filtered by field_categoria)**
+**pages-by-category — Pages by Category (node--page filtered by field_categoria) — ⚠️ LEGACY — Drupal view to be rewritten**
 
 - URL: `/{locale}/api/v1/pages-by-category/{parentNid}?items_per_page=N&page=N`
 - Function: `fetchPagesByCategory(parentId, locale, limit, offset)` in `categories.ts`
-- **parentNid must be the integer NID**, not UUID. Callers pass `node._nid` from C1 response.
+- **parentNid must be the integer NID**, not UUID. Callers pass `node._nid` from entity endpoint response.
 - Response item: `{ id, title, imageUrl (often ""), path }`
 - `path` contains full Drupal domain URL
 - Revalidate: 300s
 
-**M1 — Menu (native Drupal menu API — NOT through `apiGet()`)**
+**menu — Menu (native Drupal menu API — NOT through `apiGet()`) — ⚠️ LEGACY — Drupal view to be rewritten**
 
 - URL: `/{locale}/api/menu/{menuName}`
 - Function: `fetchMenu(menuName, locale)` in `drupal/menu.ts`
@@ -244,7 +323,7 @@ URLs with 2+ segments. `resolvePath()` is called BEFORE the listing interception
 URLs with 2+ segments (e.g. `/mosaico/murano-smalto`). `getSectionConfigAsync` runs first; if a config is found and `parseFiltersFromUrl` detects at least one active filter → `renderProductListing()` with filter active.
 
 **Stage 3 — Drupal entity resolution**
-`fetchEntity` (C1 endpoint) resolves path to a fully pre-resolved entity in one call. All relationships and paragraphs are inline — no secondary fetches needed. Rendered via `COMPONENT_MAP[getComponentName(entityType)]`.
+`fetchEntity` (entity endpoint ⚠️ LEGACY) resolves path to a fully pre-resolved entity in one call. All relationships and paragraphs are inline — no secondary fetches needed. Rendered via `COMPONENT_MAP[getComponentName(entityType)]`.
 
 **Interception: node--categoria**
 If `translatePath` resolves to `node--categoria` AND `getSectionConfigAsync` returns a config with `filterField` set → the node is a subcategory listing, not a hub category. Renders via `renderProductListing()` using the Drupal node title for the heading.
@@ -264,7 +343,7 @@ Drupal uses `node--page` nodes as hub pages for listing sections. `field_page_id
 | Static pages (page, landing_page)    | 600 s  | `node-resolver.ts` |
 | Taxonomy terms                       | 3600 s | `node-resolver.ts` |
 | Menus                                | 600 s  | `menu.ts`          |
-| Entity (C1 fetchEntity)              | 60 s   | `entity.ts`        |
+| Entity (entity endpoint, LEGACY)     | 60 s   | `entity.ts`        |
 
 #### Server Actions
 
@@ -523,7 +602,7 @@ Source: `src/styles/globals.css`
 3. **Product-level overrides collection** — e.g. `body = product.field_testo_main || collection.field_testo`
 4. **Translations for all static text** — messages/\*.json, future migration planned
 5. **Static images** in `public/images/` (flat structure): `usa-mosaic-quality.jpg`, `Retinatura-mosaico-rete.jpg.webp`
-6. **C1 entity pre-resolves all data** — relationships, paragraphs, and image meta (alt, width, height) flow inline in a single response; no secondary fetches needed for rendering
+6. **entity endpoint pre-resolves all data** — relationships, paragraphs, and image meta (alt, width, height) flow inline in a single response; no secondary fetches needed for rendering
 7. **Blocks import only Composed, never Primitives** — enforced by /ds skill
 8. **Block naming convention** — `Spec*` = template-specific, `Gen*` = paragraph-driven transversal. Gen names derived mechanically from Drupal machine name: `blocco_{name}` → `Gen{PascalCase(name)}`
 9. **Primary-text token** for text on primary color — different from primary base, optimized per theme
@@ -541,13 +620,13 @@ The system has a **uniform API client core** with a **heterogeneous template lay
 
 ### Uniform Dimensions (working well)
 
-| Dimension                 | Pattern                                             | Evidence                                                                  |
-| ------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------- |
-| **Fetcher pattern**       | All use `apiGet()`                                  | 10/10 REST fetchers; menu is the sole exception (uses `fetch()` directly) |
-| **Error handling**        | 404 → `null`, error → `console.error` + `null`      | Identical across all 14 endpoints                                         |
-| **Caching**               | `React.cache()` wrapper + `next: { revalidate: N }` | All fetchers; 3 tiers: 60s/300s/3600s                                     |
-| **Pagination**            | `items_per_page` + `page` (0-based)                 | All Views endpoints (V1, V5–V11)                                          |
-| **Type safety (fetcher)** | `apiGet<T>()` with explicit interfaces              | All response shapes in `types.ts`                                         |
+| Dimension                 | Pattern                                             | Evidence                                                                                                                         |
+| ------------------------- | --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| **Fetcher pattern**       | All use `apiGet()`                                  | 10/10 REST fetchers; menu is the sole exception (uses `fetch()` directly)                                                        |
+| **Error handling**        | 404 → `null`, error → `console.error` + `null`      | Identical across all 14 endpoints                                                                                                |
+| **Caching**               | `React.cache()` wrapper + `next: { revalidate: N }` | All fetchers; 3 tiers: 60s/300s/3600s                                                                                            |
+| **Pagination**            | `items_per_page` + `page` (0-based)                 | All paginated listing endpoints (products, blog, projects, environments, showrooms, documents, subcategories, pages-by-category) |
+| **Type safety (fetcher)** | `apiGet<T>()` with explicit interfaces              | All response shapes in `types.ts`                                                                                                |
 
 ### Heterogeneous Dimensions (5 problem areas)
 
@@ -556,7 +635,7 @@ The system has a **uniform API client core** with a **heterogeneous template lay
 | Pattern                                  | Where                                                                                   | How                                                                                        |
 | ---------------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | `next/image` `<Image>` with `fill`       | DS composed components (ProductCard, CategoryCard, GalleryCarousel, MediaElement, etc.) | Standard for content images > 100px. Uses `sizes` prop for responsive srcset.              |
-| `getDrupalImageUrl(field)`               | ProdottoMosaico, ParagraphResolver adapters                                             | Extracts `uri.url` from C1 image shape `{ type: "file--file", uri: { url } }`              |
+| `getDrupalImageUrl(field)`               | ProdottoMosaico, ParagraphResolver adapters                                             | Extracts `uri.url` from entity endpoint image shape `{ type: "file--file", uri: { url } }` |
 | `DrupalImage` component                  | ProdottoVetrite, Arredo, Tessuto, Pixall, Illuminazione, Articolo, News, Tutorial       | Legacy component wrapping entire image field — to be replaced during DS migration          |
 | Normalized `imageUrl` string → `<Image>` | ProductListingTemplate, all listing cards                                               | Pre-normalized by REST fetcher via `emptyToNull(item.imageUrl)`, rendered via `next/image` |
 
@@ -586,19 +665,19 @@ No shared `normalizeLink()` function exists — the typeof check is duplicated i
 
 #### 4. Secondary Fetches — Chaotic, no unified pattern
 
-| Template                 | Secondary Fetch       | Protocol                | Why                                              |
-| ------------------------ | --------------------- | ----------------------- | ------------------------------------------------ |
-| ProdottoArredo           | English tessuti terms | **JSON:API** (not REST) | Current locale returns stubs without name data   |
-| ProdottoIlluminazione    | English tessuti terms | **JSON:API** (not REST) | Same as Arredo                                   |
-| Categoria                | V10, V1, V11          | REST                    | 3-branch logic: products / subcategories / pages |
-| MosaicoCollezione/Colore | V3 + V1               | REST                    | Filter options + filtered products               |
-| VetriteCollezione/Colore | V3 + V1               | REST                    | Same as Mosaico                                  |
+| Template                 | Secondary Fetch                            | Protocol                | Why                                              |
+| ------------------------ | ------------------------------------------ | ----------------------- | ------------------------------------------------ |
+| ProdottoArredo           | English tessuti terms                      | **JSON:API** (not REST) | Current locale returns stubs without name data   |
+| ProdottoIlluminazione    | English tessuti terms                      | **JSON:API** (not REST) | Same as Arredo                                   |
+| Categoria                | subcategories, products, pages-by-category | REST                    | 3-branch logic: products / subcategories / pages |
+| MosaicoCollezione/Colore | taxonomy + products                        | REST                    | Filter options + filtered products               |
+| VetriteCollezione/Colore | taxonomy + products                        | REST                    | Same as Mosaico                                  |
 
 The Arredo/Illuminazione JSON:API fallback is the **only JSON:API usage** in the entire project — everything else is REST. Templates decide when and what to fetch secondarily with no shared abstraction.
 
-#### 5. C1 Entity Normalization — Delegated to templates
+#### 5. Entity Endpoint Normalization — Delegated to templates
 
-`fetchEntity()` returns raw `{ meta, data: Record<string, unknown> }`. Unlike Views fetchers (V1–V11) which normalize before returning, C1 passes raw Drupal field shapes to templates. Each template then does its own:
+`fetchEntity()` returns raw `{ meta, data: Record<string, unknown> }`. Unlike Views fetchers (products–pages-by-category) which normalize before returning, the entity endpoint passes raw Drupal field shapes to templates. Each template then does its own:
 
 - Field extraction via optional chaining
 - Fallback chains (product → collection → null)
@@ -623,7 +702,7 @@ const finiture = Array.isArray(node.field_finiture_tessuto)
 
 ### Entities Without `field_blocchi`
 
-`Showroom` and `Documento` node types do **NOT** have `field_blocchi`. Including this field in a C1 request for these entities causes Drupal to return HTTP 400. Templates must never pass these through ParagraphResolver.
+`Showroom` and `Documento` node types do **NOT** have `field_blocchi`. Including this field in an entity endpoint request for these entities causes Drupal to return HTTP 400. Templates must never pass these through ParagraphResolver.
 
 ### Detailed Documentation
 

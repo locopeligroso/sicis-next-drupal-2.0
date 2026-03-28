@@ -11,26 +11,26 @@
 
 ## Endpoint Cheat Sheet
 
-| Code    | Endpoint                                                                         | Function                                   | TTL   |
-| ------- | -------------------------------------------------------------------------------- | ------------------------------------------ | ----- |
-| **R1**  | `GET /{locale}/api/v1/resolve-path?path={alias}`                                 | `resolvePath(path, locale)`                | 3600s |
-| **P1**  | `GET /{locale}/api/v1/mosaic-product/{nid}`                                      | `fetchMosaicProduct(nid, locale)`          | 60s   |
-| **P2**  | `GET /{locale}/api/v1/vetrite-product/{nid}`                                     | `fetchVetriteProduct(nid, locale)`         | 60s   |
-| **P3**  | `GET /{locale}/api/v1/textile-product/{nid}`                                     | `fetchTextileProduct(nid, locale)`         | 60s   |
-| **C1**  | `GET /{locale}/api/v1/entity?path={path}` _(legacy, disabled locally)_           | `fetchEntity(path, locale)`                | 60s   |
-| **C2**  | `GET /{locale}/api/v1/translate-path?path=&from=&to=` _(legacy, fallback to R1)_ | `getTranslatedPath(path, from, to)`        | 3600s |
-| **V1**  | `GET /{locale}/api/v1/products/{productType}`                                    | `fetchProducts(options)`                   | 60s   |
-| **V2**  | `GET /{locale}/api/v1/products/{type}/counts/{filter}`                           | `fetchFilterCounts(...)`                   | 60s   |
-| **V3**  | `GET /{locale}/api/v1/taxonomy/{vocabulary}`                                     | `fetchFilterOptions(taxType, locale)`      | 3600s |
-| **V4**  | `GET /{locale}/api/v1/category-options/{productType}`                            | `fetchCategoryOptions(type, locale)`       | 3600s |
-| **V5**  | `GET /{locale}/api/v1/blog`                                                      | `fetchBlogPosts(locale, limit, offset)`    | 300s  |
-| **V6**  | `GET /{locale}/api/v1/projects`                                                  | `fetchProjects(locale, limit, offset)`     | 300s  |
-| **V7**  | `GET /{locale}/api/v1/environments`                                              | `fetchEnvironments(locale, limit, offset)` | 300s  |
-| **V8**  | `GET /{locale}/api/v1/showrooms`                                                 | `fetchShowrooms(locale)`                   | 300s  |
-| **V9**  | `GET /{locale}/api/v1/documents`                                                 | `fetchDocuments(locale, limit, offset)`    | 300s  |
-| **V10** | `GET /{locale}/api/v1/subcategories/{parentNid}`                                 | `fetchSubcategories(nid, locale)`          | 300s  |
-| **V11** | `GET /{locale}/api/v1/pages-by-category/{parentNid}`                             | `fetchPagesByCategory(nid, locale)`        | 300s  |
-| **M1**  | `GET /{locale}/api/menu/{menuName}`                                              | `fetchMenu(name, locale)`                  | 600s  |
+| Endpoint                        | URL                                                                       | Function                                   | TTL   |
+| ------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------ | ----- |
+| **resolve-path**                | `GET /{locale}/api/v1/resolve-path?path={alias}`                          | `resolvePath(path, locale)`                | 3600s |
+| **mosaic-product**              | `GET /{locale}/api/v1/mosaic-product/{nid}`                               | `fetchMosaicProduct(nid, locale)`          | 60s   |
+| **vetrite-product**             | `GET /{locale}/api/v1/vetrite-product/{nid}`                              | `fetchVetriteProduct(nid, locale)`         | 60s   |
+| **textile-product**             | `GET /{locale}/api/v1/textile-product/{nid}`                              | `fetchTextileProduct(nid, locale)`         | 60s   |
+| **entity ⚠️ LEGACY**            | `GET /{locale}/api/v1/entity?path={path}` _(to be rewritten)_             | `fetchEntity(path, locale)`                | 60s   |
+| **translate-path ⚠️ LEGACY**    | `GET /{locale}/api/v1/translate-path?path=&from=&to=` _(to be rewritten)_ | `getTranslatedPath(path, from, to)`        | 3600s |
+| **products ⚠️ LEGACY**          | `GET /{locale}/api/v1/products/{productType}`                             | `fetchProducts(options)`                   | 60s   |
+| **product-counts ⚠️ LEGACY**    | `GET /{locale}/api/v1/products/{type}/counts/{filter}`                    | `fetchFilterCounts(...)`                   | 60s   |
+| **taxonomy ⚠️ LEGACY**          | `GET /{locale}/api/v1/taxonomy/{vocabulary}`                              | `fetchFilterOptions(taxType, locale)`      | 3600s |
+| **category-options ⚠️ LEGACY**  | `GET /{locale}/api/v1/category-options/{productType}`                     | `fetchCategoryOptions(type, locale)`       | 3600s |
+| **blog ⚠️ LEGACY**              | `GET /{locale}/api/v1/blog`                                               | `fetchBlogPosts(locale, limit, offset)`    | 300s  |
+| **projects ⚠️ LEGACY**          | `GET /{locale}/api/v1/projects`                                           | `fetchProjects(locale, limit, offset)`     | 300s  |
+| **environments ⚠️ LEGACY**      | `GET /{locale}/api/v1/environments`                                       | `fetchEnvironments(locale, limit, offset)` | 300s  |
+| **showrooms ⚠️ LEGACY**         | `GET /{locale}/api/v1/showrooms`                                          | `fetchShowrooms(locale)`                   | 300s  |
+| **documents ⚠️ LEGACY**         | `GET /{locale}/api/v1/documents`                                          | `fetchDocuments(locale, limit, offset)`    | 300s  |
+| **subcategories ⚠️ LEGACY**     | `GET /{locale}/api/v1/subcategories/{parentNid}`                          | `fetchSubcategories(nid, locale)`          | 300s  |
+| **pages-by-category ⚠️ LEGACY** | `GET /{locale}/api/v1/pages-by-category/{parentNid}`                      | `fetchPagesByCategory(nid, locale)`        | 300s  |
+| **menu ⚠️ LEGACY**              | `GET /{locale}/api/menu/{menuName}`                                       | `fetchMenu(name, locale)`                  | 600s  |
 
 ## Product Types
 
@@ -43,7 +43,7 @@
 | `prodotto_pixall`        | `/mosaico/pixall`   | —                 | color, shape  | 1/1        |
 | `prodotto_illuminazione` | `/illuminazione`    | subcategory       | —             | 4/3        |
 
-## V1 Filter Query Params
+## products Filter Query Params
 
 | Param        | Drupal Field                                            | Used By                                |
 | ------------ | ------------------------------------------------------- | -------------------------------------- |
@@ -59,7 +59,7 @@
 
 ## Key Gotchas
 
-- **V10/V11 require NID** (integer), not UUID. Pass `node._nid` from C1 response.
+- **subcategories ⚠️ LEGACY / pages-by-category ⚠️ LEGACY require NID** (integer), not UUID. Pass `node._nid` from entity ⚠️ LEGACY response.
 - **`category` filter** does NOT support multi-value or NID-based filtering.
 - **Image empty = `""`** not `null`. Always use `emptyToNull()`.
 - **Taxonomy terms** have NO `path` field. Slug derived from `name` via `deriveSlug()`.
@@ -75,7 +75,7 @@ All Views endpoints: `items_per_page=N&page=N` (0-based page index).
 
 Response wrapper: `{ items: T[], total: number, page: number, pageSize: number }`
 
-Exception: V4 (category-options) returns `{ items: [...] }` without total/page/pageSize.
+Exception: category-options returns `{ items: [...] }` without total/page/pageSize.
 
 ## Normalizer Functions
 
@@ -95,21 +95,21 @@ Exception: V4 (category-options) returns `{ items: [...] }` without total/page/p
 src/lib/api/
   client.ts       — apiGet, stripDomain, stripLocalePrefix, emptyToNull
   types.ts        — All response interfaces
-  resolve-path.ts — R1 resolvePath (URL alias → nid, bundle, aliases)
-  mosaic-product.ts — P1 fetchMosaicProduct (normalized with collection, grouts, documents)
-  vetrite-product.ts — P2 fetchVetriteProduct (normalized with collection, documents)
-  textile-product.ts — P3 fetchTextileProduct (normalized with finiture, maintenance, documents)
-  entity.ts       — C1 fetchEntity (legacy, disabled locally)
-  products.ts     — V1 fetchProducts, V2 fetchFilterCounts, getCategoriaProductType
-  filters.ts      — V3 fetchFilterOptions, V4 fetchCategoryOptions, fetchAllFilterOptions
-  listings.ts     — V5-V9 fetchBlogPosts, fetchProjects, fetchEnvironments, fetchShowrooms, fetchDocuments
-  categories.ts   — V10 fetchSubcategories, V11 fetchPagesByCategory
-  translate-path.ts — C2 getTranslatedPath
+  resolve-path.ts — resolve-path resolvePath (URL alias → nid, bundle, aliases)
+  mosaic-product.ts — mosaic-product fetchMosaicProduct (normalized with collection, grouts, documents)
+  vetrite-product.ts — vetrite-product fetchVetriteProduct (normalized with collection, documents)
+  textile-product.ts — textile-product fetchTextileProduct (normalized with finiture, maintenance, documents)
+  entity.ts       — entity ⚠️ LEGACY fetchEntity (to be rewritten)
+  products.ts     — products ⚠️ LEGACY fetchProducts, product-counts ⚠️ LEGACY fetchFilterCounts, getCategoriaProductType
+  filters.ts      — taxonomy ⚠️ LEGACY fetchFilterOptions, category-options ⚠️ LEGACY fetchCategoryOptions, fetchAllFilterOptions
+  listings.ts     — blog ⚠️ LEGACY / projects ⚠️ LEGACY / environments ⚠️ LEGACY / showrooms ⚠️ LEGACY / documents ⚠️ LEGACY — fetchBlogPosts, fetchProjects, fetchEnvironments, fetchShowrooms, fetchDocuments
+  categories.ts   — subcategories ⚠️ LEGACY fetchSubcategories, pages-by-category ⚠️ LEGACY fetchPagesByCategory
+  translate-path.ts — translate-path ⚠️ LEGACY getTranslatedPath
   image-fallback.ts — enrichWithFallbackImages
 
 src/lib/drupal/
   config.ts       — DRUPAL_BASE_URL
-  menu.ts         — M1 fetchMenu, transformMenuToNavItems
+  menu.ts         — menu fetchMenu, transformMenuToNavItems
   image.ts        — getDrupalImageUrl
 
 src/domain/filters/

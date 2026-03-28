@@ -23,64 +23,64 @@ Entry point: `src/templates/nodes/ProdottoMosaico.tsx`
 
 #### Product-level fields (direct on node)
 
-| Field | Drupal type | Required | Access pattern | Notes |
-|---|---|---|---|---|
-| `field_titolo_main` | plain text | No | `getTextValue()` | Falls back to `title` |
-| `title` | string | Yes | direct | Fallback when `field_titolo_main` absent |
-| `langcode` | string | Yes | direct `?? 'it'` | Used to construct locale paths |
-| `field_testo_main` | formatted text | No | `getProcessedText()` | Falls back to `collezione.field_testo` |
-| `field_immagine` | file--file | No | `getDrupalImageUrl()` | Hero image; used only if `field_gallery` is empty |
-| `field_gallery` | file--file[] | No | array iteration | Carousel slides; main image used as fallback |
-| `field_video` | plain text (URL) | No | `getDrupalImageUrl()` | Vimeo URL; appended to hero carousel |
-| `field_forma` | taxonomy_term[] | No | `[0]?.name` | First element only |
-| `field_finitura` | taxonomy_term[] | No | `[0]?.name` | First element only |
-| `field_colori` | taxonomy_term[] | No | `.name`, `.field_immagine` | Maps to SwatchItem; image used for swatch |
-| `field_stucco` | taxonomy_term[] | No | `.name`, `.field_immagine` | Maps to SwatchItem |
-| `field_prezzo_eu` | plain string | No | direct `?? null` | Plain string, NOT wrapped in `{ value }` |
-| `field_prezzo_usa` | plain string | No | direct `?? null` | Plain string, NOT wrapped in `{ value }` |
-| `field_prezzo_on_demand` | boolean | No | direct `?? false` | Shows "price on request" label |
-| `field_no_usa_stock` | boolean | No | direct `?? false` | Hides US price; disables warehouse info |
-| `field_campione` | boolean | No | direct `?? false` | Shows sample-available badge |
-| `field_composizione` | formatted text | No | `getTextValue()` | Not currently rendered in template output |
+| Field                    | Drupal type      | Required | Access pattern             | Notes                                             |
+| ------------------------ | ---------------- | -------- | -------------------------- | ------------------------------------------------- |
+| `field_titolo_main`      | plain text       | No       | `getTextValue()`           | Falls back to `title`                             |
+| `title`                  | string           | Yes      | direct                     | Fallback when `field_titolo_main` absent          |
+| `langcode`               | string           | Yes      | direct `?? 'it'`           | Used to construct locale paths                    |
+| `field_testo_main`       | formatted text   | No       | `getProcessedText()`       | Falls back to `collezione.field_testo`            |
+| `field_immagine`         | file--file       | No       | `getDrupalImageUrl()`      | Hero image; used only if `field_gallery` is empty |
+| `field_gallery`          | file--file[]     | No       | array iteration            | Carousel slides; main image used as fallback      |
+| `field_video`            | plain text (URL) | No       | `getDrupalImageUrl()`      | Vimeo URL; appended to hero carousel              |
+| `field_forma`            | taxonomy_term[]  | No       | `[0]?.name`                | First element only                                |
+| `field_finitura`         | taxonomy_term[]  | No       | `[0]?.name`                | First element only                                |
+| `field_colori`           | taxonomy_term[]  | No       | `.name`, `.field_immagine` | Maps to SwatchItem; image used for swatch         |
+| `field_stucco`           | taxonomy_term[]  | No       | `.name`, `.field_immagine` | Maps to SwatchItem                                |
+| `field_prezzo_eu`        | plain string     | No       | direct `?? null`           | Plain string, NOT wrapped in `{ value }`          |
+| `field_prezzo_usa`       | plain string     | No       | direct `?? null`           | Plain string, NOT wrapped in `{ value }`          |
+| `field_prezzo_on_demand` | boolean          | No       | direct `?? false`          | Shows "price on request" label                    |
+| `field_no_usa_stock`     | boolean          | No       | direct `?? false`          | Hides US price; disables warehouse info           |
+| `field_campione`         | boolean          | No       | direct `?? false`          | Shows sample-available badge                      |
+| `field_composizione`     | formatted text   | No       | `getTextValue()`           | Not currently rendered in template output         |
 
 #### Collection-level fields (via `field_collezione`)
 
-| Field | Drupal type | Required | Notes |
-|---|---|---|---|
-| `name` | string | No | Collection label shown in hero |
-| `path.alias` | string | No | Collection link; prefixed with `/${locale}` |
-| `field_testo` | formatted text | No | Body fallback when product has no `field_testo_main` |
-| `field_utilizzi` | formatted text | No | Passed through `sanitizeHtml()` to SpecProductResources |
-| `field_manutenzione` | formatted text | No | Passed through `sanitizeHtml()` to SpecProductSpecs |
-| `field_dimensione_foglio_inch` | string | No | "Sheet size" attribute |
-| `field_dimensione_tessera_inch` | string | No | "Chip size" attribute |
-| `field_spessore_inch` | string | No | "Thickness" attribute |
-| `field_retinatura` | string | No | Formatted via `formatRetinatura()` |
-| `field_consumo_stucco_m2` | number | No | Rendered as `${value} kg/m²` |
-| `field_contenuto_piombo` | boolean | No | Converted via `boolLabel()` → `t('resistant')` / `t('absent')` |
-| `field_assorbimento_acqua` | string | No | Shown as raw value in specs table |
-| `field_resistenza_luce` | boolean | No | `boolLabel()` |
-| `field_resistenza_chimica` | boolean | No | `boolLabel()` |
-| `field_espansione_termica` | string | No | Raw value |
-| `field_resistenza_sbalzi_termici` | boolean | No | `boolLabel()` |
-| `field_resistenza_gelo` | boolean | No | `boolLabel()` |
-| `field_resistenza_abr_superficie` | string | No | Raw value |
-| `field_resistenza_abr_massa` | string | No | Raw value |
-| `field_resistenza_macchie` | boolean | No | `boolLabel()` |
-| `field_resistenza_scivolosita` | boolean | No | `boolLabel()` |
-| `field_resistenza_scivol_perc` | boolean | No | `boolLabel()` |
-| `field_documenti` | node--documento[] | No | See DocItem sub-fields below |
+| Field                             | Drupal type       | Required | Notes                                                          |
+| --------------------------------- | ----------------- | -------- | -------------------------------------------------------------- |
+| `name`                            | string            | No       | Collection label shown in hero                                 |
+| `path.alias`                      | string            | No       | Collection link; prefixed with `/${locale}`                    |
+| `field_testo`                     | formatted text    | No       | Body fallback when product has no `field_testo_main`           |
+| `field_utilizzi`                  | formatted text    | No       | Passed through `sanitizeHtml()` to SpecProductResources        |
+| `field_manutenzione`              | formatted text    | No       | Passed through `sanitizeHtml()` to SpecProductSpecs            |
+| `field_dimensione_foglio_inch`    | string            | No       | "Sheet size" attribute                                         |
+| `field_dimensione_tessera_inch`   | string            | No       | "Chip size" attribute                                          |
+| `field_spessore_inch`             | string            | No       | "Thickness" attribute                                          |
+| `field_retinatura`                | string            | No       | Formatted via `formatRetinatura()`                             |
+| `field_consumo_stucco_m2`         | number            | No       | Rendered as `${value} kg/m²`                                   |
+| `field_contenuto_piombo`          | boolean           | No       | Converted via `boolLabel()` → `t('resistant')` / `t('absent')` |
+| `field_assorbimento_acqua`        | string            | No       | Shown as raw value in specs table                              |
+| `field_resistenza_luce`           | boolean           | No       | `boolLabel()`                                                  |
+| `field_resistenza_chimica`        | boolean           | No       | `boolLabel()`                                                  |
+| `field_espansione_termica`        | string            | No       | Raw value                                                      |
+| `field_resistenza_sbalzi_termici` | boolean           | No       | `boolLabel()`                                                  |
+| `field_resistenza_gelo`           | boolean           | No       | `boolLabel()`                                                  |
+| `field_resistenza_abr_superficie` | string            | No       | Raw value                                                      |
+| `field_resistenza_abr_massa`      | string            | No       | Raw value                                                      |
+| `field_resistenza_macchie`        | boolean           | No       | `boolLabel()`                                                  |
+| `field_resistenza_scivolosita`    | boolean           | No       | `boolLabel()`                                                  |
+| `field_resistenza_scivol_perc`    | boolean           | No       | `boolLabel()`                                                  |
+| `field_documenti`                 | node--documento[] | No       | See DocItem sub-fields below                                   |
 
 #### DocItem sub-fields (items inside `field_documenti`)
 
-| Sub-field | Notes |
-|---|---|
-| `field_titolo_main` | `getTextValue()`; falls back to `title` |
-| `title` | Fallback title |
-| `field_tipologia_documento` | `getTextValue()`; used as document type label |
-| `field_collegamento_esterno` | string or `{ uri: string }`; resolved to href |
-| `field_allegato.entity.uri.value` | File path fallback when no external link |
-| `field_immagine` | Thumbnail for DocumentCard |
+| Sub-field                         | Notes                                         |
+| --------------------------------- | --------------------------------------------- |
+| `field_titolo_main`               | `getTextValue()`; falls back to `title`       |
+| `title`                           | Fallback title                                |
+| `field_tipologia_documento`       | `getTextValue()`; used as document type label |
+| `field_collegamento_esterno`      | string or `{ uri: string }`; resolved to href |
+| `field_allegato.entity.uri.value` | File path fallback when no external link      |
+| `field_immagine`                  | Thumbnail for DocumentCard                    |
 
 **Document classification logic:** title containing `install` or `manual`, or type containing `guide` → routed to maintenance card href. Title containing `rende unic` or `makes unique` → routed to hero "discover" link.
 
@@ -92,50 +92,50 @@ Entry point: `src/templates/nodes/ProdottoVetrite.tsx`
 
 #### Product-level fields
 
-| Field | Drupal type | Required | Notes |
-|---|---|---|---|
-| `field_titolo_main` | plain text | No | `getTextValue()`; falls back to `title` |
-| `title` | string | Yes | Fallback title |
-| `langcode` | string | Yes | `?? 'it'` |
-| `field_testo_main` | formatted text | No | `getProcessedText()`; falls back to `collezione.field_testo` |
-| `field_immagine` | file--file | No | Main image via `DrupalImage` |
-| `field_gallery` | file--file[] | No | Gallery grid |
-| `field_colori` | taxonomy_term[] | No | `.name`, `.field_immagine` — rendered as swatch cards |
-| `field_finiture` | taxonomy_term[] | No | `.name` — rendered as pill badges |
-| `field_texture` | taxonomy_term[] | No | `.name` — rendered as pill badges |
-| `field_prezzo_eu` | `{ value: string }` | No | **Wrapped** — access via `.value` |
-| `field_prezzo_usa` | `{ value: string }` | No | **Wrapped** — access via `.value` |
-| `field_prezzo_on_demand` | boolean | No | `?? false` |
-| `field_no_usa_stock` | boolean | No | `?? false` |
-| `field_dimensioni_cm` | string | No | Product-level override; falls back to `collezione.field_dimensioni_cm` |
-| `field_dimensioni_inch` | string | No | Product-level override |
-| `field_dimensione_pattern_cm` | string | No | Product-only; no collection equivalent |
-| `field_dimensione_pattern_inch` | string | No | Product-only |
-| `field_formato_campione` | string | No | Override; falls back to `collezione.field_formato_campione` |
+| Field                           | Drupal type         | Required | Notes                                                                  |
+| ------------------------------- | ------------------- | -------- | ---------------------------------------------------------------------- |
+| `field_titolo_main`             | plain text          | No       | `getTextValue()`; falls back to `title`                                |
+| `title`                         | string              | Yes      | Fallback title                                                         |
+| `langcode`                      | string              | Yes      | `?? 'it'`                                                              |
+| `field_testo_main`              | formatted text      | No       | `getProcessedText()`; falls back to `collezione.field_testo`           |
+| `field_immagine`                | file--file          | No       | Main image via `DrupalImage`                                           |
+| `field_gallery`                 | file--file[]        | No       | Gallery grid                                                           |
+| `field_colori`                  | taxonomy_term[]     | No       | `.name`, `.field_immagine` — rendered as swatch cards                  |
+| `field_finiture`                | taxonomy_term[]     | No       | `.name` — rendered as pill badges                                      |
+| `field_texture`                 | taxonomy_term[]     | No       | `.name` — rendered as pill badges                                      |
+| `field_prezzo_eu`               | `{ value: string }` | No       | **Wrapped** — access via `.value`                                      |
+| `field_prezzo_usa`              | `{ value: string }` | No       | **Wrapped** — access via `.value`                                      |
+| `field_prezzo_on_demand`        | boolean             | No       | `?? false`                                                             |
+| `field_no_usa_stock`            | boolean             | No       | `?? false`                                                             |
+| `field_dimensioni_cm`           | string              | No       | Product-level override; falls back to `collezione.field_dimensioni_cm` |
+| `field_dimensioni_inch`         | string              | No       | Product-level override                                                 |
+| `field_dimensione_pattern_cm`   | string              | No       | Product-only; no collection equivalent                                 |
+| `field_dimensione_pattern_inch` | string              | No       | Product-only                                                           |
+| `field_formato_campione`        | string              | No       | Override; falls back to `collezione.field_formato_campione`            |
 
 #### Collection-level fields (via `field_collezione`)
 
-| Field | Drupal type | Notes |
-|---|---|---|
-| `name` | string | Collection name displayed with optional link |
-| `path.alias` | string | Collection link |
-| `field_immagine` | file--file | Collection hero image via `DrupalImage` |
-| `field_testo` | formatted text | Body fallback |
-| `field_dimensioni_cm` | string | Slab dimensions metric |
-| `field_dimensioni_inch` | string | Slab dimensions imperial |
-| `field_dimensioni_extra_cm` | string | Extra dimension metric |
-| `field_dimensioni_extra_inch` | string | Extra dimension imperial |
-| `field_spessore_mm` | string | Thickness metric |
-| `field_spessore_inch` | string | Thickness imperial |
-| `field_spessore_extra_mm` | string | Extra thickness metric |
-| `field_spessore_extra_inch` | string | Extra thickness imperial |
-| `field_formato_campione` | string | Sample format |
-| `field_trattamenti_extra` | formatted text | `getProcessedText()` → `sanitizeHtml()` |
-| `field_lastre_speciali` | formatted text | `getProcessedText()` → `sanitizeHtml()` |
-| `field_vetri_speciali` | formatted text | `getProcessedText()` → `sanitizeHtml()` |
-| `field_utilizzi` | formatted text | `getProcessedText()` → `sanitizeHtml()` |
-| `field_manutenzione` | formatted text | `getProcessedText()` → `sanitizeHtml()` |
-| `field_documenti` | node--documento[] | Same DocItem shape as ProdottoMosaico |
+| Field                         | Drupal type       | Notes                                        |
+| ----------------------------- | ----------------- | -------------------------------------------- |
+| `name`                        | string            | Collection name displayed with optional link |
+| `path.alias`                  | string            | Collection link                              |
+| `field_immagine`              | file--file        | Collection hero image via `DrupalImage`      |
+| `field_testo`                 | formatted text    | Body fallback                                |
+| `field_dimensioni_cm`         | string            | Slab dimensions metric                       |
+| `field_dimensioni_inch`       | string            | Slab dimensions imperial                     |
+| `field_dimensioni_extra_cm`   | string            | Extra dimension metric                       |
+| `field_dimensioni_extra_inch` | string            | Extra dimension imperial                     |
+| `field_spessore_mm`           | string            | Thickness metric                             |
+| `field_spessore_inch`         | string            | Thickness imperial                           |
+| `field_spessore_extra_mm`     | string            | Extra thickness metric                       |
+| `field_spessore_extra_inch`   | string            | Extra thickness imperial                     |
+| `field_formato_campione`      | string            | Sample format                                |
+| `field_trattamenti_extra`     | formatted text    | `getProcessedText()` → `sanitizeHtml()`      |
+| `field_lastre_speciali`       | formatted text    | `getProcessedText()` → `sanitizeHtml()`      |
+| `field_vetri_speciali`        | formatted text    | `getProcessedText()` → `sanitizeHtml()`      |
+| `field_utilizzi`              | formatted text    | `getProcessedText()` → `sanitizeHtml()`      |
+| `field_manutenzione`          | formatted text    | `getProcessedText()` → `sanitizeHtml()`      |
+| `field_documenti`             | node--documento[] | Same DocItem shape as ProdottoMosaico        |
 
 ---
 
@@ -145,38 +145,38 @@ Entry point: `src/templates/nodes/ProdottoArredo.tsx`
 
 #### Product-level fields
 
-| Field | Drupal type | Required | Notes |
-|---|---|---|---|
-| `field_titolo_main` | plain text | No | `getTextValue()`; falls back to `title` |
-| `title` | string | Yes | Fallback |
-| `langcode` | string | Yes | `?? 'it'` |
-| `field_testo_main` | formatted text | No | `getProcessedText()` — no collection fallback |
-| `field_materiali` | formatted text | No | `getProcessedText()` → `sanitizeHtml()` |
-| `field_specifiche_tecniche` | formatted text | No | `getProcessedText()` → `sanitizeHtml()` |
-| `field_immagine` | file--file | No | Main image via `DrupalImage` |
-| `field_gallery` | file--file[] | No | Gallery images; combined with `field_gallery_intro` |
-| `field_gallery_intro` | file--file[] | No | Prepended to gallery output |
-| `field_finiture` | FinituraItem[] | No | `.name`, `.field_etichetta`, `.field_testo`, `.field_immagine` |
-| `field_tessuti` | taxonomy_term[] | No | `.name`, `.field_immagine`; may be stubs requiring JSON:API fallback fetch |
-| `field_documenti` | node--documento[] | No | Same DocItem shape |
-| `field_scheda_tecnica` | file--file[] | No | Array of file entities; `.filename`, `.uri.url` |
-| `field_prezzo_eu` | `{ value: string }` | No | **Wrapped** |
-| `field_prezzo_usa` | `{ value: string }` | No | **Wrapped** |
-| `field_collegamento_esterno` | string or `{ uri }` | No | External link (1stDibs, etc.) |
-| `field_path_file_ftp` | string or string[] | No | 3D file path; cast via `Record<string,unknown>` |
-| `field_blocchi` | paragraph--*[] | No | Passed to `ParagraphResolver` |
+| Field                        | Drupal type         | Required | Notes                                                                      |
+| ---------------------------- | ------------------- | -------- | -------------------------------------------------------------------------- |
+| `field_titolo_main`          | plain text          | No       | `getTextValue()`; falls back to `title`                                    |
+| `title`                      | string              | Yes      | Fallback                                                                   |
+| `langcode`                   | string              | Yes      | `?? 'it'`                                                                  |
+| `field_testo_main`           | formatted text      | No       | `getProcessedText()` — no collection fallback                              |
+| `field_materiali`            | formatted text      | No       | `getProcessedText()` → `sanitizeHtml()`                                    |
+| `field_specifiche_tecniche`  | formatted text      | No       | `getProcessedText()` → `sanitizeHtml()`                                    |
+| `field_immagine`             | file--file          | No       | Main image via `DrupalImage`                                               |
+| `field_gallery`              | file--file[]        | No       | Gallery images; combined with `field_gallery_intro`                        |
+| `field_gallery_intro`        | file--file[]        | No       | Prepended to gallery output                                                |
+| `field_finiture`             | FinituraItem[]      | No       | `.name`, `.field_etichetta`, `.field_testo`, `.field_immagine`             |
+| `field_tessuti`              | taxonomy_term[]     | No       | `.name`, `.field_immagine`; may be stubs requiring JSON:API fallback fetch |
+| `field_documenti`            | node--documento[]   | No       | Same DocItem shape                                                         |
+| `field_scheda_tecnica`       | file--file[]        | No       | Array of file entities; `.filename`, `.uri.url`                            |
+| `field_prezzo_eu`            | `{ value: string }` | No       | **Wrapped**                                                                |
+| `field_prezzo_usa`           | `{ value: string }` | No       | **Wrapped**                                                                |
+| `field_collegamento_esterno` | string or `{ uri }` | No       | External link (1stDibs, etc.)                                              |
+| `field_path_file_ftp`        | string or string[]  | No       | 3D file path; cast via `Record<string,unknown>`                            |
+| `field_blocchi`              | paragraph--\*[]     | No       | Passed to `ParagraphResolver`                                              |
 
 **Tessuti fallback:** When all tessuti items have no `name` (untranslated stubs), the template fetches each stub individually from `${DRUPAL_BASE_URL}/en/jsonapi/taxonomy_term/${bundle}/${id}?include=field_immagine`. Revalidate 3600s.
 
 #### Category-level fields (via `field_categoria`)
 
-| Field | Notes |
-|---|---|
-| `field_titolo_main` | `getTextValue()`; falls back to cast `title` |
-| `title` | Fallback category name |
-| `field_testo_main` | `getProcessedText()` — description below image |
-| `path.alias` | Category link in breadcrumb |
-| `field_immagine` | Category image via `DrupalImage` |
+| Field               | Notes                                          |
+| ------------------- | ---------------------------------------------- |
+| `field_titolo_main` | `getTextValue()`; falls back to cast `title`   |
+| `title`             | Fallback category name                         |
+| `field_testo_main`  | `getProcessedText()` — description below image |
+| `path.alias`        | Category link in breadcrumb                    |
+| `field_immagine`    | Category image via `DrupalImage`               |
 
 ---
 
@@ -186,31 +186,31 @@ Entry point: `src/templates/nodes/ProdottoTessuto.tsx`
 
 #### Product-level fields
 
-| Field | Drupal type | Required | Notes |
-|---|---|---|---|
-| `field_titolo_main` | plain text | No | `getTextValue()`; falls back to `title` |
-| `title` | string | Yes | Fallback |
-| `langcode` | string | Yes | `?? 'it'` |
-| `field_testo_main` | formatted text | No | `getProcessedText()` — rendered at bottom |
-| `field_immagine_anteprima` | file--file | No | **Main display image** — NOT `field_immagine` |
-| `field_gallery` | file--file[] | No | Combined with `field_gallery_intro` |
-| `field_gallery_intro` | file--file[] | No | Prepended to gallery |
-| `field_colori` | taxonomy_term[] | No | `.name` — pill badges only |
-| `field_finiture_tessuto` | FinituraItem or FinituraItem[] | No | **Cardinality=1 in Drupal** — normalized to array. Accesses `.name`, `.field_codice_colore`, `.field_etichetta`, `.field_testo` |
-| `field_tipologia_tessuto` | term or term[] | No | **Cardinality=1** — normalized to array. Accesses `.name` |
-| `field_indicazioni_manutenzione` | taxonomy_term[] | No | `.name` — pill badges |
-| `field_altezza_cm` | string | No | Height metric |
-| `field_altezza_inch` | string | No | Height imperial |
-| `field_peso` | string | No | Weight g/m² |
-| `field_composizione` | formatted text | No | **Not in typed schema** — cast via `Record<string,unknown>` |
-| `field_utilizzo` | string | No | Usage category (capitalized) |
-| `field_densita_annodatura` | string | No | Knotting density |
-| `field_dimensioni_cm` | string | No | Dimensions metric |
-| `field_dimensioni_inch` | string | No | Dimensions imperial |
-| `field_spessore` | string | No | Thickness |
-| `field_prezzo_eu` | plain string | No | **Plain string** — NOT wrapped (differs from Arredo/Vetrite) |
-| `field_prezzo_usa` | plain string | No | **Plain string** |
-| `field_documenti` | node--documento[] | No | Same DocItem shape |
+| Field                            | Drupal type                    | Required | Notes                                                                                                                           |
+| -------------------------------- | ------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `field_titolo_main`              | plain text                     | No       | `getTextValue()`; falls back to `title`                                                                                         |
+| `title`                          | string                         | Yes      | Fallback                                                                                                                        |
+| `langcode`                       | string                         | Yes      | `?? 'it'`                                                                                                                       |
+| `field_testo_main`               | formatted text                 | No       | `getProcessedText()` — rendered at bottom                                                                                       |
+| `field_immagine_anteprima`       | file--file                     | No       | **Main display image** — NOT `field_immagine`                                                                                   |
+| `field_gallery`                  | file--file[]                   | No       | Combined with `field_gallery_intro`                                                                                             |
+| `field_gallery_intro`            | file--file[]                   | No       | Prepended to gallery                                                                                                            |
+| `field_colori`                   | taxonomy_term[]                | No       | `.name` — pill badges only                                                                                                      |
+| `field_finiture_tessuto`         | FinituraItem or FinituraItem[] | No       | **Cardinality=1 in Drupal** — normalized to array. Accesses `.name`, `.field_codice_colore`, `.field_etichetta`, `.field_testo` |
+| `field_tipologia_tessuto`        | term or term[]                 | No       | **Cardinality=1** — normalized to array. Accesses `.name`                                                                       |
+| `field_indicazioni_manutenzione` | taxonomy_term[]                | No       | `.name` — pill badges                                                                                                           |
+| `field_altezza_cm`               | string                         | No       | Height metric                                                                                                                   |
+| `field_altezza_inch`             | string                         | No       | Height imperial                                                                                                                 |
+| `field_peso`                     | string                         | No       | Weight g/m²                                                                                                                     |
+| `field_composizione`             | formatted text                 | No       | **Not in typed schema** — cast via `Record<string,unknown>`                                                                     |
+| `field_utilizzo`                 | string                         | No       | Usage category (capitalized)                                                                                                    |
+| `field_densita_annodatura`       | string                         | No       | Knotting density                                                                                                                |
+| `field_dimensioni_cm`            | string                         | No       | Dimensions metric                                                                                                               |
+| `field_dimensioni_inch`          | string                         | No       | Dimensions imperial                                                                                                             |
+| `field_spessore`                 | string                         | No       | Thickness                                                                                                                       |
+| `field_prezzo_eu`                | plain string                   | No       | **Plain string** — NOT wrapped (differs from Arredo/Vetrite)                                                                    |
+| `field_prezzo_usa`               | plain string                   | No       | **Plain string**                                                                                                                |
+| `field_documenti`                | node--documento[]              | No       | Same DocItem shape                                                                                                              |
 
 #### Category-level fields (via `field_categoria`)
 
@@ -224,32 +224,32 @@ Entry point: `src/templates/nodes/ProdottoPixall.tsx`
 
 #### Product-level fields
 
-| Field | Drupal type | Required | Notes |
-|---|---|---|---|
-| `field_titolo_main` | plain text | No | `getTextValue()`; falls back to `title` |
-| `title` | string | Yes | Fallback |
-| `langcode` | string | Yes | `?? 'it'` |
-| `field_testo_main` | formatted text | No | `getProcessedText()` → `sanitizeHtml()` |
-| `field_composizione` | formatted text | No | `getProcessedText()` → `sanitizeHtml()` |
-| `field_manutenzione` | formatted text | No | `getProcessedText()` → `sanitizeHtml()` |
-| `field_immagine` | file--file | No | Main image via `DrupalImage` |
-| `field_immagine_moduli` | file--file | No | Module schema diagram |
-| `field_gallery_intro` | file--file[] | No | Prepended to gallery |
-| `field_gallery` | file--file[] | No | Combined with `field_gallery_intro` |
-| `field_colori` | taxonomy_term[] | No | `.name`; color swatch via `getColorSwatch(name)` |
-| `field_forma` | taxonomy_term[] | No | `.name` — pill badges |
-| `field_stucco` | taxonomy_term[] | No | `.name` — pill badges |
-| `field_dimensione_tessera_mm` | string | No | Tile size metric |
-| `field_dimensione_tessera_inch` | string | No | Tile size imperial |
-| `field_dimensione_foglio_mm` | string | No | Sheet size metric |
-| `field_dimensione_foglio_inch` | string | No | Sheet size imperial |
-| `field_dimensione_moduli` | string | No | Module size |
-| `field_consumo_stucco_m2` | number | No | Converted to string; rendered as `${value} kg/m²` |
-| `field_consumo_stucco_sqft` | number | No | Converted to string; rendered as `${value} kg/sqft` |
-| `field_retinatura` | string | No | Formatted via `formatRetinatura()` |
-| `field_utilizzi` | formatted text | No | `getProcessedText()` → `sanitizeHtml()` |
-| `field_numero_moduli` | string or number | No | Modules per sheet |
-| `field_documenti` | node--documento[] | No | Same DocItem shape |
+| Field                           | Drupal type       | Required | Notes                                               |
+| ------------------------------- | ----------------- | -------- | --------------------------------------------------- |
+| `field_titolo_main`             | plain text        | No       | `getTextValue()`; falls back to `title`             |
+| `title`                         | string            | Yes      | Fallback                                            |
+| `langcode`                      | string            | Yes      | `?? 'it'`                                           |
+| `field_testo_main`              | formatted text    | No       | `getProcessedText()` → `sanitizeHtml()`             |
+| `field_composizione`            | formatted text    | No       | `getProcessedText()` → `sanitizeHtml()`             |
+| `field_manutenzione`            | formatted text    | No       | `getProcessedText()` → `sanitizeHtml()`             |
+| `field_immagine`                | file--file        | No       | Main image via `DrupalImage`                        |
+| `field_immagine_moduli`         | file--file        | No       | Module schema diagram                               |
+| `field_gallery_intro`           | file--file[]      | No       | Prepended to gallery                                |
+| `field_gallery`                 | file--file[]      | No       | Combined with `field_gallery_intro`                 |
+| `field_colori`                  | taxonomy_term[]   | No       | `.name`; color swatch via `getColorSwatch(name)`    |
+| `field_forma`                   | taxonomy_term[]   | No       | `.name` — pill badges                               |
+| `field_stucco`                  | taxonomy_term[]   | No       | `.name` — pill badges                               |
+| `field_dimensione_tessera_mm`   | string            | No       | Tile size metric                                    |
+| `field_dimensione_tessera_inch` | string            | No       | Tile size imperial                                  |
+| `field_dimensione_foglio_mm`    | string            | No       | Sheet size metric                                   |
+| `field_dimensione_foglio_inch`  | string            | No       | Sheet size imperial                                 |
+| `field_dimensione_moduli`       | string            | No       | Module size                                         |
+| `field_consumo_stucco_m2`       | number            | No       | Converted to string; rendered as `${value} kg/m²`   |
+| `field_consumo_stucco_sqft`     | number            | No       | Converted to string; rendered as `${value} kg/sqft` |
+| `field_retinatura`              | string            | No       | Formatted via `formatRetinatura()`                  |
+| `field_utilizzi`                | formatted text    | No       | `getProcessedText()` → `sanitizeHtml()`             |
+| `field_numero_moduli`           | string or number  | No       | Modules per sheet                                   |
+| `field_documenti`               | node--documento[] | No       | Same DocItem shape                                  |
 
 ---
 
@@ -266,23 +266,23 @@ Structurally identical to ProdottoArredo. The only differences are:
 
 #### All fields accessed
 
-| Field | Notes |
-|---|---|
-| `field_titolo_main`, `title` | Same as Arredo |
-| `langcode` | Same |
-| `field_testo_main` | Same |
-| `field_materiali` | Same |
-| `field_specifiche_tecniche` | Same |
-| `field_immagine` | Same |
-| `field_gallery`, `field_gallery_intro` | Same |
-| `field_finiture` | Same shape: `.name`, `.field_etichetta`, `.field_testo`, `.field_immagine` |
-| `field_tessuti` | Same with JSON:API fallback |
-| `field_documenti` | Same DocItem shape |
-| `field_scheda_tecnica` | `[0]` only — `SchedaItem { uri?: { value? }, filename? }` |
-| `field_prezzo_eu`, `field_prezzo_usa` | **Wrapped** `{ value: string }` |
-| `field_collegamento_esterno` | string or `{ uri }` |
-| `field_path_file_ftp` | string or string[]; cast via `Record<string,unknown>` |
-| `field_categoria` | `.field_titolo_main`, `title`, `.field_testo_main`, `path.alias`, `.field_immagine` |
+| Field                                  | Notes                                                                               |
+| -------------------------------------- | ----------------------------------------------------------------------------------- |
+| `field_titolo_main`, `title`           | Same as Arredo                                                                      |
+| `langcode`                             | Same                                                                                |
+| `field_testo_main`                     | Same                                                                                |
+| `field_materiali`                      | Same                                                                                |
+| `field_specifiche_tecniche`            | Same                                                                                |
+| `field_immagine`                       | Same                                                                                |
+| `field_gallery`, `field_gallery_intro` | Same                                                                                |
+| `field_finiture`                       | Same shape: `.name`, `.field_etichetta`, `.field_testo`, `.field_immagine`          |
+| `field_tessuti`                        | Same with JSON:API fallback                                                         |
+| `field_documenti`                      | Same DocItem shape                                                                  |
+| `field_scheda_tecnica`                 | `[0]` only — `SchedaItem { uri?: { value? }, filename? }`                           |
+| `field_prezzo_eu`, `field_prezzo_usa`  | **Wrapped** `{ value: string }`                                                     |
+| `field_collegamento_esterno`           | string or `{ uri }`                                                                 |
+| `field_path_file_ftp`                  | string or string[]; cast via `Record<string,unknown>`                               |
+| `field_categoria`                      | `.field_titolo_main`, `title`, `.field_testo_main`, `path.alias`, `.field_immagine` |
 
 ---
 
@@ -290,13 +290,13 @@ Structurally identical to ProdottoArredo. The only differences are:
 
 Entry point: `src/templates/nodes/Articolo.tsx`
 
-| Field | Notes |
-|---|---|
+| Field               | Notes                                   |
+| ------------------- | --------------------------------------- |
 | `field_titolo_main` | `getTextValue()`; falls back to `title` |
-| `title` | Fallback |
-| `field_testo_main` | `getProcessedText()` → `sanitizeHtml()` |
-| `field_immagine` | Passed to `DrupalImage` (16/9) |
-| `field_blocchi` | Iterated through `ParagraphResolver` |
+| `title`             | Fallback                                |
+| `field_testo_main`  | `getProcessedText()` → `sanitizeHtml()` |
+| `field_immagine`    | Passed to `DrupalImage` (16/9)          |
+| `field_blocchi`     | Iterated through `ParagraphResolver`    |
 
 ---
 
@@ -328,13 +328,13 @@ Identical field access to Articolo: `field_titolo_main`, `title`, `field_testo_m
 
 Entry point: `src/templates/nodes/Progetto.tsx`
 
-| Field | Notes |
-|---|---|
-| `field_titolo_main` | `getTextValue()`; falls back to `title` |
-| `title` | Fallback |
-| `field_testo_main` | `getProcessedText()` → `sanitizeHtml()` |
-| `field_immagine` | Passed to `DrupalImage` (16/9) |
-| `field_blocchi` | Iterated through `ParagraphResolver` |
+| Field                      | Notes                                                             |
+| -------------------------- | ----------------------------------------------------------------- |
+| `field_titolo_main`        | `getTextValue()`; falls back to `title`                           |
+| `title`                    | Fallback                                                          |
+| `field_testo_main`         | `getProcessedText()` → `sanitizeHtml()`                           |
+| `field_immagine`           | Passed to `DrupalImage` (16/9)                                    |
+| `field_blocchi`            | Iterated through `ParagraphResolver`                              |
 | `field_categoria_progetto` | `.name`, `.path.alias` — used as category label + link above hero |
 
 ---
@@ -345,18 +345,18 @@ Entry point: `src/templates/nodes/Showroom.tsx`
 
 **No `field_blocchi`.** Drupal returns 400 if `field_blocchi` is included.
 
-| Field | Type | Notes |
-|---|---|---|
-| `field_titolo_main` | plain text | `getTextValue()`; falls back to `title` |
-| `title` | string | Fallback |
-| `field_testo_main` | formatted text | `getProcessedText()` → `sanitizeHtml()` |
-| `field_indirizzo` | string | Cast directly |
-| `field_citta` | string | Cast directly |
-| `field_telefono` | string | Cast directly; rendered as `tel:` link |
-| `field_indirizzo_email` | string | Cast directly; rendered as `mailto:` link |
-| `field_collegamento_gmaps` | string | Cast directly; "Ottieni indicazioni" link |
-| `field_collegamento_esterno` | string | Cast directly; "Anteprima" link |
-| `field_gallery` | file--file[] | First element used as hero; rest rendered as grid |
+| Field                        | Type           | Notes                                             |
+| ---------------------------- | -------------- | ------------------------------------------------- |
+| `field_titolo_main`          | plain text     | `getTextValue()`; falls back to `title`           |
+| `title`                      | string         | Fallback                                          |
+| `field_testo_main`           | formatted text | `getProcessedText()` → `sanitizeHtml()`           |
+| `field_indirizzo`            | string         | Cast directly                                     |
+| `field_citta`                | string         | Cast directly                                     |
+| `field_telefono`             | string         | Cast directly; rendered as `tel:` link            |
+| `field_indirizzo_email`      | string         | Cast directly; rendered as `mailto:` link         |
+| `field_collegamento_gmaps`   | string         | Cast directly; "Ottieni indicazioni" link         |
+| `field_collegamento_esterno` | string         | Cast directly; "Anteprima" link                   |
+| `field_gallery`              | file--file[]   | First element used as hero; rest rendered as grid |
 
 ---
 
@@ -366,13 +366,13 @@ Entry point: `src/templates/nodes/Documento.tsx`
 
 **No `field_blocchi`.** Drupal returns 400 if `field_blocchi` is included.
 
-| Field | Notes |
-|---|---|
-| `field_titolo_main` | `getTextValue()`; falls back to `title` |
-| `title` | Fallback |
-| `field_testo_main` | `getProcessedText()` → `sanitizeHtml()` |
-| `field_immagine` | Passed to `DrupalImage` (16/9) |
-| `field_allegato` | Cast as `Record<string,unknown>`; URL extracted via `getDrupalImageUrl()` |
+| Field               | Notes                                                                     |
+| ------------------- | ------------------------------------------------------------------------- |
+| `field_titolo_main` | `getTextValue()`; falls back to `title`                                   |
+| `title`             | Fallback                                                                  |
+| `field_testo_main`  | `getProcessedText()` → `sanitizeHtml()`                                   |
+| `field_immagine`    | Passed to `DrupalImage` (16/9)                                            |
+| `field_allegato`    | Cast as `Record<string,unknown>`; URL extracted via `getDrupalImageUrl()` |
 
 ---
 
@@ -380,12 +380,12 @@ Entry point: `src/templates/nodes/Documento.tsx`
 
 Entry point: `src/templates/nodes/Page.tsx`
 
-| Field | Notes |
-|---|---|
+| Field               | Notes                                                                                     |
+| ------------------- | ----------------------------------------------------------------------------------------- |
 | `field_titolo_main` | `getTextValue()`; falls back to `title` — passed to ParagraphResolver as `pageTitle` only |
-| `title` | Fallback |
-| `field_testo_main` | `getProcessedText()` → `sanitizeHtml()` — rendered before paragraphs |
-| `field_blocchi` | Iterated through `ParagraphResolver` |
+| `title`             | Fallback                                                                                  |
+| `field_testo_main`  | `getProcessedText()` → `sanitizeHtml()` — rendered before paragraphs                      |
+| `field_blocchi`     | Iterated through `ParagraphResolver`                                                      |
 
 ---
 
@@ -393,10 +393,10 @@ Entry point: `src/templates/nodes/Page.tsx`
 
 Entry point: `src/templates/nodes/LandingPage.tsx`
 
-| Field | Notes |
-|---|---|
-| `title` | `getTextValue()` — passed to ParagraphResolver as `pageTitle` only; never displayed directly |
-| `field_blocchi` | Iterated through `ParagraphResolver` — entire page is paragraphs |
+| Field           | Notes                                                                                        |
+| --------------- | -------------------------------------------------------------------------------------------- |
+| `title`         | `getTextValue()` — passed to ParagraphResolver as `pageTitle` only; never displayed directly |
+| `field_blocchi` | Iterated through `ParagraphResolver` — entire page is paragraphs                             |
 
 ---
 
@@ -406,21 +406,22 @@ Entry point: `src/templates/nodes/Categoria.tsx`
 
 Three-branch rendering. Common fields for all branches:
 
-| Field | Notes |
-|---|---|
-| `field_titolo_main` | `getTextValue()`; falls back to `title` |
-| `title` | Fallback; also passed to `getCategoriaProductType()` for branch detection |
-| `langcode` | `?? 'it'` |
-| `_nid` | Integer NID from C1 meta; passed to `fetchSubcategories(V10)` and `fetchPagesByCategory(V11)` |
+| Field               | Notes                                                                                                                     |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `field_titolo_main` | `getTextValue()`; falls back to `title`                                                                                   |
+| `title`             | Fallback; also passed to `getCategoriaProductType()` for branch detection                                                 |
+| `langcode`          | `?? 'it'`                                                                                                                 |
+| `_nid`              | Integer NID from entity meta; passed to `fetchSubcategories(subcategories)` and `fetchPagesByCategory(pages-by-category)` |
 
 **Branch 1 — Product category** (`getCategoriaProductType(title)` returns non-null):
-Calls `fetchProducts(V1)` with `limit: 24`. No additional node fields used.
+Calls `fetchProducts(products)` with `limit: 24`. No additional node fields used.
 
-**Branch 2 — Hub with subcategories** (`fetchSubcategories(V10)` returns items):
-Calls `fetchProducts(V1)` for each subcategory title in parallel (multi-fetch because V1 does not support multi-value `category` param). No additional node fields used.
+**Branch 2 — Hub with subcategories** (`fetchSubcategories(subcategories)` returns items):
+Calls `fetchProducts(products)` for each subcategory title in parallel (multi-fetch because products does not support multi-value `category` param). No additional node fields used.
 
-**Branch 3 — Content category** (falls through to `fetchPagesByCategory(V11)`):
+**Branch 3 — Content category** (falls through to `fetchPagesByCategory(pages-by-category)`):
 If `pages.length === 0`, falls back to rendering:
+
 - `field_immagine` via `DrupalImage`
 - `field_blocchi` via `ParagraphResolver`
 
@@ -450,14 +451,15 @@ Same field access as Articolo: `field_titolo_main`, `title`, `field_testo_main`,
 
 Entry point: `src/templates/taxonomy/MosaicoCollezione.tsx`
 
-| Field | Notes |
-|---|---|
-| `name` | Term name; passed to `fetchProducts(V1)` as `field_collezione.name` filter |
-| `langcode` | `?? 'it'` |
+| Field      | Notes                                                                            |
+| ---------- | -------------------------------------------------------------------------------- |
+| `name`     | Term name; passed to `fetchProducts(products)` as `field_collezione.name` filter |
+| `langcode` | `?? 'it'`                                                                        |
 
 **Secondary fetches triggered:**
-- `fetchAllFilterOptions('prodotto_mosaico', langcode)` — V3 taxonomy vocabularies
-- `fetchProducts({ productType: 'prodotto_mosaico', filters: [{ field: 'field_collezione.name', value: name }] })` — V1
+
+- `fetchAllFilterOptions('prodotto_mosaico', langcode)` — taxonomy vocabulary endpoint
+- `fetchProducts({ productType: 'prodotto_mosaico', filters: [{ field: 'field_collezione.name', value: name }] })` — products
 
 No hero image. No `field_documenti`.
 
@@ -477,16 +479,17 @@ Identical to MosaicoCollezione but filters on color term. Fields accessed: `name
 
 Entry point: `src/templates/taxonomy/VetriteCollezione.tsx`
 
-| Field | Notes |
-|---|---|
-| `name` | Term name; filter value |
-| `langcode` | `?? 'it'` |
-| `field_immagine` | Hero image; `getDrupalImageUrl()` — renders with gradient overlay if present |
-| `field_documenti` | Same DocItem shape; renders document cards section below product grid |
+| Field             | Notes                                                                        |
+| ----------------- | ---------------------------------------------------------------------------- |
+| `name`            | Term name; filter value                                                      |
+| `langcode`        | `?? 'it'`                                                                    |
+| `field_immagine`  | Hero image; `getDrupalImageUrl()` — renders with gradient overlay if present |
+| `field_documenti` | Same DocItem shape; renders document cards section below product grid        |
 
 **Secondary fetches triggered:**
-- `fetchAllFilterOptions('prodotto_vetrite', langcode)` — V3
-- `fetchProducts({ productType: 'prodotto_vetrite', filters: [{ field: 'field_collezione.name', value: name }] })` — V1
+
+- `fetchAllFilterOptions('prodotto_vetrite', langcode)` — taxonomy endpoint
+- `fetchProducts({ productType: 'prodotto_vetrite', filters: [{ field: 'field_collezione.name', value: name }] })` — products
 
 ---
 
@@ -521,9 +524,10 @@ The most common pattern. Used for title, body, and relationship data at every le
 const title = getTextValue(typedNode.field_titolo_main) || typedNode.title;
 
 // Body with collection-level fallback
-const body = getProcessedText(typedNode.field_testo_main)
-  || getProcessedText(collezioneData?.field_testo)
-  || null;
+const body =
+  getProcessedText(typedNode.field_testo_main) ||
+  getProcessedText(collezioneData?.field_testo) ||
+  null;
 
 // Collection data safely accessed
 const collezioneData = typedNode.field_collezione; // may be undefined
@@ -589,7 +593,8 @@ export function getDrupalImageUrl(field: unknown): string | null {
 // Usage — hero image with gallery fallback
 if (heroSlides.length === 0) {
   const mainSrc = getDrupalImageUrl(typedNode.field_immagine);
-  if (mainSrc) heroSlides.push({ type: 'image', src: mainSrc, alt: title ?? '' });
+  if (mainSrc)
+    heroSlides.push({ type: 'image', src: mainSrc, alt: title ?? '' });
 }
 ```
 
@@ -604,8 +609,14 @@ Color terms are mapped to SwatchItem arrays using either the image URL or a CSS 
 ```typescript
 const detailColors: SwatchItem[] = colori.map((c) => {
   const name = c.name ?? '';
-  const imageSrc = getDrupalImageUrl((c as Record<string, unknown>).field_immagine);
-  return { name, imageSrc, cssColor: imageSrc ? undefined : getColorSwatch(name) };
+  const imageSrc = getDrupalImageUrl(
+    (c as Record<string, unknown>).field_immagine,
+  );
+  return {
+    name,
+    imageSrc,
+    cssColor: imageSrc ? undefined : getColorSwatch(name),
+  };
 });
 ```
 
@@ -618,12 +629,14 @@ For finish/shape/texture terms without images, the term name is rendered as a pi
 Documents in `field_documenti` are classified by inspecting the title and type strings, routing each item to a different UI slot.
 
 ```typescript
-const isGuide = docTitle.toLowerCase().includes('install')
-  || docTitle.toLowerCase().includes('manual')
-  || docType?.toLowerCase().includes('guide');
+const isGuide =
+  docTitle.toLowerCase().includes('install') ||
+  docTitle.toLowerCase().includes('manual') ||
+  docType?.toLowerCase().includes('guide');
 
-const isDiscover = docTitle.toLowerCase().includes('rende unic')
-  || docTitle.toLowerCase().includes('makes unique');
+const isDiscover =
+  docTitle.toLowerCase().includes('rende unic') ||
+  docTitle.toLowerCase().includes('makes unique');
 ```
 
 Applied in: ProdottoMosaico. Other templates (Vetrite, Arredo, Tessuto, Pixall, Illuminazione) render all documents uniformly without classification.
@@ -704,13 +717,13 @@ import { sanitizeHtml } from '@/lib/sanitize';
 
 Price field shape differs across product types. This is a frequent source of bugs.
 
-| Template | `field_prezzo_eu` shape | `field_prezzo_usa` shape |
-|---|---|---|
-| ProdottoMosaico | `string \| null` (plain) | `string \| null` (plain) |
-| ProdottoVetrite | `{ value: string } \| null` (wrapped) | `{ value: string } \| null` (wrapped) |
-| ProdottoArredo | `{ value: string } \| null` (wrapped) | `{ value: string } \| null` (wrapped) |
-| ProdottoTessuto | `string \| null` (plain) | `string \| null` (plain) |
-| ProdottoPixall | not accessed | not accessed |
+| Template              | `field_prezzo_eu` shape               | `field_prezzo_usa` shape              |
+| --------------------- | ------------------------------------- | ------------------------------------- |
+| ProdottoMosaico       | `string \| null` (plain)              | `string \| null` (plain)              |
+| ProdottoVetrite       | `{ value: string } \| null` (wrapped) | `{ value: string } \| null` (wrapped) |
+| ProdottoArredo        | `{ value: string } \| null` (wrapped) | `{ value: string } \| null` (wrapped) |
+| ProdottoTessuto       | `string \| null` (plain)              | `string \| null` (plain)              |
+| ProdottoPixall        | not accessed                          | not accessed                          |
 | ProdottoIlluminazione | `{ value: string } \| null` (wrapped) | `{ value: string } \| null` (wrapped) |
 
 **Rule:** Mosaico and Tessuto use plain strings. Vetrite, Arredo, and Illuminazione use the `{ value }` wrapper. Access the wrong shape silently returns the object itself, which renders as `[object Object]`.

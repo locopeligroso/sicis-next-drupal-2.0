@@ -8,13 +8,13 @@
 ## Table of Contents
 
 1. [Overview](#1-overview)
-   1.5. [New REST Endpoints — R1, P1–P3](#15-new-rest-endpoints--r1-p1p3)
-2. [Entity Endpoints — C1, C2 (legacy)](#2-entity-endpoints--c1-c2)
-3. [Views Endpoints — Product Listings — V1, V2](#3-views-endpoints--product-listings--v1-v2)
-4. [Views Endpoints — Taxonomy & Categories — V3, V4](#4-views-endpoints--taxonomy--categories--v3-v4)
-5. [Views Endpoints — Content Listings — V5–V9](#5-views-endpoints--content-listings--v5v9)
-6. [Views Endpoints — Categories & Pages — V10, V11](#6-views-endpoints--categories--pages--v10-v11)
-7. [Menu API — M1](#7-menu-api--m1)
+   1.5. [New REST Endpoints — resolve-path, mosaic-product, vetrite-product, textile-product](#15-new-rest-endpoints--resolve-path-mosaic-product-vetrite-product-textile-product)
+2. [Entity Endpoints ⚠️ LEGACY — entity, translate-path](#2-entity-endpoints--entity-translate-path-legacy)
+3. [Views Endpoints ⚠️ LEGACY — Product Listings — products, product-counts](#3-views-endpoints--product-listings--products-product-counts)
+4. [Views Endpoints ⚠️ LEGACY — Taxonomy & Categories — taxonomy, category-options](#4-views-endpoints--taxonomy--categories--taxonomy-category-options)
+5. [Views Endpoints ⚠️ LEGACY — Content Listings — blog, projects, environments, showrooms, documents](#5-views-endpoints--content-listings--blog-projects-environments-showrooms-documents)
+6. [Views Endpoints ⚠️ LEGACY — Categories & Pages — subcategories, pages-by-category](#6-views-endpoints--categories--pages--subcategories-pages-by-category)
+7. [Menu API ⚠️ LEGACY — menu](#7-menu-api--menu)
 8. [Normalizer Functions](#8-normalizer-functions)
 9. [Revalidation Summary](#9-revalidation-summary)
 10. [Error Handling](#10-error-handling)
@@ -29,14 +29,15 @@ All Drupal data for the Sicis Next.js frontend flows exclusively through custom 
 
 **Endpoint categories:**
 
-| Category                    | Codes    | Purpose                                                    |
-| --------------------------- | -------- | ---------------------------------------------------------- |
-| Entity endpoints            | C1, C2   | Single-entity resolution and cross-locale path translation |
-| Views — Products            | V1, V2   | Paginated product listing and aggregated filter counts     |
-| Views — Taxonomy/Categories | V3, V4   | Taxonomy vocabulary terms and node--categoria options      |
-| Views — Content             | V5–V9    | Blog, projects, environments, showrooms, documents         |
-| Views — Relations           | V10, V11 | Subcategories and pages filtered by parent categoria       |
-| Menu                        | M1       | Drupal native menu API (different URL pattern)             |
+| Category                              | Endpoints                                                      | Purpose                                                    |
+| ------------------------------------- | -------------------------------------------------------------- | ---------------------------------------------------------- |
+| New REST endpoints                    | resolve-path, mosaic-product, vetrite-product, textile-product | URL resolution and product detail pages                    |
+| Entity endpoints ⚠️ LEGACY            | entity, translate-path                                         | Single-entity resolution and cross-locale path translation |
+| Views — Products ⚠️ LEGACY            | products, product-counts                                       | Paginated product listing and aggregated filter counts     |
+| Views — Taxonomy/Categories ⚠️ LEGACY | taxonomy, category-options                                     | Taxonomy vocabulary terms and node--categoria options      |
+| Views — Content ⚠️ LEGACY             | blog, projects, environments, showrooms, documents             | Blog, projects, environments, showrooms, documents         |
+| Views — Relations ⚠️ LEGACY           | subcategories, pages-by-category                               | Subcategories and pages filtered by parent categoria       |
+| Menu ⚠️ LEGACY                        | menu                                                           | Drupal native menu API (different URL pattern)             |
 
 ### Base URL Pattern
 
@@ -85,17 +86,17 @@ Pagination params: `items_per_page` (Drupal Views native) + `page` (0-based).
 
 ---
 
-## 1.5. New REST Endpoints — R1, P1–P3
+## 1.5. New REST Endpoints — resolve-path, mosaic-product, vetrite-product, textile-product
 
-These endpoints replace the old C1 entity endpoint for product detail pages. Each product type has its own dedicated endpoint. The `resolve-path` endpoint (R1) is the foundation for all routing.
+These endpoints replace the old entity endpoint for product detail pages. Each product type has its own dedicated endpoint. The `resolve-path` endpoint is the foundation for all routing.
 
-### R1 — Resolve Path
+### resolve-path — Resolve Path
 
 **Function:** `resolvePath(path, locale)` in `src/lib/api/resolve-path.ts`
 **URL:** `/{locale}/api/v1/resolve-path?path={pathWithoutLocale}`
 **Revalidate:** 3600s
 
-Resolves a Drupal path alias to entity metadata + multilingual aliases. Foundation for all new REST routing — replaces C1's path resolution role.
+Resolves a Drupal path alias to entity metadata + multilingual aliases. Foundation for all new REST routing — replaces the entity endpoint's path resolution role.
 
 **Response:**
 
@@ -116,7 +117,7 @@ Resolves a Drupal path alias to entity metadata + multilingual aliases. Foundati
 }
 ```
 
-### P1 — Mosaic Product
+### mosaic-product — Mosaic Product
 
 **Function:** `fetchMosaicProduct(nid, locale)` in `src/lib/api/mosaic-product.ts`
 **URL:** `/{locale}/api/v1/mosaic-product/{nid}`
@@ -125,7 +126,7 @@ Resolves a Drupal path alias to entity metadata + multilingual aliases. Foundati
 Single mosaic product with collection (specs, resistance data, documents) and grouts.
 Rendered via **MosaicProductPreview** (DS Spec\* blocks).
 
-### P2 — Vetrite Product
+### vetrite-product — Vetrite Product
 
 **Function:** `fetchVetriteProduct(nid, locale)` in `src/lib/api/vetrite-product.ts`
 **URL:** `/{locale}/api/v1/vetrite-product/{nid}`
@@ -134,7 +135,7 @@ Rendered via **MosaicProductPreview** (DS Spec\* blocks).
 Single vetrite product with collection (dimensions, thickness, treatments, special slabs/glass, documents).
 Rendered via legacy **ProdottoVetrite** template with `vetriteToLegacyNode` adapter.
 
-### P3 — Textile Product
+### textile-product — Textile Product
 
 **Function:** `fetchTextileProduct(nid, locale)` in `src/lib/api/textile-product.ts`
 **URL:** `/{locale}/api/v1/textile-product/{nid}`
@@ -150,12 +151,12 @@ URL → resolvePath(path, locale) → { nid, bundle }
   → bundle === 'prodotto_mosaico'  → fetchMosaicProduct(nid)  → MosaicProductPreview (DS)
   → bundle === 'prodotto_vetrite'  → fetchVetriteProduct(nid) → ProdottoVetrite (legacy + adapter)
   → bundle === 'prodotto_tessuto'  → fetchTextileProduct(nid) → ProdottoTessuto (legacy + adapter)
-  → other bundles                  → fallback to C1 or notFound()
+  → other bundles                  → fallback to entity endpoint or notFound()
 ```
 
 ### Common Response Pattern
 
-All P1–P3 endpoints return an **array with a single element** (Drupal Views convention). The fetcher unwraps `result[0]`. Each includes a normalizer that:
+All mosaic-product, vetrite-product, and textile-product endpoints return an **array with a single element** (Drupal Views convention). The fetcher unwraps `result[0]`. Each includes a normalizer that:
 
 - Coerces boolean strings ("1"/"0" or "On"/"Off") to native booleans
 - Converts empty strings to null via `emptyToNull()`
@@ -164,9 +165,9 @@ All P1–P3 endpoints return an **array with a single element** (Drupal Views co
 
 ---
 
-## 2. Entity Endpoints — C1, C2 (legacy, disabled locally)
+## 2. Entity Endpoints — entity, translate-path (⚠️ LEGACY — to be rewritten)
 
-### C1 — Entity (Single Entity by Path)
+### entity — Entity (Single Entity by Path) ⚠️ LEGACY — Drupal view to be rewritten
 
 **Function:** `fetchEntity(path, locale)` in `src/lib/api/entity.ts`
 **URL:** `/{locale}/api/v1/entity?path={pathWithoutLocale}`
@@ -215,12 +216,12 @@ Resolves any Drupal path alias to its fully pre-resolved entity. All relationshi
 **Notes:**
 
 - This is the single-call replacement for the old two-step `translatePath` + `fetchJsonApiResource` pattern.
-- The integer NID is available as `meta.id` — required by V10 and V11 callers.
+- The integer NID is available as `meta.id` — required by the subcategories and pages-by-category callers.
 - Returns `null` for 404 or any network/HTTP error.
 
 ---
 
-### C2 — Translate Path
+### translate-path — Translate Path
 
 **Function:** `getTranslatedPath(path, fromLocale, toLocale)` in `src/lib/api/translate-path.ts`
 **URL:** `/{locale}/api/v1/translate-path?path={path}&from={locale}&to={targetLocale}`
@@ -246,9 +247,9 @@ Resolves a path from one locale to the equivalent path in another locale. Used b
 
 ---
 
-## 3. Views Endpoints — Product Listings — V1, V2
+## 3. Views Endpoints — Product Listings — products, product-counts
 
-### V1 — Products (Paginated)
+### products — Products (Paginated)
 
 **Function:** `fetchProducts(options)` in `src/lib/api/products.ts`
 **URL:** `/{locale}/api/v1/products/{productType}`
@@ -333,7 +334,7 @@ Returns a paginated list of products for a given content type, with optional fil
 
 ---
 
-### V2 — Filter Counts
+### product-counts — Filter Counts
 
 **Function:** `fetchFilterCounts(productType, activeFilters, filterKey, drupalField, locale)` in `src/lib/api/products.ts`
 **URL:** `/{locale}/api/v1/products/{productType}/counts/{filterKey}`
@@ -345,7 +346,7 @@ Returns server-side aggregated counts for each value of a given filter facet. Ac
 
 | Name        | Values                                                                                     |
 | ----------- | ------------------------------------------------------------------------------------------ |
-| productType | Same as V1                                                                                 |
+| productType | Same as products endpoint                                                                  |
 | filterKey   | `collection`, `color`, `shape`, `finish`, `grout`, `texture`, `fabric`, `category`, `type` |
 
 **Function Parameters:**
@@ -368,9 +369,9 @@ Returns server-side aggregated counts for each value of a given filter facet. Ac
 
 ---
 
-## 4. Views Endpoints — Taxonomy & Categories — V3, V4
+## 4. Views Endpoints — Taxonomy & Categories — taxonomy, category-options
 
-### V3 — Taxonomy Terms
+### taxonomy — Taxonomy Terms
 
 **Function:** `fetchFilterOptions(taxonomyType, locale, options?)` in `src/lib/api/filters.ts`
 **URL:** `/{locale}/api/v1/taxonomy/{vocabulary}`
@@ -420,7 +421,7 @@ Returns all terms for a given Drupal taxonomy vocabulary. Vocabulary name is ext
 
 ---
 
-### V4 — Category Options
+### category-options — Category Options
 
 **Function:** `fetchCategoryOptions(productType, locale)` in `src/lib/api/filters.ts`
 **URLs:**
@@ -471,7 +472,7 @@ Fetches `node--categoria` entities for product types that organize by category h
 
 ---
 
-## 5. Views Endpoints — Content Listings — V5–V9
+## 5. Views Endpoints — Content Listings — blog, projects, environments, showrooms, documents
 
 All content listing endpoints share these conventions:
 
@@ -483,7 +484,7 @@ All content listing endpoints share these conventions:
 
 ---
 
-### V5 — Blog Posts
+### blog — Blog Posts
 
 **Function:** `fetchBlogPosts(locale, limit, offset)` in `src/lib/api/listings.ts`
 **URL:** `/{locale}/api/v1/blog`
@@ -519,7 +520,7 @@ All content listing endpoints share these conventions:
 
 ---
 
-### V6 — Projects
+### projects — Projects
 
 **Function:** `fetchProjects(locale, limit, offset)` in `src/lib/api/listings.ts`
 **URL:** `/{locale}/api/v1/projects`
@@ -541,7 +542,7 @@ All content listing endpoints share these conventions:
 
 ---
 
-### V7 — Environments
+### environments — Environments
 
 **Function:** `fetchEnvironments(locale, limit, offset)` in `src/lib/api/listings.ts`
 **URL:** `/{locale}/api/v1/environments`
@@ -562,7 +563,7 @@ All content listing endpoints share these conventions:
 
 ---
 
-### V8 — Showrooms
+### showrooms — Showrooms
 
 **Function:** `fetchShowrooms(locale)` in `src/lib/api/listings.ts`
 **URL:** `/{locale}/api/v1/showrooms`
@@ -609,7 +610,7 @@ No pagination params are used — all showrooms are returned in one response.
 
 ---
 
-### V9 — Documents
+### documents — Documents
 
 **Function:** `fetchDocuments(locale, limit, offset)` in `src/lib/api/listings.ts`
 **URL:** `/{locale}/api/v1/documents`
@@ -636,9 +637,9 @@ No pagination params are used — all showrooms are returned in one response.
 
 ---
 
-## 6. Views Endpoints — Categories & Pages — V10, V11
+## 6. Views Endpoints — Categories & Pages — subcategories, pages-by-category
 
-### V10 — Subcategories
+### subcategories — Subcategories
 
 **Function:** `fetchSubcategories(parentId, locale)` in `src/lib/api/categories.ts`
 **URL:** `/{locale}/api/v1/subcategories/{parentNid}`
@@ -646,7 +647,7 @@ No pagination params are used — all showrooms are returned in one response.
 
 Returns child `node--categoria` entities for a given parent categoria.
 
-**Critical requirement:** `parentNid` must be the integer NID, NOT the UUID. Callers must pass `node.meta.id` (from C1 response), not `node.meta.uuid`.
+**Critical requirement:** `parentNid` must be the integer NID, NOT the UUID. Callers must pass `node.meta.id` (from the entity endpoint response), not `node.meta.uuid`.
 
 **Raw REST response item:**
 
@@ -673,7 +674,7 @@ Returns child `node--categoria` entities for a given parent categoria.
 
 ---
 
-### V11 — Pages by Category
+### pages-by-category — Pages by Category
 
 **Function:** `fetchPagesByCategory(parentId, locale, limit, offset)` in `src/lib/api/categories.ts`
 **URL:** `/{locale}/api/v1/pages-by-category/{parentNid}`
@@ -681,7 +682,7 @@ Returns child `node--categoria` entities for a given parent categoria.
 
 Returns published `node--page` entities whose `field_categoria` references the given parent categoria NID.
 
-**Critical requirement:** Same as V10 — `parentNid` must be the integer NID from `meta.id` in the C1 response.
+**Critical requirement:** Same as subcategories — `parentNid` must be the integer NID from `meta.id` in the entity endpoint response.
 
 **Query Parameters:** `items_per_page`, `page`
 
@@ -698,9 +699,9 @@ Returns published `node--page` entities whose `field_categoria` references the g
 
 ---
 
-## 7. Menu API — M1
+## 7. Menu API — menu
 
-### M1 — Menu
+### menu — Menu
 
 **Function:** `fetchMenu(menuName, locale)` in `src/lib/drupal/menu.ts`
 **URL:** `/{locale}/api/menu/{menuName}`
@@ -753,7 +754,7 @@ All normalizers live in `src/lib/api/` and `src/lib/drupal/`. They are pure func
 | `toAbsoluteUrl`     | `products.ts`     | Ensure image URL is absolute                   | `"/sites/default/..."` → `"https://drupal.example.com/sites/..."` |
 | `unixToIso`         | `listings.ts`     | Convert Unix timestamp string to ISO 8601      | `"1772451555"` → `"2026-03-01T..."`                               |
 | `deriveSlug`        | `filters.ts`      | Derive URL slug from path last segment or name | `"Colibrì"` → `"colibri"` (via `SLUG_OVERRIDES`)                  |
-| `getDrupalImageUrl` | `drupal/image.ts` | Extract image URL from C1 file field shape     | `{ uri: { url: "..." } }` → `"https://..."`                       |
+| `getDrupalImageUrl` | `drupal/image.ts` | Extract image URL from entity file field shape | `{ uri: { url: "..." } }` → `"https://..."`                       |
 
 **`deriveSlug` priority order:**
 
@@ -765,22 +766,22 @@ All normalizers live in `src/lib/api/` and `src/lib/drupal/`. They are pure func
 
 ## 9. Revalidation Summary
 
-| Endpoint          | Code | Function               | TTL   |
-| ----------------- | ---- | ---------------------- | ----- |
-| Entity by path    | C1   | `fetchEntity`          | 60s   |
-| Translate path    | C2   | `getTranslatedPath`    | 3600s |
-| Products listing  | V1   | `fetchProducts`        | 60s   |
-| Filter counts     | V2   | `fetchFilterCounts`    | 60s   |
-| Taxonomy terms    | V3   | `fetchFilterOptions`   | 3600s |
-| Category options  | V4   | `fetchCategoryOptions` | 3600s |
-| Blog posts        | V5   | `fetchBlogPosts`       | 300s  |
-| Projects          | V6   | `fetchProjects`        | 300s  |
-| Environments      | V7   | `fetchEnvironments`    | 300s  |
-| Showrooms         | V8   | `fetchShowrooms`       | 300s  |
-| Documents         | V9   | `fetchDocuments`       | 300s  |
-| Subcategories     | V10  | `fetchSubcategories`   | 300s  |
-| Pages by category | V11  | `fetchPagesByCategory` | 300s  |
-| Menu              | M1   | `fetchMenu`            | 600s  |
+| Endpoint          | Name              | Function               | TTL   |
+| ----------------- | ----------------- | ---------------------- | ----- |
+| Entity by path    | entity            | `fetchEntity`          | 60s   |
+| Translate path    | translate-path    | `getTranslatedPath`    | 3600s |
+| Products listing  | products          | `fetchProducts`        | 60s   |
+| Filter counts     | product-counts    | `fetchFilterCounts`    | 60s   |
+| Taxonomy terms    | taxonomy          | `fetchFilterOptions`   | 3600s |
+| Category options  | category-options  | `fetchCategoryOptions` | 3600s |
+| Blog posts        | blog              | `fetchBlogPosts`       | 300s  |
+| Projects          | projects          | `fetchProjects`        | 300s  |
+| Environments      | environments      | `fetchEnvironments`    | 300s  |
+| Showrooms         | showrooms         | `fetchShowrooms`       | 300s  |
+| Documents         | documents         | `fetchDocuments`       | 300s  |
+| Subcategories     | subcategories     | `fetchSubcategories`   | 300s  |
+| Pages by category | pages-by-category | `fetchPagesByCategory` | 300s  |
+| Menu              | menu              | `fetchMenu`            | 600s  |
 
 ---
 
@@ -813,12 +814,12 @@ All callers are expected to handle `null` returns gracefully. Templates and list
 | ------------------------------- | ---------------------------------------------------------------------------------------- |
 | `src/lib/api/client.ts`         | Base fetcher (`apiGet`), normalizers (`stripDomain`, `stripLocalePrefix`, `emptyToNull`) |
 | `src/lib/api/types.ts`          | Response interfaces (source of truth for REST response shapes)                           |
-| `src/lib/api/entity.ts`         | C1                                                                                       |
-| `src/lib/api/translate-path.ts` | C2                                                                                       |
-| `src/lib/api/products.ts`       | V1, V2                                                                                   |
-| `src/lib/api/filters.ts`        | V3, V4                                                                                   |
-| `src/lib/api/listings.ts`       | V5, V6, V7, V8, V9                                                                       |
-| `src/lib/api/categories.ts`     | V10, V11                                                                                 |
-| `src/lib/drupal/menu.ts`        | M1                                                                                       |
+| `src/lib/api/entity.ts`         | entity                                                                                   |
+| `src/lib/api/translate-path.ts` | translate-path                                                                           |
+| `src/lib/api/products.ts`       | products, product-counts                                                                 |
+| `src/lib/api/filters.ts`        | taxonomy, category-options                                                               |
+| `src/lib/api/listings.ts`       | blog, projects, environments, showrooms, documents                                       |
+| `src/lib/api/categories.ts`     | subcategories, pages-by-category                                                         |
+| `src/lib/drupal/menu.ts`        | menu                                                                                     |
 | `src/lib/drupal/config.ts`      | `DRUPAL_BASE_URL` constant                                                               |
 | `src/lib/drupal/image.ts`       | `getDrupalImageUrl`                                                                      |

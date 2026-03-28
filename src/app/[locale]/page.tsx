@@ -11,7 +11,7 @@ export default async function HomePage({ params }: HomePageProps) {
   let homepage: Record<string, unknown> | null = null;
 
   try {
-    // C1 entity endpoint resolves the front page at path "/"
+    // entity endpoint resolves the front page at path "/"
     const entity = await fetchEntity('/', locale);
 
     if (entity) {

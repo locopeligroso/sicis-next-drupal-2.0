@@ -5,7 +5,7 @@
 /**
  * Extract image URL from a deserialized Drupal file--file relationship.
  *
- * The C1 entity endpoint returns absolute URLs in uri.url — no origin prefix needed.
+ * The entity endpoint returns absolute URLs in uri.url — no origin prefix needed.
  */
 export function getDrupalImageUrl(field: unknown): string | null {
   if (!field || typeof field !== 'object') return null;

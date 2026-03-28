@@ -30,15 +30,15 @@ React.cache() -> apiGet<T>(path, params, ttl) -> typed response | null
 
 **URL alias resolution is custom and working.** Two complementary systems:
 
-- **R1 (`resolvePath`)** — resolves alias -> `{ nid, bundle, locale, aliases }` for product routing
-- **C1 (`fetchEntity`)** — resolves alias -> fully pre-resolved entity with all relationships inline (one call, no secondary fetches)
+- **resolve-path (`resolvePath`)** — resolves alias -> `{ nid, bundle, locale, aliases }` for product routing
+- **entity ⚠️ LEGACY — Drupal view to be rewritten (`fetchEntity`)** — resolves alias -> fully pre-resolved entity with all relationships inline (one call, no secondary fetches)
 - **`LISTING_SLUG_OVERRIDES`** — 60+ hardcoded slugs across 6 locales that bypass entity resolution for product listings
 
 **On-demand revalidation already exists.** `src/app/api/revalidate/route.ts` — a secured POST endpoint with Bearer auth, locale validation, and path traversal protection. Uses `revalidatePath()`.
 
 ### Where It Hurts
 
-**C1 entity -> template is untyped.** `EntityResponse.data` is `Record<string, unknown>`. All 26 templates receive `node: Record<string, unknown>` and do ad-hoc field extraction with optional chaining. This is where most bugs live — but next-drupal doesn't fix this either.
+**entity ⚠️ LEGACY — Drupal view to be rewritten -> template is untyped.** `EntityResponse.data` is `Record<string, unknown>`. All 26 templates receive `node: Record<string, unknown>` and do ad-hoc field extraction with optional chaining. This is where most bugs live — but next-drupal doesn't fix this either.
 
 **Two JSON:API escapes remain.** `ProdottoArredo` and `ProdottoIlluminazione` fetch English taxonomy terms via raw `jsonapi/taxonomy_term/` calls — the only JSON:API usage in the entire project.
 
@@ -48,17 +48,17 @@ React.cache() -> apiGet<T>(path, params, ttl) -> typed response | null
 
 ## 2. Missing Features Analysis
 
-| Feature                    | Our Project                                   | next-drupal                     | Verdict                                                                                     |
-| -------------------------- | --------------------------------------------- | ------------------------------- | ------------------------------------------------------------------------------------------- |
-| **Preview / Draft Mode**   | Not implemented                               | `SitePreviewer` + Drupal module | **Only genuine gap**                                                                        |
-| **On-Demand Revalidation** | `POST /api/revalidate` with Bearer auth       | Tag-based `revalidateTag()`     | We have path-based; next-drupal has tag-based (more granular). Can adopt tags independently |
-| **Time-based ISR**         | 3-tier TTL (60/300/3600s)                     | Same mechanism                  | Equivalent                                                                                  |
-| **Path Resolution**        | R1 + C1 + slug overrides                      | `translatePath()`               | Ours is more capable (handles listing interceptions)                                        |
-| **Entity Fetching**        | C1 pre-resolves all relationships in one call | `getResource()` + `?include=`   | Ours is simpler                                                                             |
-| **Relationship Mapping**   | Server-side pre-resolution in C1              | Client-side `?include=` param   | **Ours is superior**                                                                        |
-| **Multilingual**           | 6 locales, C2 translate-path, R1 aliases      | Locale prefix handling          | Equivalent                                                                                  |
-| **Filter System**          | FILTER_REGISTRY + V2 counts + nuqs            | Not in scope                    | JSON:API cannot do aggregated counts                                                        |
-| **Pagination**             | Server actions + V1-V11                       | JSON:API pagination             | Ours has no 50-item hard limit                                                              |
+| Feature                    | Our Project                                                 | next-drupal                     | Verdict                                                                                     |
+| -------------------------- | ----------------------------------------------------------- | ------------------------------- | ------------------------------------------------------------------------------------------- |
+| **Preview / Draft Mode**   | Not implemented                                             | `SitePreviewer` + Drupal module | **Only genuine gap**                                                                        |
+| **On-Demand Revalidation** | `POST /api/revalidate` with Bearer auth                     | Tag-based `revalidateTag()`     | We have path-based; next-drupal has tag-based (more granular). Can adopt tags independently |
+| **Time-based ISR**         | 3-tier TTL (60/300/3600s)                                   | Same mechanism                  | Equivalent                                                                                  |
+| **Path Resolution**        | resolve-path + entity ⚠️ LEGACY + slug overrides            | `translatePath()`               | Ours is more capable (handles listing interceptions)                                        |
+| **Entity Fetching**        | entity ⚠️ LEGACY pre-resolves all relationships in one call | `getResource()` + `?include=`   | Ours is simpler                                                                             |
+| **Relationship Mapping**   | Server-side pre-resolution in entity ⚠️ LEGACY              | Client-side `?include=` param   | **Ours is superior**                                                                        |
+| **Multilingual**           | 6 locales, translate-path, resolve-path aliases             | Locale prefix handling          | Equivalent                                                                                  |
+| **Filter System**          | FILTER_REGISTRY + product-counts + nuqs                     | Not in scope                    | JSON:API cannot do aggregated counts                                                        |
+| **Pagination**             | Server actions + products–pages-by-category endpoints       | JSON:API pagination             | Ours has no 50-item hard limit                                                              |
 
 ---
 
@@ -68,9 +68,9 @@ React.cache() -> apiGet<T>(path, params, ttl) -> typed response | null
 
 | Component                                 | LOC          | Why                                      |
 | ----------------------------------------- | ------------ | ---------------------------------------- |
-| V2 — Filter counts endpoint               | ~40          | JSON:API cannot return aggregated counts |
-| V4 — Category options                     | ~50          | Non-entity listing data                  |
-| V10/V11 — Subcategories/pages-by-category | ~120         | Custom Drupal Views logic                |
+| product-counts endpoint                   | ~40          | JSON:API cannot return aggregated counts |
+| category-options endpoint                 | ~50          | Non-entity listing data                  |
+| subcategories/pages-by-category endpoints | ~120         | Custom Drupal Views logic                |
 | `FILTER_REGISTRY` + nuqs integration      | ~400         | Domain logic, no library covers this     |
 | `LISTING_SLUG_OVERRIDES` routing          | ~100         | Business rules, not data fetching        |
 | **Total unmigrateable**                   | **~710 LOC** | **These survive ANY migration**          |
@@ -96,7 +96,7 @@ React.cache() -> apiGet<T>(path, params, ttl) -> typed response | null
 - **Pre-normalized REST responses** — JSON:API sends raw Drupal field shapes
 - **Payload efficiency** — JSON:API envelope overhead is 3-10x larger per entity response
 - **50-item pagination freedom** — JSON:API hard-limits to 50 items/request
-- **Server-side relationship resolution** — C1 pre-resolves everything
+- **Server-side relationship resolution** — entity endpoint pre-resolves everything
 - **Independence** — no dependency on a niche library's release cycle
 
 ---
@@ -115,11 +115,11 @@ React.cache() -> apiGet<T>(path, params, ttl) -> typed response | null
 
 ### Recommended Investments Instead
 
-| Investment                                         | Effort   | Impact                                                          |
-| -------------------------------------------------- | -------- | --------------------------------------------------------------- |
-| **Upgrade revalidation to tag-based**              | 1 day    | More granular cache invalidation without next-drupal            |
-| **Build Preview Mode**                             | 1-2 days | Covers the one genuinely missing feature                        |
-| **Normalize C1 entity data** — shared mapper layer | 2-3 days | Addresses the real pain point (26 templates doing ad-hoc casts) |
+| Investment                                               | Effort   | Impact                                                          |
+| -------------------------------------------------------- | -------- | --------------------------------------------------------------- |
+| **Upgrade revalidation to tag-based**                    | 1 day    | More granular cache invalidation without next-drupal            |
+| **Build Preview Mode**                                   | 1-2 days | Covers the one genuinely missing feature                        |
+| **Normalize entity endpoint data** — shared mapper layer | 2-3 days | Addresses the real pain point (26 templates doing ad-hoc casts) |
 
 ---
 

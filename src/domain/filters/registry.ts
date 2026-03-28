@@ -25,7 +25,7 @@ export interface FilterOption {
   baseCount?: number;
   imageUrl?: string; // preview image for category cards
   cssColor?: string; // fallback CSS color for swatches
-  /** ID of parent category — present for children, absent for roots (from V4 parentPath depth) */
+  /** ID of parent category — present for children, absent for roots (from category-options parentPath depth) */
   parentId?: string;
 }
 

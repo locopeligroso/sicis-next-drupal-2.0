@@ -7,8 +7,8 @@ import { toDrupalLocale } from '@/i18n/config';
 /**
  * Server Action wrapper for getTranslatedPath.
  *
- * Tries C2 translate-path first. If C2 is unavailable (returns null),
- * falls back to R1 resolve-path which includes aliases for all locales.
+ * Tries translate-path first. If translate-path is unavailable (returns null),
+ * falls back to resolve-path which includes aliases for all locales.
  * The 'use server' directive makes this callable from client components.
  */
 export async function getTranslatedPath(
@@ -24,14 +24,14 @@ export async function getTranslatedPath(
   const drupalCurrentLocale = toDrupalLocale(currentLocale);
   const drupalTargetLocale = toDrupalLocale(targetLocale);
 
-  // Try C2 first (legacy endpoint)
+  // Try translate-path first (legacy endpoint)
   const c2Result = await _getTranslatedPath(
     decodedPath,
     drupalCurrentLocale,
     drupalTargetLocale,
   );
   if (c2Result) {
-    // C2 returns a path with the Drupal locale prefix (e.g. /en/mosaic/...).
+    // translate-path returns a path with the Drupal locale prefix (e.g. /en/mosaic/...).
     // If targetLocale differs from drupalTargetLocale (e.g. us vs en),
     // replace the Drupal locale prefix with the actual Next.js locale.
     const normalizedC2 =
@@ -44,7 +44,7 @@ export async function getTranslatedPath(
     return normalizedC2;
   }
 
-  // Fallback: use R1 resolve-path aliases
+  // Fallback: use resolve-path aliases
   const resolved = await resolvePath(decodedPath, currentLocale);
   if (resolved?.aliases?.[targetLocale]) {
     const result = `/${targetLocale}${resolved.aliases[targetLocale]}`;
