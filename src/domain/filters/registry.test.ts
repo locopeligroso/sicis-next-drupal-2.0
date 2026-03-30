@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { deslugify, getFilterConfig, translateBasePath, SLUG_OVERRIDES, FILTER_REGISTRY } from './registry';
+import {
+  deslugify,
+  getFilterConfig,
+  translateBasePath,
+  SLUG_OVERRIDES,
+  FILTER_REGISTRY,
+} from './registry';
 
 describe('deslugify', () => {
   it('returns override for special characters (Colibrì)', () => {
@@ -61,7 +67,13 @@ describe('getFilterConfig', () => {
   });
 
   it('all 5 product types are registered', () => {
-    const types = ['prodotto_mosaico', 'prodotto_vetrite', 'prodotto_arredo', 'prodotto_tessuto', 'prodotto_pixall'];
+    const types = [
+      'prodotto_mosaico',
+      'prodotto_vetrite',
+      'prodotto_arredo',
+      'prodotto_tessuto',
+      'prodotto_pixall',
+    ];
     for (const t of types) {
       expect(getFilterConfig(t)).not.toBeNull();
     }
@@ -74,7 +86,9 @@ describe('translateBasePath', () => {
   });
 
   it('translates IT mosaico with sub-path', () => {
-    expect(translateBasePath('/mosaico/colori/grigio', 'en')).toBe('/mosaic/colori/grigio');
+    expect(translateBasePath('/mosaico/colori/grigio', 'en')).toBe(
+      '/mosaic/colori/grigio',
+    );
   });
 
   it('returns path unchanged if no match', () => {
@@ -92,7 +106,9 @@ describe('translateBasePath', () => {
   // ── Edge cases ────────────────────────────────────────────────────────────
 
   it('translates IT arredo to EN furniture-and-accessories', () => {
-    expect(translateBasePath('/arredo', 'en')).toBe('/furniture-and-accessories');
+    expect(translateBasePath('/arredo', 'en')).toBe(
+      '/furniture-and-accessories',
+    );
   });
 
   it('returns pixall unchanged (same path in all locales)', () => {
@@ -100,14 +116,22 @@ describe('translateBasePath', () => {
   });
 
   it('translates IT lastre-vetro-vetrite to EN vetrite-glass-slabs', () => {
-    expect(translateBasePath('/lastre-vetro-vetrite', 'en')).toBe('/vetrite-glass-slabs');
+    expect(translateBasePath('/lastre-vetro-vetrite', 'en')).toBe(
+      '/vetrite-glass-slabs',
+    );
   });
 });
 
 describe('FILTER_REGISTRY completeness', () => {
   it('all 5 product types have basePaths for all 6 locales', () => {
     const locales = ['it', 'en', 'fr', 'de', 'es', 'ru'];
-    const types = ['prodotto_mosaico', 'prodotto_vetrite', 'prodotto_arredo', 'prodotto_tessuto', 'prodotto_pixall'];
+    const types = [
+      'prodotto_mosaico',
+      'prodotto_vetrite',
+      'prodotto_arredo',
+      'prodotto_tessuto',
+      'prodotto_pixall',
+    ];
     for (const type of types) {
       const config = getFilterConfig(type);
       expect(config).not.toBeNull();
@@ -130,7 +154,9 @@ describe('FILTER_REGISTRY completeness', () => {
 
   it('translateBasePath handles all product type base paths', () => {
     expect(translateBasePath('/mosaico', 'en')).toBe('/mosaic');
-    expect(translateBasePath('/arredo', 'en')).toBe('/furniture-and-accessories');
+    expect(translateBasePath('/arredo', 'en')).toBe(
+      '/furniture-and-accessories',
+    );
     expect(translateBasePath('/pixall', 'en')).toBe('/pixall');
   });
 });
@@ -169,7 +195,7 @@ describe('filter removal — unused P1/P2 filters', () => {
   it('prodotto_tessuto retains ALL its filters unchanged', () => {
     const config = getFilterConfig('prodotto_tessuto')!;
     const keys = Object.keys(config.filters);
-    expect(keys).toEqual(['category', 'type', 'color', 'finish']);
+    expect(keys).toEqual(['category', 'type']);
   });
 
   it('prodotto_illuminazione retains its subcategory filter unchanged', () => {

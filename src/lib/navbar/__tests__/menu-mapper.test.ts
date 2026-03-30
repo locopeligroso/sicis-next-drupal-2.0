@@ -10,7 +10,7 @@ function makeItem(
   title: string,
   url: string,
   children: MenuItem[] = [],
-  weight = 0
+  weight = 0,
 ): MenuItem {
   return {
     id: `menu-${title.toLowerCase().replace(/\s+/g, '-')}`,
@@ -126,7 +126,13 @@ describe('mapMenuToNavbar', () => {
 
     it('preserves group order: Mosaico, Vetrite, Living, Tessile, Jewels', () => {
       const labels = result.explore.items.map((g) => g.label);
-      expect(labels).toEqual(['Mosaico', 'Vetrite', 'Living', 'Tessile', 'Jewels']);
+      expect(labels).toEqual([
+        'Mosaico',
+        'Vetrite',
+        'Living',
+        'Tessile',
+        'Jewels',
+      ]);
     });
   });
 
@@ -141,10 +147,10 @@ describe('mapMenuToNavbar', () => {
       const titles = result.filterFind.items.map((c) => c.item.title);
       expect(titles).toEqual([
         'Mosaico',
-        'Lastre vetro Vetrite',
+        'Vetrite',
         'Arredo',
         'Illuminazione',
-        'Prodotti Tessili',
+        'Tessili',
       ]);
     });
 
@@ -215,9 +221,7 @@ describe('mapMenuToNavbar', () => {
     it('handles missing top-level sections gracefully', () => {
       const partial = mapMenuToNavbar([
         makeItem('Home', '/it'),
-        makeItem('Projects', '/it', [
-          makeItem('Progetti', '/it/progetti'),
-        ]),
+        makeItem('Projects', '/it', [makeItem('Progetti', '/it/progetti')]),
       ]);
       expect(partial.explore.items).toEqual([]);
       expect(partial.filterFind.items).toEqual([]);

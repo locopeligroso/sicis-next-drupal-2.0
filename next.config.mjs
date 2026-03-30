@@ -3,6 +3,15 @@ import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
+// Derive Drupal host from env — falls back to localhost for local dev without .env
+const drupalUrl = new URL(
+  process.env.DRUPAL_BASE_URL ||
+    process.env.NEXT_PUBLIC_DRUPAL_BASE_URL ||
+    'http://localhost',
+);
+const drupalHostname = drupalUrl.hostname;
+const drupalOrigin = drupalUrl.origin; // e.g. "http://192.168.86.201" or "https://www.sicis-stage.com"
+
 const securityHeaders = [
   { key: 'X-DNS-Prefetch-Control', value: 'on' },
   { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
@@ -18,12 +27,12 @@ const securityHeaders = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: http://192.168.86.201 https://www.sicis-stage.com https://sicis-stage.com https://www.sicis.com",
+      `img-src 'self' data: blob: ${drupalOrigin} https://www.sicis-stage.com https://sicis-stage.com https://www.sicis.com`,
       "font-src 'self' data:",
-      "connect-src 'self' http://192.168.86.201 https://www.sicis-stage.com https://sicis-stage.com",
+      `connect-src 'self' ${drupalOrigin} https://www.sicis-stage.com https://sicis-stage.com`,
       "frame-src 'self' https://player.vimeo.com https://www.youtube.com",
       "frame-ancestors 'none'",
-      "media-src 'self' http://192.168.86.201 https://www.sicis-stage.com https://www.sicis.com",
+      `media-src 'self' ${drupalOrigin} https://www.sicis-stage.com https://www.sicis.com`,
     ].join('; '),
   },
 ];
@@ -33,7 +42,11 @@ const nextConfig = {
   images: {
     remotePatterns: [
       { protocol: 'http', hostname: 'localhost' },
-      { protocol: 'http', hostname: '192.168.86.201' },
+      // Drupal instance hostname — resolved from DRUPAL_BASE_URL at build/start time
+      {
+        protocol: drupalUrl.protocol.replace(':', ''),
+        hostname: drupalHostname,
+      },
       { protocol: 'https', hostname: 'www.sicis-stage.com' },
       { protocol: 'https', hostname: 'sicis-stage.com' },
       { protocol: 'https', hostname: 'sicis.com' },
@@ -54,15 +67,11 @@ const nextConfig = {
     ];
   },
   async rewrites() {
-    const drupalBase =
-      process.env.DRUPAL_BASE_URL ||
-      process.env.NEXT_PUBLIC_DRUPAL_BASE_URL ||
-      'http://localhost';
     return [
       {
         // Proxy Drupal images to same-origin for WebGL texture loading (avoids CORS)
         source: '/drupal-images/:path*',
-        destination: `${drupalBase}/www.sicis.com_aiweb/httpdocs/sites/default/files/:path*`,
+        destination: `${drupalOrigin}/www.sicis.com_aiweb/httpdocs/sites/default/files/:path*`,
       },
     ];
   },
