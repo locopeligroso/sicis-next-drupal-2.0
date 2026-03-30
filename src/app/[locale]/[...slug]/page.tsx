@@ -2,6 +2,8 @@ import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { fetchEntity } from '@/lib/api/entity';
 import { resolvePath } from '@/lib/api/resolve-path';
+import { fetchContent } from '@/lib/api/content';
+import { fetchBlocks } from '@/lib/api/blocks';
 import { fetchMosaicProduct } from '@/lib/api/mosaic-product';
 import type { MosaicProduct } from '@/lib/api/mosaic-product';
 import { fetchVetriteProduct } from '@/lib/api/vetrite-product';
@@ -14,16 +16,16 @@ import { fetchMosaicProductListing } from '@/lib/api/mosaic-product-listing';
 import { fetchVetriteProductListing } from '@/lib/api/vetrite-product-listing';
 import { fetchPixallProductListing } from '@/lib/api/pixall-product-listing';
 import { fetchTextileProductListing } from '@/lib/api/textile-product-listing';
+import { fetchArredoProductListing } from '@/lib/api/arredo-product-listing';
+import { fetchIlluminazioneProductListing } from '@/lib/api/illuminazione-product-listing';
+import { fetchIlluminazioneProduct } from '@/lib/api/illuminazione-product';
+import type { IlluminazioneProduct } from '@/lib/api/illuminazione-product';
 import { getComponentName } from '@/lib/node-resolver';
 import UnknownEntity from '@/components_legacy/UnknownEntity';
 import { getSectionConfigAsync } from '@/domain/routing/section-config';
 import { getRoutingRegistry } from '@/domain/routing/routing-registry';
 import { parseFiltersFromUrl } from '@/domain/filters/search-params';
-import {
-  fetchAllFilterOptions,
-  fetchFilterOptions,
-  fetchCategoryOptions,
-} from '@/lib/api/filters';
+import { fetchAllFilterOptions } from '@/lib/api/filters';
 import { fetchProducts, fetchFilterCounts } from '@/lib/api/products';
 import { FILTER_REGISTRY, deslugify } from '@/domain/filters/registry';
 import type { FilterOption } from '@/domain/filters/registry';
@@ -75,10 +77,29 @@ import TaxonomyTerm from '@/templates/taxonomy/TaxonomyTerm';
  * Both generateMetadata() and SlugPage() call this with the same args,
  * so the second call returns the cached result — eliminating the double fetch.
  *
- * Uses the entity endpoint which returns pre-resolved relationships and
- * paragraphs — no INCLUDE_MAP or secondary fetches needed.
+ * Primary path: resolvePath → fetchContent + fetchBlocks in parallel.
+ * Fallback: fetchEntity (C1) — used when content/blocks endpoints return null.
  */
 const getPageData = cache(async (locale: string, drupalPath: string) => {
+  // PRIMARY: resolve-path → content/{nid} + blocks/{nid}
+  const resolved = await resolvePath(drupalPath, locale);
+  if (resolved) {
+    const [contentData, blocksData] = await Promise.all([
+      fetchContent(resolved.nid, locale),
+      fetchBlocks(resolved.nid, locale),
+    ]);
+    if (contentData) {
+      return {
+        ...contentData,
+        type: `${resolved.type}--${resolved.bundle}`,
+        id: String(resolved.nid),
+        _nid: resolved.nid,
+        field_blocchi: blocksData,
+      } as Record<string, unknown>;
+    }
+  }
+
+  // FALLBACK: C1 entity endpoint (legacy — disabled locally, may be active on production)
   const entity = await fetchEntity(drupalPath, locale);
   if (!entity) return null;
 
@@ -121,6 +142,10 @@ const LISTING_SLUG_OVERRIDES = new Set([
   // Illuminazione
   'illuminazione', // IT
   'lighting', // EN
+  'éclairage', // FR
+  'leuchten', // DE
+  'iluminación', // ES
+  'освещение', // RU
   // Pixall — collide con documento NID 2547
   'pixall',
   // Vetrite — slug localizzati (le pagine dedicate hanno priorità sul catch-all)
@@ -228,6 +253,7 @@ async function renderProductListing({
   resolvedTid,
   resolvedColorTid,
   resolvedCategoryNid,
+  hubParentNid,
 }: {
   productType: string;
   title: string;
@@ -241,6 +267,8 @@ async function renderProductListing({
   resolvedColorTid?: number;
   /** Category NID from resolve-path — for textile-products/{categoryNid} */
   resolvedCategoryNid?: number;
+  /** Parent NID for category hub (arredo, illuminazione) — for categories/{nid} endpoint */
+  hubParentNid?: number;
 }) {
   const config = FILTER_REGISTRY[productType];
   if (!config) return null;
@@ -282,7 +310,7 @@ async function renderProductListing({
 
   let products;
   let total;
-  let filterOptions: Record<string, FilterOption[]>;
+  let filterOptions: Record<string, FilterOption[]> = {};
 
   // ── Subcategory override (?sub=slug) for category-based types ──────
   // Must run BEFORE product fetch so filterDefinitions are updated.
@@ -298,107 +326,76 @@ async function renderProductListing({
       (f) => f.priority === 'P0',
     )?.key;
     if (p0FilterKey) {
-      // Pre-fetch category options to find children of active parent
-      const categoryOptions = await fetchCategoryOptions(productType, locale);
+      // Subcategory resolution via categories/{nid} endpoint.
+      // When resolvedCategoryNid is set (from resolve-path), fetch its children.
+      // (Legacy fetchCategoryOptions V4 endpoint is dead — 404)
       const activeP0 = parsed.activeFilters.find((f) => f.type === 'path');
-      if (activeP0) {
-        const activeOption = categoryOptions.find(
-          (o) => o.slug === activeP0.value,
-        );
-        if (activeOption?.id) {
-          const children = categoryOptions.filter(
-            (o) => o.parentId === activeOption.id,
-          );
-          if (children.length > 0) {
-            subcategories = children.map((child) => ({
-              slug: child.slug,
-              label: child.label,
-            }));
+      if (activeP0 && resolvedCategoryNid) {
+        const { fetchHubCategories } = await import('@/lib/api/category-hub');
+        const children = await fetchHubCategories(resolvedCategoryNid, locale);
+        if (children.length > 0) {
+          subcategories = children.map((child) => ({
+            slug: child.name
+              .normalize('NFC')
+              .toLowerCase()
+              .replace(/\s*\/\s*/g, '-')
+              .replace(/\s+/g, '-')
+              .replace(/[^a-z0-9\u00C0-\u024F\u0400-\u04FF-]/g, ''),
+            label: child.name,
+          }));
 
-            // If ?sub=slug is active, override the category filter to the subcategory
-            const subParam = Array.isArray(sp?.sub) ? sp.sub[0] : sp?.sub;
-            if (subParam && subcategories.some((sc) => sc.slug === subParam)) {
-              const subLabel = subcategories.find(
-                (sc) => sc.slug === subParam,
-              )!.label;
-              const catFieldIndex = parsed.filterDefinitions.findIndex(
-                (fd) => fd.field === 'field_categoria.title',
-              );
-              if (catFieldIndex >= 0) {
-                parsed.filterDefinitions[catFieldIndex] = {
-                  ...parsed.filterDefinitions[catFieldIndex],
-                  value: subLabel,
-                };
-              }
-              parsed.activeFilters.push({
-                key: 'sub',
-                value: subParam,
-                type: 'query',
-                label: subLabel,
-              });
+          // If ?sub=slug is active, override the category filter to the subcategory
+          const subParam = Array.isArray(sp?.sub) ? sp.sub[0] : sp?.sub;
+          if (subParam && subcategories.some((sc) => sc.slug === subParam)) {
+            const subLabel = subcategories.find(
+              (sc) => sc.slug === subParam,
+            )!.label;
+            const catFieldIndex = parsed.filterDefinitions.findIndex(
+              (fd) => fd.field === 'field_categoria.title',
+            );
+            if (catFieldIndex >= 0) {
+              parsed.filterDefinitions[catFieldIndex] = {
+                ...parsed.filterDefinitions[catFieldIndex],
+                value: subLabel,
+              };
             }
+            parsed.activeFilters.push({
+              key: 'sub',
+              value: subParam,
+              type: 'query',
+              label: subLabel,
+            });
           }
         }
       }
     }
   }
 
-  // When resolvedCategoryNid is set, a specific category is selected via resolve-path
+  // When resolvedCategoryNid is set, a specific category is selected
   // even if parseFiltersFromUrl didn't detect it (e.g. EN basePath = 'textiles/fabrics'
   // where the category IS the basePath). Skip hub mode and go to product grid.
   const forceProductGrid = resolvedCategoryNid != null;
 
   if (!hasActiveP0 && listing.categoryGroups.length > 0 && !forceProductGrid) {
     // ── State 1: Hub mode — show category cards, no product grid ──────────
-    // Fetch only the filter options needed for category card groups + sidebar
-    const optionPromises: [string, Promise<FilterOption[]>][] = [];
-    for (const group of listing.categoryGroups) {
-      const filterConfig = filters[group.filterKey];
-      if (filterConfig?.taxonomyType) {
-        optionPromises.push([
-          group.filterKey,
-          fetchFilterOptions(filterConfig.taxonomyType, locale, {
-            includeImage: group.hasImage || group.hasColorSwatch,
-          }),
-        ]);
-      } else if (filterConfig?.nodeType === 'node--categoria') {
-        optionPromises.push([
-          group.filterKey,
-          fetchCategoryOptions(config.contentType, locale),
-        ]);
-      }
-    }
-    const resolved = await Promise.all(
-      optionPromises.map(
-        async ([key, promise]) =>
-          [key, await promise] as [string, FilterOption[]],
-      ),
-    );
-    filterOptions = Object.fromEntries(resolved);
 
-    // Fetch counts for each P0 group (no active filters = total products per option)
-    const countPromises = listing.categoryGroups.map(async (group) => {
-      const filterConfig = filters[group.filterKey];
-      if (!filterConfig)
-        return [group.filterKey, {} as Record<string, number>] as const;
-      const counts = await fetchFilterCounts(
-        productType,
-        [], // no active filters in state 1
-        group.filterKey,
-        filterConfig.drupalField,
-        locale,
-      );
-      return [group.filterKey, counts] as const;
-    });
-    const countResults = await Promise.all(countPromises);
-    for (const [key, counts] of countResults) {
-      const options = filterOptions[key];
-      if (options) {
-        for (const option of options) {
-          option.count = counts[option.label] ?? 0;
-        }
-      }
-    }
+    // Category-based hubs (arredo, illuminazione) fetch their own data inside
+    // SpecHubArredo via fetchHubCategories. Skip legacy filter/count fetches
+    // (V4 category-options + V2 product-counts endpoints are dead).
+    // ALL hub types fetch internally — legacy V3/V4 endpoints are dead (404).
+    // Mosaico/Vetrite: SpecHubMosaico fetches via mosaic-hub/vetrite-hub
+    // Arredo/Illuminazione/Tessuto: SpecHubArredo fetches via category-hub
+    // Pixall: no hub mode (categoryGroups: [])
+    const SELF_FETCHING_HUBS = new Set([
+      'prodotto_mosaico',
+      'prodotto_vetrite',
+      'prodotto_arredo',
+      'prodotto_illuminazione',
+      'prodotto_tessuto',
+    ]);
+    // All hub types fetch internally — filterOptions not needed in hub mode.
+    // SpecHubMosaico/SpecHubArredo handle their own data fetching.
+    filterOptions = {};
 
     products = undefined;
     total = undefined;
@@ -414,6 +411,8 @@ async function renderProductListing({
     const hasResolvedTid = resolvedTid != null || resolvedColorTid != null;
     const useNewListingEndpoint =
       productType === 'prodotto_pixall' ||
+      productType === 'prodotto_arredo' ||
+      productType === 'prodotto_illuminazione' ||
       (productType === 'prodotto_tessuto' && resolvedCategoryNid != null) ||
       (hasResolvedTid &&
         (productType === 'prodotto_mosaico' ||
@@ -422,6 +421,15 @@ async function renderProductListing({
     const newListingFetcher = () => {
       if (productType === 'prodotto_pixall') {
         return fetchPixallProductListing(locale);
+      }
+      if (productType === 'prodotto_arredo') {
+        return fetchArredoProductListing(locale, resolvedCategoryNid ?? 'all');
+      }
+      if (productType === 'prodotto_illuminazione') {
+        return fetchIlluminazioneProductListing(
+          locale,
+          resolvedCategoryNid ?? 'all',
+        );
       }
       if (productType === 'prodotto_tessuto') {
         return fetchTextileProductListing(locale, resolvedCategoryNid ?? 'all');
@@ -620,6 +628,7 @@ async function renderProductListing({
       subcategories={subcategories}
       activePathFilterKey={activePathFilterKey}
       deepDiveLinks={deepDiveLinks}
+      hubParentNid={hubParentNid}
     />
   );
 }
@@ -647,10 +656,14 @@ export async function generateMetadata({ params }: SlugPageProps) {
     // getPageData is React.cache()-wrapped — if SlugPage already called it with
     // the same args, this returns the cached result (no extra network request).
     const resource = await getPageData(locale, drupalPath);
-    const title = resource?.field_titolo_main as string | undefined;
-    return {
-      title: title ?? (resource as { title?: string })?.title ?? 'Sicis',
-    };
+    if (resource) {
+      const title = resource?.field_titolo_main as string | undefined;
+      return {
+        title: title ?? (resource as { title?: string })?.title ?? 'Sicis',
+      };
+    }
+
+    return { title: 'Sicis' };
   } catch {
     return { title: 'Sicis' };
   }
@@ -696,14 +709,26 @@ export default async function SlugPage({
   if (singleSlug && isListingSlug) {
     const sectionConfig = await getSectionConfigAsync(slug, locale);
     if (sectionConfig) {
-      // Hub page — title is the section display name, derived from sectionConfig
-      // deslugify converts the slug to a human-readable name (e.g. "mosaico" → "Mosaico")
+      // For category-based hubs (arredo, illuminazione), resolve the parent NID
+      // so SpecHubArredo can fetch subcategories from categories/{nid} endpoint.
+      const CATEGORY_HUB_TYPES = new Set([
+        'prodotto_arredo',
+        'prodotto_illuminazione',
+        'prodotto_tessuto',
+      ]);
+      let hubParentNid: number | undefined;
+      if (CATEGORY_HUB_TYPES.has(sectionConfig.productType)) {
+        const resolved = await resolvePath(drupalPath, locale);
+        if (resolved) hubParentNid = resolved.nid;
+      }
+
       return renderProductListing({
         productType: sectionConfig.productType,
         title: deslugify(singleSlug),
         slug,
         searchParams: sp,
         locale,
+        hubParentNid,
       });
     }
     notFound();
@@ -742,6 +767,14 @@ export default async function SlugPage({
         if (product) {
           const legacyNode = pixallToLegacyNode(product, locale);
           return <ProdottoPixall node={legacyNode} />;
+        }
+      }
+      if (resolved.bundle === 'prodotto_illuminazione') {
+        const product = await fetchIlluminazioneProduct(resolved.nid, locale);
+        if (product) {
+          // TODO: migrate to DS template — for now use legacy with adapter
+          const legacyNode = illuminazioneToLegacyNode(product, locale);
+          return <ProdottoIlluminazione node={legacyNode} />;
         }
       }
       // ── Taxonomy terms: mosaico_collezioni / mosaico_colori → mosaic-products endpoint ──
@@ -788,29 +821,37 @@ export default async function SlugPage({
           resolvedColorTid: resolved.nid,
         });
       }
-      // ── node--categoria for textile → textile-products endpoint ──
-      // Textile categories share the generic 'categoria' bundle with arredo/illuminazione.
-      // Match the first slug segment against prodotto_tessuto basePaths to distinguish.
+      // ── node--categoria → type-specific listing endpoint ──
+      // Textile, arredo, and illuminazione categories share the generic 'categoria' bundle.
+      // Match the first slug segment against each product type's basePaths across ALL locales
+      // (not just the current one) to handle cross-locale URLs like /it/lighting/table-lamps.
       if (resolved.bundle === 'categoria') {
-        const tessutoConfig = FILTER_REGISTRY['prodotto_tessuto'];
-        if (tessutoConfig) {
-          const tessutoBase = (
-            tessutoConfig.basePaths[locale] ?? tessutoConfig.basePaths['it']
-          ).split('/')[0];
-          const firstSlug = decodeURIComponent(slug[0]).normalize('NFC');
-          if (firstSlug === tessutoBase) {
-            return renderProductListing({
-              productType: 'prodotto_tessuto',
-              title: deslugify(slug[slug.length - 1]),
-              slug,
-              searchParams: sp,
-              locale,
-              resolvedCategoryNid: resolved.nid,
-            });
+        const firstSlug = decodeURIComponent(slug[0]).normalize('NFC');
+        const categoryProductTypes = [
+          'prodotto_tessuto',
+          'prodotto_arredo',
+          'prodotto_illuminazione',
+        ] as const;
+        for (const pt of categoryProductTypes) {
+          const ptConfig = FILTER_REGISTRY[pt];
+          if (ptConfig) {
+            // Check basePaths of ALL locales, not just current
+            const matchesAnyLocale = Object.values(ptConfig.basePaths).some(
+              (bp) => firstSlug === bp.split('/')[0],
+            );
+            if (matchesAnyLocale) {
+              return renderProductListing({
+                productType: pt,
+                title: deslugify(slug[slug.length - 1]),
+                slug,
+                searchParams: sp,
+                locale,
+                resolvedCategoryNid: resolved.nid,
+              });
+            }
           }
         }
       }
-      // Future: add more product bundles here (prodotto_arredo, prodotto_illuminazione)
     }
   }
 
@@ -859,21 +900,20 @@ export default async function SlugPage({
     );
   }
 
-  // Fallback: if no Drupal node found via entity (legacy), try resolve-path + type-specific endpoint
+  // Fallback: if getPageData returned null, check for type-specific product renderers
+  // and section listing pages before giving up.
   if (!resource) {
+    // prodotto_mosaico uses a dedicated renderer (MosaicProductPreview) rather than
+    // the generic COMPONENT_MAP dispatch — check it here via resolvePath.
     const resolved = await resolvePath(drupalPath, locale);
-    if (resolved) {
-      if (resolved.bundle === 'prodotto_mosaico') {
-        const product = await fetchMosaicProduct(resolved.nid, locale);
-        if (product) {
-          return <MosaicProductPreview product={product} locale={locale} />;
-        }
+    if (resolved?.bundle === 'prodotto_mosaico') {
+      const product = await fetchMosaicProduct(resolved.nid, locale);
+      if (product) {
+        return <MosaicProductPreview product={product} locale={locale} />;
       }
-      // Future: add more bundle handlers here as endpoints are built
-      // if (resolved.bundle === 'prodotto_vetrite') { ... }
     }
 
-    // If resolve-path also failed, try as a section listing page
+    // Last resort: try as a section listing page
     const sectionConfig = await getSectionConfigAsync(slug, locale);
     if (sectionConfig) {
       return renderProductListing({
@@ -1604,5 +1644,55 @@ function pixallToLegacyNode(
     // Fields not yet available from pixall-product
     field_colori: [],
     field_forma: [],
+  };
+}
+
+function illuminazioneToLegacyNode(
+  product: IlluminazioneProduct,
+  locale: string,
+): Record<string, unknown> {
+  const toImageField = (url: string | null) =>
+    url
+      ? {
+          type: 'file--file',
+          uri: { url },
+          meta: { alt: '', width: 0, height: 0 },
+        }
+      : null;
+
+  return {
+    type: 'node--prodotto_illuminazione',
+    langcode: locale,
+    title: product.title,
+    field_titolo_main: product.title,
+    field_testo_main: product.body
+      ? { value: product.body, processed: product.body }
+      : null,
+    field_materiali: product.materialsHtml
+      ? { value: product.materialsHtml, processed: product.materialsHtml }
+      : null,
+    field_specifiche_tecniche: product.techSpecsHtml
+      ? { value: product.techSpecsHtml, processed: product.techSpecsHtml }
+      : null,
+    field_immagine: toImageField(product.imageUrl),
+    field_gallery_intro: product.galleryIntro.map((url) => toImageField(url)),
+    field_scheda_tecnica: product.techSheetUrls,
+    field_no_form_scheda_tecnica: product.noTechSheet ? '1' : '0',
+    field_path_file_ftp: product.hdImagePath,
+    field_documenti: product.documents.map((doc) => ({
+      field_titolo_main: doc.title,
+      title: doc.title,
+      field_tipologia_documento: null,
+      field_collegamento_esterno: doc.href,
+      field_immagine: toImageField(doc.imageSrc),
+      field_allegato: null,
+    })),
+    // Fields not available from illuminazione-product endpoint
+    field_prezzo_eu: null,
+    field_prezzo_usa: null,
+    field_gallery: [],
+    field_finiture: [],
+    field_tessuti: [],
+    field_categoria: null,
   };
 }

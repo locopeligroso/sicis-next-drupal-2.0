@@ -64,6 +64,10 @@ interface ProductListingTemplateProps {
 
   // Deep dive links from Filter & Find mega-menu (for hub Approfondimenti section)
   deepDiveLinks?: SecondaryLink[];
+
+  // Parent NID for category-based hubs (arredo, illuminazione, tessuto)
+  // Used by SpecHubArredo to fetch subcategories from categories/{nid} endpoint
+  hubParentNid?: number;
 }
 
 /**
@@ -96,8 +100,7 @@ function mapCategoriesToHubArredo(
   basePath: string,
 ) {
   // Arredo/Illuminazione use 'subcategory', Tessile uses 'category'
-  const options =
-    filterOptions.subcategory ?? filterOptions.category ?? [];
+  const options = filterOptions.subcategory ?? filterOptions.category ?? [];
   // Only top-level categories (not children) for the hub
   const parents = options.filter((opt) => !opt.parentId);
   return parents.map((opt) => ({
@@ -133,6 +136,7 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
     activePathFilterKey,
     hasActiveP0,
     deepDiveLinks,
+    hubParentNid,
   } = props;
 
   const variant = resolveVariant(props.variant, hasActiveP0, listingConfig);
@@ -155,17 +159,18 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
               Object.entries(filterOptions).map(([key, opts]) => [
                 key,
                 opts.filter((o) => !o.label.includes(' - ')),
-              ])
+              ]),
             )}
             filters={filters}
             listingConfig={listingConfig}
             basePath={basePath}
             locale={locale}
+            productType={productType}
             deepDiveLinks={deepDiveLinks}
           />
         ) : (
           <SpecHubArredo
-            categories={mapCategoriesToHubArredo(filterOptions, basePath)}
+            parentNid={hubParentNid!}
             basePath={basePath}
             locale={locale}
             categoryCardRatio={listingConfig.categoryCardRatio}
@@ -227,7 +232,12 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
           locale={locale}
           basePath={basePath}
           productCardRatio={listingConfig.productCardRatio}
-          imageFit={productType === 'prodotto_illuminazione' || productType === 'prodotto_arredo' ? 'contain' : 'cover'}
+          imageFit={
+            productType === 'prodotto_illuminazione' ||
+            productType === 'prodotto_arredo'
+              ? 'contain'
+              : 'cover'
+          }
         />
       </main>
     </div>

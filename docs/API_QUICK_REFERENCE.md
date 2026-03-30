@@ -1,6 +1,6 @@
 # Drupal REST API — Quick Reference
 
-> Generated: 2026-03-25 | Source of truth: `src/lib/api/`
+> Updated: 2026-03-30 | Source of truth: `src/lib/api/`
 
 ## Base URL Pattern
 
@@ -9,107 +9,163 @@
 {DRUPAL_BASE_URL}/{locale}/api/menu/{menuName}    # Menu API (via fetch directly)
 ```
 
-## Endpoint Cheat Sheet
+## Active Endpoints
 
-| Endpoint                        | URL                                                                       | Function                                   | TTL   |
-| ------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------ | ----- |
-| **resolve-path**                | `GET /{locale}/api/v1/resolve-path?path={alias}`                          | `resolvePath(path, locale)`                | 3600s |
-| **mosaic-product**              | `GET /{locale}/api/v1/mosaic-product/{nid}`                               | `fetchMosaicProduct(nid, locale)`          | 60s   |
-| **vetrite-product**             | `GET /{locale}/api/v1/vetrite-product/{nid}`                              | `fetchVetriteProduct(nid, locale)`         | 60s   |
-| **textile-product**             | `GET /{locale}/api/v1/textile-product/{nid}`                              | `fetchTextileProduct(nid, locale)`         | 60s   |
-| **entity ⚠️ LEGACY**            | `GET /{locale}/api/v1/entity?path={path}` _(to be rewritten)_             | `fetchEntity(path, locale)`                | 60s   |
-| **translate-path ⚠️ LEGACY**    | `GET /{locale}/api/v1/translate-path?path=&from=&to=` _(to be rewritten)_ | `getTranslatedPath(path, from, to)`        | 3600s |
-| **products ⚠️ LEGACY**          | `GET /{locale}/api/v1/products/{productType}`                             | `fetchProducts(options)`                   | 60s   |
-| **product-counts ⚠️ LEGACY**    | `GET /{locale}/api/v1/products/{type}/counts/{filter}`                    | `fetchFilterCounts(...)`                   | 60s   |
-| **taxonomy ⚠️ LEGACY**          | `GET /{locale}/api/v1/taxonomy/{vocabulary}`                              | `fetchFilterOptions(taxType, locale)`      | 3600s |
-| **category-options ⚠️ LEGACY**  | `GET /{locale}/api/v1/category-options/{productType}`                     | `fetchCategoryOptions(type, locale)`       | 3600s |
-| **blog ⚠️ LEGACY**              | `GET /{locale}/api/v1/blog`                                               | `fetchBlogPosts(locale, limit, offset)`    | 300s  |
-| **projects ⚠️ LEGACY**          | `GET /{locale}/api/v1/projects`                                           | `fetchProjects(locale, limit, offset)`     | 300s  |
-| **environments ⚠️ LEGACY**      | `GET /{locale}/api/v1/environments`                                       | `fetchEnvironments(locale, limit, offset)` | 300s  |
-| **showrooms ⚠️ LEGACY**         | `GET /{locale}/api/v1/showrooms`                                          | `fetchShowrooms(locale)`                   | 300s  |
-| **documents ⚠️ LEGACY**         | `GET /{locale}/api/v1/documents`                                          | `fetchDocuments(locale, limit, offset)`    | 300s  |
-| **subcategories ⚠️ LEGACY**     | `GET /{locale}/api/v1/subcategories/{parentNid}`                          | `fetchSubcategories(nid, locale)`          | 300s  |
-| **pages-by-category ⚠️ LEGACY** | `GET /{locale}/api/v1/pages-by-category/{parentNid}`                      | `fetchPagesByCategory(nid, locale)`        | 300s  |
-| **menu ⚠️ LEGACY**              | `GET /{locale}/api/menu/{menuName}`                                       | `fetchMenu(name, locale)`                  | 600s  |
+| Endpoint                   | URL                                                    | Function                                           | TTL   |
+| -------------------------- | ------------------------------------------------------ | -------------------------------------------------- | ----- |
+| **resolve-path**           | `GET /{locale}/api/v1/resolve-path?path={alias}`       | `resolvePath(path, locale)`                        | 3600s |
+| **content**                | `GET /{locale}/api/v1/content/{nid}`                   | `fetchContent(nid, locale)`                        | 300s  |
+| **blocks**                 | `GET /{locale}/api/v1/blocks/{nid}`                    | `fetchBlocks(nid, locale)`                         | 300s  |
+| **categories**             | `GET /{locale}/api/v1/categories/{parentNid}`          | `fetchHubCategories(parentNid, locale)`            | 3600s |
+| **mosaic-product**         | `GET /{locale}/api/v1/mosaic-product/{nid}`            | `fetchMosaicProduct(nid, locale)`                  | 60s   |
+| **vetrite-product**        | `GET /{locale}/api/v1/vetrite-product/{nid}`           | `fetchVetriteProduct(nid, locale)`                 | 60s   |
+| **textile-product**        | `GET /{locale}/api/v1/textile-product/{nid}`           | `fetchTextileProduct(nid, locale)`                 | 60s   |
+| **illuminazione-product**  | `GET /{locale}/api/v1/illuminazione-product/{nid}`     | `fetchIlluminazioneProduct(nid, locale)`           | 60s   |
+| **arredo-products**        | `GET /{locale}/api/v1/arredo-products/{categoryNid}`   | `fetchArredoProductListing(locale, catNid)`        | 60s   |
+| **illuminazione-products** | `GET /{locale}/api/v1/illuminazione-products/{catNid}` | `fetchIlluminazioneProductListing(locale, catNid)` | 60s   |
+| **vetrite-colors**         | `GET /{locale}/api/v1/vetrite-colors`                  | `fetchVetriteColors(locale)`                       | 3600s |
+| **vetrite-collections**    | `GET /{locale}/api/v1/vetrite-collections`             | `fetchVetriteCollections(locale)`                  | 3600s |
+| **menu**                   | `GET /{locale}/api/menu/{menuName}`                    | `fetchMenu(name, locale)`                          | 600s  |
 
-## Product Types
+## Dead Endpoints — All return 404
 
-| Product Type             | Base Path (IT)      | P0 Filters        | P1 Filters    | Card Ratio |
-| ------------------------ | ------------------- | ----------------- | ------------- | ---------- |
-| `prodotto_mosaico`       | `/mosaico`          | collection, color | shape, finish | 1/1        |
-| `prodotto_vetrite`       | `/vetrite`          | collection, color | —             | 1/2        |
-| `prodotto_arredo`        | `/arredo`           | subcategory       | —             | 4/3        |
-| `prodotto_tessuto`       | `/prodotti-tessili` | category          | type          | 4/3        |
-| `prodotto_pixall`        | `/mosaico/pixall`   | —                 | color, shape  | 1/1        |
-| `prodotto_illuminazione` | `/illuminazione`    | subcategory       | —             | 4/3        |
+| Endpoint                 | Was                                                    | Old Function                               |
+| ------------------------ | ------------------------------------------------------ | ------------------------------------------ |
+| ❌ **entity**            | `GET /{locale}/api/v1/entity?path={path}`              | `fetchEntity(path, locale)`                |
+| ❌ **translate-path**    | `GET /{locale}/api/v1/translate-path?path=&from=&to=`  | `getTranslatedPath(path, from, to)`        |
+| ❌ **products**          | `GET /{locale}/api/v1/products/{productType}`          | `fetchProducts(options)`                   |
+| ❌ **product-counts**    | `GET /{locale}/api/v1/products/{type}/counts/{filter}` | `fetchFilterCounts(...)`                   |
+| ❌ **taxonomy**          | `GET /{locale}/api/v1/taxonomy/{vocabulary}`           | `fetchFilterOptions(taxType, locale)`      |
+| ❌ **category-options**  | `GET /{locale}/api/v1/category-options/{productType}`  | `fetchCategoryOptions(type, locale)`       |
+| ❌ **blog**              | `GET /{locale}/api/v1/blog`                            | `fetchBlogPosts(locale, limit, offset)`    |
+| ❌ **projects**          | `GET /{locale}/api/v1/projects`                        | `fetchProjects(locale, limit, offset)`     |
+| ❌ **environments**      | `GET /{locale}/api/v1/environments`                    | `fetchEnvironments(locale, limit, offset)` |
+| ❌ **showrooms**         | `GET /{locale}/api/v1/showrooms`                       | `fetchShowrooms(locale)`                   |
+| ❌ **documents**         | `GET /{locale}/api/v1/documents`                       | `fetchDocuments(locale, limit, offset)`    |
+| ❌ **subcategories**     | `GET /{locale}/api/v1/subcategories/{parentNid}`       | `fetchSubcategories(nid, locale)`          |
+| ❌ **pages-by-category** | `GET /{locale}/api/v1/pages-by-category/{parentNid}`   | `fetchPagesByCategory(nid, locale)`        |
 
-## products Filter Query Params
+## Response Shapes — New Endpoints
 
-| Param        | Drupal Field                                            | Used By                                |
-| ------------ | ------------------------------------------------------- | -------------------------------------- |
-| `collection` | `field_collezione.name`                                 | Mosaico, Vetrite                       |
-| `color`      | `field_colori.name` / `field_colore.name`               | Mosaico, Vetrite, Tessuto              |
-| `shape`      | `field_forma.name`                                      | Mosaico, Pixall                        |
-| `finish`     | `field_finitura.name` / `field_finitura_tessuto.name`   | Mosaico, Vetrite, Tessuto              |
-| `grout`      | `field_stucco.name`                                     | Mosaico, Pixall                        |
-| `texture`    | `field_texture.name`                                    | Vetrite                                |
-| `fabric`     | `field_tessuto.name`                                    | Arredo                                 |
-| `category`   | `field_categoria.title`                                 | All (title-based only, no multi-value) |
-| `type`       | `field_tipologia.name` / `field_tipologia_tessuto.name` | Tessuto                                |
+### content/{nid}
+
+```typescript
+// Array[1] unwrapped by fetcher → ContentEntity
+{ nid: string; type: string; [key: string]: unknown }
+```
+
+Raw fields returned as-is — normalization deferred until field shape is finalised.
+
+### blocks/{nid}
+
+```typescript
+// Array of BlockItem (normalized)
+{ type: string; pid: number; [key: string]: unknown }
+```
+
+Normalizations applied: `type` gains `paragraph--` prefix; `field_immagine*` plain URL strings are converted to C1 file object shape `{ type: "file--file", uri: { url }, meta: { alt, width, height } }`.
+
+### categories/{parentNid}
+
+```typescript
+// Array of CategoryHubItem (deduplicated by NID)
+{
+  nid: string;
+  name: string;
+  imageUrl: string | null;
+}
+```
+
+### arredo-products/{categoryNid} and illuminazione-products/{categoryNid}
+
+```typescript
+// { products: ProductCard[]; total: number }
+// ProductCard shape (normalized from raw Drupal view):
+{ id, type, title, subtitle: null, imageUrl, imageUrlMain, price, priceOnDemand: false, path }
+```
+
+Pass `"all"` as `categoryNid` for unfiltered listing. No server-side pagination — returns all matching items.
+
+### illuminazione-product/{nid}
+
+```typescript
+// Array[1] unwrapped → IlluminazioneProduct
+{
+  nid: number; title: string; body: string | null;
+  imageUrl: string | null; galleryIntro: string[];
+  materialsHtml: string | null; techSpecsHtml: string | null;
+  noTechSheet: boolean; techSheetUrls: string[];
+  hdImagePath: string | null;
+  documents: { nid, title, imageSrc, href, videoId }[];
+}
+```
+
+### vetrite-colors and vetrite-collections
+
+```typescript
+// Array of VetriteTermItem
+{
+  name: string;
+  imageUrl: string | null;
+  href: string;
+}
+```
+
+`href` is the taxonomy term path (domain-stripped).
 
 ## Key Gotchas
 
-- **subcategories ⚠️ LEGACY / pages-by-category ⚠️ LEGACY require NID** (integer), not UUID. Pass `node._nid` from entity ⚠️ LEGACY response.
-- **`category` filter** does NOT support multi-value or NID-based filtering.
+- **content/{nid}** returns raw Drupal field shapes — no normalization layer yet. Handle unknown fields defensively.
+- **blocks/{nid}** normalizes image fields to C1 shape so ParagraphResolver adapters work without changes.
+- **categories/{parentNid}** deduplicates by NID — Drupal may return duplicates due to multi-locale joins.
+- **arredo-products / illuminazione-products** have no server-side pagination. Endpoint returns all items.
 - **Image empty = `""`** not `null`. Always use `emptyToNull()`.
-- **Taxonomy terms** have NO `path` field. Slug derived from `name` via `deriveSlug()`.
-- **Showroom/Documento** have NO `field_blocchi` — Drupal returns 400 if included.
-- **`field_prezzo_eu`** is `{ value: string }` in Vetrite/Arredo but plain `string` in Tessuto.
-- **Link fields** are polymorphic: `string` OR `{ uri, title }` — check with `typeof`.
-- **Blog `created`** is Unix timestamp string — normalize with `unixToIso()`.
 - **Menu API** uses `/api/menu/` pattern (no `v1`), different from entity endpoints.
-
-## Pagination
-
-All Views endpoints: `items_per_page=N&page=N` (0-based page index).
-
-Response wrapper: `{ items: T[], total: number, page: number, pageSize: number }`
-
-Exception: category-options returns `{ items: [...] }` without total/page/pageSize.
+- **`field_prezzo_eu`** in arredo/illuminazione listing responses is a plain `string` (not `{ value }`).
+- **resolve-path** is the entry point for all product detail routing — resolves alias → `{ nid, bundle, locale, aliases }`.
 
 ## Normalizer Functions
 
-| Function                   | File            | Purpose                   |
-| -------------------------- | --------------- | ------------------------- |
-| `stripDomain(url)`         | client.ts       | Full URL → path only      |
-| `stripLocalePrefix(path)`  | client.ts       | `/it/path` → `/path`      |
-| `emptyToNull(value)`       | client.ts       | `""` → `null`             |
-| `toAbsoluteUrl(url)`       | products.ts     | Relative → absolute URL   |
-| `unixToIso(ts)`            | listings.ts     | Unix timestamp → ISO 8601 |
-| `deriveSlug(path, name)`   | filters.ts      | Name → URL-safe slug      |
-| `getDrupalImageUrl(field)` | drupal/image.ts | Image field → URL string  |
+| Function                   | File            | Purpose                            |
+| -------------------------- | --------------- | ---------------------------------- |
+| `stripDomain(url)`         | client.ts       | Full URL → path only               |
+| `stripLocalePrefix(path)`  | client.ts       | `/it/path` → `/path`               |
+| `emptyToNull(value)`       | client.ts       | `""` → `null`                      |
+| `toAbsoluteUrl(url)`       | products.ts     | Relative → absolute URL            |
+| `unixToIso(ts)`            | listings.ts     | Unix timestamp → ISO 8601          |
+| `deriveSlug(path, name)`   | filters.ts      | Name → URL-safe slug               |
+| `getDrupalImageUrl(field)` | drupal/image.ts | C1 image field object → URL string |
 
 ## Source Files
 
 ```
 src/lib/api/
-  client.ts       — apiGet, stripDomain, stripLocalePrefix, emptyToNull
-  types.ts        — All response interfaces
-  resolve-path.ts — resolve-path resolvePath (URL alias → nid, bundle, aliases)
-  mosaic-product.ts — mosaic-product fetchMosaicProduct (normalized with collection, grouts, documents)
-  vetrite-product.ts — vetrite-product fetchVetriteProduct (normalized with collection, documents)
-  textile-product.ts — textile-product fetchTextileProduct (normalized with finiture, maintenance, documents)
-  entity.ts       — entity ⚠️ LEGACY fetchEntity (to be rewritten)
-  products.ts     — products ⚠️ LEGACY fetchProducts, product-counts ⚠️ LEGACY fetchFilterCounts, getCategoriaProductType
-  filters.ts      — taxonomy ⚠️ LEGACY fetchFilterOptions, category-options ⚠️ LEGACY fetchCategoryOptions, fetchAllFilterOptions
-  listings.ts     — blog ⚠️ LEGACY / projects ⚠️ LEGACY / environments ⚠️ LEGACY / showrooms ⚠️ LEGACY / documents ⚠️ LEGACY — fetchBlogPosts, fetchProjects, fetchEnvironments, fetchShowrooms, fetchDocuments
-  categories.ts   — subcategories ⚠️ LEGACY fetchSubcategories, pages-by-category ⚠️ LEGACY fetchPagesByCategory
-  translate-path.ts — translate-path ⚠️ LEGACY getTranslatedPath
+  client.ts                      — apiGet, stripDomain, stripLocalePrefix, emptyToNull
+  types.ts                       — All response interfaces
+  resolve-path.ts                — resolvePath (URL alias → nid, bundle, aliases)
+  content.ts                     — fetchContent (basic entity fields by NID)
+  blocks.ts                      — fetchBlocks (paragraph blocks for any node by NID)
+  category-hub.ts                — fetchHubCategories (child categories of parent NID)
+  mosaic-product.ts              — fetchMosaicProduct (normalized with collection, grouts, documents)
+  vetrite-product.ts             — fetchVetriteProduct (normalized with collection, documents)
+  textile-product.ts             — fetchTextileProduct (normalized with finiture, maintenance, documents)
+  illuminazione-product.ts       — fetchIlluminazioneProduct (normalized with documents, gallery)
+  arredo-product-listing.ts      — fetchArredoProductListing (ProductCard[], filtered by category)
+  illuminazione-product-listing.ts — fetchIlluminazioneProductListing (ProductCard[], filtered by category)
+  vetrite-hub.ts                 — fetchVetriteColors, fetchVetriteCollections (VetriteTermItem[])
+
+  — DEAD (404) — kept for reference, do not call:
+  entity.ts       — fetchEntity
+  products.ts     — fetchProducts, fetchFilterCounts, getCategoriaProductType
+  filters.ts      — fetchFilterOptions, fetchCategoryOptions, fetchAllFilterOptions
+  listings.ts     — fetchBlogPosts, fetchProjects, fetchEnvironments, fetchShowrooms, fetchDocuments
+  categories.ts   — fetchSubcategories, fetchPagesByCategory
+  translate-path.ts — getTranslatedPath
   image-fallback.ts — enrichWithFallbackImages
 
 src/lib/drupal/
   config.ts       — DRUPAL_BASE_URL
-  menu.ts         — menu fetchMenu, transformMenuToNavItems
+  menu.ts         — fetchMenu, transformMenuToNavItems
   image.ts        — getDrupalImageUrl
 
 src/domain/filters/

@@ -15,11 +15,36 @@ BASE="${1:-http://192.168.86.201/www.sicis.com_aiweb/httpdocs}"
 LOCALE="it"
 TIMEOUT=10
 
-# Sample NID/TID for testing (known mosaico product + collection)
-SAMPLE_NID=515
+# ── Dynamic NID/TID discovery ──────────────────────────────────────────────
+# Fetches real NIDs from listing endpoints so single-product checks use valid IDs.
+# Falls back to hardcoded values if the listing endpoint is unreachable.
+
+extract_nid() {
+  # Extract first "nid":"NNN" from a JSON array response
+  local url="$1"
+  local nid
+  nid=$(curl -s --max-time "$TIMEOUT" "$url" 2>/dev/null | grep -o '"nid":"[0-9]*"' | head -1 | grep -o '[0-9]*')
+  echo "${nid:-0}"
+}
+
+echo "  Discovering valid NIDs from listing endpoints..."
+echo ""
+
+MOSAIC_NID=$(extract_nid "$BASE/$LOCALE/api/v1/mosaic-products/58/1")
+VETRITE_NID=$(extract_nid "$BASE/$LOCALE/api/v1/vetrite-products/all/all")
+TEXTILE_NID=$(extract_nid "$BASE/$LOCALE/api/v1/textile-products/all")
+PIXALL_NID=$(extract_nid "$BASE/$LOCALE/api/v1/pixall-products")
+
+# TID/category NIDs (static — these are taxonomy terms / categoria nodes, stable)
 SAMPLE_TID=58
 SAMPLE_COLOR_TID=1
 SAMPLE_CATEGORY_NID=3545
+
+echo "  Mosaic NID:  ${MOSAIC_NID:-none}"
+echo "  Vetrite NID: ${VETRITE_NID:-none}"
+echo "  Textile NID: ${TEXTILE_NID:-none}"
+echo "  Pixall NID:  ${PIXALL_NID:-none}"
+echo ""
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -60,10 +85,10 @@ check() {
 echo "--- NEW endpoints (definitive) ---"
 echo ""
 check "resolve-path"       "$BASE/$LOCALE/api/v1/resolve-path?path=/mosaico/pluma"   "new"
-check "mosaic-product"     "$BASE/$LOCALE/api/v1/mosaic-product/$SAMPLE_NID"          "new"
-check "vetrite-product"    "$BASE/$LOCALE/api/v1/vetrite-product/$SAMPLE_NID"         "new"
-check "textile-product"    "$BASE/$LOCALE/api/v1/textile-product/$SAMPLE_NID"         "new"
-check "pixall-product"     "$BASE/$LOCALE/api/v1/pixall-product/$SAMPLE_NID"         "new"
+check "mosaic-product"     "$BASE/$LOCALE/api/v1/mosaic-product/$MOSAIC_NID"          "new"
+check "vetrite-product"    "$BASE/$LOCALE/api/v1/vetrite-product/$VETRITE_NID"       "new"
+check "textile-product"    "$BASE/$LOCALE/api/v1/textile-product/$TEXTILE_NID"       "new"
+check "pixall-product"     "$BASE/$LOCALE/api/v1/pixall-product/$PIXALL_NID"         "new"
 check "mosaic-products"    "$BASE/$LOCALE/api/v1/mosaic-products/$SAMPLE_TID/$SAMPLE_COLOR_TID" "new"
 check "vetrite-products"   "$BASE/$LOCALE/api/v1/vetrite-products/all/all"            "new"
 check "textile-products"   "$BASE/$LOCALE/api/v1/textile-products/all"                "new"

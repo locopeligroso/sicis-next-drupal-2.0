@@ -1,4 +1,7 @@
 import { fetchEntity } from '@/lib/api/entity';
+import { resolvePath } from '@/lib/api/resolve-path';
+import { fetchContent } from '@/lib/api/content';
+import { fetchBlocks } from '@/lib/api/blocks';
 import Page from '@/templates/nodes/Page';
 
 interface HomePageProps {
@@ -11,11 +14,34 @@ export default async function HomePage({ params }: HomePageProps) {
   let homepage: Record<string, unknown> | null = null;
 
   try {
-    // entity endpoint resolves the front page at path "/"
-    const entity = await fetchEntity('/', locale);
+    // Primary: content/{nid} + blocks/{nid}
+    // resolve-path doesn't support "/" (Drupal front page has no URL alias).
+    // Try resolve-path first, fall back to hardcoded NID 1 (Drupal front page).
+    const resolved = await resolvePath('/', locale);
+    const homepageNid = resolved?.nid ?? 1;
+    const homeBundle = resolved?.bundle ?? 'page';
+    const homeType = resolved?.type ?? 'node';
 
-    if (entity) {
-      homepage = entity.data as Record<string, unknown>;
+    const [content, blocks] = await Promise.all([
+      fetchContent(homepageNid, locale),
+      fetchBlocks(homepageNid, locale),
+    ]);
+    if (content) {
+      homepage = {
+        ...content,
+        type: `${homeType}--${homeBundle}`,
+        id: String(homepageNid),
+        _nid: homepageNid,
+        field_blocchi: blocks,
+      } as Record<string, unknown>;
+    }
+
+    // Fallback: legacy C1 entity endpoint
+    if (!homepage) {
+      const entity = await fetchEntity('/', locale);
+      if (entity) {
+        homepage = entity.data as Record<string, unknown>;
+      }
     }
   } catch (error) {
     console.error('[HomePage] Failed to fetch homepage node', error);

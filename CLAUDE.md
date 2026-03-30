@@ -2,7 +2,7 @@
 
 > **Source of truth:** The code is always the source of truth. This document may be outdated — when in doubt, read the code. For Drupal data (fields, entities, menus, paragraphs), the only real source is what Drupal returns via REST endpoints — never assume field presence or structure from this doc alone, always verify against the actual API response.
 
-> **⚠️ Cambiamenti recenti (2026-03-28):** Migrazione architetturale in corso. I vecchi endpoint generici (entity, products, taxonomy, ecc.) sono ⚠️ LEGACY e vengono riscritti come endpoint dedicati tipo-specifici. Gli endpoint nuovi definitivi usano NID/TID nei path params, non hanno paginazione, e ritornano array flat. Vedi le tabelle "✅ NEW" e "⚠️ LEGACY" nella sezione Endpoint Reference. Le pagine dettaglio prodotto passano da `resolvePath()` + endpoint tipo-specifico (`mosaic-product`, `vetrite-product`, `textile-product`, `pixall-product`). Il language switcher usa `window.location.href` (hard navigation) al posto di `router.push`. Vedi `CHANGELOG.md` per i dettagli completi, `docs/REFACTORING_ROADMAP.md` per i prossimi passi.
+> **⚠️ Cambiamenti recenti (2026-03-30):** Integrazione `content/{nid}` + `blocks/{nid}` completata. C1 entity endpoint confermato morto (404) — `getPageData()` usa ora `resolvePath` → `content/{nid}` + `blocks/{nid}` come primary, C1 come fallback. Tutti gli endpoint legacy V1-V9 confermati morti (404); 9 nuovi fetcher aggiunti (vedi lista in `src/lib/api/`). Hub pages (mosaico, vetrite, arredo, illuminazione, tessuto) fetchano internamente — nessuna chiamata legacy in Stage 1. Homepage usa `content/1` + `blocks/1`. Vedi `CHANGELOG.md` per i dettagli completi.
 >
 > **🚫 NON modificare il routing** in `src/app/[locale]/[...slug]/page.tsx` — è in fase di ristrutturazione e verrà consolidato (vedi `docs/REFACTORING_ROADMAP.md` #17). Qualsiasi modifica al routing rischia di rompere il flusso resolve-path.
 >
@@ -29,7 +29,7 @@ Next 16.1.7 | React 19.2.4 | Tailwind 4.2.2 | Storybook 10.3.1 | next-intl | nuq
 
 > Full details in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 
-- **Data layer:** All data from Drupal REST endpoints via `apiGet()`. 11 NEW definitive endpoints (type-specific, NID/TID-based) + 14 LEGACY generic Views (to be rewritten). See endpoint status tables in docs/ARCHITECTURE.md.
+- **Data layer:** All data from Drupal REST endpoints via `apiGet()`. Primary path: `resolvePath` → `content/{nid}` + `blocks/{nid}`. Product detail: `mosaic-product`, `vetrite-product`, `textile-product`, `pixall-product`, `illuminazione-product`. Hub listings: `categories/{nid}`, `vetrite-hub`, `arredo-product-listing`, `illuminazione-product-listing`. Legacy V1-V9 + C1 confirmed dead (404) — stubs kept for V1/V2/V5-V9 pending Freddi replacements. See endpoint status tables in docs/ARCHITECTURE.md.
 - **Routing:** 4-stage pipeline in `[...slug]/page.tsx` — LISTING_SLUG_OVERRIDES → resolve-path product detail → multi-slug filter interception → entity fallback. **DO NOT MODIFY** (restructuring in progress, see REFACTORING_ROADMAP.md #17).
 - **Revalidation:** 3 ISR tiers — 60s (products), 300s (editorial), 3600s (taxonomy/menu).
 - **Domain layer:** `src/domain/filters/` (FILTER_REGISTRY, 6 product types, P0/P1/P2 filter priorities) + `src/domain/routing/` (section-config, routing-registry shadow mode).
@@ -154,7 +154,7 @@ Source: `src/styles/globals.css`
 3. **Product-level overrides collection** — e.g. `body = product.field_testo_main || collection.field_testo`
 4. **Translations for all static text** — messages/\*.json, future migration planned
 5. **Static images** in `public/images/` (flat structure): `usa-mosaic-quality.jpg`, `Retinatura-mosaico-rete.jpg.webp`
-6. **entity endpoint pre-resolves all data** — relationships, paragraphs, and image meta (alt, width, height) flow inline in a single response; no secondary fetches needed for rendering
+6. **content+blocks split** — `content/{nid}` returns entity fields; `blocks/{nid}` returns paragraph blocks with recursive image normalization (4:3 default dimensions). C1 entity endpoint kept as fallback only.
 7. **Blocks import only Composed, never Primitives** — enforced by /ds skill
 8. **Block naming convention** — `Spec*` = template-specific, `Gen*` = paragraph-driven transversal. Gen names derived mechanically from Drupal machine name: `blocco_{name}` → `Gen{PascalCase(name)}`
 9. **Primary-text token** for text on primary color — different from primary base, optimized per theme

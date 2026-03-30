@@ -3,6 +3,7 @@
 import { getTranslatedPath as _getTranslatedPath } from '@/lib/api/translate-path';
 import { resolvePath } from '@/lib/api/resolve-path';
 import { toDrupalLocale } from '@/i18n/config';
+import { translateBasePath } from '@/domain/filters/registry';
 
 /**
  * Server Action wrapper for getTranslatedPath.
@@ -49,6 +50,14 @@ export async function getTranslatedPath(
   if (resolved?.aliases?.[targetLocale]) {
     const result = `/${targetLocale}${resolved.aliases[targetLocale]}`;
     return result;
+  }
+
+  // Second fallback: translate listing base paths via FILTER_REGISTRY
+  // Handles product listing URLs (e.g. /lighting/table-lamps → /illuminazione/table-lamps)
+  // when both C2 and R1 are unavailable or return no result.
+  const translatedBase = translateBasePath(decodedPath, targetLocale);
+  if (translatedBase !== decodedPath) {
+    return `/${targetLocale}${translatedBase}`;
   }
 
   return null;

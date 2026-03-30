@@ -4,6 +4,63 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### 2026-03-30
+
+#### New endpoint integration + legacy cleanup — 9 new fetchers, dead V1-V9 calls removed
+
+All legacy Drupal Views endpoints (V1-V9, C1, C2) are confirmed dead (404). Integrated 9 new REST endpoints and removed all dead legacy calls from the routing.
+
+**New fetcher files (9):**
+
+- `src/lib/api/vetrite-hub.ts` — `vetrite-colors` + `vetrite-collections` (hub page)
+- `src/lib/api/arredo-product-listing.ts` — `arredo-products/{categoryNid}` (product grid)
+- `src/lib/api/illuminazione-product-listing.ts` — `illuminazione-products/{categoryNid}` (product grid)
+- `src/lib/api/category-hub.ts` — `categories/{nid}` (replaces dead V4 category-options, with NID deduplication)
+- `src/lib/api/illuminazione-product.ts` — `illuminazione-product/{nid}` (single product detail)
+- `src/lib/api/content.ts` — `content/{nid}` (basic entity fields, replaces dead C1 entity)
+- `src/lib/api/blocks.ts` — `blocks/{nid}` (paragraph blocks, replaces C1 field_blocchi)
+
+**Routing overhaul (`page.tsx`):**
+
+- `getPageData()` refactored: uses `resolvePath` → `content/{nid}` + `blocks/{nid}` as primary, C1 as fallback
+- `generateMetadata()` uses same content+blocks fallback for page titles
+- Hub State 1: ALL hub types (mosaico, vetrite, arredo, illuminazione, tessuto) now fetch internally — dead V3/V4/V2 calls removed entirely
+- Stage 1.5 categoria matching checks basePaths of ALL locales (fixes cross-locale URLs like `/it/lighting/table-lamps`)
+- Subcategory resolution replaced: `fetchCategoryOptions` (V4, dead) → `fetchHubCategories` (new `categories/{nid}`)
+- Arredo/illuminazione product grid uses new listing endpoints via `useNewListingEndpoint`
+- Illuminazione single product routed via resolve-path Stage 1.5
+- Homepage (`[locale]/page.tsx`): uses `content/1` + `blocks/1` with C1 fallback
+
+**Removed dead legacy imports:**
+
+- `fetchFilterOptions` — V3 taxonomy endpoint (dead)
+- `fetchCategoryOptions` — V4 category-options endpoint (dead)
+- Hub State 1 filter/count fetch block — all 50+ lines of dead V3/V4/V2 calls
+
+**Still present (no replacement available — awaiting Freddi):**
+
+- `fetchProducts` (V1) — State 2 fallback when useNewListingEndpoint is false
+- `fetchFilterCounts` (V2) — sidebar filter counts in State 2
+- `fetchAllFilterOptions` — sidebar filter options in State 2 (returns empty for dead endpoints)
+- `fetchProjects/Environments/BlogPosts/Showrooms/Documents` (V5-V9) — content listings via field_page_id
+
+**Component changes:**
+
+- `SpecHubMosaico` — generic: accepts `productType`, dispatches mosaic vs vetrite endpoints
+- `SpecHubArredo` — fetches categories internally via `fetchHubCategories`, `slugifyName()` for accented/Cyrillic hrefs
+- `ProductListingTemplate` — passes `productType` + `hubParentNid` to hub components
+- `ParagraphResolver` — gallery caption: removed filename fallback (blocks/{nid} has no alt text)
+- `blocks.ts` — recursive `normalizeImageFields`: converts nested `field_immagine` strings (in field_slide, field_elementi, field_documenti) to C1 shape with 4:3 default dimensions
+
+**Bug fixes:**
+
+- Vetrite hub showed mosaic data → dispatches by productType
+- Illuminazione hub broken for FR/DE/ES/RU → 4 missing slugs added to LISTING_SLUG_OVERRIDES
+- Language switcher wrong-locale URLs → `translateBasePath` as third fallback in getTranslatedPath
+- Tessili hub duplicates → NID-based deduplication in category-hub.ts
+- US locale missing i18n hub keys → added to messages/us.json
+- Page titles showing "Sicis" → generateMetadata uses content/{nid} fallback
+
 ### 2026-03-28
 
 #### Endpoint nomenclature overhaul — descriptive names replace opaque codes

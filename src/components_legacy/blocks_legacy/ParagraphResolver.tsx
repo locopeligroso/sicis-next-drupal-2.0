@@ -27,7 +27,9 @@ import BloccoAnni from './BloccoAnni';
 import BloccoTutorial from './BloccoTutorial';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ParagraphComponent = (props: { paragraph: Record<string, unknown> }) => any;
+type ParagraphComponent = (props: {
+  paragraph: Record<string, unknown>;
+}) => any;
 
 const LEGACY_MAP: Record<string, ParagraphComponent> = {
   'paragraph--blocco_slider_home': BloccoSliderHome,
@@ -42,15 +44,24 @@ const LEGACY_MAP: Record<string, ParagraphComponent> = {
 
 function adaptGenIntro(p: Record<string, unknown>, pageTitle?: string) {
   const title = getTextValue(p.field_titolo_formattato);
-  const subtitle = pageTitle ?? getTextValue(p.field_sopratitolo_approfondiment) ?? '';
+  const subtitle =
+    pageTitle ?? getTextValue(p.field_sopratitolo_approfondiment) ?? '';
   const bodyHtml = getProcessedText(p.field_testo);
   const imageSrc = getDrupalImageUrl(p.field_immagine);
-  const imageAlt = (p.field_immagine as Record<string, unknown> | undefined)?.meta
-    ? ((p.field_immagine as Record<string, unknown>).meta as Record<string, unknown>)?.alt as string ?? ''
+  const imageAlt = (p.field_immagine as Record<string, unknown> | undefined)
+    ?.meta
+    ? (((
+        (p.field_immagine as Record<string, unknown>).meta as Record<
+          string,
+          unknown
+        >
+      )?.alt as string) ?? '')
     : '';
-  const linkHref = getTextValue(p.field_collegamento_esterno)
-    ?? (p.field_collegamento_interno as Record<string, unknown> | undefined)?.path as string
-    ?? null;
+  const linkHref =
+    getTextValue(p.field_collegamento_esterno) ??
+    ((p.field_collegamento_interno as Record<string, unknown> | undefined)
+      ?.path as string) ??
+    null;
   const linkLabel = getTextValue(p.field_label_collegamento) ?? null;
 
   if (!title || !bodyHtml || !imageSrc) return null;
@@ -82,14 +93,26 @@ function adaptGenTestoImmagine(p: Record<string, unknown>) {
   const imageSrc = getDrupalImageUrl(p.field_immagine);
   if (!bodyHtml || !imageSrc) return null;
 
-  const imgMeta = (p.field_immagine as Record<string, unknown> | undefined)?.meta as Record<string, unknown> | undefined;
+  const imgMeta = (p.field_immagine as Record<string, unknown> | undefined)
+    ?.meta as Record<string, unknown> | undefined;
   const imageAlt = (imgMeta?.alt as string) ?? '';
   const titleRaw = getProcessedText(p.field_titolo_formattato);
-  const title = titleRaw ? titleRaw.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() : null;
-  const layout = (getTextValue(p.field_layout_blocco_testo_img) as 'text_dx' | 'text_sx' | 'text_up') ?? 'text_dx';
-  const linkHref = getTextValue(p.field_collegamento_esterno)
-    ?? (p.field_collegamento_interno as Record<string, unknown> | undefined)?.path as string
-    ?? null;
+  const title = titleRaw
+    ? titleRaw
+        .replace(/<[^>]*>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .trim()
+    : null;
+  const layout =
+    (getTextValue(p.field_layout_blocco_testo_img) as
+      | 'text_dx'
+      | 'text_sx'
+      | 'text_up') ?? 'text_dx';
+  const linkHref =
+    getTextValue(p.field_collegamento_esterno) ??
+    ((p.field_collegamento_interno as Record<string, unknown> | undefined)
+      ?.path as string) ??
+    null;
   const linkLabel = getTextValue(p.field_label_collegamento) ?? null;
 
   return (
@@ -106,7 +129,8 @@ function adaptGenTestoImmagine(p: Record<string, unknown>) {
 }
 
 function adaptGenGallery(p: Record<string, unknown>) {
-  const slideData = (p.field_slide as Array<Record<string, unknown>> | undefined) ?? [];
+  const slideData =
+    (p.field_slide as Array<Record<string, unknown>> | undefined) ?? [];
   const slides: GenGallerySlide[] = slideData
     .map((slide) => {
       const src = getDrupalImageUrl(slide.field_immagine);
@@ -116,17 +140,22 @@ function adaptGenGallery(p: Record<string, unknown>) {
       const alt = (meta?.alt as string) ?? '';
       const width = meta?.width as number | undefined;
       const height = meta?.height as number | undefined;
-      // Use alt text as caption, fallback to filename from URL
-      const filename = src.split('/').pop()?.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ') ?? '';
-      const caption = alt || filename || null;
-      return { src, alt: alt || filename, caption, width, height };
+      // Use alt text as caption when available; skip filename fallback
+      // (blocks/{nid} returns images without alt — filename makes ugly captions)
+      const caption = alt || null;
+      return { src, alt: alt || '', caption, width, height };
     })
     .filter((s) => s !== null) as GenGallerySlide[];
 
   if (slides.length === 0) return null;
 
   const titleRaw = getProcessedText(p.field_titolo_formattato);
-  const title = titleRaw ? titleRaw.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() : null;
+  const title = titleRaw
+    ? titleRaw
+        .replace(/<[^>]*>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .trim()
+    : null;
 
   return <GenGallery slides={slides} title={title} />;
 }
@@ -135,14 +164,22 @@ function adaptGenTestoImmagineBig(p: Record<string, unknown>) {
   const imageSrc = getDrupalImageUrl(p.field_immagine);
   if (!imageSrc) return null;
 
-  const imgMeta = (p.field_immagine as Record<string, unknown> | undefined)?.meta as Record<string, unknown> | undefined;
+  const imgMeta = (p.field_immagine as Record<string, unknown> | undefined)
+    ?.meta as Record<string, unknown> | undefined;
   const imageAlt = (imgMeta?.alt as string) ?? '';
   const titleRaw = getProcessedText(p.field_titolo_formattato);
-  const title = titleRaw ? titleRaw.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() : null;
+  const title = titleRaw
+    ? titleRaw
+        .replace(/<[^>]*>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .trim()
+    : null;
   const bodyHtml = getProcessedText(p.field_testo);
-  const linkHref = getTextValue(p.field_collegamento_esterno)
-    ?? (p.field_collegamento_interno as Record<string, unknown> | undefined)?.path as string
-    ?? null;
+  const linkHref =
+    getTextValue(p.field_collegamento_esterno) ??
+    ((p.field_collegamento_interno as Record<string, unknown> | undefined)
+      ?.path as string) ??
+    null;
   const linkLabel = getTextValue(p.field_label_collegamento) ?? null;
 
   return (
@@ -162,9 +199,15 @@ function adaptGenTestoImmagineBlog(p: Record<string, unknown>) {
   if (!bodyHtml) return null;
 
   const titleRaw = getProcessedText(p.field_titolo_formattato);
-  const title = titleRaw ? titleRaw.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() : null;
+  const title = titleRaw
+    ? titleRaw
+        .replace(/<[^>]*>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .trim()
+    : null;
   const imageSrc = getDrupalImageUrl(p.field_immagine);
-  const imgMeta = (p.field_immagine as Record<string, unknown> | undefined)?.meta as Record<string, unknown> | undefined;
+  const imgMeta = (p.field_immagine as Record<string, unknown> | undefined)
+    ?.meta as Record<string, unknown> | undefined;
   const imageAlt = (imgMeta?.alt as string) ?? '';
 
   return (
@@ -183,8 +226,10 @@ function adaptGenGalleryIntro(p: Record<string, unknown>) {
   if (!title || !bodyHtml) return null;
 
   // TODO: overline hardcoded — Drupal field_sopratitolo_approfondiment never populated, needs content entry
-  const overline = getTextValue(p.field_sopratitolo_approfondiment) ?? 'Lorem ipsum dolor sit';
-  const slideData = (p.field_slide as Array<Record<string, unknown>> | undefined) ?? [];
+  const overline =
+    getTextValue(p.field_sopratitolo_approfondiment) ?? 'Lorem ipsum dolor sit';
+  const slideData =
+    (p.field_slide as Array<Record<string, unknown>> | undefined) ?? [];
   const slides: GenGalleryIntroSlide[] = slideData
     .map((slide) => {
       const src = getDrupalImageUrl(slide.field_immagine);
@@ -212,7 +257,8 @@ function adaptGenGalleryIntro(p: Record<string, unknown>) {
 
 function adaptGenDocumenti(p: Record<string, unknown>) {
   const title = getTextValue(p.field_titolo_formattato) ?? null;
-  const docNodes = (p.field_documenti as Array<Record<string, unknown>> | undefined) ?? [];
+  const docNodes =
+    (p.field_documenti as Array<Record<string, unknown>> | undefined) ?? [];
 
   const documents: GenDocumentiItem[] = docNodes
     .map((doc) => {
@@ -234,9 +280,11 @@ function adaptGenQuote(p: Record<string, unknown>) {
   const text = getProcessedText(p.field_testo);
   if (!text) return null;
 
-  const linkHref = getTextValue(p.field_collegamento_esterno)
-    ?? (p.field_collegamento_interno as Record<string, unknown> | undefined)?.path as string
-    ?? null;
+  const linkHref =
+    getTextValue(p.field_collegamento_esterno) ??
+    ((p.field_collegamento_interno as Record<string, unknown> | undefined)
+      ?.path as string) ??
+    null;
   const linkLabel = getTextValue(p.field_label_collegamento) ?? null;
 
   return <GenQuote text={text} linkHref={linkHref} linkLabel={linkLabel} />;
@@ -249,18 +297,30 @@ function drupalRatioToNumber(ratio: string | null | undefined): number {
 
 function adaptGenA(p: Record<string, unknown>) {
   const imageSrc = getDrupalImageUrl(p.field_immagine);
-  const imageAlt = ((p.field_immagine as Record<string, unknown> | undefined)?.meta as Record<string, unknown> | undefined)?.alt as string ?? '';
+  const imageAlt =
+    ((
+      (p.field_immagine as Record<string, unknown> | undefined)?.meta as
+        | Record<string, unknown>
+        | undefined
+    )?.alt as string) ?? '';
   const videoCode = getTextValue(p.field_video) ?? null;
   const ratio = drupalRatioToNumber(getTextValue(p.field_ratio));
   const captionHtml = getProcessedText(p.field_caption);
 
   const imageSmallSrc = getDrupalImageUrl(p.field_immagine_small);
-  const imageSmallAlt = ((p.field_immagine_small as Record<string, unknown> | undefined)?.meta as Record<string, unknown> | undefined)?.alt as string ?? '';
+  const imageSmallAlt =
+    ((
+      (p.field_immagine_small as Record<string, unknown> | undefined)?.meta as
+        | Record<string, unknown>
+        | undefined
+    )?.alt as string) ?? '';
   const videoSmallCode = getTextValue(p.field_video_small) ?? null;
   const ratioSmall = drupalRatioToNumber(getTextValue(p.field_ratio_small));
   const captionSmallHtml = getProcessedText(p.field_caption_small);
 
-  const layout = (getTextValue(p.field_layout_blocco_a) as 'img_big_sx' | 'img_big_dx') ?? 'img_big_sx';
+  const layout =
+    (getTextValue(p.field_layout_blocco_a) as 'img_big_sx' | 'img_big_dx') ??
+    'img_big_sx';
 
   if (!imageSrc && !videoCode && !imageSmallSrc && !videoSmallCode) return null;
 
@@ -282,12 +342,18 @@ function adaptGenA(p: Record<string, unknown>) {
 }
 
 function adaptGenB(p: Record<string, unknown>) {
-  const images = (p.field_3_immagini as Array<Record<string, unknown>> | undefined) ?? [];
+  const images =
+    (p.field_3_immagini as Array<Record<string, unknown>> | undefined) ?? [];
   const videos = (p.field_3_video as Array<string> | undefined) ?? [];
 
   const items: GenBItem[] = images.map((img, i) => ({
     imageSrc: getDrupalImageUrl(img),
-    imageAlt: ((img as Record<string, unknown>)?.meta as Record<string, unknown> | undefined)?.alt as string ?? '',
+    imageAlt:
+      ((
+        (img as Record<string, unknown>)?.meta as
+          | Record<string, unknown>
+          | undefined
+      )?.alt as string) ?? '',
     videoCode: videos[i] ?? null,
   }));
 
@@ -298,17 +364,31 @@ function adaptGenB(p: Record<string, unknown>) {
 
 function adaptGenC(p: Record<string, unknown>) {
   const titleRaw = getProcessedText(p.field_titolo_formattato);
-  const title = titleRaw ? titleRaw.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() : null;
+  const title = titleRaw
+    ? titleRaw
+        .replace(/<[^>]*>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .trim()
+    : null;
   const bodyHtml = getProcessedText(p.field_testo);
   const imageSrc = getDrupalImageUrl(p.field_immagine);
-  const imageAlt = ((p.field_immagine as Record<string, unknown> | undefined)?.meta as Record<string, unknown> | undefined)?.alt as string ?? '';
+  const imageAlt =
+    ((
+      (p.field_immagine as Record<string, unknown> | undefined)?.meta as
+        | Record<string, unknown>
+        | undefined
+    )?.alt as string) ?? '';
   const videoCode = getTextValue(p.field_video) ?? null;
   const captionHtml = getProcessedText(p.field_caption);
-  const linkHref = getTextValue(p.field_collegamento_esterno)
-    ?? (p.field_collegamento_interno as Record<string, unknown> | undefined)?.path as string
-    ?? null;
+  const linkHref =
+    getTextValue(p.field_collegamento_esterno) ??
+    ((p.field_collegamento_interno as Record<string, unknown> | undefined)
+      ?.path as string) ??
+    null;
   const linkLabel = getTextValue(p.field_label_collegamento) ?? null;
-  const layout = (getTextValue(p.field_layout_blocco_c) as 'text_sx' | 'text_dx') ?? 'text_sx';
+  const layout =
+    (getTextValue(p.field_layout_blocco_c) as 'text_sx' | 'text_dx') ??
+    'text_sx';
 
   if (!imageSrc && !videoCode && !bodyHtml) return null;
 
@@ -334,19 +414,28 @@ interface ParagraphResolverProps {
   pageTitle?: string;
 }
 
-export default function ParagraphResolver({ paragraph, pageTitle }: ParagraphResolverProps) {
+export default function ParagraphResolver({
+  paragraph,
+  pageTitle,
+}: ParagraphResolverProps) {
   const type = paragraph.type as string;
 
   // Gen blocks (DS)
-  if (type === 'paragraph--blocco_intro') return adaptGenIntro(paragraph, pageTitle);
+  if (type === 'paragraph--blocco_intro')
+    return adaptGenIntro(paragraph, pageTitle);
   if (type === 'paragraph--blocco_quote') return adaptGenQuote(paragraph);
   if (type === 'paragraph--blocco_video') return adaptGenVideo(paragraph);
-  if (type === 'paragraph--blocco_testo_immagine') return adaptGenTestoImmagine(paragraph);
+  if (type === 'paragraph--blocco_testo_immagine')
+    return adaptGenTestoImmagine(paragraph);
   if (type === 'paragraph--blocco_gallery') return adaptGenGallery(paragraph);
-  if (type === 'paragraph--blocco_testo_immagine_big') return adaptGenTestoImmagineBig(paragraph);
-  if (type === 'paragraph--blocco_testo_immagine_blog') return adaptGenTestoImmagineBlog(paragraph);
-  if (type === 'paragraph--blocco_gallery_intro') return adaptGenGalleryIntro(paragraph);
-  if (type === 'paragraph--blocco_documenti') return adaptGenDocumenti(paragraph);
+  if (type === 'paragraph--blocco_testo_immagine_big')
+    return adaptGenTestoImmagineBig(paragraph);
+  if (type === 'paragraph--blocco_testo_immagine_blog')
+    return adaptGenTestoImmagineBlog(paragraph);
+  if (type === 'paragraph--blocco_gallery_intro')
+    return adaptGenGalleryIntro(paragraph);
+  if (type === 'paragraph--blocco_documenti')
+    return adaptGenDocumenti(paragraph);
   if (type === 'paragraph--blocco_a') return adaptGenA(paragraph);
   if (type === 'paragraph--blocco_b') return adaptGenB(paragraph);
   if (type === 'paragraph--blocco_c') return adaptGenC(paragraph);
@@ -356,7 +445,14 @@ export default function ParagraphResolver({ paragraph, pageTitle }: ParagraphRes
   if (!Component) {
     if (process.env.NODE_ENV === 'development') {
       return (
-        <div style={{ padding: '1rem', border: '0.0625rem dashed #f59e0b', background: '#fffbeb', marginBottom: '1rem' }}>
+        <div
+          style={{
+            padding: '1rem',
+            border: '0.0625rem dashed #f59e0b',
+            background: '#fffbeb',
+            marginBottom: '1rem',
+          }}
+        >
           <p style={{ margin: 0, fontSize: '0.75rem', color: '#92400e' }}>
             Unknown paragraph: <code>{type}</code>
           </p>

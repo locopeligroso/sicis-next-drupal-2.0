@@ -211,7 +211,10 @@
   "hub": {
     "discoverAlso": "Discover also",
     "deepDives": "Learn more",
-    "explore": "Explore"
+    "explore": "Explore",
+    "exploreByColor": "Explore by color",
+    "exploreByCollection": "Explore by collection",
+    "exploreByTypology": "Explore by typology"
   },
   "share": {
     "copyLink": "Copy link",
