@@ -1,5 +1,5 @@
-import { VimeoPlayer } from '@/components/composed/VimeoPlayer';
 import { cn } from '@/lib/utils';
+import { VimeoPlayer } from '@/components/composed/VimeoPlayer';
 
 export interface GenVideoProps {
   videoCode: string;
@@ -15,7 +15,9 @@ export function GenVideo({
   className,
 }: GenVideoProps) {
   return (
-    <section className={cn('max-w-main mx-auto px-(--spacing-page)', className)}>
+    <section
+      className={cn('max-w-main mx-auto px-(--spacing-page)', className)}
+    >
       <VimeoPlayer
         videoCode={videoCode}
         posterSrc={posterSrc}

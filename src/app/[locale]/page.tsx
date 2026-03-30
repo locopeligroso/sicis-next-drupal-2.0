@@ -1,4 +1,3 @@
-import { fetchEntity } from '@/lib/api/entity';
 import { resolvePath } from '@/lib/api/resolve-path';
 import { fetchContent } from '@/lib/api/content';
 import { fetchBlocks } from '@/lib/api/blocks';
@@ -36,13 +35,8 @@ export default async function HomePage({ params }: HomePageProps) {
       } as Record<string, unknown>;
     }
 
-    // Fallback: legacy C1 entity endpoint
-    if (!homepage) {
-      const entity = await fetchEntity('/', locale);
-      if (entity) {
-        homepage = entity.data as Record<string, unknown>;
-      }
-    }
+    // C1 entity fallback removed — endpoint is dead (returns HTML, ~6s timeout).
+    // Homepage uses content/1 + blocks/1 exclusively.
   } catch (error) {
     console.error('[HomePage] Failed to fetch homepage node', error);
   }

@@ -25,6 +25,7 @@ export function ProductCard({
   return (
     <Link
       href={href}
+      prefetch={false}
       className={cn('group flex flex-col gap-2 rounded-lg', className)}
     >
       <div

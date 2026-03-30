@@ -30,6 +30,7 @@ export async function apiGet<T>(
     const res = await fetch(url.toString(), {
       next: { revalidate },
       headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(8000), // 8s timeout — prevents 120s hangs on Drupal stalls
     });
 
     if (!res.ok) {

@@ -6,6 +6,45 @@ All notable changes to this project will be documented in this file.
 
 ### 2026-03-30
 
+#### Performance optimizations — 13× faster product pages, streaming, dead code purge
+
+**Measured improvements (dev LAN):**
+
+- Product detail: 2.6s → 0.2s (13× faster) — removed 6s C1 timeout from getPageData
+- Homepage: 8.8s → 1.2s (7× faster) — removed 6s fetchEntity fallback
+- Listing filtrato: 7.3s → 4.0s — removed dead fetchFilterCounts base counts (2-4s timeout)
+- Hub pages: 3.3s → 0.3s (11× faster) — all hubs fetch internally, no dead V3/V4
+- TTFB all pages: under 0.2s — Suspense streaming enabled
+
+**Quick wins:**
+
+- Font loading: `display: 'swap'` + weight 700 on all 3 fonts (Outfit, Geist, Geist Mono)
+- Image priority: `priority` prop on first ProductCarousel slide (LCP improvement)
+- Prefetch: `prefetch={false}` on CategoryCard/ProductCard links (reduces hub prefetch traffic)
+- Request timeout: `AbortSignal.timeout(8000)` on all apiGet calls (prevents 120s hangs)
+- Language switcher: C2+R1 calls parallelized via Promise.all (was sequential)
+
+**Streaming:**
+
+- Suspense boundary in layout.tsx wrapping `{children}` — navbar renders instantly
+- `loading.tsx` created for `[locale]/` and `[locale]/[...slug]/` route segments
+
+**ISR fix:**
+
+- Removed blanket `export const revalidate = 60` from catch-all page — each fetch uses its own TTL (products 60s, editorial 300s, taxonomy 3600s, menu 600s)
+
+**Dead code purge (all V1-V9 legacy imports removed from page.tsx):**
+
+- `fetchEntity` (C1) — disabled in getPageData, removed from homepage
+- `fetchProducts` (V1) — replaced by `useNewListingEndpoint = true` always, using type-specific fetchers with `'all'` fallback
+- `fetchFilterCounts` (V2) — both main counts and base counts blocks removed
+- `fetchAllFilterOptions` (V3+V4) — removed, hub State 1 entirely skipped
+- `fetchFilterOptions`, `fetchCategoryOptions` — imports removed
+
+**Slug-based listing routing:**
+
+- `field_page_id` dependency removed — editorial listing pages (progetti, ambienti, showroom, cataloghi) now detected by URL slug mapping instead of Drupal field
+
 #### New endpoint integration + legacy cleanup — 9 new fetchers, dead V1-V9 calls removed
 
 All legacy Drupal Views endpoints (V1-V9, C1, C2) are confirmed dead (404). Integrated 9 new REST endpoints and removed all dead legacy calls from the routing.

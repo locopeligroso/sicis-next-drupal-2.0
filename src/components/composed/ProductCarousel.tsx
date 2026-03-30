@@ -64,6 +64,7 @@ export function ProductCarousel({
                   src={slide.src}
                   alt={slide.alt}
                   ratio={ratio}
+                  priority={i === 0}
                 />
               )}
             </CarouselItem>

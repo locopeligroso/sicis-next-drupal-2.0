@@ -8,8 +8,10 @@ import { translateBasePath } from '@/domain/filters/registry';
 /**
  * Server Action wrapper for getTranslatedPath.
  *
- * Tries translate-path first. If translate-path is unavailable (returns null),
- * falls back to resolve-path which includes aliases for all locales.
+ * Fires C2 (translate-path) and R1 (resolve-path) in parallel to avoid
+ * sequential timeout when C2 is unavailable. Prefers C2 when it returns a
+ * result (canonical Drupal translation), falls back to R1 aliases, then to
+ * translateBasePath for product listing URLs.
  * The 'use server' directive makes this callable from client components.
  */
 export async function getTranslatedPath(
@@ -25,16 +27,22 @@ export async function getTranslatedPath(
   const drupalCurrentLocale = toDrupalLocale(currentLocale);
   const drupalTargetLocale = toDrupalLocale(targetLocale);
 
-  // Try translate-path first (legacy endpoint)
-  const c2Result = await _getTranslatedPath(
-    decodedPath,
-    drupalCurrentLocale,
-    drupalTargetLocale,
-  );
+  // Fire C2 and R1 in parallel — C2 often times out (dead endpoint), so
+  // running both concurrently means R1 wins without waiting for C2's timeout.
+  const [c2Result, resolved] = await Promise.all([
+    _getTranslatedPath(
+      decodedPath,
+      drupalCurrentLocale,
+      drupalTargetLocale,
+    ).catch(() => null),
+    resolvePath(decodedPath, currentLocale).catch(() => null),
+  ]);
+
+  // Prefer C2 if available (canonical Drupal translation).
+  // translate-path returns a path with the Drupal locale prefix (e.g. /en/mosaic/...).
+  // If targetLocale differs from drupalTargetLocale (e.g. us vs en),
+  // replace the Drupal locale prefix with the actual Next.js locale.
   if (c2Result) {
-    // translate-path returns a path with the Drupal locale prefix (e.g. /en/mosaic/...).
-    // If targetLocale differs from drupalTargetLocale (e.g. us vs en),
-    // replace the Drupal locale prefix with the actual Next.js locale.
     const normalizedC2 =
       drupalTargetLocale !== targetLocale
         ? c2Result.replace(
@@ -46,10 +54,8 @@ export async function getTranslatedPath(
   }
 
   // Fallback: use resolve-path aliases
-  const resolved = await resolvePath(decodedPath, currentLocale);
   if (resolved?.aliases?.[targetLocale]) {
-    const result = `/${targetLocale}${resolved.aliases[targetLocale]}`;
-    return result;
+    return `/${targetLocale}${resolved.aliases[targetLocale]}`;
   }
 
   // Second fallback: translate listing base paths via FILTER_REGISTRY

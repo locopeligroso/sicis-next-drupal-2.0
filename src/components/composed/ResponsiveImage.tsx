@@ -8,6 +8,7 @@ interface ResponsiveImageProps {
   ratio?: number;
   className?: string;
   sizes?: string;
+  priority?: boolean;
 }
 
 export function ResponsiveImage({
@@ -16,13 +17,21 @@ export function ResponsiveImage({
   ratio = 1,
   className,
   sizes = '100vw',
+  priority = false,
 }: ResponsiveImageProps) {
   return (
     <AspectRatio
       ratio={ratio}
       className={cn('overflow-hidden rounded-lg bg-muted', className)}
     >
-      <Image src={src} alt={alt} fill sizes={sizes} className="object-cover" />
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        sizes={sizes}
+        className="object-cover"
+        priority={priority}
+      />
     </AspectRatio>
   );
 }

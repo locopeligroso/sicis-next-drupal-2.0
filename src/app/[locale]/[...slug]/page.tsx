@@ -1,6 +1,6 @@
 import { cache } from 'react';
 import { notFound } from 'next/navigation';
-import { fetchEntity } from '@/lib/api/entity';
+// fetchEntity (C1 legacy) removed — replaced by content/{nid} + blocks/{nid}
 import { resolvePath } from '@/lib/api/resolve-path';
 import { fetchContent } from '@/lib/api/content';
 import { fetchBlocks } from '@/lib/api/blocks';
@@ -25,8 +25,8 @@ import UnknownEntity from '@/components_legacy/UnknownEntity';
 import { getSectionConfigAsync } from '@/domain/routing/section-config';
 import { getRoutingRegistry } from '@/domain/routing/routing-registry';
 import { parseFiltersFromUrl } from '@/domain/filters/search-params';
-import { fetchAllFilterOptions } from '@/lib/api/filters';
-import { fetchProducts, fetchFilterCounts } from '@/lib/api/products';
+// fetchAllFilterOptions removed — all V3/V4 legacy endpoints are dead
+// fetchProducts (V1 legacy) removed — all product types use type-specific listing endpoints
 import { FILTER_REGISTRY, deslugify } from '@/domain/filters/registry';
 import type { FilterOption } from '@/domain/filters/registry';
 import { getHubDeepDiveLinks } from '@/lib/navbar/hub-links';
@@ -99,23 +99,14 @@ const getPageData = cache(async (locale: string, drupalPath: string) => {
     }
   }
 
-  // FALLBACK: C1 entity endpoint (legacy — disabled locally, may be active on production)
-  const entity = await fetchEntity(drupalPath, locale);
-  if (!entity) return null;
-
-  // Construct the compound entity type (e.g. "node--prodotto_mosaico")
-  // that COMPONENT_MAP and getComponentName expect
-  const entityType = `${entity.meta.type}--${entity.meta.bundle}`;
-
-  return {
-    ...entity.data,
-    // Inject `type` in the JSON:API compound format for COMPONENT_MAP dispatch
-    type: entityType,
-    // Inject UUID as `id` for backward compatibility with templates
-    id: entity.meta.uuid,
-    // NID for subcategories/pages-by-category REST endpoints
-    _nid: entity.meta.id,
-  } as Record<string, unknown>;
+  // FALLBACK: C1 entity endpoint — DISABLED.
+  // C1 is dead (returns HTML, ~6s timeout). All entity types now use content+blocks.
+  // Product types (prodotto_*) are not covered by content/{nid} — they use type-specific
+  // fetchers (mosaic-product, vetrite-product, etc.) in Stage 1.5 of SlugPage.
+  // Keeping fetchEntity call commented for rollback reference.
+  // const entity = await fetchEntity(drupalPath, locale);
+  // if (!entity) return null;
+  return null;
 });
 
 // Fallback: used when registry is null (Drupal menu unavailable).
@@ -409,14 +400,9 @@ async function renderProductListing({
     // use the new TID-based listing endpoints directly — avoids the broken products (legacy)
     // endpoint and the extra taxonomy name→TID lookup.
     const hasResolvedTid = resolvedTid != null || resolvedColorTid != null;
-    const useNewListingEndpoint =
-      productType === 'prodotto_pixall' ||
-      productType === 'prodotto_arredo' ||
-      productType === 'prodotto_illuminazione' ||
-      (productType === 'prodotto_tessuto' && resolvedCategoryNid != null) ||
-      (hasResolvedTid &&
-        (productType === 'prodotto_mosaico' ||
-          productType === 'prodotto_vetrite'));
+    // ALL product types now use new listing endpoints — legacy fetchProducts (V1) is dead (404).
+    // Mosaico/vetrite use 'all' when no TID resolved; tessuto uses 'all' when no category resolved.
+    const useNewListingEndpoint = true;
 
     const newListingFetcher = () => {
       if (productType === 'prodotto_pixall') {
@@ -449,48 +435,14 @@ async function renderProductListing({
     };
 
     const [productResult, allFilterOptions] = await Promise.all([
-      useNewListingEndpoint
-        ? newListingFetcher()
-        : fetchProducts({
-            productType,
-            locale,
-            limit: listing.pageSize,
-            offset,
-            filters:
-              parsed.filterDefinitions.length > 0
-                ? parsed.filterDefinitions
-                : undefined,
-            sort: parsed.sort || undefined,
-          }),
-      fetchAllFilterOptions(productType, locale),
+      newListingFetcher(),
+      // Filter options skipped — legacy V3/V2 endpoints are dead (404).
+      // Sidebar renders empty until new filter endpoints exist.
+      Promise.resolve({} as Record<string, FilterOption[]>),
     ]);
     products = productResult.products;
     total = productResult.total;
     filterOptions = allFilterOptions;
-
-    // Live counts per filter value — product-counts endpoint does server-side aggregation
-    // (no more client-side pagination loops that caused 27s+ page loads with JSON:API)
-    const countPromises = Object.entries(filters)
-      .filter(([, cfg]) => !cfg.nodeType)
-      .map(async ([key, filterConfig]) => {
-        const counts = await fetchFilterCounts(
-          productType,
-          parsed.filterDefinitions,
-          key,
-          filterConfig.drupalField,
-          locale,
-        );
-        return [key, counts] as const;
-      });
-    const countResults = await Promise.all(countPromises);
-    for (const [key, counts] of countResults) {
-      const options = filterOptions[key];
-      if (options) {
-        for (const option of options) {
-          option.count = counts[option.label] ?? 0;
-        }
-      }
-    }
   }
 
   // ── Determine layout variant ──────────────────────────────────────────
@@ -511,37 +463,9 @@ async function renderProductListing({
   const activePathP0 = parsed.activeFilters.find((f) => f.type === 'path');
   const activePathFilterKey = activePathP0?.key;
 
-  // ── Base counts (P0-only) for non-P0 filter groups ───────────────────
-  // Distinguishes "not in collection" (baseCount=0) from "filtered out by P1"
-  if (activePathP0 && parsed.filterDefinitions.length > 0) {
-    const p0Config = filters[activePathP0.key];
-    const p0OnlyDefs = parsed.filterDefinitions.filter(
-      (fd) => p0Config && fd.field === p0Config.drupalField,
-    );
-
-    const baseCountPromises = Object.entries(filters)
-      .filter(([key, cfg]) => key !== activePathP0.key && !cfg.nodeType)
-      .map(async ([key, filterConfig]) => {
-        const counts = await fetchFilterCounts(
-          productType,
-          p0OnlyDefs,
-          key,
-          filterConfig.drupalField,
-          locale,
-        );
-        return [key, counts] as const;
-      });
-
-    const baseResults = await Promise.all(baseCountPromises);
-    for (const [key, counts] of baseResults) {
-      const options = filterOptions[key];
-      if (options) {
-        for (const option of options) {
-          option.baseCount = counts[option.label] ?? 0;
-        }
-      }
-    }
-  }
+  // Base counts (P0-only) removed — V2 product-counts endpoint is dead (404).
+  // Was adding 2-4s latency per filtered listing page.
+  // TODO: re-add when Freddi creates new filter count endpoints.
 
   // ── Context-bar props: imageUrl / swatchColor from active P0 option ──
   let imageUrl: string | undefined;
@@ -958,36 +882,47 @@ export default async function SlugPage({
     }
   }
 
-  // ── node--page with field_page_id → listing interception ──────────────────
+  // ── node--page listing interception (slug-based, replaces field_page_id) ───
   // Drupal uses node--page nodes as hub pages for listing sections.
-  // field_page_id is set in Drupal and maps 1:1 to a content type.
-  // Product types render with SpecFilterSidebar; content types render standalone.
+  // Listing type is determined from the URL slug, not from field_page_id.
+  // Product types (tessile) are handled earlier by LISTING_SLUG_OVERRIDES.
+  // Content listings below await new Drupal endpoints from Freddi (V5-V9 are dead).
   if (type === 'node--page') {
-    const pageId = resolvedResource.field_page_id as string | undefined;
-    if (pageId) {
-      const nodeTitle =
-        (resolvedResource.field_titolo_main as string | undefined) ??
-        (resolvedResource.title as string | undefined) ??
-        slug[slug.length - 1];
+    const nodeTitle =
+      (resolvedResource.field_titolo_main as string | undefined) ??
+      (resolvedResource.title as string | undefined) ??
+      slug[slug.length - 1];
 
-      // Product listing (with ProductListingTemplate)
-      const PAGE_ID_TO_PRODUCT_TYPE: Record<string, string> = {
-        tessile: 'prodotto_tessuto',
-      };
-      const productType = PAGE_ID_TO_PRODUCT_TYPE[pageId];
-      if (productType) {
-        return renderProductListing({
-          productType,
-          title: nodeTitle,
-          slug,
-          searchParams: sp,
-          locale,
-        });
-      }
+    // Slug → listing type mapping (all locales)
+    const SLUG_TO_LISTING: Record<string, string> = {
+      // Progetti
+      progetti: 'progetti',
+      projects: 'progetti',
+      projets: 'progetti',
+      projekte: 'progetti',
+      proyectos: 'progetti',
+      проекты: 'progetti',
+      // Ambienti
+      ambienti: 'environments',
+      environments: 'environments',
+      // Showroom
+      showroom: 'showroom',
+      // Download cataloghi
+      'libreria-cataloghi-arredo': 'download_catalogues',
+      'furniture-catalogue-library': 'download_catalogues',
+      'catalogues-dameublement': 'download_catalogues',
+      einrichtungskataloge: 'download_catalogues',
+      'catálogos-de-mobiliario': 'download_catalogues',
+      'каталоги-мебели': 'download_catalogues',
+    };
 
-      // Content listing (without SpecFilterSidebar) — maps field_page_id → fetcher + component
+    const firstSlug =
+      singleSlug ?? decodeURIComponent(slug[0]).normalize('NFC');
+    const listingType = SLUG_TO_LISTING[firstSlug];
+
+    if (listingType) {
       const basePath = `/${locale}/${slug.join('/')}`;
-      const PAGE_ID_TO_CONTENT_LISTING: Record<
+      const CONTENT_LISTING_RENDERERS: Record<
         string,
         () => Promise<React.ReactElement>
       > = {
@@ -1019,24 +954,6 @@ export default async function SlugPage({
             <EnvironmentListing
               title={nodeTitle}
               environments={environments}
-              total={total}
-              locale={locale}
-              currentPage={currentPage}
-              pageSize={PAGE_SIZE}
-              basePath={basePath}
-            />
-          );
-        },
-        blog: async () => {
-          const { posts, total } = await fetchBlogPosts(
-            locale,
-            PAGE_SIZE,
-            offset,
-          );
-          return (
-            <BlogListing
-              title={nodeTitle}
-              posts={posts}
               total={total}
               locale={locale}
               currentPage={currentPage}
@@ -1082,9 +999,9 @@ export default async function SlugPage({
           );
         },
       };
-      const contentRenderer = PAGE_ID_TO_CONTENT_LISTING[pageId];
-      if (contentRenderer) {
-        return contentRenderer();
+      const renderer = CONTENT_LISTING_RENDERERS[listingType];
+      if (renderer) {
+        return renderer();
       }
     }
   }
@@ -1113,7 +1030,10 @@ export default async function SlugPage({
   );
 }
 
-export const revalidate = 60;
+// ISR revalidation removed — each fetch() call has its own revalidate value:
+// Products: 60s, Editorial: 300s, Taxonomy/paths: 3600s, Menu: 600s
+// Removing the blanket 60s prevents unnecessary cache misses for static/taxonomy pages.
+// export const revalidate = 60;
 
 // ── Product page using DS Spec* blocks (data from P1 mosaic-product endpoint) ─
 // Uses the same SpecProductHero, SpecProductDetails, SpecProductSpecs,

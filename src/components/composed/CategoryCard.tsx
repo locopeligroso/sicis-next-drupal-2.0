@@ -99,6 +99,7 @@ export function CategoryCard({
   return (
     <Link
       href={href}
+      prefetch={false}
       className={cn(
         'group flex flex-col gap-2 transition-opacity hover:opacity-80',
         className,

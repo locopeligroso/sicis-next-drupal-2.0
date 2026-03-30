@@ -15,16 +15,36 @@ import '@/styles/globals.css';
 
 if (process.env.NODE_ENV !== 'development') notFound();
 
-const fontBody = Outfit({ subsets: ['latin'], variable: '--font-body' });
-const fontHeading = Geist({ subsets: ['latin'], variable: '--font-heading' });
-const fontCode = Geist_Mono({ subsets: ['latin'], variable: '--font-code' });
+const fontBody = Outfit({
+  subsets: ['latin'],
+  variable: '--font-body',
+  display: 'swap',
+  weight: ['400', '700'],
+});
+const fontHeading = Geist({
+  subsets: ['latin'],
+  variable: '--font-heading',
+  display: 'swap',
+  weight: ['400', '700'],
+});
+const fontCode = Geist_Mono({
+  subsets: ['latin'],
+  variable: '--font-code',
+  display: 'swap',
+  weight: ['400', '700'],
+});
 
 export default function DevLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn('antialiased', fontBody.variable, fontHeading.variable, fontCode.variable)}
+      className={cn(
+        'antialiased',
+        fontBody.variable,
+        fontHeading.variable,
+        fontCode.variable,
+      )}
     >
       <body>
         <ThemeProvider>
