@@ -29,6 +29,28 @@ interface FinituraItem {
   field_immagine?: unknown;
 }
 
+// ── REST finiture arredo types (from arredo-product endpoint) ─────────────────
+interface FinituraVariant {
+  tid: number;
+  name: string;
+  imageUrl: string | null;
+}
+interface FinituraTessuto {
+  tid: number;
+  name: string;
+  imageUrl: string | null;
+  variants: FinituraVariant[];
+}
+interface FinituraCategory {
+  tid: number;
+  name: string;
+  items: FinituraTessuto[];
+}
+interface FinitureArredoField {
+  tessutoFiniture: FinituraCategory[];
+  arredoFiniture: FinituraCategory[];
+}
+
 // ── Scheda tecnica (file--file entity) ────────────────────────────────────────
 interface SchedaTecnicaItem {
   id?: string;
@@ -111,6 +133,18 @@ export default async function ProdottoArredo({
   // ── Scheda tecnica (file--file entities) ──────────────────────────────────
   const schedeTecniche = (typedNode.field_scheda_tecnica ??
     []) as SchedaTecnicaItem[];
+
+  // ── Finiture from REST endpoint (3-level: category > fabric > variant) ──────
+  const finitureArredoField = (typedNode as Record<string, unknown>)
+    .field_finiture_arredo as FinitureArredoField | undefined;
+  const tessutoFiniture: FinituraCategory[] =
+    finitureArredoField?.tessutoFiniture ?? [];
+  const arredoFinitureList = finitureArredoField?.arredoFiniture ?? [];
+  const finitureHref = (typedNode as Record<string, unknown>)._finitureHref as
+    | string
+    | undefined;
+  const hasFiniture =
+    tessutoFiniture.length > 0 || arredoFinitureList.length > 0;
 
   // ── Tessuti (taxonomy terms) — fallback to English if not translated ──────
   const tessutiRaw = (typedNode.field_tessuti ?? []) as TessutoItem[];
@@ -422,6 +456,34 @@ export default async function ProdottoArredo({
           );
         })()}
 
+      {/* ── 6.6. Finiture CTA — link alla pagina finiture dedicata ────────────── */}
+      {hasFiniture && finitureHref && (
+        <section
+          className={styles.section}
+          aria-labelledby="finiture-cta-heading"
+        >
+          <h2 id="finiture-cta-heading" className={styles.sectionHeading}>
+            {t('finishes')}
+          </h2>
+          <Link
+            href={finitureHref}
+            style={{
+              display: 'inline-block',
+              marginTop: '0.5rem',
+              padding: '0.625rem 1.25rem',
+              border: '0.0625rem solid #111',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              color: '#111',
+              textDecoration: 'none',
+              letterSpacing: '0.03em',
+            }}
+          >
+            {t('viewAllFinishes')} →
+          </Link>
+        </section>
+      )}
+
       {/* ── 7. Prezzi ────────────────────────────────────────────────────────── */}
       {(prezzoEu || prezzoUsa || prezzoOnDemand) && (
         <section className={styles.section} aria-labelledby="prezzo-heading">
@@ -663,8 +725,14 @@ export default async function ProdottoArredo({
       )}
 
       {/* ── Paragraph blocks (Gen) ─────────────────────────────────────────── */}
-      {((typedNode.field_blocchi as Record<string, unknown>[] | undefined) ?? []).map((p, i) => (
-        <ParagraphResolver key={(p.id as string) ?? i} paragraph={p} pageTitle={title ?? undefined} />
+      {(
+        (typedNode.field_blocchi as Record<string, unknown>[] | undefined) ?? []
+      ).map((p, i) => (
+        <ParagraphResolver
+          key={(p.id as string) ?? i}
+          paragraph={p}
+          pageTitle={title ?? undefined}
+        />
       ))}
     </article>
   );

@@ -7,12 +7,16 @@
     "retry": "Réessayer",
     "viewAll": "Voir tout",
     "download": "Télécharger",
+    "downloadPdf": "Télécharger PDF",
     "close": "Fermer",
     "open": "Ouvrir",
     "search": "Rechercher",
     "noResults": "Aucun résultat trouvé",
     "showMore": "Afficher plus",
-    "showLess": "Afficher moins"
+    "showLess": "Afficher moins",
+    "discover": "Découvrir",
+    "watchVideo": "Regarder la vidéo",
+    "browseCatalogue": "Parcourir le catalogue"
   },
   "nav": {
     "home": "Accueil",
@@ -82,6 +86,11 @@
     "relatedProducts": "Produits associés",
     "composition": "Composition",
     "maintenance": "Entretien",
+    "requestSample": "Demander un échantillon",
+    "getQuote": "Demander un devis",
+    "startingAt": "À partir de",
+    "inStock": "En stock",
+    "outOfStock": "Rupture de stock",
     "resistant": "Résistant",
     "absent": "Absent",
     "uses": "Utilisations",
@@ -162,8 +171,10 @@
     "knottingDensity": "Densité de nouage",
     "dimensionsAndSpecs": "Dimensions et spécifications techniques",
     "fabrics": "Tissus",
+    "finishes": "Finitions",
     "furniture": "Mobilier",
-    "lighting": "Éclairage"
+    "lighting": "Éclairage",
+    "viewAllFinishes": "Voir toutes les finitions"
   },
   "filters": {
     "title": "Filtres",

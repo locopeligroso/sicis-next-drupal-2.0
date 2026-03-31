@@ -4,6 +4,94 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### 2026-03-31 — Arredo finiture: pagina dedicata stile Molteni
+
+#### Pagina finiture (`/[locale]/arredo/.../finiture`)
+
+Nuova route dedicata alle finiture di ogni prodotto arredo, modellata sul layout di Molteni.
+
+**Routing** (`[...slug]/page.tsx`): intercettazione slug `finiture` come ultimo segmento prima della risoluzione prodotto. Risolve il percorso prodotto senza l'ultimo segmento, verifica bundle `prodotto_arredo`, renderizza `ProdottoArredoFiniture`.
+
+**`ProdottoArredoFiniture.tsx`** (nuovo template): breadcrumb uppercase tracking, titolo stile `"NOME - FINITURE"`, passa entrambe le category list (tessuto + arredo) alla gallery.
+
+**`FinitureGallery.tsx`** (nuovo componente `'use client'`):
+
+- Layout a due colonne: sidebar sinistra sticky con anchor link per categoria + contenuto scrollabile a destra
+- Categorie **non** nascoste da tab — tutte visibili in verticale, sidebar naviga via anchor `#cat-{tid}`
+- Swatch `aspect-[4/3]` (landscape) anziché quadrato
+- Heading fabric: `text-[11px] uppercase tracking-[0.15em]`
+- Pulsante "VEDI TUTTI (N)": bordered uppercase `text-[11px]`, solo se varianti > 8
+
+**CTA dal prodotto** (`ProdottoArredo.tsx`): sezioni 6.6/6.7 (rendering inline finiture ~130 righe) sostituite con link CTA `"Vedi tutte le finiture →"` che punta alla pagina dedicata. `_finitureHref` iniettato in `page.tsx` dopo `arredoToLegacyNode`.
+
+#### Data layer (`arredo-product.ts`)
+
+- `field_finiture_arredo.arredo_finiture` ora normalizzato con struttura **3 livelli completa** (categoria → sottogruppo → variante con immagine) — in precedenza strippava i children a `{ tid, name }`
+- `ArredoFinitureArredoRest` ridefinito come alias di `ArredoFinituracategoryRest` (stessa shape)
+- `ArredoFinituraArredo` ridefinito come alias di `ArredoFinituraCategory`
+- `normalizeFabric()`: gestisce Drupal 2-level anomaly — quando un fabric ha `field_immagine` ma nessun children, sintetizza un singolo variant da sé stesso (fix per sezione Marmo su Amaretto Sofa)
+
+#### i18n
+
+`viewAllFinishes` aggiunto a tutti e 6 i file di messaggi (IT/EN/FR/DE/ES/RU).
+
+---
+
+### 2026-03-31 — Performance: Phase 1 + Phase 2 listing optimization
+
+#### P1-A: Serial → Parallel fetches
+
+**`SpecHubArredo.tsx`:** Due catene `await` sequenziali convertite a `Promise.all`:
+
+- `fetchHubCategories(indoorNid)` e `fetchHubCategories(ARREDO_DESCRIPTIVE_PARENT_NID)` ora parallele.
+- `resolvePath('/prodotti-tessili/tappeti')`, `fetchContent(337)`, `fetchContent(350)` ora in un unico `Promise.all` (prima `resolvePath` era sequenziale prima del `.all`).
+
+**`render-product-listing.tsx`:**
+
+- `deepDiveLinksPromise` pre-lanciata in hub mode prima del fetch categories (risparmio ~100ms).
+- `filterOptionsPromise` avviata all'inizio del branch product-grid, in parallelo con `fetchProductData`.
+
+#### P1-B: ISR cache su hub-links (`hub-links.ts`)
+
+`getHubDeepDiveLinks` ora usa due layer di cache:
+
+- `unstable_cache` (ISR) con `revalidate: 3600` e tag `['menu', 'hub-links']` — persiste il risultato del menu parsing cross-request, evita re-parsing ad ogni ISR cycle.
+- `React.cache()` — deduplicates chiamate identiche nello stesso render pass.
+
+#### P1-C: `searchParams` isolation (`[...slug]/page.tsx`)
+
+Rimossa la riga `const sp = await searchParams` dal top-level della page. Sostituita con lazy getter:
+
+```ts
+const getSearchParams = () => searchParams ?? Promise.resolve(undefined);
+```
+
+Entity detail routes (prodotto\_\*, showroom) non toccano mai `searchParams` — restano fuori dalla dynamic signal. 11 call site aggiornati con `await getSearchParams()` nel proprio branch.
+
+#### P2-A: `unstable_cache` su `renderProductListing` (`render-product-listing.tsx`)
+
+Splitting del data layer in due layer:
+
+- `_fetchListingData` — funzione async che ritorna solo dati serializzabili (`ListingData` interface). Nessun JSX.
+- `_cachedFetchListingData` — `unstable_cache(_fetchListingData, ['listing'], { revalidate: 300, tags: ['listing'] })` creata a module scope (non per-request). Next.js auto-appende tutti gli argomenti alla cache key.
+- JSX (`CollectionPopoverContent`) costruito fuori dalla cache layer in `renderProductListing`.
+
+#### P2-B: PPR + Suspense boundary
+
+**`next.config.mjs`:** `experimental.ppr: 'incremental'` (hard-deprecated in Next 16.1) sostituito con `cacheComponents: true` a top-level config.
+
+**`page.tsx`:** `export const experimental_ppr = true` aggiunto. Branch single-slug `isListingSlug` wrappato in `<Suspense fallback={<ProductListingSkeleton />}>`.
+
+**`_ListingContent.tsx`** (nuovo): Async Server Component che vive dentro il Suspense. Awaita `searchParams` qui (nel dynamic hole), non a livello page. Risolve `sectionConfig` e `hubParentNid`, poi chiama `renderProductListing`.
+
+**`ProductListingSkeleton.tsx`** (nuovo): Skeleton a 12 card con `animate-pulse` usato come Suspense fallback. Nessun import server-only — safe per uso come fallback PPR.
+
+**Impatto atteso:**
+
+- Listing pages: static shell da CDN a ~0ms TTFB; dynamic hole (griglia prodotti + filtri) streama in.
+- Entity detail pages (prodotto\_\*, showroom): non toccano `searchParams` → potenzialmente eligibili per Full Route Cache.
+- Hub pages: -40–60% render time grazie ai Promise.all paralleli + ISR cache del menu.
+
 ### 2026-03-31
 
 #### Arredo sidebar — category list, subcategory filtering, URL cleanup, sticky scroll
@@ -69,6 +157,57 @@ Aggiunte le chiavi `products.resistant` e `products.absent` a tutti i 4 file loc
 #### Test — fix product-listing-factory.test.ts
 
 `EXPECTED_TYPES` aggiornato con `next_art` — test suite ora passa correttamente con `toHaveLength(7)`.
+
+---
+
+#### Arredo routing — Freddi DB changes
+
+`category-hub.ts`: aggiunte costanti `ARREDO_INDOOR_PARENT_NID = 4261` e `ARREDO_DESCRIPTIVE_PARENT_NID = 3522`. Le categorie indoor (Console, Divani, Sedute, ecc.) vengono ora da `/api/v1/categories/4261` invece del NID della hub page.
+
+`SpecHubArredo.tsx`: la hub page mostra sezione Indoor (da NID 4261) + sezione Tipologie descrittive (da NID 3522 — Bar e Ristoranti, Guardaroba, Cucina, Bagno, Porte, Vasche da bagno).
+
+Sidebar arredo: `hubParentNid` è hardcoded a `ARREDO_INDOOR_PARENT_NID = 4261` in tutti i punti di routing — la sidebar mostra le sottocategorie indoor corrette (Console, Divani, Letti...) invece delle categorie descrittive.
+
+---
+
+#### Arredo routing — categorie descrittive slug-based
+
+`category-hub.ts`: aggiunte `slugifyDescriptiveName()` e `fetchDescriptiveCategorySlugToNid(locale)` — ritorna `Map<slug, nid>` per i figli di NID 3522. Necessario perché queste pagine non hanno alias Drupal, quindi `resolvePath` ritorna null e i controlli NID-based erano inefficaci.
+
+`page.tsx`: aggiunto intercettore slug-based prima di tutti i blocchi `slug.length > 1`. Quando il primo segmento è un prefix arredo e il secondo segmento è nella mappa descrittiva, fetcha content+blocks per NID direttamente e renderizza via `COMPONENT_MAP['Categoria']` (blocchi Drupal, nessun listing).
+
+Fix: `/it/arredo/bar-e-ristoranti`, `/it/arredo/guardaroba-e-cabine-armadio`, ecc. non vengono più renderizzati come product listings.
+
+---
+
+#### Arredo/outdoor — pagina dedicata senza sidebar
+
+`page.tsx`: intercettore hardcoded per `secondSlug === 'outdoor'` (NID 348). Chiama `renderProductListing` con `resolvedCategoryNid: 348` e senza `hubParentNid` — griglia prodotti outdoor senza sidebar e senza selettore filtro Cambia, identico al layout di `/it/next-art`.
+
+---
+
+#### Warmup script — `scripts/warmup.mjs`
+
+Nuovo script Node.js ESM (zero dipendenze) per pre-riscaldare la cache ISR di Next.js su tutte le pagine del sito.
+
+**3 tier di discovery:**
+
+- **Tier 1 — Percorsi statici:** hub pages, listing pages, pagine speciali (next-art, showroom, environments, blog, download) per tutti e 6 i locale. ~200 URL.
+- **Tier 2 — Categorie dinamiche:** mosaic-collections, mosaic-colors, vetrite-collections, vetrite-colors, categories/4261 (arredo indoor), categories/3522 (arredo descrittive) — costruisce gli URL dalla risposta Drupal REST. ~100–300 URL.
+- **Tier 3 — Prodotti e contenuti individuali:** tutti gli endpoint listing Drupal (mosaico, vetrite, arredo, tessuto, pixall, illuminazione + articles, news, tutorials, projects, environments, showrooms) — scopre URL tramite il campo `view_node`. ~15k URL totali.
+
+**Opzioni CLI:**
+
+```
+node scripts/warmup.mjs [--base=URL] [--drupal=URL] [--concurrency=N] [--timeout=MS] [--quick] [--locale=xx] [--dry-run]
+```
+
+- `--quick` — salta il Tier 3 (solo hub/listing/tassonomie)
+- `--locale=it` — riscalda un solo locale
+- `--dry-run` — stampa gli URL senza fare richieste
+- `DRUPAL_BASE` / `NEXT_BASE` — sovrascrivibili anche via env var
+
+**Files changed:** `scripts/warmup.mjs` (nuovo, 542 righe)
 
 ---
 

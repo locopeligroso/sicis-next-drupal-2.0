@@ -14,6 +14,36 @@ interface ArredoDocumentRest {
   field_id_video: string;
 }
 
+// ── Finiture REST shapes ─────────────────────────────────────────────────────
+
+interface ArredoFinituraVariantRest {
+  tid: number;
+  name: string;
+  field_immagine?: string | null;
+}
+
+interface ArredoFinituraTessutoRest {
+  tid: number;
+  name: string;
+  field_immagine?: string | null;
+  children: ArredoFinituraVariantRest[];
+}
+
+interface ArredoFinituracategoryRest {
+  tid: number;
+  name: string;
+  children: ArredoFinituraTessutoRest[];
+}
+
+// arredo_finiture has the same 3-level shape as tessuto_finiture
+type ArredoFinitureArredoRest = ArredoFinituracategoryRest;
+
+interface ArredoFinitureGroupRest {
+  nodes: unknown[];
+  tessuto_finiture: ArredoFinituracategoryRest[];
+  arredo_finiture: ArredoFinitureArredoRest[];
+}
+
 interface ArredoProductRest {
   nid: string | number;
   field_titolo_main: string;
@@ -29,6 +59,7 @@ interface ArredoProductRest {
   field_scheda_tecnica: string[];
   field_path_file_ftp_img_hd: string;
   field_documenti: ArredoDocumentRest[];
+  field_finiture_arredo?: ArredoFinitureGroupRest | null;
   [key: string]: unknown;
 }
 
@@ -41,6 +72,34 @@ export interface ArredoProductDocument {
   href: string | null;
   videoId: string | null;
 }
+
+/** Single finish variant (leaf level) */
+export interface ArredoFinituraVariant {
+  tid: number;
+  name: string;
+  imageUrl: string | null;
+}
+
+/** A fabric/finish family (mid level: e.g. "Ares", "Elios") */
+export interface ArredoFinituraTessuto {
+  tid: number;
+  name: string;
+  imageUrl: string | null;
+  variants: ArredoFinituraVariant[];
+}
+
+/** Top-level category grouping (e.g. "Velvets", "Plain colour") */
+export interface ArredoFinituraCategory {
+  tid: number;
+  name: string;
+  items: ArredoFinituraTessuto[];
+}
+
+/**
+ * Hard finish category (arredo_finiture — same 3-level structure as tessuto:
+ * Category (Legni/Marmo) → Sub-group (Essenze lucide) → Variant with image)
+ */
+export type ArredoFinituraArredo = ArredoFinituraCategory;
 
 export interface ArredoProduct {
   nid: number;
@@ -57,11 +116,59 @@ export interface ArredoProduct {
   techSheetUrls: string[];
   hdImagePath: string | null;
   documents: ArredoProductDocument[];
+  /** Tessuto finish groups (3-level: category > fabric > variant) */
+  tessutoFiniture: ArredoFinituraCategory[];
+  /** Hard arredo finishes (currently always empty — future use) */
+  arredoFiniture: ArredoFinituraArredo[];
 }
 
 // ── Normalizer ───────────────────────────────────────────────────────────────
 
 function normalizeArredoProduct(raw: ArredoProductRest): ArredoProduct {
+  // Normalize 3-level tessuto finiture
+  const finGrp = raw.field_finiture_arredo;
+  /**
+   * Normalize a fabric-level entry.
+   * Drupal sometimes returns 3-level (category → fabric → variants) and sometimes
+   * 2-level (category → fabric with own image, no children).
+   * When children are absent but the fabric itself has field_immagine, we synthesize
+   * a single-variant list so the swatch is rendered.
+   */
+  function normalizeFabric(
+    fabric: ArredoFinituraTessutoRest,
+  ): ArredoFinituraTessuto {
+    const ownImage = emptyToNull(fabric.field_immagine);
+    const children = fabric.children ?? [];
+    const variants: ArredoFinituraVariant[] =
+      children.length > 0
+        ? children.map((v) => ({
+            tid: v.tid,
+            name: v.name,
+            imageUrl: emptyToNull(v.field_immagine),
+          }))
+        : ownImage
+          ? [{ tid: fabric.tid, name: fabric.name, imageUrl: ownImage }]
+          : [];
+    return { tid: fabric.tid, name: fabric.name, imageUrl: ownImage, variants };
+  }
+
+  const tessutoFiniture: ArredoFinituraCategory[] = (
+    finGrp?.tessuto_finiture ?? []
+  ).map((cat) => ({
+    tid: cat.tid,
+    name: cat.name,
+    items: (cat.children ?? []).map(normalizeFabric),
+  }));
+
+  // arredo_finiture has the same 3-level structure as tessuto_finiture
+  const arredoFiniture: ArredoFinituraArredo[] = (
+    finGrp?.arredo_finiture ?? []
+  ).map((cat) => ({
+    tid: cat.tid,
+    name: cat.name,
+    items: (cat.children ?? []).map(normalizeFabric),
+  }));
+
   return {
     nid: Number(raw.nid),
     title: raw.field_titolo_main || '',
@@ -83,6 +190,8 @@ function normalizeArredoProduct(raw: ArredoProductRest): ArredoProduct {
       href: d.field_collegamento_esterno || d.field_allegato || null,
       videoId: emptyToNull(d.field_id_video),
     })),
+    tessutoFiniture,
+    arredoFiniture,
   };
 }
 
@@ -98,7 +207,7 @@ export const fetchArredoProduct = cache(
     const result = await apiGet<ArredoProductRest[]>(
       `/${locale}/arredo-product/${nid}`,
       {},
-      60,
+      600,
     );
     if (!result || result.length === 0) return null;
     return normalizeArredoProduct(result[0]);
