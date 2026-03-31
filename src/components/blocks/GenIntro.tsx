@@ -8,8 +8,8 @@ export interface GenIntroProps {
   title: string;
   subtitle: string;
   bodyHtml: string;
-  imageSrc: string;
-  imageAlt: string;
+  imageSrc?: string | null;
+  imageAlt?: string;
   linkHref?: string | null;
   linkLabel?: string | null;
   className?: string;
@@ -27,15 +27,21 @@ export function GenIntro({
 }: GenIntroProps) {
   return (
     <section className={cn('flex flex-col gap-(--spacing-content)', className)}>
-      <ResponsiveImage
-        src={imageSrc}
-        alt={imageAlt}
-        ratio={16 / 3}
-        className="rounded-none"
-      />
+      {imageSrc && (
+        <ResponsiveImage
+          src={imageSrc}
+          alt={imageAlt ?? ''}
+          ratio={16 / 3}
+          className="rounded-none"
+        />
+      )}
 
       <div className="max-w-main mx-auto px-(--spacing-page) w-full flex flex-col gap-(--spacing-element)">
-        <Typography textRole="overline" as="span" className="text-muted-foreground">
+        <Typography
+          textRole="overline"
+          as="span"
+          className="text-muted-foreground"
+        >
           {subtitle}
         </Typography>
 

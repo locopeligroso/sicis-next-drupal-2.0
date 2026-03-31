@@ -175,6 +175,7 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
             locale={locale}
             categoryCardRatio={listingConfig.categoryCardRatio}
             deepDiveLinks={deepDiveLinks}
+            productType={productType}
           />
         )}
       </div>

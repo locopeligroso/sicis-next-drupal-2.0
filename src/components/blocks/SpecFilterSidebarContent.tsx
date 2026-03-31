@@ -82,36 +82,38 @@ export function SpecFilterSidebarContent({
   return (
     <div className="flex flex-col gap-4">
       {/* Subcategory filter — shown when active parent has children */}
-      {subcategories && subcategories.length > 0 && (() => {
-        const activeSub = activeFilters.find((f) => f.key === 'sub')?.value;
-        return (
-          <>
-            <FilterGroup label={t('subcategories')}>
-              <div className="flex flex-col gap-0.5">
-                {subcategories.map((sc) => {
-                  const isActive = sc.slug === activeSub;
-                  return (
-                    <button
-                      key={sc.slug}
-                      type="button"
-                      onClick={() => toggleFilter('sub', sc.slug, 'query')}
-                      className={cn(
-                        'flex items-center gap-2 rounded-md px-2 py-1.5 text-left cursor-pointer transition-colors hover:bg-muted',
-                        isActive && 'bg-muted ring-1 ring-border',
-                      )}
-                    >
-                      <Typography textRole="body-sm" as="span">
-                        {sc.label}
-                      </Typography>
-                    </button>
-                  );
-                })}
-              </div>
-            </FilterGroup>
-            <Separator />
-          </>
-        );
-      })()}
+      {subcategories &&
+        subcategories.length > 0 &&
+        (() => {
+          const activeSub = activeFilters.find((f) => f.key === 'sub')?.value;
+          return (
+            <>
+              <FilterGroup label={t('subcategories')}>
+                <div className="flex flex-col gap-0.5">
+                  {subcategories.map((sc) => {
+                    const isActive = sc.slug === activeSub;
+                    return (
+                      <button
+                        key={sc.slug}
+                        type="button"
+                        onClick={() => toggleFilter('sub', sc.slug, 'query')}
+                        className={cn(
+                          'flex items-center gap-2 rounded-md px-2 py-1.5 text-left cursor-pointer transition-colors hover:bg-muted',
+                          isActive && 'bg-muted ring-1 ring-border',
+                        )}
+                      >
+                        <Typography textRole="body-sm" as="span">
+                          {sc.label}
+                        </Typography>
+                      </button>
+                    );
+                  })}
+                </div>
+              </FilterGroup>
+              <Separator />
+            </>
+          );
+        })()}
 
       {/* Filter groups */}
       {visibleGroups.map((group) => {
@@ -127,7 +129,10 @@ export function SpecFilterSidebarContent({
             .filter((f) => f.key === group.key)
             .map((f) => f.value);
           const visibleOptions = options.filter(
-            (o) => o.count == null || o.count > 0 || activeForGroupCheck.includes(o.slug),
+            (o) =>
+              o.count == null ||
+              o.count > 0 ||
+              activeForGroupCheck.includes(o.slug),
           );
           if (visibleOptions.length <= 1) return null;
         }
@@ -138,8 +143,12 @@ export function SpecFilterSidebarContent({
           .map((f) => f.value);
         const activeValue = activeForGroup[0];
 
-        // Determine the translated label for this group
-        const groupLabel = t(group.key);
+        // Use the registry's labelKey when available (e.g. 'filters.typologies' → 'Tipologie')
+        // Fall back to the filter key name (e.g. 'subcategory' → 'Sottocategoria')
+        const labelFromRegistry = categoryGroup?.labelKey;
+        const groupLabel = labelFromRegistry
+          ? t(labelFromRegistry.replace('filters.', ''))
+          : t(group.key);
 
         return (
           <FilterGroup key={group.key} label={groupLabel}>
@@ -186,7 +195,6 @@ export function SpecFilterSidebarContent({
           </FilterGroup>
         );
       })}
-
     </div>
   );
 }

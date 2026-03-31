@@ -11,12 +11,6 @@ import { fetchTextileProduct } from '@/lib/api/textile-product';
 import type { TextileProduct } from '@/lib/api/textile-product';
 import { fetchPixallProduct } from '@/lib/api/pixall-product';
 import type { PixallProduct } from '@/lib/api/pixall-product';
-import { fetchMosaicProductListing } from '@/lib/api/mosaic-product-listing';
-import { fetchVetriteProductListing } from '@/lib/api/vetrite-product-listing';
-import { fetchPixallProductListing } from '@/lib/api/pixall-product-listing';
-import { fetchTextileProductListing } from '@/lib/api/textile-product-listing';
-import { fetchArredoProductListing } from '@/lib/api/arredo-product-listing';
-import { fetchIlluminazioneProductListing } from '@/lib/api/illuminazione-product-listing';
 import { fetchIlluminazioneProduct } from '@/lib/api/illuminazione-product';
 import type { IlluminazioneProduct } from '@/lib/api/illuminazione-product';
 import { fetchArredoProduct } from '@/lib/api/arredo-product';
@@ -36,9 +30,6 @@ import { parseFiltersFromUrl } from '@/domain/filters/search-params';
 // fetchAllFilterOptions removed — all V3/V4 legacy endpoints are dead
 // fetchProducts (V1 legacy) removed — all product types use type-specific listing endpoints
 import { FILTER_REGISTRY, deslugify } from '@/domain/filters/registry';
-import type { FilterOption } from '@/domain/filters/registry';
-import { getHubDeepDiveLinks } from '@/lib/navbar/hub-links';
-import { ProductListingTemplate } from '@/templates/nodes/ProductListingTemplate';
 import { MosaicProductPreview } from '@/templates/nodes/MosaicProductPreview';
 import ProjectListing from '@/components_legacy/ProjectListing';
 import EnvironmentListing from '@/components_legacy/EnvironmentListing';
@@ -75,11 +66,8 @@ import Tag from '@/templates/nodes/Tag';
 import ProductsMasterPage from '@/templates/nodes/ProductsMasterPage';
 
 // Taxonomy components
-import MosaicoCollezione from '@/templates/taxonomy/MosaicoCollezione';
-import MosaicoColore from '@/templates/taxonomy/MosaicoColore';
-import VetriteCollezione from '@/templates/taxonomy/VetriteCollezione';
-import VetriteColore from '@/templates/taxonomy/VetriteColore';
 import TaxonomyTerm from '@/templates/taxonomy/TaxonomyTerm';
+import { renderProductListing } from '@/lib/render-product-listing';
 
 /**
  * React.cache() deduplicates identical calls within the same request.
@@ -97,24 +85,38 @@ const getPageData = cache(async (locale: string, drupalPath: string) => {
       fetchContent(resolved.nid, locale),
       fetchBlocks(resolved.nid, locale),
     ]);
+    const blocks = (blocksData ?? []).map((block: Record<string, unknown>) => ({
+      ...block,
+      // blocks/{nid} returns type as "blocco_intro", but ParagraphResolver
+      // expects "paragraph--blocco_intro". Add prefix if missing.
+      type:
+        typeof block.type === 'string' && !block.type.startsWith('paragraph--')
+          ? `paragraph--${block.type}`
+          : block.type,
+    }));
+
     if (contentData) {
       return {
         ...contentData,
         type: `${resolved.type}--${resolved.bundle}`,
         id: String(resolved.nid),
         _nid: resolved.nid,
-        field_blocchi: blocksData,
+        field_blocchi: blocks,
       } as Record<string, unknown>;
     }
+
+    // content/{nid} returned empty but resolvePath succeeded.
+    // Create a minimal entity so COMPONENT_MAP can dispatch to the right template.
+    // This covers bundles not yet supported by content/{nid} (e.g. showroom, progetto).
+    return {
+      type: `${resolved.type}--${resolved.bundle}`,
+      id: String(resolved.nid),
+      _nid: resolved.nid,
+      langcode: locale,
+      field_blocchi: blocks,
+    } as Record<string, unknown>;
   }
 
-  // FALLBACK: C1 entity endpoint — DISABLED.
-  // C1 is dead (returns HTML, ~6s timeout). All entity types now use content+blocks.
-  // Product types (prodotto_*) are not covered by content/{nid} — they use type-specific
-  // fetchers (mosaic-product, vetrite-product, etc.) in Stage 1.5 of SlugPage.
-  // Keeping fetchEntity call commented for rollback reference.
-  // const entity = await fetchEntity(drupalPath, locale);
-  // if (!entity) return null;
   return null;
 });
 
@@ -146,6 +148,8 @@ const LISTING_SLUG_OVERRIDES = new Set([
   'leuchten', // DE
   'iluminación', // ES
   'освещение', // RU
+  // Next Art — collide con page NID 3545
+  'next-art',
   // Pixall — collide con documento NID 2547
   'pixall',
   // Vetrite — slug localizzati (le pagine dedicate hanno priorità sul catch-all)
@@ -201,6 +205,34 @@ const PRODUCTS_MASTER_SLUGS = new Set([
   'продукция', // RU
 ]);
 
+// Content listing slugs — all locales for blog, projects, environments, showroom,
+// and download catalogues. Checked BEFORE getPageData() so these routes work
+// even when Drupal is offline or returns a different entity type.
+const CONTENT_LISTING_SLUGS: Record<string, string> = {
+  // Blog (articoli + news + tutorial)
+  blog: 'blog',
+  'il-blog': 'blog',
+  // Progetti
+  progetti: 'progetti',
+  projects: 'progetti',
+  projets: 'progetti',
+  projekte: 'progetti',
+  proyectos: 'progetti',
+  проекты: 'progetti',
+  // Ambienti
+  ambienti: 'environments',
+  environments: 'environments',
+  // Showroom
+  showroom: 'showroom',
+  // Download cataloghi
+  'libreria-cataloghi-arredo': 'download_catalogues',
+  'furniture-catalogue-library': 'download_catalogues',
+  'catalogues-dameublement': 'download_catalogues',
+  einrichtungskataloge: 'download_catalogues',
+  'catálogos-de-mobiliario': 'download_catalogues',
+  'каталоги-мебели': 'download_catalogues',
+};
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const COMPONENT_MAP: Record<
   string,
@@ -230,341 +262,10 @@ const COMPONENT_MAP: Record<
   CategoriaBlog,
   Documento,
   Tag,
-  MosaicoCollezione,
-  MosaicoColore,
-  VetriteCollezione,
-  VetriteColore,
   TaxonomyTerm,
 };
 
 const PAGE_SIZE = 48;
-
-// ── Helper: renderizza listing prodotti con ProductListingTemplate ─────────
-// Replaces the old renderListingLayout (SpecFilterSidebar + ProductListing grid).
-// Uses FILTER_REGISTRY to determine state (hub with category cards vs product grid)
-// and fetches data accordingly.
-async function renderProductListing({
-  productType,
-  title,
-  description,
-  slug,
-  searchParams: sp,
-  locale,
-  resolvedTid,
-  resolvedColorTid,
-  resolvedCategoryNid,
-  hubParentNid,
-}: {
-  productType: string;
-  title: string;
-  description?: string | null;
-  slug: string[];
-  searchParams: Record<string, string | string[]> | undefined;
-  locale: string;
-  /** Collection TID from resolve-path — skips taxonomy name→TID lookup for mosaic-products endpoint */
-  resolvedTid?: number;
-  /** Color TID from resolve-path — for mosaic-products/all/{colorTid} */
-  resolvedColorTid?: number;
-  /** Category NID from resolve-path — for textile-products/{categoryNid} */
-  resolvedCategoryNid?: number;
-  /** Parent NID for category hub (arredo, illuminazione) — for categories/{nid} endpoint */
-  hubParentNid?: number;
-}) {
-  const config = FILTER_REGISTRY[productType];
-  if (!config) return null;
-
-  const { listing, filters } = config;
-  // Build basePath from the actual URL slug by matching leading segments against
-  // the registry basePath. Only include slug segments that match the registry base —
-  // filter segments (e.g. /textiles/bedcover) must not be included in basePath.
-  const registryBaseSegments = (
-    config.basePaths[locale] ?? config.basePaths['it']
-  ).split('/');
-  let matchCount = 0;
-  for (let i = 0; i < registryBaseSegments.length && i < slug.length; i++) {
-    if (
-      decodeURIComponent(slug[i]).normalize('NFC') === registryBaseSegments[i]
-    ) {
-      matchCount++;
-    } else {
-      break;
-    }
-  }
-  // Use at least 1 segment (the product type slug)
-  const basePath = `/${locale}/${slug.slice(0, Math.max(1, matchCount)).join('/')}`;
-
-  // Flatten searchParams to Record<string, string> for parseFiltersFromUrl
-  const spRecord: Record<string, string> = {};
-  if (sp) {
-    Object.entries(sp).forEach(([k, v]) => {
-      if (k !== 'page') spRecord[k] = Array.isArray(v) ? v[0] : v;
-    });
-  }
-  const parsed = parseFiltersFromUrl(slug, spRecord, locale);
-
-  // Determine if any P0 filter is active (drives hub vs product grid state)
-  const p0Keys = Object.values(filters)
-    .filter((f) => f.priority === 'P0')
-    .map((f) => f.key);
-  const hasActiveP0 = parsed.activeFilters.some((f) => p0Keys.includes(f.key));
-
-  let products;
-  let total;
-  let filterOptions: Record<string, FilterOption[]> = {};
-
-  // ── Subcategory override (?sub=slug) for category-based types ──────
-  // Must run BEFORE product fetch so filterDefinitions are updated.
-  const TYPOLOGY_TYPES = new Set([
-    'prodotto_arredo',
-    'prodotto_illuminazione',
-    'prodotto_tessuto',
-  ]);
-  let subcategories: { slug: string; label: string }[] | undefined;
-
-  if (TYPOLOGY_TYPES.has(productType) && hasActiveP0) {
-    const p0FilterKey = Object.values(filters).find(
-      (f) => f.priority === 'P0',
-    )?.key;
-    if (p0FilterKey) {
-      // Subcategory resolution via categories/{nid} endpoint.
-      // When resolvedCategoryNid is set (from resolve-path), fetch its children.
-      // (Legacy fetchCategoryOptions V4 endpoint is dead — 404)
-      const activeP0 = parsed.activeFilters.find((f) => f.type === 'path');
-      if (activeP0 && resolvedCategoryNid) {
-        const { fetchHubCategories } = await import('@/lib/api/category-hub');
-        const children = await fetchHubCategories(resolvedCategoryNid, locale);
-        if (children.length > 0) {
-          subcategories = children.map((child) => ({
-            slug: child.name
-              .normalize('NFC')
-              .toLowerCase()
-              .replace(/\s*\/\s*/g, '-')
-              .replace(/\s+/g, '-')
-              .replace(/[^a-z0-9\u00C0-\u024F\u0400-\u04FF-]/g, ''),
-            label: child.name,
-          }));
-
-          // If ?sub=slug is active, override the category filter to the subcategory
-          const subParam = Array.isArray(sp?.sub) ? sp.sub[0] : sp?.sub;
-          if (subParam && subcategories.some((sc) => sc.slug === subParam)) {
-            const subLabel = subcategories.find(
-              (sc) => sc.slug === subParam,
-            )!.label;
-            const catFieldIndex = parsed.filterDefinitions.findIndex(
-              (fd) => fd.field === 'field_categoria.title',
-            );
-            if (catFieldIndex >= 0) {
-              parsed.filterDefinitions[catFieldIndex] = {
-                ...parsed.filterDefinitions[catFieldIndex],
-                value: subLabel,
-              };
-            }
-            parsed.activeFilters.push({
-              key: 'sub',
-              value: subParam,
-              type: 'query',
-              label: subLabel,
-            });
-          }
-        }
-      }
-    }
-  }
-
-  // When resolvedCategoryNid is set, a specific category is selected
-  // even if parseFiltersFromUrl didn't detect it (e.g. EN basePath = 'textiles/fabrics'
-  // where the category IS the basePath). Skip hub mode and go to product grid.
-  const forceProductGrid = resolvedCategoryNid != null;
-
-  if (!hasActiveP0 && listing.categoryGroups.length > 0 && !forceProductGrid) {
-    // ── State 1: Hub mode — show category cards, no product grid ──────────
-
-    // Category-based hubs (arredo, illuminazione) fetch their own data inside
-    // SpecHubArredo via fetchHubCategories. Skip legacy filter/count fetches
-    // (V4 category-options + V2 product-counts endpoints are dead).
-    // ALL hub types fetch internally — legacy V3/V4 endpoints are dead (404).
-    // Mosaico/Vetrite: SpecHubMosaico fetches via mosaic-hub/vetrite-hub
-    // Arredo/Illuminazione/Tessuto: SpecHubArredo fetches via category-hub
-    // Pixall: no hub mode (categoryGroups: [])
-    const SELF_FETCHING_HUBS = new Set([
-      'prodotto_mosaico',
-      'prodotto_vetrite',
-      'prodotto_arredo',
-      'prodotto_illuminazione',
-      'prodotto_tessuto',
-    ]);
-    // All hub types fetch internally — filterOptions not needed in hub mode.
-    // SpecHubMosaico/SpecHubArredo handle their own data fetching.
-    filterOptions = {};
-
-    products = undefined;
-    total = undefined;
-  } else {
-    // ── State 2: Product grid mode — fetch products + all filter options ───
-    const pageStr = Array.isArray(sp?.page) ? sp.page[0] : sp?.page;
-    const currentPage = Math.max(1, parseInt((pageStr as string) ?? '1', 10));
-    const offset = (currentPage - 1) * listing.pageSize;
-
-    // When resolvedTid or resolvedColorTid is available (from resolve-path),
-    // use the new TID-based listing endpoints directly — avoids the broken products (legacy)
-    // endpoint and the extra taxonomy name→TID lookup.
-    const hasResolvedTid = resolvedTid != null || resolvedColorTid != null;
-    // ALL product types now use new listing endpoints — legacy fetchProducts (V1) is dead (404).
-    // Mosaico/vetrite use 'all' when no TID resolved; tessuto uses 'all' when no category resolved.
-    const useNewListingEndpoint = true;
-
-    const newListingFetcher = () => {
-      if (productType === 'prodotto_pixall') {
-        return fetchPixallProductListing(locale);
-      }
-      if (productType === 'prodotto_arredo') {
-        return fetchArredoProductListing(locale, resolvedCategoryNid ?? 'all');
-      }
-      if (productType === 'prodotto_illuminazione') {
-        return fetchIlluminazioneProductListing(
-          locale,
-          resolvedCategoryNid ?? 'all',
-        );
-      }
-      if (productType === 'prodotto_tessuto') {
-        return fetchTextileProductListing(locale, resolvedCategoryNid ?? 'all');
-      }
-      if (productType === 'prodotto_vetrite') {
-        return fetchVetriteProductListing(
-          locale,
-          resolvedTid ?? 'all',
-          resolvedColorTid ?? 'all',
-        );
-      }
-      return fetchMosaicProductListing(
-        locale,
-        resolvedTid ?? 'all',
-        resolvedColorTid ?? 'all',
-      );
-    };
-
-    const [productResult, allFilterOptions] = await Promise.all([
-      newListingFetcher(),
-      // Filter options skipped — legacy V3/V2 endpoints are dead (404).
-      // Sidebar renders empty until new filter endpoints exist.
-      Promise.resolve({} as Record<string, FilterOption[]>),
-    ]);
-    products = productResult.products;
-    total = productResult.total;
-    filterOptions = allFilterOptions;
-  }
-
-  // ── Determine layout variant ──────────────────────────────────────────
-  let variant: 'hub' | 'context-bar' | 'airy-header';
-  if (!hasActiveP0 && listing.categoryGroups.length > 0 && !forceProductGrid) {
-    variant = 'hub';
-  } else if (hasActiveP0 || forceProductGrid) {
-    variant = 'context-bar';
-  } else {
-    variant = 'airy-header';
-  }
-
-  // ── hasFilterPanel — false for hub, true when filters exist ──────────
-  const hasFilterPanel =
-    variant === 'hub' ? false : Object.keys(filters).length > 0;
-
-  // ── Active P0 filter key (the one in the URL path, excluded from panel) ──
-  const activePathP0 = parsed.activeFilters.find((f) => f.type === 'path');
-  const activePathFilterKey = activePathP0?.key;
-
-  // Base counts (P0-only) removed — V2 product-counts endpoint is dead (404).
-  // Was adding 2-4s latency per filtered listing page.
-  // TODO: re-add when Freddi creates new filter count endpoints.
-
-  // ── Context-bar props: imageUrl / swatchColor from active P0 option ──
-  let imageUrl: string | undefined;
-  let swatchColor: string | undefined;
-
-  if (variant === 'context-bar') {
-    const activeP0 = activePathP0;
-    if (activeP0) {
-      const options = filterOptions[activeP0.key] ?? [];
-      const activeOption = options.find((o) => o.slug === activeP0.value);
-      if (activeOption?.imageUrl) {
-        imageUrl = activeOption.imageUrl;
-      } else if (activeOption?.cssColor) {
-        swatchColor = activeOption.cssColor;
-      }
-    }
-  }
-
-  // ── Change popover content for context-bar (collections or colors) ──
-  let changePopoverContent: React.ReactNode | undefined;
-
-  if (variant === 'context-bar' && activePathP0) {
-    // The popover shows the OTHER P0 options (same key as the active one)
-    const popoverOptions = filterOptions[activePathP0.key] ?? [];
-    const categoryGroup = listing.categoryGroups.find(
-      (cg) => cg.filterKey === activePathP0.key,
-    );
-    const isColorSwatch = categoryGroup?.hasColorSwatch ?? false;
-    const pathPrefix = filters[activePathP0.key]?.pathPrefix?.[locale];
-
-    // For category-based types (arredo/illuminazione/tessuto), show only parents in popover
-    const isTypologyType = TYPOLOGY_TYPES.has(productType);
-    const filteredPopoverOptions = isTypologyType
-      ? popoverOptions.filter((opt) => !opt.parentId)
-      : popoverOptions.filter((opt) => !opt.label.includes(' - '));
-
-    const popoverItems = filteredPopoverOptions.map((opt) => ({
-      slug: opt.slug,
-      label: opt.label,
-      imageUrl: opt.imageUrl,
-      cssColor: opt.cssColor,
-      href: pathPrefix
-        ? `${basePath}/${pathPrefix}/${opt.slug}`
-        : `${basePath}/${opt.slug}`,
-      isActive: opt.slug === activePathP0.value,
-    }));
-
-    const { CollectionPopoverContent } =
-      await import('@/components/composed/CollectionPopoverContent');
-    changePopoverContent = (
-      <CollectionPopoverContent
-        items={popoverItems}
-        mode={isColorSwatch ? 'swatches' : 'list'}
-      />
-    );
-  }
-
-  // ── Deep dive links for hub mode (from Filter & Find mega-menu) ────
-  const deepDiveLinks =
-    variant === 'hub' ? await getHubDeepDiveLinks(productType, locale) : [];
-
-  return (
-    <ProductListingTemplate
-      title={title}
-      description={description}
-      productType={productType}
-      listingConfig={listing}
-      filters={filters}
-      filterOptions={filterOptions}
-      activeFilters={parsed.activeFilters}
-      filterDefinitions={parsed.filterDefinitions}
-      hasActiveP0={hasActiveP0}
-      products={products}
-      total={total}
-      currentSort={parsed.sort}
-      basePath={basePath}
-      locale={locale}
-      variant={variant}
-      hasFilterPanel={hasFilterPanel}
-      imageUrl={imageUrl}
-      swatchColor={swatchColor}
-      backHref={basePath}
-      changePopoverContent={changePopoverContent}
-      subcategories={subcategories}
-      activePathFilterKey={activePathFilterKey}
-      deepDiveLinks={deepDiveLinks}
-      hubParentNid={hubParentNid}
-    />
-  );
-}
 
 interface SlugPageProps {
   params: Promise<{ locale: string; slug: string[] }>;
@@ -634,10 +335,136 @@ export default async function SlugPage({
     return <ProductsMasterPage locale={locale} />;
   }
 
+  // ── Content listing slug interception ─────────────────────────────────────
+  // Must be checked BEFORE LISTING_SLUG_OVERRIDES — otherwise slugs like "blog",
+  // "showroom", "environments" that exist in the Drupal routing registry would be
+  // caught by the product listing check, getSectionConfigAsync returns null, → 404.
+  if (singleSlug && CONTENT_LISTING_SLUGS[singleSlug]) {
+    const listingType = CONTENT_LISTING_SLUGS[singleSlug];
+    const basePath = `/${locale}/${slug.join('/')}`;
+    // Try to get the CMS title; fall back to deslugify when Drupal is offline.
+    let nodeTitle = deslugify(singleSlug);
+    try {
+      const resolved = await resolvePath(drupalPath, locale);
+      if (resolved) {
+        const content = await fetchContent(resolved.nid, locale);
+        if (content) {
+          nodeTitle =
+            (content.field_titolo_main as string | undefined) ??
+            (content.title as string | undefined) ??
+            nodeTitle;
+        }
+      }
+    } catch {
+      // Drupal offline — keep deslugify fallback title
+    }
+
+    const CONTENT_LISTING_RENDERERS: Record<
+      string,
+      () => Promise<React.ReactElement>
+    > = {
+      progetti: async () => {
+        const { projects, total } = await fetchProjects(
+          locale,
+          PAGE_SIZE,
+          offset,
+        );
+        return (
+          <ProjectListing
+            title={nodeTitle}
+            projects={projects}
+            total={total}
+            locale={locale}
+            currentPage={currentPage}
+            pageSize={PAGE_SIZE}
+            basePath={basePath}
+          />
+        );
+      },
+      environments: async () => {
+        const { environments, total } = await fetchEnvironments(
+          locale,
+          PAGE_SIZE,
+          offset,
+        );
+        return (
+          <EnvironmentListing
+            title={nodeTitle}
+            environments={environments}
+            total={total}
+            locale={locale}
+            currentPage={currentPage}
+            pageSize={PAGE_SIZE}
+            basePath={basePath}
+          />
+        );
+      },
+      showroom: async () => {
+        const { showrooms, total } = await fetchShowrooms(
+          locale,
+          PAGE_SIZE,
+          offset,
+        );
+        return (
+          <ShowroomListing
+            title={nodeTitle}
+            showrooms={showrooms}
+            total={total}
+            locale={locale}
+            currentPage={currentPage}
+            pageSize={PAGE_SIZE}
+            basePath={basePath}
+          />
+        );
+      },
+      download_catalogues: async () => {
+        const { documents, total } = await fetchDocuments(
+          locale,
+          PAGE_SIZE,
+          offset,
+        );
+        return (
+          <DocumentListing
+            title={nodeTitle}
+            documents={documents}
+            total={total}
+            locale={locale}
+            currentPage={currentPage}
+            pageSize={PAGE_SIZE}
+            basePath={basePath}
+          />
+        );
+      },
+      blog: async () => {
+        const { posts, total } = await fetchBlogPosts(
+          locale,
+          PAGE_SIZE,
+          offset,
+        );
+        return (
+          <BlogListing
+            title={nodeTitle}
+            posts={posts}
+            total={total}
+            locale={locale}
+            currentPage={currentPage}
+            pageSize={PAGE_SIZE}
+            basePath={basePath}
+          />
+        );
+      },
+    };
+
+    const renderer = CONTENT_LISTING_RENDERERS[listingType];
+    if (renderer) {
+      return renderer();
+    }
+  }
+
   // Bypass translatePath per slug che devono essere listing prodotti ma hanno nodi Drupal
   // con lo stesso alias (categoria_blog, documento, page) che verrebbero renderizzati al posto.
   const isListingSlug =
-    registry?.listingSlugs.has(singleSlug!) ??
+    registry?.listingSlugs.has(singleSlug!) ||
     LISTING_SLUG_OVERRIDES.has(singleSlug!);
   if (singleSlug && isListingSlug) {
     const sectionConfig = await getSectionConfigAsync(slug, locale);
@@ -717,6 +544,15 @@ export default async function SlugPage({
           return <ProdottoIlluminazione node={legacyNode} />;
         }
       }
+      // ── Showroom detail — uses showroom/{nid} endpoint ──
+      if (resolved.bundle === 'showroom') {
+        const { fetchShowroomDetail } =
+          await import('@/lib/api/showroom-detail');
+        const showroomData = await fetchShowroomDetail(resolved.nid, locale);
+        if (showroomData) {
+          return <Showroom node={showroomData} />;
+        }
+      }
       // ── Taxonomy terms: mosaico_collezioni / mosaico_colori → mosaic-products endpoint ──
       // resolve-path gives us the TID directly — pass it to renderProductListing
       // so it uses the new endpoint without an extra taxonomy name→TID fetch.
@@ -780,6 +616,18 @@ export default async function SlugPage({
               (bp) => firstSlug === bp.split('/')[0],
             );
             if (matchesAnyLocale) {
+              // Resolve the hub root page NID so filter-options can fetch
+              // categories/{nid} for the sidebar. resolvePath is React.cache()
+              // so no extra network call when already fetched in this request.
+              const basePathSegment = (
+                ptConfig.basePaths[locale] ?? ptConfig.basePaths['it']
+              ).split('/')[0];
+              const baseResolved = await resolvePath(
+                `/${basePathSegment}`,
+                locale,
+              );
+              const hubParentNid = baseResolved?.nid;
+
               return renderProductListing({
                 productType: pt,
                 title: deslugify(slug[slug.length - 1]),
@@ -787,6 +635,7 @@ export default async function SlugPage({
                 searchParams: sp,
                 locale,
                 resolvedCategoryNid: resolved.nid,
+                hubParentNid,
               });
             }
           }
@@ -895,130 +744,6 @@ export default async function SlugPage({
         searchParams: sp,
         locale,
       });
-    }
-  }
-
-  // ── node--page listing interception (slug-based, replaces field_page_id) ───
-  // Drupal uses node--page nodes as hub pages for listing sections.
-  // Listing type is determined from the URL slug, not from field_page_id.
-  // Product types (tessile) are handled earlier by LISTING_SLUG_OVERRIDES.
-  // Content listings below await new Drupal endpoints from Freddi (V5-V9 are dead).
-  if (type === 'node--page') {
-    const nodeTitle =
-      (resolvedResource.field_titolo_main as string | undefined) ??
-      (resolvedResource.title as string | undefined) ??
-      slug[slug.length - 1];
-
-    // Slug → listing type mapping (all locales)
-    const SLUG_TO_LISTING: Record<string, string> = {
-      // Progetti
-      progetti: 'progetti',
-      projects: 'progetti',
-      projets: 'progetti',
-      projekte: 'progetti',
-      proyectos: 'progetti',
-      проекты: 'progetti',
-      // Ambienti
-      ambienti: 'environments',
-      environments: 'environments',
-      // Showroom
-      showroom: 'showroom',
-      // Download cataloghi
-      'libreria-cataloghi-arredo': 'download_catalogues',
-      'furniture-catalogue-library': 'download_catalogues',
-      'catalogues-dameublement': 'download_catalogues',
-      einrichtungskataloge: 'download_catalogues',
-      'catálogos-de-mobiliario': 'download_catalogues',
-      'каталоги-мебели': 'download_catalogues',
-    };
-
-    const firstSlug =
-      singleSlug ?? decodeURIComponent(slug[0]).normalize('NFC');
-    const listingType = SLUG_TO_LISTING[firstSlug];
-
-    if (listingType) {
-      const basePath = `/${locale}/${slug.join('/')}`;
-      const CONTENT_LISTING_RENDERERS: Record<
-        string,
-        () => Promise<React.ReactElement>
-      > = {
-        progetti: async () => {
-          const { projects, total } = await fetchProjects(
-            locale,
-            PAGE_SIZE,
-            offset,
-          );
-          return (
-            <ProjectListing
-              title={nodeTitle}
-              projects={projects}
-              total={total}
-              locale={locale}
-              currentPage={currentPage}
-              pageSize={PAGE_SIZE}
-              basePath={basePath}
-            />
-          );
-        },
-        environments: async () => {
-          const { environments, total } = await fetchEnvironments(
-            locale,
-            PAGE_SIZE,
-            offset,
-          );
-          return (
-            <EnvironmentListing
-              title={nodeTitle}
-              environments={environments}
-              total={total}
-              locale={locale}
-              currentPage={currentPage}
-              pageSize={PAGE_SIZE}
-              basePath={basePath}
-            />
-          );
-        },
-        showroom: async () => {
-          const { showrooms, total } = await fetchShowrooms(
-            locale,
-            PAGE_SIZE,
-            offset,
-          );
-          return (
-            <ShowroomListing
-              title={nodeTitle}
-              showrooms={showrooms}
-              total={total}
-              locale={locale}
-              currentPage={currentPage}
-              pageSize={PAGE_SIZE}
-              basePath={basePath}
-            />
-          );
-        },
-        download_catalogues: async () => {
-          const { documents, total } = await fetchDocuments(
-            locale,
-            PAGE_SIZE,
-            offset,
-          );
-          return (
-            <DocumentListing
-              title={nodeTitle}
-              documents={documents}
-              total={total}
-              locale={locale}
-              currentPage={currentPage}
-              pageSize={PAGE_SIZE}
-              basePath={basePath}
-            />
-          );
-        },
-      };
-      const renderer = CONTENT_LISTING_RENDERERS[listingType];
-      if (renderer) {
-        return renderer();
-      }
     }
   }
 

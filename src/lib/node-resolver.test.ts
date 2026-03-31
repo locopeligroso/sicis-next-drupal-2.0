@@ -48,10 +48,6 @@ describe('getComponentName', () => {
     expect(getComponentName('node--progetto')).toBe('Progetto');
   });
 
-  it('maps taxonomy_term--mosaico_collezioni to MosaicoCollezione', () => {
-    expect(getComponentName('taxonomy_term--mosaico_collezioni')).toBe('MosaicoCollezione');
-  });
-
   it('returns UnknownEntity for unmapped type', () => {
     expect(getComponentName('node--unknown_type')).toBe('UnknownEntity');
   });
@@ -114,4 +110,3 @@ describe('getRevalidateTime', () => {
     expect(getRevalidateTime('node--unknown_type')).toBe(300);
   });
 });
-

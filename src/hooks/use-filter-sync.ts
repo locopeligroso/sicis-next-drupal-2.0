@@ -10,13 +10,18 @@ import { useCallback } from 'react';
 import type { ActiveFilter } from '@/domain/filters/registry';
 
 interface UseFilterSyncOptions {
-  basePath: string;       // es. '/it/mosaico'
+  basePath: string; // es. '/it/mosaico'
   locale: string;
   activeFilters: ActiveFilter[];
 }
 
 interface UseFilterSyncReturn {
-  toggleFilter: (key: string, value: string, type: 'path' | 'query', pathPrefix?: string) => void;
+  toggleFilter: (
+    key: string,
+    value: string,
+    type: 'path' | 'query',
+    pathPrefix?: string,
+  ) => void;
   clearFilter: (key: string) => void;
   clearAll: () => void;
   isActive: (key: string, value: string) => boolean;
@@ -32,16 +37,21 @@ export function useFilterSync({
 
   const isActive = useCallback(
     (key: string, value: string) =>
-      activeFilters.some(f => f.key === key && f.value === value),
+      activeFilters.some((f) => f.key === key && f.value === value),
     [activeFilters],
   );
 
   const toggleFilter = useCallback(
-    (key: string, value: string, type: 'path' | 'query', pathPrefix?: string) => {
+    (
+      key: string,
+      value: string,
+      type: 'path' | 'query',
+      pathPrefix?: string,
+    ) => {
       if (type === 'path') {
         // Check if another P0 is already active via path
         const otherPathActive = activeFilters.find(
-          f => f.type === 'path' && f.key !== key,
+          (f) => f.type === 'path' && f.key !== key,
         );
 
         if (otherPathActive) {
@@ -59,14 +69,14 @@ export function useFilterSync({
         }
 
         // First P0 → existing path navigation logic
-        const currentActive = activeFilters.find(f => f.key === key);
+        const currentActive = activeFilters.find((f) => f.key === key);
         if (currentActive?.value === value) {
-          // Deselect: go back to base path
-          router.push(`${basePath}?${searchParams.toString()}`);
+          // Deselect: go back to base path (clear all query params — new context)
+          router.push(basePath);
         } else {
-          // Select: navigate to path with filter
+          // Select: navigate to path with filter (clear query params — context changes)
           const prefix = pathPrefix ? `/${pathPrefix}` : '';
-          router.push(`${basePath}${prefix}/${value}?${searchParams.toString()}`);
+          router.push(`${basePath}${prefix}/${value}`);
         }
       } else {
         // Toggle query param filter — keep current pathname (preserves active P0 in path)
@@ -88,7 +98,7 @@ export function useFilterSync({
 
   const clearFilter = useCallback(
     (key: string) => {
-      const filter = activeFilters.find(f => f.key === key);
+      const filter = activeFilters.find((f) => f.key === key);
       if (!filter) return;
       if (filter.type === 'path') {
         router.push(`${basePath}?${searchParams.toString()}`);

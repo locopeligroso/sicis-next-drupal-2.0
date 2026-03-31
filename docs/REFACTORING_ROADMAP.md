@@ -66,13 +66,13 @@ Quando `resolve-path` con aliases è l'unico meccanismo di traduzione path.
 
 Quando le View Drupal per i listing (prodotti, blog, progetti, showroom, etc.) sono ricostruite con nuove response shape.
 
-| #   | Refactoring                             | File                                                                    | Note                                                                  |
-| --- | --------------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| 12  | Aggiornare `types.ts`                   | `src/lib/api/types.ts`                                                  | Le response shape products–pages-by-category cambieranno              |
-| 13  | Aggiornare normalizer nei fetcher Views | `src/lib/api/products.ts`, `listings.ts`, `categories.ts`, `filters.ts` | Allineare alle nuove shape                                            |
-| 14  | Rimuovere `stripDomain()`               | `src/lib/api/client.ts`                                                 | Se le nuove View non includono il dominio Drupal nei path             |
-| 15  | Rimuovere `emptyToNull()`               | `src/lib/api/client.ts`                                                 | Se le nuove View usano `null` invece di `""` per campi immagine vuoti |
-| 16  | Rimuovere `unixToIso()`                 | `src/lib/api/listings.ts`                                               | Se le nuove View restituiscono date in ISO 8601 nativo                |
+| #   | Refactoring                             | File                                                                    | Note                                                                      |
+| --- | --------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| 12  | Aggiornare `types.ts`                   | `src/lib/api/types.ts`                                                  | Le response shape products–pages-by-category cambieranno                  |
+| 13  | Aggiornare normalizer nei fetcher Views | `src/lib/api/products.ts`, `listings.ts`, `categories.ts`, `filters.ts` | Allineare alle nuove shape                                                |
+| 14  | Rimuovere `stripDomain()`               | `src/lib/api/client.ts`                                                 | Se le nuove View non includono il dominio Drupal nei path                 |
+| 15  | Rimuovere `emptyToNull()`               | `src/lib/api/client.ts`                                                 | Se le nuove View usano `null` invece di `""` per campi immagine vuoti     |
+| 16  | ~~Rimuovere `unixToIso()`~~             | ~~`src/lib/api/listings.ts`~~                                           | ✅ DONE 2026-03-30 — `field_data` è già ISO nativo, `unixToIso` eliminato |
 
 ---
 
@@ -83,8 +83,8 @@ Da eseguire PRIMA di aggiungere altri product type per evitare accumulo di debit
 | #   | Refactoring                                                   | Priorità    | Tempo stimato | Note                                                                               |
 | --- | ------------------------------------------------------------- | ----------- | ------------- | ---------------------------------------------------------------------------------- |
 | 17  | Consolidare resolve-path dispatch in `resolveProductDetail()` | **CRITICA** | 2-3 ore       | Elimina duplicazione tra Point A e Point B — già driftata dopo 1 giorno            |
-| 18  | Estrarre `MosaicProductPreview` in file dedicato              | Alta        | 30 min        | 240 righe + 8 dynamic import fuori da page.tsx                                     |
-| 19  | Estrarre adapter legacy in modulo dedicato                    | Alta        | 30 min        | `src/lib/adapters/legacy-node-adapters.ts`                                         |
+| 18  | ~~Estrarre `MosaicProductPreview` in file dedicato~~          | ~~Alta~~    | ~~30 min~~    | ✅ DONE 2026-03-30 — estratto in `src/components/blocks/MosaicProductPreview.tsx`  |
+| 19  | ~~Estrarre adapter legacy in modulo dedicato~~                | ~~Alta~~    | ~~30 min~~    | ✅ DONE 2026-03-30 — `src/lib/adapters/legacy-node-adapters.ts`                    |
 | 20  | Creare shared normalizer utilities                            | Alta        | 1 ora         | `normalizeDocument()` (duplicato 3x), `toArray()`, `toImageField()`, `stripHtml()` |
 | 21  | Fix alt text vuoto nelle gallery adapter                      | Media       | 30 min        | Oggi `alt: ''` per tutte le immagini gallery — regressione accessibilità           |
 | 22  | Normalizzazione prezzi uniforme                               | Media       | 30 min        | Vetrite filtra "0.00"→null, altri no                                               |
@@ -98,10 +98,10 @@ Da eseguire PRIMA di aggiungere altri product type per evitare accumulo di debit
 | ---------------------------------------------- | ----------------------- | ------------------ |
 | Endpoint mosaico (mosaic-product)              | ✅ Attivo               | 2026-03-26         |
 | Endpoint vetrite (vetrite-product)             | ✅ Attivo               | 2026-03-26         |
-| Endpoint tessuto (textile-product)             | 🔄 In corso             | —                  |
-| Endpoint arredo (arredo-product)               | ⏳ Pianificato          | —                  |
-| Endpoint illuminazione (illuminazione-product) | ⏳ Pianificato          | —                  |
-| Endpoint pixall (pixall-product)               | ⏳ Pianificato          | —                  |
+| Endpoint tessuto (textile-product)             | ✅ Attivo               | 2026-03-30         |
+| Endpoint arredo (arredo-product)               | ✅ Attivo               | 2026-03-30         |
+| Endpoint illuminazione (illuminazione-product) | ✅ Attivo               | 2026-03-30         |
+| Endpoint pixall (pixall-product)               | ✅ Attivo               | 2026-03-30         |
 | resolve-path                                   | ✅ Attivo (con aliases) | 2026-03-26         |
 | View listing products–pages-by-category        | ⏳ Da ricostruire       | —                  |
 | entity ⚠️ LEGACY — Drupal view to be rewritten | 🔴 Da riscrivere        | —                  |

@@ -94,6 +94,9 @@ const ARREDO_SLUGS = new Set([
 // Slug listing illuminazione per locale
 const ILLUMINAZIONE_SLUGS = new Set(['illuminazione', 'lighting']);
 
+// Slug listing next-art (same across all locales)
+const NEXT_ART_SLUGS = new Set(['next-art']);
+
 // Slug listing pixall per locale
 const PIXALL_SLUGS = new Set(['pixall']);
 
@@ -218,7 +221,14 @@ export function getSectionConfig(
       };
     }
     // /mosaico/colori/{slug} — color filter listing (3 segments)
-    const mosaicoColorPrefixes = ['colori', 'colors', 'couleurs', 'farben', 'colores', 'цвета'];
+    const mosaicoColorPrefixes = [
+      'colori',
+      'colors',
+      'couleurs',
+      'farben',
+      'colores',
+      'цвета',
+    ];
     if (s3 && mosaicoColorPrefixes.includes(s2)) {
       return {
         productType: 'prodotto_mosaico',
@@ -241,7 +251,14 @@ export function getSectionConfig(
       };
     }
     // /vetrite/colori/{slug} — color filter listing (3 segments)
-    const vetriteColorPrefixes = ['colori', 'colors', 'couleurs', 'farben', 'colores', 'цвета'];
+    const vetriteColorPrefixes = [
+      'colori',
+      'colors',
+      'couleurs',
+      'farben',
+      'colores',
+      'цвета',
+    ];
     if (s3 && vetriteColorPrefixes.includes(s2)) {
       return {
         productType: 'prodotto_vetrite',
@@ -277,6 +294,12 @@ export function getSectionConfig(
         filterValue: deslugify(decodeURIComponent(s2)),
       };
     }
+    return null;
+  }
+
+  // ── Next Art ─────────────────────────────────────────────────────────────
+  if (NEXT_ART_SLUGS.has(s1)) {
+    if (!s2) return { productType: 'next_art' };
     return null;
   }
 
@@ -351,7 +374,14 @@ export async function getSectionConfigAsync(
 
     // /mosaico/colori/{slug} or /vetrite/colori/{slug} — color filter listing (3 segments)
     if (s3) {
-      const colorPrefixes = ['colori', 'colors', 'couleurs', 'farben', 'colores', 'цвета'];
+      const colorPrefixes = [
+        'colori',
+        'colors',
+        'couleurs',
+        'farben',
+        'colores',
+        'цвета',
+      ];
       if (colorPrefixes.includes(s2)) {
         const termName =
           registry.slugToTermName.get(s3) ?? deslugify(decodeURIComponent(s3));
@@ -369,9 +399,13 @@ export async function getSectionConfigAsync(
         productType === 'prodotto_arredo' ||
         productType === 'prodotto_illuminazione'
       ) {
-        if (registry.slugToTermName.has(s3) || registry.subcategoryMap.has(s3)) {
+        if (
+          registry.slugToTermName.has(s3) ||
+          registry.subcategoryMap.has(s3)
+        ) {
           const termName =
-            registry.slugToTermName.get(s3) ?? deslugify(decodeURIComponent(s3));
+            registry.slugToTermName.get(s3) ??
+            deslugify(decodeURIComponent(s3));
           return {
             productType,
             filterField: 'field_categoria.title',

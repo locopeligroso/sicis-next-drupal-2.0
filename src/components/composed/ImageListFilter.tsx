@@ -1,20 +1,20 @@
-"use client"
+'use client';
 
-import Image from "next/image"
-import { Check, X } from "lucide-react"
-import { Typography } from "@/components/composed/Typography"
-import { cn } from "@/lib/utils"
+import Image from 'next/image';
+import { Check, X } from 'lucide-react';
+import { Typography } from '@/components/composed/Typography';
+import { cn } from '@/lib/utils';
 
 interface ImageListFilterProps {
   options: {
-    slug: string
-    label: string
-    imageUrl?: string | null
-    count?: number
-    baseCount?: number
-  }[]
-  activeValue?: string
-  onChange: (slug: string) => void
+    slug: string;
+    label: string;
+    imageUrl?: string | null;
+    count?: number;
+    baseCount?: number;
+  }[];
+  activeValue?: string;
+  onChange: (slug: string) => void;
 }
 
 export function ImageListFilter({
@@ -23,15 +23,17 @@ export function ImageListFilter({
   onChange,
 }: ImageListFilterProps) {
   const visible = options.filter((o) => {
-    const base = o.baseCount ?? o.count ?? 0
-    return base > 0 || activeValue === o.slug
-  })
+    // If count is not provided (e.g. category nav lists), always show the option.
+    // Count filtering only applies when product counts are available.
+    const base = o.baseCount ?? o.count;
+    return base == null || base > 0 || activeValue === o.slug;
+  });
 
   return (
     <div className="flex flex-col gap-1">
       {visible.map((option) => {
-        const isActive = activeValue === option.slug
-        const isEmpty = !isActive && option.count === 0
+        const isActive = activeValue === option.slug;
+        const isEmpty = !isActive && option.count === 0;
 
         return (
           <div key={option.slug} className="flex items-center gap-2">
@@ -39,9 +41,9 @@ export function ImageListFilter({
               type="button"
               onClick={() => onChange(option.slug)}
               className={cn(
-                "flex flex-1 items-center gap-3 rounded-md px-2 py-1.5 transition-colors hover:bg-muted",
-                isActive && "bg-muted ring-2 ring-primary",
-                isEmpty && "opacity-30",
+                'flex flex-1 items-center gap-3 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-muted',
+                isActive && 'bg-muted ring-2 ring-primary',
+                isEmpty && 'opacity-30',
               )}
             >
               {option.imageUrl ? (
@@ -71,8 +73,8 @@ export function ImageListFilter({
               </button>
             )}
           </div>
-        )
+        );
       })}
     </div>
-  )
+  );
 }

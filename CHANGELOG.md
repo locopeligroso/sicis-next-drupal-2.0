@@ -4,7 +4,138 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### 2026-03-31
+
+#### Arredo sidebar — category list, subcategory filtering, URL cleanup, sticky scroll
+
+**Category list in sidebar (arredo/illuminazione/tessuto):**
+
+`renderProductListing` ora chiama `fetchHubCategories(hubParentNid, locale)` e passa tutte le categorie come opzioni `ImageListFilter` nella sidebar. Prima la sidebar mostrava solo le sottocategorie del nodo attivo — ora mostra sempre la lista completa (es. tutti gli stili arredo: Sedute, Tavoli, Armadi...).
+
+**Subcategory filter funzionante (`?sub=`):**
+
+Aggiunto `subCategoryNid` tracking in `renderProductListing`: quando `?sub=slug` è attivo, il fetcher usa `effectiveCategoryNid = subCategoryNid` (NID del figlio) invece di quello del parent. In precedenza il bottone cambiava solo l'URL ma il fetch products usava sempre il NID della categoria navigata. Subcategories array ora include `nid: Number(child.nid)`.
+
+**URL cleanup al cambio filtro path-based:**
+
+`useFilterSync.toggleFilter()` ora fa `router.push(basePath)` invece di `router.push(basePath?${searchParams.toString()})` per i filtri path-based — evita che `?sub=sedute` rimanga in URL dopo aver cliccato su un'altra categoria.
+
+**`activePathFilterKey` corretto per TYPOLOGY_TYPES:**
+
+Per prodotto_arredo, prodotto_illuminazione, prodotto_tessuto il filtro P0 è "subcategory" ma la sidebar deve mostrarlo comunque (è il filtro principale). `activePathFilterKey` ora è `undefined` per questi tipi invece di escludere il gruppo dal pannello.
+
+**ImageListFilter — fix conteggio e allineamento:**
+
+- `baseCount ?? count` non più usato come soglia — se il valore è `null`/`undefined`, il filtro è sempre visibile (categorie senza conteggio prodotti)
+- Aggiunto `text-left` al bottone per label multiriga
+
+**FilterPanel — sticky CSS puro:**
+
+Rimosso il listener JS `scroll` + `translateY` dinamico. Sostituito con `position: sticky` + `top: calc(72px + 2rem)` + `max-h: calc(100dvh - 72px - 2rem)` + `overflow-y: auto`. La sidebar ora scorre indipendentemente senza jitter e senza JavaScript.
+
+**Label sidebar più descrittive:**
+
+- `SpecFilterSidebarContent` usa `categoryGroup.labelKey` dalla registry (es. `filters.typologies`) invece del fallback generico `t(group.key)`
+- `messages/it.json`: `filters.subcategories` → "Filtra per tipo" (era "Sottocategorie")
+- Stessa chiave aggiornata in `messages/de.json`, `fr.json`, `es.json`, `ru.json`
+
+---
+
+#### P0 — Eliminazione dead code (6 file)
+
+Rimossi file non più referenziati dopo il refactoring del data layer:
+
+- `src/lib/api/entity.ts` — wrapper C1 legacy (rimpiazzato da `content.ts` + `blocks.ts`)
+- `src/lib/api/filters.ts` — `fetchFilterOptions` V3 dead endpoint
+- `src/config/env.ts` — duplicato di variabili già in `client.ts`
+- `src/lib/api/isr.ts` — helper ISR non più usato dopo la rimozione del `revalidate` globale
+- `src/hooks/useFilters.ts` — hook legacy sostituito da `useFilterSync`
+- `src/proxy.ts` — file rinominato male (vedi fix middleware sotto)
+
+---
+
+#### Fix — middleware next-intl ripristinato
+
+`src/proxy.ts` conteneva il middleware next-intl ma Next.js ignora qualsiasi file che non si chiami `middleware.ts`. Eliminando `proxy.ts` (P0) il sito tornava 404 su `/`. Creato `src/middleware.ts` con la stessa logica `createMiddleware({ locales, defaultLocale, localePrefix: 'always' })`.
+
+---
+
+#### i18n — chiavi mancanti aggiunte a DE/FR/ES/RU
+
+Aggiunte le chiavi `products.resistant` e `products.absent` a tutti i 4 file locale che le mancavano (de, fr, es, ru). Era un gap noto documentato in CLAUDE.md.
+
+---
+
+#### Test — fix product-listing-factory.test.ts
+
+`EXPECTED_TYPES` aggiornato con `next_art` — test suite ora passa correttamente con `toHaveLength(7)`.
+
+---
+
 ### 2026-03-30
+
+#### Content listings, filter sidebar, arredo hub, showroom detail
+
+**6 content listing fetchers rewritten to match real Drupal response shapes:**
+
+All endpoints return raw arrays (not `PaginatedResponse`). Fetchers updated: `fetchEnvironments`, `fetchShowrooms`, `fetchProjects`, `fetchArticles` (NEW), `fetchNews` (NEW), `fetchTutorials` (NEW). `fetchBlogPosts` now aggregates articles+news+tutorials in parallel. `unixToIso()` removed — `field_data` is already ISO.
+
+**Content listing routing (blog/showroom/environments 404 fix):**
+
+Added `CONTENT_LISTING_SLUGS` early interception in page.tsx BEFORE `LISTING_SLUG_OVERRIDES` — fixes 404s when Drupal routing registry catches content slugs before the listing renderer. Blog (`/en/blog`), showroom, environments, projects, download catalogues all work even with Drupal offline.
+
+**Showroom detail page (`showroom/{nid}` endpoint):**
+
+New fetcher `src/lib/api/showroom-detail.ts` — calls `showroom/{nid}` (singular). Gallery images wrapped in `{ uri: { url } }` for `getDrupalImageUrl` compatibility. Only first gallery image shown as hero preview. Intercepted in page.tsx via `resolved.bundle === 'showroom'`.
+
+**Filter sidebar reactivated (mosaic/vetrite):**
+
+New `src/lib/api/filter-options.ts` — `fetchListingFilterOptions()` fetches from alive hub endpoints (`mosaic-colors`, `mosaic-collections`, `vetrite-colors`, `vetrite-collections`, `categories/{nid}`) instead of dead V3/V4 taxonomy endpoints. Change popover + sidebar functional for mosaico/vetrite.
+
+**Arredo hub sections (SpecHubArredo):**
+
+- **Indoor** — heading renamed from "Esplora per tipologia" (arredo-only)
+- **Outdoor** — PixallHubCard, image from `content/348` (fetched by NID directly, avoids cross-locale alias issues)
+- **Next Art** — PixallHubCard, image from `content/3545`
+- **Discover also** — CategoryCards for Illuminazione (`content/337`) + Carpets (`content/350`) with images
+- Non-arredo hubs (illuminazione/tessuto) unchanged
+
+**getPageData fallback for unsupported bundles:**
+
+When `resolvePath` succeeds but `content/{nid}` returns empty, `getPageData` now creates a minimal entity with type/id/langcode so COMPONENT_MAP can still dispatch to the correct template.
+
+---
+
+#### Refactoring — factory listing fetcher, renderProductListing extraction, taxonomy template cleanup
+
+**Factory listing fetcher (`src/lib/api/product-listing-factory.ts`):**
+
+6 near-identical `*-product-listing.ts` files (mosaic, vetrite, arredo, illuminazione, textile, pixall) consolidated into a single config-driven factory. Each file had the same pattern: raw REST interface → `normalizeItem()` → `cache()`-wrapped fetcher. The factory captures the 5 axes of variation (endpoint name, image field, price field, priceOnDemand strategy, param shape) in `PRODUCT_LISTING_CONFIGS` and exposes a single entry point: `fetchProductListing(productType, locale, params?)`.
+
+- Deleted: `mosaic-product-listing.ts`, `vetrite-product-listing.ts`, `arredo-product-listing.ts`, `illuminazione-product-listing.ts`, `textile-product-listing.ts`, `pixall-product-listing.ts`
+- 3 param shapes: `dual-tid` (mosaic/vetrite), `single-nid` (arredo/illuminazione/tessuto), `none` (pixall)
+- Per-type `cache()` identity preserved via eager `FETCHER_REGISTRY`
+
+**renderProductListing extraction (`src/lib/render-product-listing.tsx`):**
+
+Extracted the ~320-line `renderProductListing()` helper from `page.tsx` into its own module. Reduces page.tsx complexity and makes the listing orchestration logic independently testable. All imports (6 listing fetchers, `ProductListingTemplate`, `CollectionPopoverContent`, `fetchHubCategories`) moved to the new module.
+
+**Taxonomy template elimination:**
+
+Removed 4 dead taxonomy templates that were unreachable since resolve-path intercepts taxonomy bundles (`mosaico_collezioni`, `mosaico_colori`, `vetrite_collezioni`, `vetrite_colori`) before the COMPONENT_MAP dispatch:
+
+- Deleted: `MosaicoCollezione.tsx`, `MosaicoColore.tsx`, `VetriteCollezione.tsx`, `VetriteColore.tsx`
+- Removed imports, COMPONENT_MAP entries, and `node-resolver.ts` mappings
+- Generic `TaxonomyTerm.tsx` fallback preserved
+
+**Data layer tests (106 tests):**
+
+- `product-listing-factory.test.ts` (43 tests) — URL building per param shape, normalizer per product type, priceOnDemand variants, emptyToNull edge cases
+- `products-normalizer.test.ts` (63 tests) — type prefix, priceOnDemand casting, toAbsoluteUrl, filtersToQueryParams mapping, getCategoriaProductType locale coverage
+
+**Files changed:** 4 created, 3 modified, 10 deleted. `page.tsx` reduced by ~350 lines.
+
+---
 
 #### Performance optimizations — 13× faster product pages, streaming, dead code purge
 

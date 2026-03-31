@@ -64,14 +64,14 @@ function adaptGenIntro(p: Record<string, unknown>, pageTitle?: string) {
     null;
   const linkLabel = getTextValue(p.field_label_collegamento) ?? null;
 
-  if (!title || !bodyHtml || !imageSrc) return null;
+  if (!title || !bodyHtml) return null;
 
   return (
     <GenIntro
       title={title}
       subtitle={subtitle}
       bodyHtml={bodyHtml}
-      imageSrc={imageSrc}
+      imageSrc={imageSrc ?? undefined}
       imageAlt={imageAlt}
       linkHref={linkHref}
       linkLabel={linkLabel}

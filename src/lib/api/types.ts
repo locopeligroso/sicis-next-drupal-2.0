@@ -43,6 +43,19 @@ export interface BlogCard {
   created: string;
 }
 
+// === articles / news / tutorials: Individual blog-type endpoints ===
+// These endpoints return items without an explicit `type` field.
+// The `type` is injected by the fetcher based on which endpoint was called.
+export interface ArticleCard {
+  id: string;
+  title: string;
+  imageUrl: string | null;
+  path: string | null;
+  created: string;
+  // `type` may be present if the endpoint returns it; fetcher injects it as fallback
+  type?: 'articolo' | 'news' | 'tutorial';
+}
+
 // === projects: Projects ===
 export interface ProjectCard {
   id: string;

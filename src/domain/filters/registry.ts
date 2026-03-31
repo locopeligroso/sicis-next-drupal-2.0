@@ -509,6 +509,30 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
     },
   },
 
+  next_art: {
+    contentType: 'next_art',
+    basePaths: {
+      it: 'next-art',
+      en: 'next-art',
+      fr: 'next-art',
+      de: 'next-art',
+      es: 'next-art',
+      ru: 'next-art',
+      us: 'next-art',
+    },
+    includes: ['field_immagine_anteprima'],
+    filters: {},
+    listing: {
+      categoryCardRatio: '1/1',
+      productCardRatio: '1/1',
+      categoryGroups: [],
+      sortOptions: [
+        { labelKey: 'sort.name', field: 'title', direction: 'ASC' },
+      ],
+      pageSize: 48,
+    },
+  },
+
   prodotto_illuminazione: {
     contentType: 'prodotto_illuminazione',
     basePaths: {

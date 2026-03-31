@@ -15,6 +15,7 @@ import {
 } from '@/lib/api/vetrite-hub';
 import { HubSection } from '@/components/composed/HubSection';
 import { CategoryCard } from '@/components/composed/CategoryCard';
+import { ColorSwatchLink } from '@/components/composed/ColorSwatchLink';
 
 interface SpecHubMosaicoProps {
   filterOptions: Record<string, unknown[]>;
@@ -45,15 +46,13 @@ export async function SpecHubMosaico({
       {/* ── Listing 1: Colori ──────────────────────────────────────────── */}
       {colors.length > 0 && (
         <HubSection title={tHub('exploreByColor')}>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+          <div className="flex flex-wrap gap-4">
             {colors.map((color) => (
-              <CategoryCard
+              <ColorSwatchLink
                 key={color.name}
-                title={color.name}
+                label={color.name}
                 imageUrl={color.imageUrl}
                 href={color.href}
-                aspectRatio={listingConfig.categoryCardRatio}
-                hasColorSwatch
               />
             ))}
           </div>

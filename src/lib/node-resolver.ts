@@ -93,11 +93,6 @@ export function getComponentName(type: EntityTypeName): string {
     'node--categoria_blog': 'CategoriaBlog',
     'node--documento': 'Documento',
     'node--tag': 'Tag',
-    'taxonomy_term--mosaico_collezioni': 'MosaicoCollezione',
-    'taxonomy_term--mosaico_colori': 'MosaicoColore',
-    'taxonomy_term--vetrite_collezioni': 'VetriteCollezione',
-    'taxonomy_term--vetrite_colori': 'VetriteColore',
   };
   return map[type] ?? 'UnknownEntity';
 }
-
