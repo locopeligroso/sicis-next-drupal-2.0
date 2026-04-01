@@ -22,16 +22,9 @@ export function ImageListFilter({
   activeValue,
   onChange,
 }: ImageListFilterProps) {
-  const visible = options.filter((o) => {
-    // If count is not provided (e.g. category nav lists), always show the option.
-    // Count filtering only applies when product counts are available.
-    const base = o.baseCount ?? o.count;
-    return base == null || base > 0 || activeValue === o.slug;
-  });
-
   return (
     <div className="flex flex-col gap-1">
-      {visible.map((option) => {
+      {options.map((option) => {
         const isActive = activeValue === option.slug;
         const isZeroCount =
           !isActive &&

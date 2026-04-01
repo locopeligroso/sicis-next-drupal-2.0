@@ -55,16 +55,18 @@ export function useFilterSync({
         );
 
         if (otherPathActive) {
-          // Second P0 → use query param instead of path navigation
-          // Reset all other query filters (P1) when changing a P0-level filter
+          // Second P0 clicked while another P0 is active in path.
+          // Navigate to the NEW P0's path, carrying the existing P0 as a query param.
+          // Example: on /mosaic/colors/navy-blu, click Antigua →
+          //   navigate to /mosaic/antigua?color=navy-blu (or just /mosaic/antigua)
+          // P1 query params (shape, finish) are intentionally dropped (P0 dominates).
+          const prefix = pathPrefix ? `/${pathPrefix}` : '';
+          const newPath = `${basePath}${prefix}/${value}`;
+          // Carry the currently active path P0 as a query param
           const params = new URLSearchParams();
-          const queryKey = key;
-          if (searchParams.get(queryKey) !== value) {
-            params.set(queryKey, value);
-          }
-          const currentPath = window.location.pathname;
+          params.set(otherPathActive.key, otherPathActive.value);
           const qs = params.toString();
-          router.push(qs ? `${currentPath}?${qs}` : currentPath);
+          router.push(qs ? `${newPath}?${qs}` : newPath);
           return;
         }
 

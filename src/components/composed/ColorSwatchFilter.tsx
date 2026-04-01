@@ -33,14 +33,9 @@ export function ColorSwatchFilter({
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const filtered = options.filter((o) => {
-    const base = o.baseCount ?? o.count ?? 0;
-    return base > 0 || activeValue === o.slug;
-  });
-
   return (
     <div className="grid grid-cols-3 gap-3">
-      {filtered.map((option) => {
+      {options.map((option) => {
         const isActive = activeValue === option.slug;
 
         const backgroundStyle: React.CSSProperties = option.imageUrl
