@@ -120,21 +120,12 @@ export function SpecFilterSidebarContent({
         const options = filterOptions[group.key] ?? [];
         if (options.length === 0) return null;
 
-        // For non-swatch/non-image groups: hide if ≤1 visible options (no filtering value)
+        // Hide groups with ≤1 total options (no filtering value regardless of counts)
         const categoryGroup = listingConfig.categoryGroups.find(
           (cg) => cg.filterKey === group.key,
         );
         if (!categoryGroup?.hasColorSwatch && !categoryGroup?.hasImage) {
-          const activeForGroupCheck = activeFilters
-            .filter((f) => f.key === group.key)
-            .map((f) => f.value);
-          const visibleOptions = options.filter(
-            (o) =>
-              o.count == null ||
-              o.count > 0 ||
-              activeForGroupCheck.includes(o.slug),
-          );
-          if (visibleOptions.length <= 1) return null;
+          if (options.length <= 1) return null;
         }
 
         // Get active values for this group

@@ -35,12 +35,10 @@ export function CheckboxFilter({
             <button
               type="button"
               onClick={() => onChange(option.slug)}
-              disabled={isZeroCount}
-              aria-disabled={isZeroCount}
               className={cn(
                 'flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left cursor-pointer transition-colors hover:bg-muted',
                 isActive && 'bg-muted ring-1 ring-border',
-                isZeroCount && 'opacity-40 pointer-events-none',
+                isZeroCount && 'opacity-40',
               )}
             >
               <Typography textRole="body-sm" as="span">

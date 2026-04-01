@@ -56,13 +56,11 @@ export function ColorSwatchFilter({
         const swatch = (
           <button
             type="button"
-            onClick={() => !isZeroCount && onChange(option.slug)}
-            disabled={isZeroCount}
-            aria-disabled={isZeroCount}
+            onClick={() => onChange(option.slug)}
             className={cn(
               'flex flex-col items-center gap-1.5 rounded-md p-1.5 cursor-pointer transition-colors hover:bg-muted',
               isActive && 'bg-accent',
-              isZeroCount && 'opacity-40 pointer-events-none',
+              isZeroCount && 'opacity-40',
             )}
           >
             <span

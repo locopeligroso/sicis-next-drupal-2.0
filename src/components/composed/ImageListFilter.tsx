@@ -36,12 +36,10 @@ export function ImageListFilter({
             <button
               type="button"
               onClick={() => onChange(option.slug)}
-              disabled={isZeroCount}
-              aria-disabled={isZeroCount}
               className={cn(
                 'flex flex-1 items-center gap-3 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-muted',
                 isActive && 'bg-muted ring-2 ring-primary',
-                isZeroCount && 'opacity-40 pointer-events-none',
+                isZeroCount && 'opacity-40',
               )}
             >
               {option.imageUrl ? (
