@@ -56,17 +56,11 @@ export function useFilterSync({
 
         if (otherPathActive) {
           // Second P0 clicked while another P0 is active in path.
-          // Navigate to the NEW P0's path, carrying the existing P0 as a query param.
-          // Example: on /mosaic/colors/navy-blu, click Antigua →
-          //   navigate to /mosaic/antigua?color=navy-blu (or just /mosaic/antigua)
-          // P1 query params (shape, finish) are intentionally dropped (P0 dominates).
+          // Navigate to the NEW P0's path, dropping all other filters.
+          // Example: on /mosaic/colors/navy-blu, click Tephra →
+          //   navigate to /mosaic/tephra (clean context switch)
           const prefix = pathPrefix ? `/${pathPrefix}` : '';
-          const newPath = `${basePath}${prefix}/${value}`;
-          // Carry the currently active path P0 as a query param
-          const params = new URLSearchParams();
-          params.set(otherPathActive.key, otherPathActive.value);
-          const qs = params.toString();
-          router.push(qs ? `${newPath}?${qs}` : newPath);
+          router.push(`${basePath}${prefix}/${value}`);
           return;
         }
 
