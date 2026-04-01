@@ -10,6 +10,7 @@ import { SpecProductDetails } from '@/components/blocks/SpecProductDetails';
 import { SpecProductSpecs } from '@/components/blocks/SpecProductSpecs';
 import { SpecProductResources } from '@/components/blocks/SpecProductResources';
 import { SpecProductGallery } from '@/components/blocks/SpecProductGallery';
+import { QuoteSheetProvider } from '@/components/composed/QuoteSheetProvider';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { formatRetinatura } from '@/lib/product-helpers';
 import type { MosaicProduct } from '@/lib/api/mosaic-product';
@@ -177,6 +178,7 @@ export async function MosaicProductPreview({
   );
 
   return (
+    <QuoteSheetProvider productName={product.title}>
     <article className="flex flex-col gap-(--spacing-section) pt-(--spacing-navbar) pb-(--spacing-section)">
       {/* ── Hero Block ── */}
       <SpecProductHero
@@ -261,5 +263,6 @@ export async function MosaicProductPreview({
         </details>
       )}
     </article>
+    </QuoteSheetProvider>
   );
 }
