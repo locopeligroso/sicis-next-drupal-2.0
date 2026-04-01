@@ -2,10 +2,12 @@
  * filter-options.ts
  *
  * Fetches filter option lists for the product listing sidebar / popover
- * using the alive hub endpoints (mosaic-hub, vetrite-hub, category-hub).
+ * using hub endpoints (mosaic-hub, vetrite-hub, category-hub).
  *
- * Only P0 filter options are populated — P1 taxonomy endpoints are dead (404)
- * and will be added back when Freddi creates new taxonomy endpoints.
+ * Mosaic: P0 (collection, color) + P1 (shape, finish) all populated.
+ * Vetrite: P0 (collection, color) populated; P1 taxonomy endpoints pending.
+ * Category-based types (arredo, illuminazione, tessuto): P0 subcategory populated.
+ * Pixall: no filter options (all P1 query-based, no dedicated taxonomy endpoints).
  */
 
 import type { FilterOption } from '@/domain/filters/registry';
@@ -16,6 +18,8 @@ import type { CategoryHubItem } from '@/lib/api/category-hub';
 import {
   fetchMosaicCollections,
   fetchMosaicColors,
+  fetchMosaicShapes,
+  fetchMosaicFinishes,
 } from '@/lib/api/mosaic-hub';
 import {
   fetchVetriteCollections,
@@ -88,6 +92,7 @@ function hubTermsToFilterOptions(
       slug,
       label: term.name,
       imageUrl: term.imageUrl ?? undefined,
+      id: 'tid' in term && term.tid ? String(term.tid) : undefined,
     };
   });
 }
@@ -131,13 +136,17 @@ export async function fetchListingFilterOptions(
 ): Promise<Record<string, FilterOption[]>> {
   switch (productType) {
     case 'prodotto_mosaico': {
-      const [collections, colors] = await Promise.all([
+      const [collections, colors, shapes, finishes] = await Promise.all([
         fetchMosaicCollections(locale),
         fetchMosaicColors(locale),
+        fetchMosaicShapes(locale),
+        fetchMosaicFinishes(locale),
       ]);
       return {
         collection: hubTermsToFilterOptions(collections),
         color: hubTermsToFilterOptions(colors),
+        shape: hubTermsToFilterOptions(shapes),
+        finish: hubTermsToFilterOptions(finishes),
       };
     }
 
@@ -171,7 +180,7 @@ export async function fetchListingFilterOptions(
     }
 
     default:
-      // prodotto_pixall: all filters are P1 (query-based), taxonomy endpoints dead
+      // prodotto_pixall: P1 query-based filters, no dedicated taxonomy endpoints
       // unknown types: no config
       return {};
   }

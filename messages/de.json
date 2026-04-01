@@ -78,7 +78,7 @@
     "priceUsa": "USA-Preis",
     "collection": "Kollektion",
     "colors": "Farben",
-    "finishes": "Oberflächen",
+    "finishes": "Ausführungen",
     "shapes": "Formen",
     "documents": "Dokumente",
     "gallery": "Galerie",
@@ -171,7 +171,6 @@
     "knottingDensity": "Knotendichte",
     "dimensionsAndSpecs": "Abmessungen und technische Daten",
     "fabrics": "Stoffe",
-    "finishes": "Ausführungen",
     "furniture": "Einrichtung",
     "lighting": "Beleuchtung",
     "viewAllFinishes": "Alle Ausführungen anzeigen"
@@ -213,7 +212,9 @@
     "showResults": "{count} Produkte anzeigen",
     "activeCount": "Filter ({count})",
     "colorDominant": "Dominante Farbe",
-    "filtersAndTypologies": "Filter & Typologien"
+    "filtersAndTypologies": "Filter & Typologien",
+    "shapes": "Formen",
+    "finishes": "Ausführungen"
   },
   "breadcrumb": {
     "filterAndFind": "Produkte",

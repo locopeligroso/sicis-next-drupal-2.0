@@ -1,7 +1,15 @@
-import { cache } from 'react';
+import { cache, Suspense } from 'react';
+import { setRequestLocale } from 'next-intl/server';
+import { ListingContent } from './_ListingContent';
+import { ProductListingSkeleton } from '@/components/composed/ProductListingSkeleton';
 import { notFound } from 'next/navigation';
 // fetchEntity (C1 legacy) removed — replaced by content/{nid} + blocks/{nid}
 import { resolvePath } from '@/lib/api/resolve-path';
+import {
+  fetchDescriptiveCategoryNids,
+  fetchDescriptiveCategorySlugToNid,
+  ARREDO_INDOOR_PARENT_NID,
+} from '@/lib/api/category-hub';
 import { fetchContent } from '@/lib/api/content';
 import { fetchBlocks } from '@/lib/api/blocks';
 import { fetchMosaicProduct } from '@/lib/api/mosaic-product';
@@ -24,7 +32,10 @@ import {
 } from '@/lib/adapters/legacy-node-adapters';
 import { getComponentName } from '@/lib/node-resolver';
 import UnknownEntity from '@/components_legacy/UnknownEntity';
-import { getSectionConfigAsync } from '@/domain/routing/section-config';
+import {
+  getSectionConfigAsync,
+  PRODUCT_LISTING_SLUGS,
+} from '@/domain/routing/section-config';
 import { getRoutingRegistry } from '@/domain/routing/routing-registry';
 import { parseFiltersFromUrl } from '@/domain/filters/search-params';
 // fetchAllFilterOptions removed — all V3/V4 legacy endpoints are dead
@@ -49,6 +60,7 @@ import Page from '@/templates/nodes/Page';
 import LandingPage from '@/templates/nodes/LandingPage';
 import ProdottoMosaico from '@/templates/nodes/ProdottoMosaico';
 import ProdottoArredo from '@/templates/nodes/ProdottoArredo';
+import ProdottoArredoFiniture from '@/templates/nodes/ProdottoArredoFiniture';
 import ProdottoIlluminazione from '@/templates/nodes/ProdottoIlluminazione';
 import ProdottoPixall from '@/templates/nodes/ProdottoPixall';
 import ProdottoTessuto from '@/templates/nodes/ProdottoTessuto';
@@ -120,77 +132,34 @@ const getPageData = cache(async (locale: string, drupalPath: string) => {
   return null;
 });
 
+// Legacy SEO aliases NOT covered by PRODUCT_LISTING_SLUGS in section-config.
+// These exist purely for backward-compat/SEO — do NOT remove without verifying
+// there are no inbound links or Drupal routes that still use these paths.
+//
+// мозаика    — RU mosaico (MOSAICO_SLUGS omits the Cyrillic variant)
+// furniture  — legacy EN arredo (in ARREDO_PREFIXES only, not ARREDO_SLUGS)
+// mobilier   — legacy FR arredo (in ARREDO_PREFIXES only)
+// moebel     — legacy DE arredo (in ARREDO_PREFIXES only)
+// leuchten   — old DE illuminazione slug (section-config now uses 'beleuchtung')
+// iluminación — ES illuminazione with accent (section-config uses 'iluminacion')
+const LEGACY_SEO_ALIASES = new Set([
+  'мозаика', // RU mosaico
+  'furniture', // legacy EN arredo
+  'mobilier', // legacy FR arredo
+  'moebel', // legacy DE arredo
+  'leuchten', // old DE illuminazione
+  'iluminación', // ES illuminazione with accent variant
+]);
+
 // Fallback: used when registry is null (Drupal menu unavailable).
 // Slug che devono bypassare translatePath perché Drupal ha nodi (categoria_blog,
 // documento, page) con lo stesso alias che verrebbero renderizzati al posto del
 // listing prodotti corretto. getSectionConfig gestisce il productType.
-const LISTING_SLUG_OVERRIDES = new Set([
-  // Mosaico — collide con categoria_blog in IT e ES
-  'mosaico', // IT + ES
-  'mosaic', // EN
-  'mosaïque', // FR
-  'mosaik', // DE
-  'мозаика', // RU
-  // Arredo
-  'arredo', // IT
-  'furniture-and-accessories', // EN
-  'ameublement', // FR
-  'einrichtung', // DE
-  'mueble', // ES
-  'обстановка', // RU
-  'furniture',
-  'mobilier',
-  'moebel', // legacy
-  // Illuminazione
-  'illuminazione', // IT
-  'lighting', // EN
-  'éclairage', // FR
-  'leuchten', // DE
-  'iluminación', // ES
-  'освещение', // RU
-  // Next Art — collide con page NID 3545
-  'next-art',
-  // Pixall — collide con documento NID 2547
-  'pixall',
-  // Vetrite — slug localizzati (le pagine dedicate hanno priorità sul catch-all)
-  'lastre-vetro-vetrite', // IT
-  'vetrite-glass-slabs', // EN
-  'plaque-en-verre-vetrite', // FR
-  'glasscheibe-vetrite', // DE
-  'láminas-de-vidrio-vetrite', // ES
-  'стеклянные-листы-vetrite', // RU
-  // Tessili — slug singoli categoria tessuto (path reali Drupal)
-  'arazzi',
-  'coperte',
-  'tappeti',
-  'cuscini', // IT
-  'tapestries',
-  'bedcover',
-  'carpets',
-  'cushions', // EN
-  'tapisseries',
-  'couvertures',
-  'tapis',
-  'coussins', // FR
-  'wandteppiche',
-  'decken',
-  'teppiche',
-  'kissen', // DE
-  'tapices',
-  'mantas',
-  'alfombras',
-  'cojines', // ES
-  'гобелены',
-  'одеяла',
-  'ковры',
-  'подушки', // RU
-  // Legacy aliases tessili
-  'tessili',
-  'tessuti',
-  'fabrics',
-  'tissus',
-  'stoffe',
-  'telas',
+// Derived programmatically from section-config slug Sets (PRODUCT_LISTING_SLUGS)
+// plus the small LEGACY_SEO_ALIASES above — 58 entries reduced to 6 kept manually.
+const LISTING_SLUG_OVERRIDES: ReadonlySet<string> = new Set([
+  ...PRODUCT_LISTING_SLUGS,
+  ...LEGACY_SEO_ALIASES,
 ]);
 
 // Products master page slugs — one per locale.
@@ -308,10 +277,15 @@ export default async function SlugPage({
   searchParams,
 }: SlugPageProps) {
   const { locale, slug } = await params;
-  const sp = await searchParams;
-  const pageStr = Array.isArray(sp?.page) ? sp.page[0] : sp?.page;
-  const currentPage = Math.max(1, parseInt(pageStr ?? '1', 10));
-  const offset = (currentPage - 1) * PAGE_SIZE;
+  setRequestLocale(locale);
+
+  // searchParams is resolved lazily — only awaited in branches that need it.
+  // Entity detail pages (prodotto_*, showroom) return before calling getSearchParams(),
+  // keeping those render paths structurally closer to static for future PPR (Phase 2).
+  const getSearchParams = (): Promise<
+    Record<string, string | string[]> | undefined
+  > => searchParams ?? Promise.resolve(undefined);
+
   // Full path with locale (used for ProductListing basePath and logging)
   const path = `/${locale}/${slug.join('/')}`;
   // Drupal aliases do NOT include locale prefix — strip it for translate-path
@@ -340,6 +314,10 @@ export default async function SlugPage({
   // "showroom", "environments" that exist in the Drupal routing registry would be
   // caught by the product listing check, getSectionConfigAsync returns null, → 404.
   if (singleSlug && CONTENT_LISTING_SLUGS[singleSlug]) {
+    const sp = await getSearchParams();
+    const pageStr = Array.isArray(sp?.page) ? sp.page[0] : sp?.page;
+    const currentPage = Math.max(1, parseInt(pageStr ?? '1', 10));
+    const offset = (currentPage - 1) * PAGE_SIZE;
     const listingType = CONTENT_LISTING_SLUGS[singleSlug];
     const basePath = `/${locale}/${slug.join('/')}`;
     // Try to get the CMS title; fall back to deslugify when Drupal is offline.
@@ -467,31 +445,137 @@ export default async function SlugPage({
     registry?.listingSlugs.has(singleSlug!) ||
     LISTING_SLUG_OVERRIDES.has(singleSlug!);
   if (singleSlug && isListingSlug) {
-    const sectionConfig = await getSectionConfigAsync(slug, locale);
-    if (sectionConfig) {
-      // For category-based hubs (arredo, illuminazione), resolve the parent NID
-      // so SpecHubArredo can fetch subcategories from categories/{nid} endpoint.
-      const CATEGORY_HUB_TYPES = new Set([
-        'prodotto_arredo',
-        'prodotto_illuminazione',
-        'prodotto_tessuto',
-      ]);
-      let hubParentNid: number | undefined;
-      if (CATEGORY_HUB_TYPES.has(sectionConfig.productType)) {
-        const resolved = await resolvePath(drupalPath, locale);
-        if (resolved) hubParentNid = resolved.nid;
-      }
-
-      return renderProductListing({
-        productType: sectionConfig.productType,
-        title: deslugify(singleSlug),
-        slug,
-        searchParams: sp,
+    if (
+      process.env.NODE_ENV !== 'production' &&
+      LISTING_SLUG_OVERRIDES.has(singleSlug!) &&
+      !registry?.listingSlugs.has(singleSlug!)
+    ) {
+      console.debug('[routing] LISTING_SLUG_OVERRIDES hit:', {
+        slug: singleSlug,
         locale,
-        hubParentNid,
       });
     }
-    notFound();
+    return (
+      <Suspense fallback={<ProductListingSkeleton />}>
+        <ListingContent
+          singleSlug={singleSlug}
+          slug={slug}
+          locale={locale}
+          searchParams={searchParams}
+          drupalPath={drupalPath}
+        />
+      </Suspense>
+    );
+  }
+
+  // ── Arredo descriptive categories — slug-based detection ────────────────
+  // Pages like /arredo/bar-e-ristoranti have no Drupal path alias, so resolvePath
+  // returns null and all NID-based guards are ineffective. Detect by matching the
+  // second slug against slugified names from the NID 3522 children, then fetch
+  // content+blocks directly by NID and render via Categoria template.
+  // Must run BEFORE the product-detail and multi-slug listing interceptors.
+  if (slug.length >= 2) {
+    const firstSlug = decodeURIComponent(slug[0]).normalize('NFC');
+    const arredoConfig = FILTER_REGISTRY['prodotto_arredo'];
+    const isArredoPrefix =
+      arredoConfig !== undefined &&
+      Object.values(arredoConfig.basePaths).some(
+        (bp) => firstSlug === bp.split('/')[0],
+      );
+    if (isArredoPrefix) {
+      const secondSlug = decodeURIComponent(slug[1]).normalize('NFC');
+
+      // ── Exception: /arredo/outdoor — no Drupal alias, hardcoded NID 348 ──
+      // Render as a category product listing WITHOUT sidebar and WITHOUT P0 filter
+      // selector — exactly like /next-art. hubParentNid is intentionally omitted so
+      // ProductListingTemplate renders no SpecFilterSidebar and no "Cambia" button.
+      // "outdoor" is locale-invariant. This is an isolated exception — no other page
+      // is affected.
+      // Guard: slug.length === 2 only. A third segment means a product detail page
+      // (e.g. /arredo/outdoor/filicudi-outdoor-coffee-table) — let it fall through
+      // to the product-detail interception block below (resolvePath → prodotto_arredo).
+      if (secondSlug === 'outdoor' && slug.length === 2) {
+        const outdoorTitle =
+          ((await fetchContent(348, locale).catch(() => null))
+            ?.field_titolo_main as string | undefined) ?? 'Outdoor';
+        const sp = await getSearchParams();
+        return renderProductListing({
+          productType: 'prodotto_arredo',
+          title: outdoorTitle,
+          slug,
+          searchParams: sp,
+          locale,
+          resolvedCategoryNid: 348,
+          // hubParentNid deliberately omitted → no sidebar, no Cambia filter
+        });
+      }
+
+      // Guard: descriptive category pages are always exactly 2 segments.
+      // A third segment (slug.length >= 3) means a product detail page that
+      // happens to share the second slug with a descriptive category name.
+      // Let those fall through to the product-detail interception block.
+      const descriptiveSlugToNid =
+        slug.length === 2
+          ? await fetchDescriptiveCategorySlugToNid(locale)
+          : new Map<string, number>();
+      const descriptiveNid = descriptiveSlugToNid.get(secondSlug);
+      if (descriptiveNid != null) {
+        const [contentData, blocksData] = await Promise.all([
+          fetchContent(descriptiveNid, locale),
+          fetchBlocks(descriptiveNid, locale),
+        ]);
+        const descriptiveBlocks = (blocksData ?? []).map(
+          (block: Record<string, unknown>) => ({
+            ...block,
+            type:
+              typeof block.type === 'string' &&
+              !block.type.startsWith('paragraph--')
+                ? `paragraph--${block.type}`
+                : block.type,
+          }),
+        );
+        const descriptiveResource: Record<string, unknown> = {
+          ...(contentData ?? {}),
+          type: 'node--categoria',
+          id: String(descriptiveNid),
+          _nid: descriptiveNid,
+          langcode: locale,
+          field_blocchi: descriptiveBlocks,
+        };
+        const DescComponent = COMPONENT_MAP['Categoria'];
+        if (DescComponent) {
+          const sp = await getSearchParams();
+          return (
+            <DescComponent
+              node={descriptiveResource}
+              basePath={`/${locale}/${slug.join('/')}`}
+              searchParams={sp}
+            />
+          );
+        }
+      }
+    }
+  }
+
+  // ── Arredo finiture dedicated page (/arredo/…/product/finiture) ──────────
+  // Must run BEFORE product-detail interception. When last segment is 'finiture'
+  // and the preceding path resolves to a prodotto_arredo, render the finiture page.
+  if (slug.length > 2 && slug[slug.length - 1] === 'finiture') {
+    const productSlug = slug.slice(0, -1);
+    const productDrupalPath = decodeURIComponent(`/${productSlug.join('/')}`);
+    const resolvedFiniture = await resolvePath(productDrupalPath, locale);
+    if (resolvedFiniture?.bundle === 'prodotto_arredo') {
+      const product = await fetchArredoProduct(resolvedFiniture.nid, locale);
+      if (product) {
+        return (
+          <ProdottoArredoFiniture
+            product={product}
+            locale={locale}
+            slug={slug}
+          />
+        );
+      }
+    }
   }
 
   // ── Product detail page interception (new REST endpoints) ────────────────
@@ -533,6 +617,8 @@ export default async function SlugPage({
         const product = await fetchArredoProduct(resolved.nid, locale);
         if (product) {
           const legacyNode = arredoToLegacyNode(product, locale);
+          // Inject finiture page href so ProdottoArredo can render the "Vedi finiture" link
+          legacyNode._finitureHref = `/${locale}/${slug.join('/')}/finiture`;
           return <ProdottoArredo node={legacyNode} />;
         }
       }
@@ -557,6 +643,7 @@ export default async function SlugPage({
       // resolve-path gives us the TID directly — pass it to renderProductListing
       // so it uses the new endpoint without an extra taxonomy name→TID fetch.
       if (resolved.bundle === 'mosaico_collezioni') {
+        const sp = await getSearchParams();
         return renderProductListing({
           productType: 'prodotto_mosaico',
           title: deslugify(slug[slug.length - 1]),
@@ -567,6 +654,7 @@ export default async function SlugPage({
         });
       }
       if (resolved.bundle === 'mosaico_colori') {
+        const sp = await getSearchParams();
         return renderProductListing({
           productType: 'prodotto_mosaico',
           title: deslugify(slug[slug.length - 1]),
@@ -578,6 +666,7 @@ export default async function SlugPage({
       }
       // ── Taxonomy terms: vetrite_collezioni / vetrite_colori → vetrite-products endpoint ──
       if (resolved.bundle === 'vetrite_collezioni') {
+        const sp = await getSearchParams();
         return renderProductListing({
           productType: 'prodotto_vetrite',
           title: deslugify(slug[slug.length - 1]),
@@ -588,6 +677,7 @@ export default async function SlugPage({
         });
       }
       if (resolved.bundle === 'vetrite_colori') {
+        const sp = await getSearchParams();
         return renderProductListing({
           productType: 'prodotto_vetrite',
           title: deslugify(slug[slug.length - 1]),
@@ -601,45 +691,57 @@ export default async function SlugPage({
       // Textile, arredo, and illuminazione categories share the generic 'categoria' bundle.
       // Match the first slug segment against each product type's basePaths across ALL locales
       // (not just the current one) to handle cross-locale URLs like /it/lighting/table-lamps.
+      // Arredo descriptive categories (children of NID 3522) are excluded — they render
+      // content blocks, not product listings.
       if (resolved.bundle === 'categoria') {
-        const firstSlug = decodeURIComponent(slug[0]).normalize('NFC');
-        const categoryProductTypes = [
-          'prodotto_tessuto',
-          'prodotto_arredo',
-          'prodotto_illuminazione',
-        ] as const;
-        for (const pt of categoryProductTypes) {
-          const ptConfig = FILTER_REGISTRY[pt];
-          if (ptConfig) {
-            // Check basePaths of ALL locales, not just current
-            const matchesAnyLocale = Object.values(ptConfig.basePaths).some(
-              (bp) => firstSlug === bp.split('/')[0],
-            );
-            if (matchesAnyLocale) {
-              // Resolve the hub root page NID so filter-options can fetch
-              // categories/{nid} for the sidebar. resolvePath is React.cache()
-              // so no extra network call when already fetched in this request.
-              const basePathSegment = (
-                ptConfig.basePaths[locale] ?? ptConfig.basePaths['it']
-              ).split('/')[0];
-              const baseResolved = await resolvePath(
-                `/${basePathSegment}`,
-                locale,
+        const descriptiveNids = await fetchDescriptiveCategoryNids(locale);
+        if (descriptiveNids.has(resolved.nid)) {
+          // Descriptive category: fall through to entity rendering (renders blocks)
+        } else {
+          const firstSlug = decodeURIComponent(slug[0]).normalize('NFC');
+          const categoryProductTypes = [
+            'prodotto_tessuto',
+            'prodotto_arredo',
+            'prodotto_illuminazione',
+          ] as const;
+          for (const pt of categoryProductTypes) {
+            const ptConfig = FILTER_REGISTRY[pt];
+            if (ptConfig) {
+              // Check basePaths of ALL locales, not just current
+              const matchesAnyLocale = Object.values(ptConfig.basePaths).some(
+                (bp) => firstSlug === bp.split('/')[0],
               );
-              const hubParentNid = baseResolved?.nid;
+              if (matchesAnyLocale) {
+                // Arredo indoor: hardcoded NID 4261 so sidebar shows indoor subcategories.
+                // Other types (illuminazione, tessuto): resolve hub page NID from Drupal.
+                let hubParentNid: number | undefined;
+                if (pt === 'prodotto_arredo') {
+                  hubParentNid = ARREDO_INDOOR_PARENT_NID;
+                } else {
+                  const basePathSegment = (
+                    ptConfig.basePaths[locale] ?? ptConfig.basePaths['it']
+                  ).split('/')[0];
+                  const baseResolved = await resolvePath(
+                    `/${basePathSegment}`,
+                    locale,
+                  );
+                  hubParentNid = baseResolved?.nid;
+                }
 
-              return renderProductListing({
-                productType: pt,
-                title: deslugify(slug[slug.length - 1]),
-                slug,
-                searchParams: sp,
-                locale,
-                resolvedCategoryNid: resolved.nid,
-                hubParentNid,
-              });
+                const sp = await getSearchParams();
+                return renderProductListing({
+                  productType: pt,
+                  title: deslugify(slug[slug.length - 1]),
+                  slug,
+                  searchParams: sp,
+                  locale,
+                  resolvedCategoryNid: resolved.nid,
+                  hubParentNid,
+                });
+              }
             }
           }
-        }
+        } // end else (non-descriptive categoria)
       }
     }
   }
@@ -649,29 +751,73 @@ export default async function SlugPage({
   // check if it's a product listing with an active P0 filter. If so, render
   // with the new ProductListingTemplate instead of falling through to Drupal
   // node resolution (which would render old taxonomy templates).
+  // Arredo descriptive categories (NID 3522 children) are excluded — they render blocks.
   if (slug.length > 1) {
-    const sectionConfig = await getSectionConfigAsync(slug, locale);
-    if (sectionConfig) {
-      // Check if this is a product detail page (3+ segments after base for some types)
-      // by verifying getSectionConfig returns a productType (it returns null for detail pages)
-      const parsed = parseFiltersFromUrl(
-        slug,
-        (sp as Record<string, string>) ?? {},
-        locale,
+    const resolvedForDescCheck = await resolvePath(drupalPath, locale);
+    const isDescriptiveSlug =
+      resolvedForDescCheck?.bundle === 'categoria' &&
+      (await fetchDescriptiveCategoryNids(locale)).has(
+        resolvedForDescCheck.nid,
       );
-      if (parsed.activeFilters.length > 0) {
-        // Title = the active P0 filter's label (e.g. "Murano Smalto", "Rosso", "Seats")
-        // Falls back to deslugify of the filter value or last slug segment
-        const activeP0 = parsed.activeFilters.find((f) => f.type === 'path');
-        const listingTitle =
-          activeP0?.label ?? deslugify(slug[slug.length - 1]);
-        return renderProductListing({
-          productType: sectionConfig.productType,
-          title: listingTitle,
+
+    if (!isDescriptiveSlug) {
+      const sectionConfig = await getSectionConfigAsync(slug, locale);
+      if (sectionConfig) {
+        // Check if this is a product detail page (3+ segments after base for some types)
+        // by verifying getSectionConfig returns a productType (it returns null for detail pages)
+        const sp = await getSearchParams();
+        const parsed = parseFiltersFromUrl(
           slug,
-          searchParams: sp,
+          (sp as Record<string, string>) ?? {},
           locale,
-        });
+        );
+        if (parsed.activeFilters.length > 0) {
+          // Title = the active P0 filter's label (e.g. "Murano Smalto", "Rosso", "Seats")
+          // Falls back to deslugify of the filter value or last slug segment
+          const activeP0 = parsed.activeFilters.find((f) => f.type === 'path');
+          const listingTitle =
+            activeP0?.label ?? deslugify(slug[slug.length - 1]);
+
+          // Resolve hub parent NID for category-based types (illuminazione, tessuto, arredo)
+          // so that subcategory siblings appear in the sidebar.
+          const CATEGORY_LISTING_TYPES = new Set([
+            'prodotto_arredo',
+            'prodotto_illuminazione',
+            'prodotto_tessuto',
+          ]);
+          let mlHubParentNid: number | undefined;
+          let mlResolvedCategoryNid: number | undefined;
+          if (CATEGORY_LISTING_TYPES.has(sectionConfig.productType)) {
+            const ptConfig = FILTER_REGISTRY[sectionConfig.productType];
+            if (sectionConfig.productType === 'prodotto_arredo') {
+              mlHubParentNid = ARREDO_INDOOR_PARENT_NID;
+            } else if (ptConfig) {
+              const basePathSegment = (
+                ptConfig.basePaths[locale] ?? ptConfig.basePaths['it']
+              ).split('/')[0];
+              const baseResolved = await resolvePath(
+                `/${basePathSegment}`,
+                locale,
+              );
+              mlHubParentNid = baseResolved?.nid;
+            }
+            // Use parent NID as resolvedCategoryNid so render-product-listing
+            // fetches sibling subcategories for the sidebar
+            if (mlHubParentNid) {
+              mlResolvedCategoryNid = mlHubParentNid;
+            }
+          }
+
+          return renderProductListing({
+            productType: sectionConfig.productType,
+            title: listingTitle,
+            slug,
+            searchParams: sp,
+            locale,
+            hubParentNid: mlHubParentNid,
+            resolvedCategoryNid: mlResolvedCategoryNid,
+          });
+        }
       }
     }
   }
@@ -705,6 +851,7 @@ export default async function SlugPage({
     // Last resort: try as a section listing page
     const sectionConfig = await getSectionConfigAsync(slug, locale);
     if (sectionConfig) {
+      const sp = await getSearchParams();
       return renderProductListing({
         productType: sectionConfig.productType,
         title: deslugify(slug[slug.length - 1] ?? slug[0] ?? 'Prodotti'),
@@ -729,22 +876,40 @@ export default async function SlugPage({
   // The guard is: type === 'node--categoria' AND getSectionConfig returns a config
   // with filterField (meaning it's a subcategory listing, not a hub category).
   if (type === 'node--categoria') {
-    const sectionConfig = await getSectionConfigAsync(slug, locale);
-    if (sectionConfig && sectionConfig.filterField) {
-      // Use the CMS node title for the page heading (preserves SEO data from Drupal)
-      const nodeTitle =
-        (resolvedResource.field_titolo_main as { value?: string } | undefined)
-          ?.value ??
-        (resolvedResource.title as string | undefined) ??
-        slug[slug.length - 1];
-      return renderProductListing({
-        productType: sectionConfig.productType,
-        title: nodeTitle,
-        slug,
-        searchParams: sp,
-        locale,
-      });
+    // Check if this is a descriptive category (falls through to block rendering)
+    const catResolved = await resolvePath(drupalPath, locale);
+    const catNid = catResolved?.nid;
+    const descriptiveNids = catNid
+      ? await fetchDescriptiveCategoryNids(locale)
+      : new Set<number>();
+    const isDescriptive = catNid ? descriptiveNids.has(catNid) : false;
+
+    if (!isDescriptive) {
+      const sectionConfig = await getSectionConfigAsync(slug, locale);
+      if (sectionConfig && sectionConfig.filterField) {
+        // Use the CMS node title for the page heading (preserves SEO data from Drupal)
+        const nodeTitle =
+          (resolvedResource.field_titolo_main as { value?: string } | undefined)
+            ?.value ??
+          (resolvedResource.title as string | undefined) ??
+          slug[slug.length - 1];
+        // Arredo indoor: hardcoded NID 4261 for sidebar filter options.
+        const nodeHubParentNid =
+          sectionConfig.productType === 'prodotto_arredo'
+            ? ARREDO_INDOOR_PARENT_NID
+            : undefined;
+        const sp = await getSearchParams();
+        return renderProductListing({
+          productType: sectionConfig.productType,
+          title: nodeTitle,
+          slug,
+          searchParams: sp,
+          locale,
+          hubParentNid: nodeHubParentNid,
+        });
+      }
     }
+    // Descriptive categories (or unmatched): fall through to COMPONENT_MAP dispatch
   }
 
   const componentName = getComponentName(type);
@@ -760,6 +925,10 @@ export default async function SlugPage({
     return <UnknownEntity node={resolvedResource} />;
   }
 
+  const sp = await getSearchParams();
+  const pageStr = Array.isArray(sp?.page) ? sp.page[0] : sp?.page;
+  const currentPage = Math.max(1, parseInt(pageStr ?? '1', 10));
+
   return (
     <Component
       node={resolvedResource}
@@ -771,9 +940,7 @@ export default async function SlugPage({
   );
 }
 
-// ISR revalidation removed — each fetch() call has its own revalidate value:
-// Products: 60s, Editorial: 300s, Taxonomy/paths: 3600s, Menu: 600s
-// Removing the blanket 60s prevents unnecessary cache misses for static/taxonomy pages.
-// export const revalidate = 60;
+export const revalidate = 600;
+export const experimental_ppr = true;
 
 // Adapter functions extracted to src/lib/adapters/legacy-node-adapters.ts

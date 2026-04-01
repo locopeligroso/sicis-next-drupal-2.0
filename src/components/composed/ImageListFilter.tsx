@@ -33,17 +33,22 @@ export function ImageListFilter({
     <div className="flex flex-col gap-1">
       {visible.map((option) => {
         const isActive = activeValue === option.slug;
-        const isEmpty = !isActive && option.count === 0;
+        const isZeroCount =
+          !isActive &&
+          (option.count === 0 || option.baseCount === 0) &&
+          (option.count != null || option.baseCount != null);
 
         return (
           <div key={option.slug} className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => onChange(option.slug)}
+              disabled={isZeroCount}
+              aria-disabled={isZeroCount}
               className={cn(
                 'flex flex-1 items-center gap-3 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-muted',
                 isActive && 'bg-muted ring-2 ring-primary',
-                isEmpty && 'opacity-30',
+                isZeroCount && 'opacity-40 pointer-events-none',
               )}
             >
               {option.imageUrl ? (

@@ -171,7 +171,6 @@
     "knottingDensity": "Плотность узлов",
     "dimensionsAndSpecs": "Размеры и технические характеристики",
     "fabrics": "Ткани",
-    "finishes": "Отделки",
     "furniture": "Мебель",
     "lighting": "Освещение",
     "viewAllFinishes": "Смотреть все отделки"
@@ -213,7 +212,9 @@
     "showResults": "Показать {count} товаров",
     "activeCount": "Фильтры ({count})",
     "colorDominant": "Доминирующий цвет",
-    "filtersAndTypologies": "Фильтры и типологии"
+    "filtersAndTypologies": "Фильтры и типологии",
+    "shapes": "Формы",
+    "finishes": "Отделки"
   },
   "breadcrumb": {
     "filterAndFind": "Продукция",

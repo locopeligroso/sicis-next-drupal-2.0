@@ -171,7 +171,6 @@
     "knottingDensity": "Densità di annodatura",
     "dimensionsAndSpecs": "Dimensioni e specifiche tecniche",
     "fabrics": "Tessuti",
-    "finishes": "Finiture",
     "furniture": "Arredo",
     "lighting": "Illuminazione",
     "viewAllFinishes": "Vedi tutte le finiture"
@@ -213,7 +212,9 @@
     "showResults": "Mostra {count} prodotti",
     "activeCount": "Filtri ({count})",
     "colorDominant": "Colore dominante",
-    "filtersAndTypologies": "Filtri & Tipologie"
+    "filtersAndTypologies": "Filtri & Tipologie",
+    "shapes": "Forme",
+    "finishes": "Finiture"
   },
   "breadcrumb": {
     "filterAndFind": "Prodotti",

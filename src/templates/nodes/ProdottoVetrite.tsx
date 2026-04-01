@@ -129,7 +129,7 @@ export default async function ProdottoVetrite({
     formatoCampione;
 
   return (
-    <article style={{ maxWidth: '60rem', margin: '0 auto', padding: '2rem' }}>
+    <article>
       {/* ── 1. Title ─────────────────────────────────────────────────────────── */}
       {title && (
         <h1

@@ -171,7 +171,6 @@
     "knottingDensity": "Knotting density",
     "dimensionsAndSpecs": "Dimensions and technical specs",
     "fabrics": "Fabrics",
-    "finishes": "Finishes",
     "furniture": "Furniture",
     "lighting": "Lighting",
     "viewAllFinishes": "View all finishes"
@@ -213,7 +212,9 @@
     "showResults": "Show {count} products",
     "activeCount": "Filters ({count})",
     "colorDominant": "Dominant color",
-    "filtersAndTypologies": "Filters & Typologies"
+    "filtersAndTypologies": "Filters & Typologies",
+    "shapes": "Shapes",
+    "finishes": "Finishes"
   },
   "breadcrumb": {
     "filterAndFind": "Products",

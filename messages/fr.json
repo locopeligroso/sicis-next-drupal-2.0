@@ -171,7 +171,6 @@
     "knottingDensity": "Densité de nouage",
     "dimensionsAndSpecs": "Dimensions et spécifications techniques",
     "fabrics": "Tissus",
-    "finishes": "Finitions",
     "furniture": "Mobilier",
     "lighting": "Éclairage",
     "viewAllFinishes": "Voir toutes les finitions"
@@ -213,7 +212,9 @@
     "showResults": "Afficher {count} produits",
     "activeCount": "Filtres ({count})",
     "colorDominant": "Couleur dominante",
-    "filtersAndTypologies": "Filtres & Typologies"
+    "filtersAndTypologies": "Filtres & Typologies",
+    "shapes": "Formes",
+    "finishes": "Finitions"
   },
   "breadcrumb": {
     "filterAndFind": "Produits",

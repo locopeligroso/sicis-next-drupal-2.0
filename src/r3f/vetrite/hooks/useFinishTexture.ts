@@ -23,15 +23,12 @@ export default function useFinishTexture(textureUrl: string) {
   // Load the texture — useTexture is memoised by URL via useLoader
   const texture = useTexture(textureUrl);
 
-  // Configure color space, wrapping, and 10% zoom crop (once only)
+  // Configure color space, wrapping, and anisotropy (once only)
   useEffect(() => {
     texture.colorSpace = SRGBColorSpace;
     texture.wrapS = ClampToEdgeWrapping;
     texture.wrapT = ClampToEdgeWrapping;
     texture.anisotropy = maxAnisotropy.current;
-    // Zoom in 10%: scale UV repeat to 0.9 and offset to center the crop
-    texture.repeat.set(0.9, 0.9);
-    texture.offset.set(0.05, 0.05);
     texture.needsUpdate = true;
   }, [texture]);
 

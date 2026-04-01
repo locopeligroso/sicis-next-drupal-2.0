@@ -206,7 +206,7 @@ export default async function ProdottoArredo({
   }
 
   return (
-    <article style={{ maxWidth: '60rem', margin: '0 auto', padding: '2rem' }}>
+    <article>
       {/* ── Breadcrumb ──────────────────────────────────────────────────────── */}
       <nav aria-label="Breadcrumb" style={{ marginBottom: '1.5rem' }}>
         <ol

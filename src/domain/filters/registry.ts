@@ -260,6 +260,18 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
           hasImage: true,
           hasColorSwatch: false,
         },
+        {
+          filterKey: 'shape',
+          labelKey: 'filters.shapes',
+          hasImage: false,
+          hasColorSwatch: false,
+        },
+        {
+          filterKey: 'finish',
+          labelKey: 'filters.finishes',
+          hasImage: false,
+          hasColorSwatch: false,
+        },
       ],
       sortOptions: [
         { labelKey: 'sort.name', field: 'title', direction: 'ASC' },

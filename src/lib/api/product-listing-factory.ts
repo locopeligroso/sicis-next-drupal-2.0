@@ -108,11 +108,39 @@ export const PRODUCT_LISTING_CONFIGS: Record<string, ProductListingConfig> = {
   },
 };
 
+// ── Multi-TID collection groups ───────────────────────────────────────────
+// Some Drupal mosaic collections span multiple taxonomy TIDs (parent + sub-collections).
+// resolve-path returns only the primary TID; these groups include all sub-TIDs so the
+// endpoint returns the full product set.
+//
+// Source: Drupal REST endpoint format `mosaic-products/{tid1+tid2+...}/{colorTid}`
+// Provided by Freddi (2026-03-31):
+//   neocolibrì  → primary TID 72, group 72+74+75+76
+//   neoglass    → primary TID 67, group 67+77+78+79
+export const MOSAIC_COLLECTION_GROUPS: Record<number, string> = {
+  72: '72+74+75+76', // neocolibrì + barrels + domes + cubes
+  67: '67+77+78+79', // neoglass + sub-collections
+};
+
+/**
+ * Expands a single mosaic collection TID to its full group string when sub-collections exist.
+ * Returns the original value unchanged for collections without a group (most collections).
+ */
+export function resolveCollectionTidGroup(tid: number | 'all'): string | 'all' {
+  if (tid === 'all') return 'all';
+  return MOSAIC_COLLECTION_GROUPS[tid] ?? String(tid);
+}
+
 // ── Param types per shape ─────────────────────────────────────────────────
 
 export interface DualTidParams {
-  tid1?: number | 'all';
+  // tid1 can be a '+'-joined multi-TID group string (e.g. "72+74+75+76") for mosaic sub-collections
+  tid1?: number | string | 'all';
   tid2?: number | 'all';
+  /** Shape TID for mosaic P1 filter — passed as ?shape={tid} query param */
+  shapeTid?: number;
+  /** Finish TID for mosaic P1 filter — passed as ?finish={tid} query param */
+  finishTid?: number;
 }
 
 export interface SingleNidParams {
@@ -148,7 +176,6 @@ function makeNormalizer(
       title: item.field_titolo_main,
       subtitle: null,
       imageUrl,
-      imageUrlMain: imageUrl,
       price,
       priceOnDemand,
       path,
@@ -158,28 +185,36 @@ function makeNormalizer(
 
 // ── URL builder ───────────────────────────────────────────────────────────
 
+interface BuiltUrl {
+  path: string;
+  queryParams: Record<string, string | number | boolean | undefined>;
+}
+
 function buildUrl(
   config: ProductListingConfig,
   locale: string,
   params: ListingParams,
-): string {
+): BuiltUrl {
   const base = `/${locale}/${config.endpoint}`;
+  const queryParams: Record<string, string | number | boolean | undefined> = {};
 
   if (config.paramShape === 'dual-tid') {
     const p = (params ?? {}) as DualTidParams;
     const tid1 = p.tid1 ?? 'all';
     const tid2 = p.tid2 ?? 'all';
-    return `${base}/${tid1}/${tid2}`;
+    if (p.shapeTid) queryParams.shape = p.shapeTid;
+    if (p.finishTid) queryParams.finish = p.finishTid;
+    return { path: `${base}/${tid1}/${tid2}`, queryParams };
   }
 
   if (config.paramShape === 'single-nid') {
     const p = (params ?? {}) as SingleNidParams;
     const nid = p.nid ?? 'all';
-    return `${base}/${nid}`;
+    return { path: `${base}/${nid}`, queryParams };
   }
 
   // none
-  return base;
+  return { path: base, queryParams };
 }
 
 // ── Per-type cached fetchers (one cache() call per product type) ──────────
@@ -200,8 +235,12 @@ function createCachedFetcher(config: ProductListingConfig): CachedFetcher {
       locale: string,
       params?: ListingParams,
     ): Promise<{ products: ProductCard[]; total: number }> => {
-      const url = buildUrl(config, locale, params);
-      const items = await apiGet<ProductListingItemRest[]>(url, {}, 60);
+      const { path, queryParams } = buildUrl(config, locale, params);
+      const items = await apiGet<ProductListingItemRest[]>(
+        path,
+        queryParams,
+        600,
+      );
 
       if (!items || !Array.isArray(items)) {
         return { products: [], total: 0 };

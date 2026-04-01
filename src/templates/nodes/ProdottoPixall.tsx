@@ -85,7 +85,7 @@ export default async function ProdottoPixall({
     hasDimensions || hasConsumption || retinatura || numeroModuli;
 
   return (
-    <article style={{ maxWidth: '60rem', margin: '0 auto', padding: '2rem' }}>
+    <article>
       {/* ── 1. Title ─────────────────────────────────────────────────────────── */}
       {title && (
         <h1

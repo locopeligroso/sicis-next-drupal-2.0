@@ -171,7 +171,6 @@
     "knottingDensity": "Densidad de anudado",
     "dimensionsAndSpecs": "Dimensiones y especificaciones técnicas",
     "fabrics": "Tejidos",
-    "finishes": "Acabados",
     "furniture": "Mobiliario",
     "lighting": "Iluminación",
     "viewAllFinishes": "Ver todos los acabados"
@@ -213,7 +212,9 @@
     "showResults": "Mostrar {count} productos",
     "activeCount": "Filtros ({count})",
     "colorDominant": "Color dominante",
-    "filtersAndTypologies": "Filtros y tipologías"
+    "filtersAndTypologies": "Filtros y tipologías",
+    "shapes": "Formas",
+    "finishes": "Acabados"
   },
   "breadcrumb": {
     "filterAndFind": "Productos",
