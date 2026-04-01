@@ -76,17 +76,24 @@ export function useFilterSync({
         }
       } else {
         // Toggle query param filter — keep current pathname (preserves active P0 in path)
-        const params = new URLSearchParams(searchParams.toString());
-        if (params.get(key) === value) {
-          params.delete(key);
+        // Clear OTHER P1 query filters when selecting a new one (clean context switch)
+        const params = new URLSearchParams();
+        if (searchParams.get(key) === value) {
+          // Deselect: remove this filter, keep others
+          const preserved = new URLSearchParams(searchParams.toString());
+          preserved.delete(key);
+          preserved.delete('page');
+          const currentPath = window.location.pathname;
+          const qs = preserved.toString();
+          router.push(qs ? `${currentPath}?${qs}` : currentPath);
         } else {
+          // Select: set only this P1 filter, drop all other P1 query params
           params.set(key, value);
+          const currentPath = window.location.pathname;
+          const qs = params.toString();
+          router.push(qs ? `${currentPath}?${qs}` : currentPath);
         }
-        // Reset pagination when filter changes
-        params.delete('page');
-        const currentPath = window.location.pathname;
-        const qs = params.toString();
-        router.push(qs ? `${currentPath}?${qs}` : currentPath);
+        return;
       }
     },
     [basePath, activeFilters, router, searchParams],

@@ -49,26 +49,8 @@ export function SpecFilterSidebarContent({
   });
   const t = useTranslations('filters');
 
-  // Auto-deselect P1 query filters whose selected value has count=0
-  // (e.g. switching color makes the active finish unavailable)
-  const didAutoDeselect = useRef(false);
-  useEffect(() => {
-    if (didAutoDeselect.current) {
-      didAutoDeselect.current = false;
-      return;
-    }
-    for (const af of activeFilters) {
-      if (af.type !== 'query') continue;
-      const options = filterOptions[af.key];
-      if (!options) continue;
-      const match = options.find((o) => o.slug === af.value);
-      if (match && match.count === 0) {
-        didAutoDeselect.current = true;
-        clearFilter(af.key);
-        return; // one at a time to avoid race conditions
-      }
-    }
-  }, [activeFilters, filterOptions, clearFilter]);
+  // Auto-deselect removed: users can intentionally select count=0 options
+  // (dimmed but clickable). The cross-filtering counts update on next render.
 
   // Exclude the P0 filter that's active via path (it's shown in the context bar)
   const visibleGroups = Object.values(filters).filter(
