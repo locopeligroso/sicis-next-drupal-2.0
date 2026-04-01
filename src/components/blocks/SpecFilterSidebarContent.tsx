@@ -129,12 +129,13 @@ export function SpecFilterSidebarContent({
               <ColorSwatchFilter
                 options={options}
                 activeValue={activeValue}
-                onChange={(slug) =>
+                onChange={(slug, zeroCount) =>
                   toggleFilter(
                     group.key,
                     slug,
                     group.type,
                     group.pathPrefix?.[locale],
+                    zeroCount,
                   )
                 }
               />
@@ -142,12 +143,13 @@ export function SpecFilterSidebarContent({
               <ImageListFilter
                 options={options}
                 activeValue={activeValue}
-                onChange={(slug) =>
+                onChange={(slug, zeroCount) =>
                   toggleFilter(
                     group.key,
                     slug,
                     group.type,
                     group.pathPrefix?.[locale],
+                    zeroCount,
                   )
                 }
               />
@@ -155,12 +157,13 @@ export function SpecFilterSidebarContent({
               <CheckboxFilter
                 options={options}
                 activeValues={activeForGroup}
-                onChange={(slug) =>
+                onChange={(slug, zeroCount) =>
                   toggleFilter(
                     group.key,
                     slug,
                     group.type,
                     group.pathPrefix?.[locale],
+                    zeroCount,
                   )
                 }
               />

@@ -12,7 +12,7 @@ interface CheckboxFilterProps {
     baseCount?: number;
   }[];
   activeValues: string[];
-  onChange: (slug: string) => void;
+  onChange: (slug: string, isZeroCount?: boolean) => void;
 }
 
 export function CheckboxFilter({
@@ -34,7 +34,7 @@ export function CheckboxFilter({
           <div key={option.slug} className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => onChange(option.slug)}
+              onClick={() => onChange(option.slug, isZeroCount)}
               className={cn(
                 'flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left cursor-pointer transition-colors hover:bg-muted',
                 isActive && 'bg-muted ring-1 ring-border',
@@ -60,7 +60,7 @@ export function CheckboxFilter({
             {isActive && (
               <button
                 type="button"
-                onClick={() => onChange(option.slug)}
+                onClick={() => onChange(option.slug, isZeroCount)}
                 className="shrink-0 cursor-pointer rounded-full p-0.5 text-muted-foreground transition-colors hover:text-foreground"
                 aria-label={`Remove ${option.label}`}
               >

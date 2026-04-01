@@ -20,7 +20,7 @@ interface ColorSwatchFilterProps {
     baseCount?: number;
   }[];
   activeValue?: string;
-  onChange: (slug: string) => void;
+  onChange: (slug: string, isZeroCount?: boolean) => void;
 }
 
 export function ColorSwatchFilter({
@@ -56,7 +56,7 @@ export function ColorSwatchFilter({
         const swatch = (
           <button
             type="button"
-            onClick={() => onChange(option.slug)}
+            onClick={() => onChange(option.slug, isZeroCount)}
             className={cn(
               'flex flex-col items-center gap-1.5 rounded-md p-1.5 cursor-pointer transition-colors hover:bg-muted',
               isActive && 'bg-accent',

@@ -21,6 +21,7 @@ interface UseFilterSyncReturn {
     value: string,
     type: 'path' | 'query',
     pathPrefix?: string,
+    isZeroCount?: boolean,
   ) => void;
   clearFilter: (key: string) => void;
   clearAll: () => void;
@@ -47,6 +48,7 @@ export function useFilterSync({
       value: string,
       type: 'path' | 'query',
       pathPrefix?: string,
+      isZeroCount?: boolean,
     ) => {
       if (type === 'path') {
         // Check if another P0 is already active via path
@@ -76,20 +78,26 @@ export function useFilterSync({
         }
       } else {
         // Toggle query param filter — keep current pathname (preserves active P0 in path)
-        // Clear OTHER P1 query filters when selecting a new one (clean context switch)
-        const params = new URLSearchParams();
+        const currentPath = window.location.pathname;
+
         if (searchParams.get(key) === value) {
           // Deselect: remove this filter, keep others
-          const preserved = new URLSearchParams(searchParams.toString());
-          preserved.delete(key);
-          preserved.delete('page');
-          const currentPath = window.location.pathname;
-          const qs = preserved.toString();
+          const params = new URLSearchParams(searchParams.toString());
+          params.delete(key);
+          params.delete('page');
+          const qs = params.toString();
+          router.push(qs ? `${currentPath}?${qs}` : currentPath);
+        } else if (isZeroCount) {
+          // Select count=0 option: clear all other P1 query params (context switch)
+          const params = new URLSearchParams();
+          params.set(key, value);
+          const qs = params.toString();
           router.push(qs ? `${currentPath}?${qs}` : currentPath);
         } else {
-          // Select: set only this P1 filter, drop all other P1 query params
+          // Select count>0 option: keep existing P1 params, add/replace this one
+          const params = new URLSearchParams(searchParams.toString());
           params.set(key, value);
-          const currentPath = window.location.pathname;
+          params.delete('page');
           const qs = params.toString();
           router.push(qs ? `${currentPath}?${qs}` : currentPath);
         }

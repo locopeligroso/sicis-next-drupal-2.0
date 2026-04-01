@@ -14,7 +14,7 @@ interface ImageListFilterProps {
     baseCount?: number;
   }[];
   activeValue?: string;
-  onChange: (slug: string) => void;
+  onChange: (slug: string, isZeroCount?: boolean) => void;
 }
 
 export function ImageListFilter({
@@ -35,7 +35,7 @@ export function ImageListFilter({
           <div key={option.slug} className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => onChange(option.slug)}
+              onClick={() => onChange(option.slug, isZeroCount)}
               className={cn(
                 'flex flex-1 items-center gap-3 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-muted',
                 isActive && 'bg-muted ring-2 ring-primary',
