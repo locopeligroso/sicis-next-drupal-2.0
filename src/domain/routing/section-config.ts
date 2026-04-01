@@ -92,13 +92,40 @@ const ARREDO_SLUGS = new Set([
 ]);
 
 // Slug listing illuminazione per locale
-const ILLUMINAZIONE_SLUGS = new Set(['illuminazione', 'lighting']);
+// IT: /illuminazione  EN: /lighting  FR: /éclairage  DE: /beleuchtung  ES: /iluminacion  RU: /освещение
+// TODO: verify FR slug ('éclairage') against actual Drupal path — accent present in other FR slugs (mosaïque)
+// TODO: verify RU slug ('освещение') against actual Drupal path — Cyrillic pattern confirmed in ARREDO_SLUGS/TESSILI_SLUGS
+// TODO: verify ES slug ('iluminacion') against actual Drupal path — no accent, following URL slug convention
+const ILLUMINAZIONE_SLUGS = new Set([
+  'illuminazione', // IT
+  'lighting', // EN
+  'éclairage', // FR — TODO: verify against Drupal
+  'beleuchtung', // DE
+  'iluminacion', // ES — TODO: verify (iluminación without accent per URL convention)
+  'освещение', // RU — TODO: verify against Drupal
+]);
 
 // Slug listing next-art (same across all locales)
 const NEXT_ART_SLUGS = new Set(['next-art']);
 
 // Slug listing pixall per locale
 const PIXALL_SLUGS = new Set(['pixall']);
+
+/**
+ * Union of all product listing hub slugs derived from section-config Sets.
+ * Used in page.tsx to replace the large hardcoded LISTING_SLUG_OVERRIDES.
+ * Does NOT include legacy SEO aliases — those live in LEGACY_SEO_ALIASES in page.tsx.
+ */
+export const PRODUCT_LISTING_SLUGS: ReadonlySet<string> = new Set([
+  ...MOSAICO_SLUGS,
+  ...VETRITE_SLUGS,
+  ...ARREDO_SLUGS,
+  ...ILLUMINAZIONE_SLUGS,
+  ...TESSILI_SLUGS,
+  ...(Object.keys(TESSUTO_CATEGORIA_SLUGS) as string[]),
+  ...NEXT_ART_SLUGS,
+  ...PIXALL_SLUGS,
+]);
 
 // Prefissi path tessile — path con sottocategoria da Drupal per ogni locale
 // IT: /prodotti-tessili/{cat}  EN: /textiles/{cat}  FR: /produits-textiles/{cat}

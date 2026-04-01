@@ -178,7 +178,11 @@ describe('fetchMosaicCollections', () => {
 
     await fetchMosaicCollections('fr');
 
-    expect(mockApiGet).toHaveBeenCalledWith('/fr/mosaic-collections', {}, 3600);
+    expect(mockApiGet).toHaveBeenCalledWith(
+      '/fr/mosaic-collections',
+      {},
+      86400,
+    );
   });
 
   it('falls back to "#" when view_taxonomy_term is empty (stripDomain returns null)', async () => {
@@ -219,7 +223,7 @@ describe('fetchMosaicColors', () => {
 
     await fetchMosaicColors('de');
 
-    expect(mockApiGet).toHaveBeenCalledWith('/de/mosaic-colors', {}, 3600);
+    expect(mockApiGet).toHaveBeenCalledWith('/de/mosaic-colors', {}, 86400);
   });
 
   it('returns empty array when apiGet returns null', async () => {
@@ -263,7 +267,7 @@ describe('fetchVetriteCollections', () => {
     expect(mockApiGet).toHaveBeenCalledWith(
       '/es/vetrite-collections',
       {},
-      3600,
+      86400,
     );
   });
 
@@ -309,7 +313,7 @@ describe('fetchVetriteColors', () => {
 
     await fetchVetriteColors('ru');
 
-    expect(mockApiGet).toHaveBeenCalledWith('/ru/vetrite-colors', {}, 3600);
+    expect(mockApiGet).toHaveBeenCalledWith('/ru/vetrite-colors', {}, 86400);
   });
 
   it('returns empty array when apiGet returns null', async () => {
@@ -398,7 +402,7 @@ describe('fetchHubCategories', () => {
 
     await fetchHubCategories(42, 'en');
 
-    expect(mockApiGet).toHaveBeenCalledWith('/en/categories/42', {}, 3600);
+    expect(mockApiGet).toHaveBeenCalledWith('/en/categories/42', {}, 86400);
   });
 
   it('handles multiple duplicate NID groups correctly', async () => {

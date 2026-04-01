@@ -150,7 +150,7 @@ export const fetchEnvironments = cache(
     const items = await apiGet<RawEnvironmentItem[]>(
       `/${locale}/environments`,
       {},
-      300,
+      1800,
     );
     if (!items || !Array.isArray(items)) return { environments: [], total: 0 };
     const total = items.length;
@@ -174,7 +174,7 @@ export const fetchShowrooms = cache(
     const items = await apiGet<RawShowroomItem[]>(
       `/${locale}/showrooms`,
       {},
-      300,
+      1800,
     );
     if (!items || !Array.isArray(items))
       return { showrooms: [] as ShowroomCard[], total: 0 };
@@ -207,7 +207,7 @@ export const fetchArticles = cache(
     const items = await apiGet<RawArticleItem[]>(
       `/${locale}/articles`,
       {},
-      300,
+      1800,
     );
     if (!items || !Array.isArray(items)) return { posts: [], total: 0 };
     return {
@@ -229,7 +229,7 @@ export const fetchArticles = cache(
 // ── news endpoint ────────────────────────────────────────────────────────────
 
 export const fetchNews = cache(async (locale = 'it'): Promise<BlogResult> => {
-  const items = await apiGet<RawNewsItem[]>(`/${locale}/news`, {}, 300);
+  const items = await apiGet<RawNewsItem[]>(`/${locale}/news`, {}, 1800);
   if (!items || !Array.isArray(items)) return { posts: [], total: 0 };
   return {
     posts: items.map(
@@ -253,7 +253,7 @@ export const fetchTutorials = cache(
     const items = await apiGet<RawTutorialItem[]>(
       `/${locale}/tutorials`,
       {},
-      300,
+      1800,
     );
     if (!items || !Array.isArray(items)) return { posts: [], total: 0 };
     return {
@@ -312,7 +312,7 @@ export const fetchProjects = cache(
     const items = await apiGet<RawProjectItem[]>(
       `/${locale}/projects`,
       {},
-      300,
+      1800,
     );
     if (!items || !Array.isArray(items)) return { projects: [], total: 0 };
     const total = items.length;
@@ -340,7 +340,7 @@ export const fetchDocuments = cache(
     const items = await apiGet<RawDocumentItem[]>(
       `/${locale}/documents`,
       {},
-      300,
+      1800,
     );
     if (!items || !Array.isArray(items)) return { documents: [], total: 0 };
     const total = items.length;

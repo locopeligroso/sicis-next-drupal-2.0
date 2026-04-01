@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import type { ExploreSection } from '@/lib/navbar/types';
 import { cn } from '@/lib/utils';
+import { Typography } from '@/components/composed/Typography';
 
 interface MegaMenuExploreProps {
   menu: ExploreSection;
@@ -86,13 +87,17 @@ export function MegaMenuExplore({ menu }: MegaMenuExploreProps) {
                 <span
                   className={cn(
                     'absolute bottom-0 h-[2px] bg-foreground transition-[width] duration-300 ease-out',
-                    isHovered ? 'left-0' : 'right-0'
+                    isHovered ? 'left-0' : 'right-0',
                   )}
                   style={{ width: isHovered ? '100%' : '0%' }}
                 />
-                <span className="text-[10px] tracking-[2.5px] uppercase font-bold text-foreground">
+                <Typography
+                  textRole="overline"
+                  as="span"
+                  className="text-[10px] tracking-[2.5px] uppercase font-bold text-foreground"
+                >
                   {group.label}
-                </span>
+                </Typography>
               </div>
 
               {/* Links */}
@@ -145,9 +150,13 @@ export function MegaMenuExplore({ menu }: MegaMenuExploreProps) {
                 <HoverVideo src={videoSrc} isActive={isActive} />
               ) : null}
               {/* Category label overlay */}
-              <span className="absolute bottom-4 left-4 text-[10px] tracking-[3px] uppercase text-white/40 z-10">
+              <Typography
+                textRole="overline"
+                as="span"
+                className="absolute bottom-4 left-4 text-[10px] tracking-[3px] uppercase text-white/40 z-10"
+              >
                 {group.label}
-              </span>
+              </Typography>
             </div>
           );
         })}

@@ -32,7 +32,7 @@ export const fetchShowroomDetail = cache(
     const items = await apiGet<RawShowroomDetail[]>(
       `/${locale}/showroom/${nid}`,
       {},
-      300,
+      1800,
     );
 
     if (!items || !Array.isArray(items) || items.length === 0) return null;

@@ -6,8 +6,10 @@ import type { FilterDefinition } from '@/domain/filters/search-params';
 import {
   fetchProductListing,
   resolveCollectionTidGroup,
+  MOSAIC_COLLECTION_GROUPS,
 } from '@/lib/api/product-listing-factory';
 import { fetchListingFilterOptions } from '@/lib/api/filter-options';
+import { resolvePath } from '@/lib/api/resolve-path';
 import { getHubDeepDiveLinks } from '@/lib/navbar/hub-links';
 import { ProductListingTemplate } from '@/templates/nodes/ProductListingTemplate';
 import type { SecondaryLink } from '@/lib/navbar/types';
@@ -151,12 +153,12 @@ async function _fetchListingData(
       const activeP0 = parsed.activeFilters.find((f) => f.type === 'path');
       if (activeP0 && resolvedCategoryNid) {
         const { fetchHubCategories } = await import('@/lib/api/category-hub');
-        let children = await fetchHubCategories(resolvedCategoryNid, locale);
-        // Flat category types: no children → show siblings from parent hub
-        if (children.length === 0 && hubParentNid) {
-          children = await fetchHubCategories(hubParentNid, locale);
-        }
-        if (children.length > 0) {
+        const children = await fetchHubCategories(resolvedCategoryNid, locale);
+        // Only populate subcategories when the resolved category has ACTUAL children
+        // (arredo: sedute → sedie, sgabelli). Flat types (illuminazione, tessili)
+        // have resolvedCategoryNid === hubParentNid so children are siblings —
+        // those are already shown via categoryGroups, not as sub-subcategories.
+        if (children.length > 0 && resolvedCategoryNid !== hubParentNid) {
           subcategories = children.map((child) => ({
             slug: child.name
               .normalize('NFC')
@@ -228,16 +230,29 @@ async function _fetchListingData(
 
     const effectiveCategoryNid = subCategoryNid ?? resolvedCategoryNid;
 
-    // Resolve P1 shape/finish TIDs from active query filters.
+    // Resolve query-param filter TIDs (shape, finish, and second P0 as query).
     // filterOptions are already being fetched — await them to map slug → TID.
     let shapeTid: number | undefined;
     let finishTid: number | undefined;
-    if (productType === 'prodotto_mosaico') {
+    let tipologiaTid: number | undefined;
+    let queryCollectionTid: number | undefined;
+    let queryColorTid: number | undefined;
+    if (
+      productType === 'prodotto_mosaico' ||
+      productType === 'prodotto_vetrite'
+    ) {
       const shapeFilter = parsed.activeFilters.find((f) => f.key === 'shape');
       const finishFilter = parsed.activeFilters.find((f) => f.key === 'finish');
+      // Second P0 as query param (e.g. /mosaico/blends?color=navy-blu)
+      const colorQueryFilter = parsed.activeFilters.find(
+        (f) => f.key === 'color' && f.type === 'query',
+      );
+      const collectionQueryFilter = parsed.activeFilters.find(
+        (f) => f.key === 'collection' && f.type === 'query',
+      );
+
+      // Resolve shape/finish TIDs from filterOptions (they have tid as id)
       if (shapeFilter || finishFilter) {
-        // We need filter options to resolve slug → TID.
-        // filterOptionsPromise is already in flight — await it here.
         const opts = await filterOptionsPromise;
         if (shapeFilter && opts.shape) {
           const match = opts.shape.find((o) => o.slug === shapeFilter.value);
@@ -248,19 +263,58 @@ async function _fetchListingData(
           if (match?.id) finishTid = Number(match.id);
         }
       }
+
+      // Resolve P0 query params via resolve-path (slug → TID).
+      // Collections/colors hub endpoints don't include TID, so we resolve
+      // the Drupal path alias to get the taxonomy term ID.
+      if (colorQueryFilter) {
+        const colorPrefix =
+          config.filters['color']?.pathPrefix?.[locale] ??
+          config.filters['color']?.pathPrefix?.['it'] ??
+          'colori';
+        const colorPath = `/${config.basePaths[locale] ?? config.basePaths['it']}/${colorPrefix}/${colorQueryFilter.value}`;
+        const resolved = await resolvePath(colorPath, locale);
+        if (resolved) queryColorTid = resolved.nid;
+      }
+      if (collectionQueryFilter) {
+        const collPath = `/${config.basePaths[locale] ?? config.basePaths['it']}/${collectionQueryFilter.value}`;
+        const resolved = await resolvePath(collPath, locale);
+        if (resolved) queryCollectionTid = resolved.nid;
+      }
     }
 
-    const listingParams =
+    // Resolve tessuto tipologia TID from query param slug → TID via filterOptions
+    if (productType === 'prodotto_tessuto') {
+      const tipologiaFilter = parsed.activeFilters.find(
+        (f) => f.key === 'tipologia',
+      );
+      if (tipologiaFilter) {
+        const opts = await filterOptionsPromise;
+        if (opts.tipologia) {
+          const match = opts.tipologia.find(
+            (o) => o.slug === tipologiaFilter.value,
+          );
+          if (match?.id) tipologiaTid = Number(match.id);
+        }
+      }
+    }
+
+    // Effective TIDs: path-resolved takes priority, query-resolved as fallback
+    const effectiveCollectionTid = resolvedTid ?? queryCollectionTid;
+    const effectiveColorTid = resolvedColorTid ?? queryColorTid;
+
+    const listingParams: import('@/lib/api/product-listing-factory').ListingParams =
       productType === 'prodotto_mosaico' || productType === 'prodotto_vetrite'
         ? {
-            // Expand TID to group string for multi-sub-collection mosaics (e.g. neocolibrì, neoglass)
-            tid1: resolveCollectionTidGroup(resolvedTid ?? 'all'),
-            tid2: resolvedColorTid ?? 'all',
+            tid1: resolveCollectionTidGroup(effectiveCollectionTid ?? 'all'),
+            tid2: effectiveColorTid ?? 'all',
             shapeTid,
             finishTid,
           }
         : isCategoryType
-          ? { nid: effectiveCategoryNid ?? 'all' }
+          ? productType === 'prodotto_tessuto'
+            ? { nid: effectiveCategoryNid ?? 'all', tipologiaTid }
+            : { nid: effectiveCategoryNid ?? 'all' }
           : undefined;
 
     let productFetch: Promise<{
@@ -318,12 +372,16 @@ async function _fetchListingData(
       // For collection groups (NeoColibrì=72→74+75+76, Neoglass=67→77+78+79),
       // the parent TID has 0 products — counts must be fetched per sub-collection
       // and summed. Same endpoints, parallel fetches.
-      const collectionGroup = resolvedTid
-        ? resolveCollectionTidGroup(resolvedTid)
+      const collectionGroup = effectiveCollectionTid
+        ? resolveCollectionTidGroup(effectiveCollectionTid)
         : 'all';
       const subTids =
         typeof collectionGroup === 'string' && collectionGroup.includes('+')
-          ? collectionGroup.split('+').map(Number)
+          ? collectionGroup
+              .split('+')
+              .map(Number)
+              // Exclude the parent TID — it has 0 products (all products are in children)
+              .filter((tid) => tid !== effectiveCollectionTid)
           : null;
 
       let counts: Awaited<ReturnType<typeof fetchMosaicProductCounts>>;
@@ -334,7 +392,7 @@ async function _fetchListingData(
             fetchMosaicProductCounts(
               locale,
               tid,
-              resolvedColorTid,
+              effectiveColorTid,
               shapeTid,
               finishTid,
             ),
@@ -367,8 +425,8 @@ async function _fetchListingData(
       } else {
         counts = await fetchMosaicProductCounts(
           locale,
-          resolvedTid ?? 'all',
-          resolvedColorTid,
+          effectiveCollectionTid ?? 'all',
+          effectiveColorTid,
           shapeTid,
           finishTid,
         );
@@ -390,9 +448,58 @@ async function _fetchListingData(
         }));
       };
 
+      // Special merge for collections: NeoColibrì/Neoglass are single entries
+      // in the hub but split into sub-collections (Barrels/Cubes/Domes) in counts.
+      // Sum sub-collection counts for each parent group.
+      const mergeCollectionCounts = (
+        options: FilterOption[] | undefined,
+        countItems: { tid: number; name: string; count: number }[],
+      ): FilterOption[] | undefined => {
+        if (!options || countItems.length === 0) return options;
+
+        // Build a reverse map: sub-collection TID → parent TID
+        const subToParent = new Map<number, number>();
+        for (const [parentTid, groupStr] of Object.entries(
+          MOSAIC_COLLECTION_GROUPS,
+        )) {
+          const parent = Number(parentTid);
+          for (const tid of groupStr.split('+').map(Number)) {
+            if (tid !== parent) subToParent.set(tid, parent);
+          }
+        }
+
+        // Sum counts: group sub-collection counts under the parent name
+        const byName = new Map<string, number>();
+        for (const item of countItems) {
+          const parentTid = subToParent.get(item.tid);
+          if (parentTid != null) {
+            // This is a sub-collection — find the parent option label to accumulate
+            const parentOpt = options.find(
+              (o) =>
+                o.id === String(parentTid) ||
+                item.name.toLowerCase().startsWith(o.label.toLowerCase()),
+            );
+            if (parentOpt) {
+              byName.set(
+                parentOpt.label,
+                (byName.get(parentOpt.label) ?? 0) + item.count,
+              );
+              continue;
+            }
+          }
+          // Regular collection or parent itself
+          byName.set(item.name, (byName.get(item.name) ?? 0) + item.count);
+        }
+
+        return options.map((opt) => ({
+          ...opt,
+          count: byName.get(opt.label) ?? 0,
+        }));
+      };
+
       const mergedShape = mergeCounts(filterOptions.shape, counts.shapes);
       const mergedFinish = mergeCounts(filterOptions.finish, counts.finishes);
-      const mergedCollection = mergeCounts(
+      const mergedCollection = mergeCollectionCounts(
         filterOptions.collection,
         counts.collections,
       );
@@ -401,6 +508,76 @@ async function _fetchListingData(
       if (mergedFinish) filterOptions.finish = mergedFinish;
       if (mergedCollection) filterOptions.collection = mergedCollection;
       if (mergedColor) filterOptions.color = mergedColor;
+    }
+
+    // ── Vetrite cross-filtering: merge faceted counts into 3 filter dimensions ──
+    if (productType === 'prodotto_vetrite') {
+      const { fetchVetriteProductCounts } =
+        await import('@/lib/api/vetrite-hub');
+
+      // Vetrite has no collection groups (no NeoColibrì/Neoglass equivalent),
+      // so counts are always fetched in a single request.
+      const counts = await fetchVetriteProductCounts(
+        locale,
+        effectiveCollectionTid ?? 'all',
+        effectiveColorTid,
+        finishTid,
+      );
+
+      // Helper: merge counts into filter options.
+      // Matches by TID (opt.id) first, then falls back to name (opt.label)
+      // because collections/colors hub endpoints don't include TID.
+      const mergeCounts = (
+        options: FilterOption[] | undefined,
+        countItems: { tid: number; name: string; count: number }[],
+      ): FilterOption[] | undefined => {
+        if (!options || countItems.length === 0) return options;
+        const byTid = new Map(countItems.map((c) => [String(c.tid), c.count]));
+        const byName = new Map(countItems.map((c) => [c.name, c.count]));
+        return options.map((opt) => ({
+          ...opt,
+          count: byTid.get(opt.id ?? '') ?? byName.get(opt.label) ?? 0,
+        }));
+      };
+
+      const mergedFinish = mergeCounts(filterOptions.finish, counts.finishes);
+      const mergedCollection = mergeCounts(
+        filterOptions.collection,
+        counts.collections,
+      );
+      const mergedColor = mergeCounts(filterOptions.color, counts.colors);
+      if (mergedFinish) filterOptions.finish = mergedFinish;
+      if (mergedCollection) filterOptions.collection = mergedCollection;
+      if (mergedColor) filterOptions.color = mergedColor;
+    }
+
+    // ── Tessuto cross-filtering: merge faceted counts into tipologia filter ──
+    if (productType === 'prodotto_tessuto' && filterOptions.tipologia) {
+      const { fetchTessutoProductCounts } =
+        await import('@/lib/api/category-hub');
+
+      const counts = await fetchTessutoProductCounts(
+        locale,
+        effectiveCategoryNid,
+      );
+
+      // Merge counts into tipologia options. When counts is empty (e.g. Tappeti
+      // has 0 tipologie), set count=0 on all options so they get hidden/dimmed.
+      const countItems = counts.tipologie;
+      if (countItems.length > 0) {
+        const byTid = new Map(countItems.map((c) => [String(c.tid), c.count]));
+        const byName = new Map(countItems.map((c) => [c.name, c.count]));
+        filterOptions.tipologia = filterOptions.tipologia.map((opt) => ({
+          ...opt,
+          count: byTid.get(opt.id ?? '') ?? byName.get(opt.label) ?? 0,
+        }));
+      } else {
+        // No counts = no products for any tipologia in this category → all zero
+        filterOptions.tipologia = filterOptions.tipologia.map((opt) => ({
+          ...opt,
+          count: 0,
+        }));
+      }
     }
   }
 

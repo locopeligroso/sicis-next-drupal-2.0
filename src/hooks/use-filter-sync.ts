@@ -58,11 +58,21 @@ export function useFilterSync({
 
         if (otherPathActive) {
           // Second P0 clicked while another P0 is active in path.
-          // Navigate to the NEW P0's path, dropping all other filters.
-          // Example: on /mosaic/colors/navy-blu, click Tephra →
-          //   navigate to /mosaic/tephra (clean context switch)
-          const prefix = pathPrefix ? `/${pathPrefix}` : '';
-          router.push(`${basePath}${prefix}/${value}`);
+          // Keep current path, add the new P0 as query param (coexist).
+          // Example: /mosaico/blends + click "Gialli" → /mosaico/blends?color=gialli-arancioni
+          // Example: /mosaico/colori/blu-scuro + click "Tephra" → /mosaico/colori/blu-scuro?collection=tephra
+          const currentPath = window.location.pathname;
+          const params = new URLSearchParams(searchParams.toString());
+          const queryKey = key;
+          if (params.get(queryKey) === value) {
+            // Deselect: remove this P0 query param
+            params.delete(queryKey);
+          } else {
+            params.set(queryKey, value);
+          }
+          params.delete('page');
+          const qs = params.toString();
+          router.push(qs ? `${currentPath}?${qs}` : currentPath);
           return;
         }
 

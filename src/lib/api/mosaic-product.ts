@@ -178,7 +178,7 @@ export const fetchMosaicProduct = cache(
     const result = await apiGet<MosaicProductRest[]>(
       `/${locale}/mosaic-product/${nid}`,
       {},
-      60,
+      600,
     );
     if (!result || result.length === 0) return null;
     return normalizeMosaicProduct(result[0]);

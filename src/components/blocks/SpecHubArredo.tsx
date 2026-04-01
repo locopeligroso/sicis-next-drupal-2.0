@@ -3,7 +3,11 @@ import { getTranslations } from 'next-intl/server';
 import { ArrowUpRight } from 'lucide-react';
 
 import type { SecondaryLink } from '@/lib/navbar/types';
-import { fetchHubCategories } from '@/lib/api/category-hub';
+import {
+  fetchHubCategories,
+  ARREDO_INDOOR_PARENT_NID,
+  ARREDO_DESCRIPTIVE_PARENT_NID,
+} from '@/lib/api/category-hub';
 import { resolvePath } from '@/lib/api/resolve-path';
 import { fetchContent } from '@/lib/api/content';
 import { emptyToNull } from '@/lib/api/client';
@@ -48,10 +52,19 @@ export async function SpecHubArredo({
 }: SpecHubArredoProps) {
   const tHub = await getTranslations('hub');
 
-  // Fetch categories from the new categories/{nid} endpoint
-  const categories = await fetchHubCategories(parentNid, locale);
-
   const isArredo = productType === 'prodotto_arredo';
+
+  // Arredo indoor: hardcoded NID 4261 (Freddi DB change 2026-03-31)
+  // Other types (illuminazione, tessuto): use the hub page NID passed via parentNid
+  const indoorNid = isArredo ? ARREDO_INDOOR_PARENT_NID : parentNid;
+  // Fetch both category lists in parallel — they are independent endpoints.
+  // Arredo descriptive categories: NID 3522 — rendered as block pages, not product listings
+  const [categories, descriptiveCategories] = await Promise.all([
+    fetchHubCategories(indoorNid, locale),
+    isArredo
+      ? fetchHubCategories(ARREDO_DESCRIPTIVE_PARENT_NID, locale)
+      : Promise.resolve([]),
+  ]);
 
   // ── 1. Typology cards ────────────────────────────────────────────────
   const typologySection =
@@ -116,7 +129,30 @@ export async function SpecHubArredo({
     />
   ) : null;
 
-  // ── 1c. Arredo-only: "Discover also" — links to Illuminazione + Tappeti ──
+  // ── 1c. Arredo-only: DESCRIPTIVE categories (NID 3522) — render blocks, not listings ──
+  const descriptiveCategoriesSection =
+    isArredo && descriptiveCategories.length > 0 ? (
+      <section className="flex flex-col gap-(--spacing-element)">
+        <Typography textRole="h2" as="h2">
+          {tHub('exploreByTypology')}
+        </Typography>
+        <hr className="border-t border-border" />
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+          {descriptiveCategories.map((cat) => (
+            <CategoryCard
+              key={cat.nid}
+              title={cat.name}
+              imageUrl={cat.imageUrl}
+              href={`${basePath}/${slugifyName(cat.name)}`}
+              aspectRatio={categoryCardRatio}
+              imageFit={categoryImageFit}
+            />
+          ))}
+        </div>
+      </section>
+    ) : null;
+
+  // ── 1d. Arredo-only: "Discover also" — links to Illuminazione + Tappeti ──
   let discoverAlsoSection: React.ReactNode = null;
 
   if (isArredo) {
@@ -125,19 +161,16 @@ export async function SpecHubArredo({
       FILTER_REGISTRY['prodotto_illuminazione']?.basePaths[locale] ??
       'illuminazione';
 
-    // Carpets path is locale-dependent (aliases from resolve-path)
-    const carpetsResolved = await resolvePath(
-      '/prodotti-tessili/tappeti',
-      locale,
-    ).catch(() => null);
+    // All three calls are independent — fetch in parallel.
+    // Carpets path is locale-dependent (aliases from resolve-path).
+    const [carpetsResolved, illuminazioneContent, carpetsContent] =
+      await Promise.all([
+        resolvePath('/prodotti-tessili/tappeti', locale).catch(() => null),
+        fetchContent(337, locale).catch(() => null),
+        fetchContent(350, locale).catch(() => null),
+      ]);
     const carpetsAlias =
       carpetsResolved?.aliases?.[locale] ?? '/textiles/carpets';
-
-    // Fetch images in parallel
-    const [illuminazioneContent, carpetsContent] = await Promise.all([
-      fetchContent(337, locale).catch(() => null),
-      fetchContent(350, locale).catch(() => null),
-    ]);
 
     const illuminazioneImageUrl = emptyToNull(
       illuminazioneContent?.field_immagine as string | null | undefined,
@@ -208,6 +241,7 @@ export async function SpecHubArredo({
       {typologySection}
       {outdoorSection}
       {nextArtSection}
+      {descriptiveCategoriesSection}
       {discoverAlsoSection}
       {deepDiveSection}
     </div>

@@ -128,7 +128,7 @@ export const fetchVetriteProduct = cache(
     const result = await apiGet<VetriteProductRest[]>(
       `/${locale}/vetrite-product/${nid}`,
       {},
-      60,
+      600,
     );
     if (!result || result.length === 0) return null;
     return normalizeVetriteProduct(result[0]);

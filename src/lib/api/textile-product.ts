@@ -143,7 +143,7 @@ export const fetchTextileProduct = cache(
     const result = await apiGet<TextileProductRest[]>(
       `/${locale}/textile-product/${nid}`,
       {},
-      60,
+      600,
     );
     if (!result || result.length === 0) return null;
     return normalizeTextileProduct(result[0]);

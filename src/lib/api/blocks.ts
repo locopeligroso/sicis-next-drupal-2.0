@@ -97,7 +97,7 @@ export const fetchBlocks = cache(
     const result = await apiGet<RawBlockItem[]>(
       `/${locale}/blocks/${nid}`,
       {},
-      300,
+      1800,
     );
     if (!result) return [];
     return result.map(normalizeBlock);

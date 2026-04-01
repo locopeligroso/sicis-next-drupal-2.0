@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import type { ProjectsSection } from '@/lib/navbar/types';
 import { cn } from '@/lib/utils';
+import { Typography } from '@/components/composed/Typography';
 
 interface MegaMenuProjectsProps {
   menu: ProjectsSection;
@@ -50,10 +51,15 @@ export function MegaMenuProjects({ menu }: MegaMenuProjectsProps) {
             <a
               key={item.id}
               href={item.url}
-              className={cn('group/link', !isLast && 'border-b border-border/60 pb-4')}
+              className={cn(
+                'group/link',
+                !isLast && 'border-b border-border/60 pb-4',
+              )}
               onMouseEnter={() => setHoveredIndex(index)}
             >
-              <div
+              <Typography
+                textRole="body-sm"
+                as="div"
                 className={cn(
                   'text-sm transition-colors',
                   isHovered
@@ -61,11 +67,21 @@ export function MegaMenuProjects({ menu }: MegaMenuProjectsProps) {
                     : 'font-semibold text-muted-foreground',
                 )}
               >
-                {t(TITLE_KEYS[index])} <span aria-hidden="true" className="inline-block transition-transform duration-200 group-hover/link:translate-x-[3px]">&rarr;</span>
-              </div>
-              <div className="text-xs text-muted-foreground leading-[1.5] mt-1">
+                {t(TITLE_KEYS[index])}{' '}
+                <span
+                  aria-hidden="true"
+                  className="inline-block transition-transform duration-200 group-hover/link:translate-x-[3px]"
+                >
+                  &rarr;
+                </span>
+              </Typography>
+              <Typography
+                textRole="caption"
+                as="div"
+                className="text-xs text-muted-foreground leading-[1.5] mt-1"
+              >
                 {t(DESC_KEYS[index])}
-              </div>
+              </Typography>
             </a>
           );
         })}
@@ -93,9 +109,13 @@ export function MegaMenuProjects({ menu }: MegaMenuProjectsProps) {
                 priority={index === 0}
               />
               {/* Caption overlay */}
-              <span className="absolute bottom-4 left-4 text-[10px] tracking-[3px] uppercase text-white/35">
+              <Typography
+                textRole="overline"
+                as="span"
+                className="absolute bottom-4 left-4 text-[10px] tracking-[3px] uppercase text-white/35"
+              >
                 {t(TITLE_KEYS[index])}
-              </span>
+              </Typography>
             </div>
           );
         })}

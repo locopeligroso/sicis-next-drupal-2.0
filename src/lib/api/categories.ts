@@ -59,7 +59,7 @@ export const fetchSubcategories = cache(
     const result = await apiGet<PaginatedResponse<RestCategoryCard>>(
       `/${locale}/subcategories/${parentId}`,
       {},
-      300,
+      1800,
     );
 
     if (!result) return { subcategories: [], total: 0 };

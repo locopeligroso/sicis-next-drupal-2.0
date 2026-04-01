@@ -1,3 +1,4 @@
+import { setRequestLocale } from 'next-intl/server';
 import { resolvePath } from '@/lib/api/resolve-path';
 import { fetchContent } from '@/lib/api/content';
 import { fetchBlocks } from '@/lib/api/blocks';
@@ -9,6 +10,7 @@ interface HomePageProps {
 
 export default async function HomePage({ params }: HomePageProps) {
   const { locale } = await params;
+  setRequestLocale(locale);
 
   let homepage: Record<string, unknown> | null = null;
 

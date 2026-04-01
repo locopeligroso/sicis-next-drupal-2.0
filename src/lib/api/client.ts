@@ -11,7 +11,7 @@ import { toDrupalLocale } from '@/i18n/config';
 export async function apiGet<T>(
   path: string,
   params: Record<string, string | number | boolean | undefined> = {},
-  revalidate: number = 300,
+  revalidate: number = 1800,
 ): Promise<T | null> {
   // path comes in as "/{locale}/endpoint" — insert /api/v1 after locale
   // e.g. "/it/entity" → "/it/api/v1/entity"
@@ -30,7 +30,7 @@ export async function apiGet<T>(
     const res = await fetch(url.toString(), {
       next: { revalidate },
       headers: { Accept: 'application/json' },
-      signal: AbortSignal.timeout(8000), // 8s timeout — prevents 120s hangs on Drupal stalls
+      signal: AbortSignal.timeout(30000), // 30s timeout — accommodates cold Drupal views cache (first request can take 20-30s)
     });
 
     if (!res.ok) {

@@ -78,7 +78,7 @@ describe('fetchContent', () => {
 
     await fetchContent(7, 'en');
 
-    expect(mockApiGet).toHaveBeenCalledWith('/en/content/7', {}, 300);
+    expect(mockApiGet).toHaveBeenCalledWith('/en/content/7', {}, 1800);
   });
 
   it('includes nid and type fields in the returned entity', async () => {
@@ -121,7 +121,7 @@ describe('fetchContent', () => {
 
     await fetchContent(3, 'de');
 
-    expect(mockApiGet).toHaveBeenCalledWith('/de/content/3', {}, 300);
+    expect(mockApiGet).toHaveBeenCalledWith('/de/content/3', {}, 1800);
   });
 });
 
@@ -177,7 +177,7 @@ describe('fetchBlocks', () => {
 
     await fetchBlocks(99, 'en');
 
-    expect(mockApiGet).toHaveBeenCalledWith('/en/blocks/99', {}, 300);
+    expect(mockApiGet).toHaveBeenCalledWith('/en/blocks/99', {}, 1800);
   });
 
   it('converts a plain field_immagine URL string to C1 file-object shape', async () => {
@@ -284,6 +284,6 @@ describe('fetchBlocks', () => {
 
     await fetchBlocks(5, 'ru');
 
-    expect(mockApiGet).toHaveBeenCalledWith('/ru/blocks/5', {}, 300);
+    expect(mockApiGet).toHaveBeenCalledWith('/ru/blocks/5', {}, 1800);
   });
 });

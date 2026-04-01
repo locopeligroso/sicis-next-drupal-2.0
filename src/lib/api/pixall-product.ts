@@ -107,7 +107,7 @@ export const fetchPixallProduct = cache(
     const result = await apiGet<PixallProductRest[]>(
       `/${locale}/pixall-product/${nid}`,
       {},
-      60,
+      600,
     );
     if (!result || result.length === 0) return null;
     return normalizePixallProduct(result[0]);

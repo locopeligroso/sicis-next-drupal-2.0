@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono, Outfit } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
+import { getMessages, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { locales } from '@/i18n/request';
 import Footer from '@/components_legacy/Footer';
@@ -34,6 +34,8 @@ const fontCode = Geist_Mono({
   weight: ['400', '700'],
 });
 
+export const revalidate = 600;
+
 export const metadata: Metadata = {
   title: { default: 'Sicis', template: '%s | Sicis' },
   description: 'Sicis — The Art of Mosaic',
@@ -49,6 +51,7 @@ export default async function LocaleLayout({
   params,
 }: LocaleLayoutProps) {
   const { locale } = await params;
+  setRequestLocale(locale);
 
   if (!locales.includes(locale as (typeof locales)[number])) {
     notFound();

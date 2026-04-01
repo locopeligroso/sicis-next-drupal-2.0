@@ -22,7 +22,7 @@ export const resolvePath = cache(
     const data = await apiGet<ResolvePathResponse>(
       `/${locale}/resolve-path`,
       { path },
-      3600, // Path aliases rarely change
+      86400, // Path aliases rarely change
     );
 
     if (!data) return null;

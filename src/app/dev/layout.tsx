@@ -13,8 +13,6 @@ import '@/styles/globals.css';
  * with a NODE_ENV guard. This layout handles the rest.
  */
 
-if (process.env.NODE_ENV !== 'development') notFound();
-
 const fontBody = Outfit({
   subsets: ['latin'],
   variable: '--font-body',
@@ -35,6 +33,7 @@ const fontCode = Geist_Mono({
 });
 
 export default function DevLayout({ children }: { children: React.ReactNode }) {
+  if (process.env.NODE_ENV !== 'development') notFound();
   return (
     <html
       lang="en"

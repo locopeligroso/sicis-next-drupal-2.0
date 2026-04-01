@@ -1,5 +1,4 @@
 import { cache } from 'react';
-import { DRUPAL_BASE_URL } from '@/lib/drupal/config';
 import { apiGet, stripDomain, stripLocalePrefix, emptyToNull } from './client';
 import type {
   PaginatedResponse,
@@ -19,7 +18,6 @@ export interface ProductCard {
   title: string;
   subtitle: string | null;
   imageUrl: string | null; // field_immagine_anteprima (preview for cards)
-  imageUrlMain: string | null; // field_immagine (full-size for detail page)
   price: string | null;
   priceOnDemand: boolean;
   path: string | null;
@@ -96,26 +94,16 @@ function filtersToQueryParams(
 
 /**
  * Normalize a single product item from REST to the ProductCard shape.
- * Handles staging quirks: type prefix, path stripping, empty imageUrl, priceOnDemand cast.
+ * Handles staging quirks: type prefix, path stripping, empty imageUrl.
  */
-/** Ensure image URL is absolute (imageUrlMain can arrive as a relative path). */
-function toAbsoluteUrl(url: string | null): string | null {
-  if (!url) return null;
-  if (url.startsWith('http')) return url;
-  return `${DRUPAL_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
-}
-
 function normalizeProduct(item: RestProductCard): ProductCard {
-  const imgPreview = emptyToNull(item.imageUrl);
-  const imgMain = toAbsoluteUrl(emptyToNull(item.imageUrlMain));
   return {
     id: item.id,
     // REST returns type without `node--` prefix — add it
     type: item.type.startsWith('node--') ? item.type : `node--${item.type}`,
     title: item.title,
     subtitle: item.subtitle ?? null,
-    imageUrl: imgPreview ?? imgMain,
-    imageUrlMain: imgMain,
+    imageUrl: emptyToNull(item.imageUrl),
     price: item.price ?? null,
     // REST returns priceOnDemand as string "0"/"1" — cast to boolean
     priceOnDemand:
@@ -172,7 +160,7 @@ export const fetchProducts = cache(
     const result = await apiGet<PaginatedResponse<RestProductCard>>(
       `/${locale}/products/${productType}`,
       params,
-      60, // 60s revalidation matching old JSON:API TTL
+      600, // 600s revalidation matching new TTL strategy
     );
 
     if (!result) return { products: [], total: 0 };
@@ -223,7 +211,7 @@ export async function fetchFilterCounts(
   const result = await apiGet<{ counts: Record<string, number> }>(
     `/${locale}/products/${productType}/counts/${restParam}`,
     filterParams,
-    60,
+    600,
   );
 
   return result?.counts ?? {};

@@ -345,5 +345,10 @@ export function arredoToLegacyNode(
     field_tessuti: [],
     field_categoria: null,
     field_blocchi: [],
+    // New field from arredo-product REST endpoint
+    field_finiture_arredo: {
+      tessutoFiniture: product.tessutoFiniture,
+      arredoFiniture: product.arredoFiniture,
+    },
   };
 }

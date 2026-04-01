@@ -30,7 +30,7 @@ export const fetchContent = cache(
     const result = await apiGet<ContentEntity[]>(
       `/${locale}/content/${nid}`,
       {},
-      300,
+      1800,
     );
     if (!result || result.length === 0) return null;
     return result[0];

@@ -171,7 +171,7 @@ describe('fetchProductListing — buildUrl', () => {
     expect(mockApiGet).toHaveBeenCalledWith(
       '/it/mosaic-products/all/all',
       {},
-      60,
+      600,
     );
   });
 
@@ -182,7 +182,7 @@ describe('fetchProductListing — buildUrl', () => {
     expect(mockApiGet).toHaveBeenCalledWith(
       '/en/vetrite-products/5/12',
       {},
-      60,
+      600,
     );
   });
 
@@ -193,14 +193,14 @@ describe('fetchProductListing — buildUrl', () => {
     expect(mockApiGet).toHaveBeenCalledWith(
       '/fr/mosaic-products/all/7',
       {},
-      60,
+      600,
     );
   });
 
   it('single-nid: calls apiGet with /locale/endpoint/all when no params', async () => {
     mockApiGet.mockResolvedValue([]);
     await fetchProductListing('prodotto_arredo', 'it');
-    expect(mockApiGet).toHaveBeenCalledWith('/it/arredo-products/all', {}, 60);
+    expect(mockApiGet).toHaveBeenCalledWith('/it/arredo-products/all', {}, 600);
   });
 
   it('single-nid: injects nid when provided', async () => {
@@ -210,14 +210,14 @@ describe('fetchProductListing — buildUrl', () => {
     expect(mockApiGet).toHaveBeenCalledWith(
       '/de/illuminazione-products/99',
       {},
-      60,
+      600,
     );
   });
 
   it('none: calls apiGet with just /locale/endpoint (no suffix)', async () => {
     mockApiGet.mockResolvedValue([]);
     await fetchProductListing('prodotto_pixall', 'it');
-    expect(mockApiGet).toHaveBeenCalledWith('/it/pixall-products', {}, 60);
+    expect(mockApiGet).toHaveBeenCalledWith('/it/pixall-products', {}, 600);
   });
 });
 
@@ -291,7 +291,6 @@ describe('normalizer — emptyToNull for image and price', () => {
     mockApiGet.mockResolvedValue([makeItem({ field_immagine: '' })]);
     const { products } = await fetchProductListing('prodotto_mosaico', 'it');
     expect(products[0].imageUrl).toBeNull();
-    expect(products[0].imageUrlMain).toBeNull();
   });
 
   it('maps empty string price to null', async () => {
@@ -385,13 +384,12 @@ describe('normalizer — ProductCard shape', () => {
     expect(products[0].subtitle).toBeNull();
   });
 
-  it('imageUrl and imageUrlMain both derive from the configured imageField', async () => {
+  it('imageUrl derives from the configured imageField', async () => {
     // prodotto_mosaico uses field_immagine
     const img = 'https://drupal.example.com/img.jpg';
     mockApiGet.mockResolvedValue([makeItem({ field_immagine: img })]);
     const { products } = await fetchProductListing('prodotto_mosaico', 'it');
     expect(products[0].imageUrl).toBe(img);
-    expect(products[0].imageUrlMain).toBe(img);
   });
 
   it('total matches items array length', async () => {
@@ -420,6 +418,5 @@ describe('normalizer — vetrite imageField is anteprima', () => {
     const { products } = await fetchProductListing('prodotto_vetrite', 'it');
     // Config says imageField: 'field_immagine_anteprima' for vetrite
     expect(products[0].imageUrl).toBe(previewImg);
-    expect(products[0].imageUrlMain).toBe(previewImg);
   });
 });

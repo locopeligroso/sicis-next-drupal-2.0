@@ -88,7 +88,7 @@ export const fetchIlluminazioneProduct = cache(
     const result = await apiGet<IlluminazioneProductRest[]>(
       `/${locale}/illuminazione-product/${nid}`,
       {},
-      60,
+      600,
     );
     if (!result || result.length === 0) return null;
     return normalizeIlluminazioneProduct(result[0]);

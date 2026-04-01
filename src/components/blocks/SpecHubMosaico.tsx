@@ -35,10 +35,17 @@ export async function SpecHubMosaico({
   const tHub = await getTranslations('hub');
 
   // Fetch colors and collections from the correct endpoint per product type
-  const [colors, collections] = await Promise.all(
+  const [colors, rawCollections] = await Promise.all(
     productType === 'prodotto_vetrite'
       ? [fetchVetriteColors(locale), fetchVetriteCollections(locale)]
       : [fetchMosaicColors(locale), fetchMosaicCollections(locale)],
+  );
+
+  // Filter out sub-collection entries (e.g. "Neocolibrì – Barrels") —
+  // these are taxonomy children that should not appear as top-level hub cards.
+  // Guard against Drupal view changes that temporarily include sub-groups.
+  const collections = rawCollections.filter(
+    (c) => !c.name.includes(' – ') && !c.name.includes(' - '),
   );
 
   return (

@@ -53,8 +53,12 @@ export function SpecFilterSidebarContent({
   // (dimmed but clickable). The cross-filtering counts update on next render.
 
   // Exclude the P0 filter that's active via path (it's shown in the context bar)
+  // Also exclude filters not present in categoryGroups (e.g. shape — kept in data layer but hidden from sidebar)
+  const categoryGroupKeys = new Set(
+    listingConfig.categoryGroups.map((cg) => cg.filterKey),
+  );
   const visibleGroups = Object.values(filters).filter(
-    (g) => g.key !== activePathFilterKey,
+    (g) => g.key !== activePathFilterKey && categoryGroupKeys.has(g.key),
   );
 
   const handleRemoveFilter = (key: string) => {
@@ -63,7 +67,8 @@ export function SpecFilterSidebarContent({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Subcategory filter — shown when active parent has children */}
+      {/* Sub-subcategory filter — shown for arredo-style types where categories
+          have children (sedute → sedie, sgabelli). Uses ?sub=slug query param. */}
       {subcategories &&
         subcategories.length > 0 &&
         (() => {
@@ -102,12 +107,18 @@ export function SpecFilterSidebarContent({
         const options = filterOptions[group.key] ?? [];
         if (options.length === 0) return null;
 
-        // Hide groups with ≤1 total options (no filtering value regardless of counts)
+        // Hide groups with ≤1 total options or all options at count=0
         const categoryGroup = listingConfig.categoryGroups.find(
           (cg) => cg.filterKey === group.key,
         );
         if (!categoryGroup?.hasColorSwatch && !categoryGroup?.hasImage) {
           if (options.length <= 1) return null;
+          // Hide group entirely when ALL options have count=0
+          // (e.g. Tappeti has no tipologie available)
+          const allZero = options.every(
+            (o) => o.count != null && o.count === 0,
+          );
+          if (allZero) return null;
         }
 
         // Get active values for this group

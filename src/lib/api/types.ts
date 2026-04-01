@@ -13,7 +13,6 @@ export interface ProductCard {
   title: string;
   subtitle: string | null;
   imageUrl: string | null; // field_immagine_anteprima (preview for cards)
-  imageUrlMain: string | null; // field_immagine (full-size for detail page)
   price: string | null;
   priceOnDemand: string | null; // Drupal returns "0", "1", or null
   path: string | null;

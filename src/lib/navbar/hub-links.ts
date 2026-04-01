@@ -1,4 +1,5 @@
 import { cache } from 'react';
+import { unstable_cache } from 'next/cache';
 import { fetchMenu, transformMenuToNavItems } from '@/lib/drupal';
 import { mapMenuToNavbar } from '@/lib/navbar/menu-mapper';
 import { FILTER_REGISTRY } from '@/domain/filters/registry';
@@ -8,10 +9,13 @@ import type { SecondaryLink } from './types';
  * Returns the secondary links from the Filter & Find mega-menu
  * for a given product type. Used in hub pages for the "Approfondimenti" section.
  *
- * Matches the menu category by comparing its URL to the product type's basePath.
- * Uses React.cache() for request-level deduplication.
+ * Two-layer cache:
+ * - unstable_cache (ISR): persists the result across requests for 3600s.
+ *   Prevents menu re-parsing on every ISR revalidation cycle.
+ * - React.cache(): deduplicates identical calls within the same render pass
+ *   (e.g. when both generateMetadata and SlugPage call this with the same args).
  */
-export const getHubDeepDiveLinks = cache(
+const _getHubDeepDiveLinksISR = unstable_cache(
   async (productType: string, locale: string): Promise<SecondaryLink[]> => {
     const config = FILTER_REGISTRY[productType];
     if (!config) return [];
@@ -29,4 +33,11 @@ export const getHubDeepDiveLinks = cache(
 
     return category?.secondaryLinks ?? [];
   },
+  ['hub-deep-dive-links'],
+  { revalidate: 3600, tags: ['menu', 'hub-links'] },
+);
+
+export const getHubDeepDiveLinks = cache(
+  (productType: string, locale: string): Promise<SecondaryLink[]> =>
+    _getHubDeepDiveLinksISR(productType, locale),
 );

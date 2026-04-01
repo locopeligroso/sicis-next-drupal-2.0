@@ -39,6 +39,19 @@ const securityHeaders = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // NOTE: PPR (Partial Prerendering) via cacheComponents: true is deferred.
+  // cacheComponents is incompatible with `export const revalidate` in route segments.
+  // Migration path: replace revalidate exports with cacheLife() inside 'use cache' functions.
+  // The Suspense boundary in [...slug]/page.tsx still enables streaming even without PPR.
+  experimental: {
+    // Cache dynamic pages for 30s in the client-side router cache.
+    // Default in Next.js 15+ is 0s — this restores the pre-v15 behavior for
+    // repeat in-browser navigations (e.g. back/forward on listing pages).
+    staleTimes: {
+      dynamic: 30,
+      static: 180,
+    },
+  },
   images: {
     remotePatterns: [
       { protocol: 'http', hostname: 'localhost' },
@@ -52,11 +65,11 @@ const nextConfig = {
       { protocol: 'https', hostname: 'sicis.com' },
       { protocol: 'https', hostname: 'www.sicis.com' },
     ],
-    // In dev, next/image blocks private IPs (192.168.x.x) from the optimization proxy.
-    // loaderFile bypasses this by serving the original URL directly in development.
-    ...(process.env.NODE_ENV === 'development'
-      ? { loader: 'custom', loaderFile: './src/lib/image-loader.ts' }
-      : {}),
+    // next/image blocks private IPs (192.168.x.x) from the optimization proxy.
+    // Custom loader bypasses this by serving the original Drupal URL directly.
+    // Applied in both dev and prod since Drupal runs on a private IP.
+    loader: 'custom',
+    loaderFile: './src/lib/image-loader.ts',
   },
   async headers() {
     return [

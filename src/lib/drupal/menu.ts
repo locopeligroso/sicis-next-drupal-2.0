@@ -32,7 +32,7 @@ export const fetchMenu = cache(
       const url = `${DRUPAL_BASE_URL}${localePrefix}/api/menu/${menuName}`;
 
       const res = await fetch(url, {
-        next: { revalidate: 600 }, // Cache for 10 minutes
+        next: { revalidate: 3600 }, // Cache for 1 hour
       });
 
       if (!res.ok) {

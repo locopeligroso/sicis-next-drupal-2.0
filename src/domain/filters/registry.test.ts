@@ -192,10 +192,12 @@ describe('filter removal — unused P1/P2 filters', () => {
     expect(config.filters).not.toHaveProperty('grout');
   });
 
-  it('prodotto_tessuto retains ALL its filters unchanged', () => {
+  it('prodotto_tessuto retains ALL its filters including tipologia', () => {
     const config = getFilterConfig('prodotto_tessuto')!;
     const keys = Object.keys(config.filters);
-    expect(keys).toEqual(['category', 'type']);
+    expect(keys).toEqual(['category', 'type', 'tipologia']);
+    expect(config.filters.tipologia.queryKey).toBe('tipologia');
+    expect(config.filters.tipologia.priority).toBe('P1');
   });
 
   it('prodotto_illuminazione retains its subcategory filter unchanged', () => {

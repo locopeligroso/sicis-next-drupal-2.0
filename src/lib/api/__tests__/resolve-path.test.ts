@@ -75,7 +75,7 @@ describe('resolvePath', () => {
     expect(mockApiGet).toHaveBeenCalledWith(
       '/en/resolve-path',
       { path: '/mosaico/pluma' },
-      3600,
+      86400,
     );
   });
 
@@ -87,7 +87,7 @@ describe('resolvePath', () => {
     expect(mockApiGet).toHaveBeenCalledWith(
       '/fr/resolve-path',
       { path: '/vetrite/murano' },
-      3600,
+      86400,
     );
   });
 

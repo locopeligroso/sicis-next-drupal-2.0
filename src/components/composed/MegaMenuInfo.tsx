@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import type { InfoSection } from '@/lib/navbar/types';
 import { Separator } from '@/components/ui/separator';
+import { Typography } from '@/components/composed/Typography';
 
 interface MegaMenuInfoProps {
   menu: InfoSection;
@@ -29,13 +30,24 @@ export function MegaMenuInfo({ menu }: MegaMenuInfoProps) {
           const descKey = STRATEGIC_DESC_KEYS[item.title.toLowerCase().trim()];
           return (
             <a key={item.id} href={item.url} className="group/link block">
-              <span className="text-sm font-bold text-foreground">
-                {item.title} <span className="inline-block transition-transform duration-200 group-hover/link:translate-x-[3px]">&rarr;</span>
-              </span>
+              <Typography
+                textRole="body-sm"
+                as="span"
+                className="text-sm font-bold text-foreground"
+              >
+                {item.title}{' '}
+                <span className="inline-block transition-transform duration-200 group-hover/link:translate-x-[3px]">
+                  &rarr;
+                </span>
+              </Typography>
               {descKey && (
-                <p className="text-[11px] text-muted-foreground leading-[1.4] mt-1">
+                <Typography
+                  textRole="body-sm"
+                  as="p"
+                  className="text-[11px] text-muted-foreground leading-[1.4] mt-1"
+                >
                   {t(descKey)}
-                </p>
+                </Typography>
               )}
             </a>
           );
@@ -70,7 +82,10 @@ export function MegaMenuInfo({ menu }: MegaMenuInfoProps) {
                 href={item.url}
                 className="group/link text-[11px] text-muted-foreground hover:text-foreground transition-colors"
               >
-                {item.title} <span className="inline-block transition-transform duration-200 group-hover/link:translate-x-[3px]">&rarr;</span>
+                {item.title}{' '}
+                <span className="inline-block transition-transform duration-200 group-hover/link:translate-x-[3px]">
+                  &rarr;
+                </span>
               </a>
             ))}
           </>

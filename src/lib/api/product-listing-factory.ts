@@ -61,7 +61,7 @@ export const PRODUCT_LISTING_CONFIGS: Record<string, ProductListingConfig> = {
   prodotto_vetrite: {
     endpoint: 'vetrite-products',
     productType: 'prodotto_vetrite',
-    imageField: 'field_immagine_anteprima',
+    imageField: 'field_immagine',
     priceField: 'field_prezzo_eu',
     priceOnDemand: 'field',
     paramShape: 'dual-tid',
@@ -145,6 +145,8 @@ export interface DualTidParams {
 
 export interface SingleNidParams {
   nid?: number | 'all';
+  /** Tipologia TID for tessuto P1 filter — passed as ?tipologia={tid} query param */
+  tipologiaTid?: number;
 }
 
 export type ListingParams = DualTidParams | SingleNidParams | undefined;
@@ -210,6 +212,7 @@ function buildUrl(
   if (config.paramShape === 'single-nid') {
     const p = (params ?? {}) as SingleNidParams;
     const nid = p.nid ?? 'all';
+    if (p.tipologiaTid) queryParams.tipologia = p.tipologiaTid;
     return { path: `${base}/${nid}`, queryParams };
   }
 

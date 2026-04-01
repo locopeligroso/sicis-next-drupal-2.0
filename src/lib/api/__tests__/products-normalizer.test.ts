@@ -4,8 +4,7 @@
  * Tests:
  *  - normalizeProduct: type prefix (node-- added when missing, not doubled)
  *  - normalizeProduct: priceOnDemand casting ("0"→false, "1"→true, boolean passthrough)
- *  - normalizeProduct: toAbsoluteUrl (relative paths prepend DRUPAL_BASE_URL)
- *  - normalizeProduct: emptyToNull for imageUrl/imageUrlMain
+ *  - normalizeProduct: emptyToNull for imageUrl
  *  - normalizeProduct: path stripping via stripDomain + stripLocalePrefix
  *  - filtersToQueryParams: maps known FilterDefinition fields to REST param keys
  *  - filtersToQueryParams: multi-value arrays joined with commas
@@ -62,7 +61,6 @@ function makeRestCard(
     title: 'Test Mosaic',
     subtitle: null,
     imageUrl: 'https://drupal.example.com/preview.jpg',
-    imageUrlMain: 'https://drupal.example.com/main.jpg',
     price: '€ 100.00',
     priceOnDemand: '0', // string form from REST
     path: 'https://drupal.example.com/it/mosaico/test',
@@ -165,95 +163,23 @@ describe('normalizeProduct — priceOnDemand casting', () => {
   });
 });
 
-// ── normalizeProduct: toAbsoluteUrl ───────────────────────────────────────────
-
-describe('normalizeProduct — toAbsoluteUrl for imageUrlMain', () => {
-  it('prepends DRUPAL_BASE_URL to a relative path', async () => {
-    mockApiGet.mockResolvedValue(
-      makePaginatedResponse([
-        makeRestCard({ imageUrlMain: '/sites/default/files/img.jpg' }),
-      ]),
-    );
-    const { products } = await fetchProducts({
-      productType: 'prodotto_mosaico',
-    });
-    expect(products[0].imageUrlMain).toBe(
-      'https://drupal.example.com/sites/default/files/img.jpg',
-    );
-  });
-
-  it('leaves absolute https URL unchanged', async () => {
-    const absUrl = 'https://cdn.sicis.com/img.jpg';
-    mockApiGet.mockResolvedValue(
-      makePaginatedResponse([makeRestCard({ imageUrlMain: absUrl })]),
-    );
-    const { products } = await fetchProducts({
-      productType: 'prodotto_mosaico',
-    });
-    expect(products[0].imageUrlMain).toBe(absUrl);
-  });
-
-  it('returns null when imageUrlMain is empty string', async () => {
-    mockApiGet.mockResolvedValue(
-      makePaginatedResponse([makeRestCard({ imageUrlMain: '' })]),
-    );
-    const { products } = await fetchProducts({
-      productType: 'prodotto_mosaico',
-    });
-    expect(products[0].imageUrlMain).toBeNull();
-  });
-
-  it('returns null when imageUrlMain is null', async () => {
-    mockApiGet.mockResolvedValue(
-      makePaginatedResponse([makeRestCard({ imageUrlMain: null })]),
-    );
-    const { products } = await fetchProducts({
-      productType: 'prodotto_mosaico',
-    });
-    expect(products[0].imageUrlMain).toBeNull();
-  });
-
-  it('relative path without leading slash gets / inserted', async () => {
-    mockApiGet.mockResolvedValue(
-      makePaginatedResponse([
-        makeRestCard({ imageUrlMain: 'sites/default/files/img.jpg' }),
-      ]),
-    );
-    const { products } = await fetchProducts({
-      productType: 'prodotto_mosaico',
-    });
-    expect(products[0].imageUrlMain).toBe(
-      'https://drupal.example.com/sites/default/files/img.jpg',
-    );
-  });
-});
-
 // ── normalizeProduct: emptyToNull for imageUrl ────────────────────────────────
 
 describe('normalizeProduct — emptyToNull for imageUrl', () => {
-  it('maps empty string imageUrl to null (falls back to imageUrlMain)', async () => {
-    const mainUrl = 'https://drupal.example.com/main.jpg';
+  it('maps empty string imageUrl to null', async () => {
     mockApiGet.mockResolvedValue(
-      makePaginatedResponse([
-        makeRestCard({ imageUrl: '', imageUrlMain: mainUrl }),
-      ]),
+      makePaginatedResponse([makeRestCard({ imageUrl: '' })]),
     );
     const { products } = await fetchProducts({
       productType: 'prodotto_mosaico',
     });
-    // imgPreview is null → falls back to imgMain
-    expect(products[0].imageUrl).toBe(mainUrl);
+    expect(products[0].imageUrl).toBeNull();
   });
 
-  it('uses imageUrl preview when non-empty', async () => {
+  it('uses imageUrl when non-empty', async () => {
     const previewUrl = 'https://drupal.example.com/preview.jpg';
     mockApiGet.mockResolvedValue(
-      makePaginatedResponse([
-        makeRestCard({
-          imageUrl: previewUrl,
-          imageUrlMain: 'https://drupal.example.com/main.jpg',
-        }),
-      ]),
+      makePaginatedResponse([makeRestCard({ imageUrl: previewUrl })]),
     );
     const { products } = await fetchProducts({
       productType: 'prodotto_mosaico',
@@ -320,7 +246,7 @@ describe('fetchProducts — URL construction', () => {
     expect(mockApiGet).toHaveBeenCalledWith(
       '/en/products/prodotto_mosaico',
       expect.objectContaining({ items_per_page: 24, page: 0 }),
-      60,
+      600,
     );
   });
 
@@ -330,7 +256,7 @@ describe('fetchProducts — URL construction', () => {
     expect(mockApiGet).toHaveBeenCalledWith(
       '/it/products/prodotto_mosaico',
       expect.any(Object),
-      60,
+      600,
     );
   });
 

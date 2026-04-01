@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { getTranslations } from 'next-intl/server';
 import { Typography } from '@/components/composed/Typography';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -17,15 +18,25 @@ export interface DocumentCardItem {
   downloadLabel?: string;
 }
 
-function getActionFromHref(href: string | null | undefined) {
-  if (!href) return { label: 'Scopri', icon: ExternalLinkIcon };
+interface ActionLabels {
+  discover: string;
+  watchVideo: string;
+  downloadPdf: string;
+  browseCatalogue: string;
+}
+
+function getActionFromHref(
+  href: string | null | undefined,
+  labels: ActionLabels,
+) {
+  if (!href) return { label: labels.discover, icon: ExternalLinkIcon };
   if (/youtube|vimeo/i.test(href))
-    return { label: 'Guarda video', icon: PlayIcon };
+    return { label: labels.watchVideo, icon: PlayIcon };
   if (/\.pdf(\?|$)/i.test(href))
-    return { label: 'Download PDF', icon: DownloadIcon };
+    return { label: labels.downloadPdf, icon: DownloadIcon };
   if (/catalog|library/i.test(href))
-    return { label: 'Sfoglia catalogo', icon: BookOpenIcon };
-  return { label: 'Scopri', icon: ExternalLinkIcon };
+    return { label: labels.browseCatalogue, icon: BookOpenIcon };
+  return { label: labels.discover, icon: ExternalLinkIcon };
 }
 
 interface DocumentCardProps {
@@ -34,11 +45,19 @@ interface DocumentCardProps {
   className?: string;
 }
 
-export function DocumentCard({
+export async function DocumentCard({
   item,
   layout = 'vertical',
   className,
 }: DocumentCardProps) {
+  const tCommon = await getTranslations('common');
+  const labels: ActionLabels = {
+    discover: tCommon('discover'),
+    watchVideo: tCommon('watchVideo'),
+    downloadPdf: tCommon('downloadPdf'),
+    browseCatalogue: tCommon('browseCatalogue'),
+  };
+
   const Wrapper = item.href ? 'a' : 'div';
   const wrapperProps = item.href
     ? { href: item.href, target: '_blank' as const, rel: 'noopener noreferrer' }
@@ -46,8 +65,11 @@ export function DocumentCard({
 
   const isHorizontal = layout === 'horizontal';
   const action = item.downloadLabel
-    ? { label: item.downloadLabel, icon: getActionFromHref(item.href).icon }
-    : getActionFromHref(item.href);
+    ? {
+        label: item.downloadLabel,
+        icon: getActionFromHref(item.href, labels).icon,
+      }
+    : getActionFromHref(item.href, labels);
   const ActionIcon = action.icon;
 
   return (

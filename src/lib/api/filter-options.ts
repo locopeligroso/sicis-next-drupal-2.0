@@ -24,8 +24,12 @@ import {
 import {
   fetchVetriteCollections,
   fetchVetriteColors,
+  fetchVetriteFinishes,
 } from '@/lib/api/vetrite-hub';
-import { fetchHubCategories } from '@/lib/api/category-hub';
+import {
+  fetchHubCategories,
+  fetchTessutoTipologie,
+} from '@/lib/api/category-hub';
 
 // ── Reverse SLUG_OVERRIDES: term name → slug ─────────────────────────────
 // Built once at module init. Used when converting hub term names back to slugs.
@@ -50,7 +54,13 @@ function hrefToSlug(href: string): string {
   if (!href || href === '#') return '#';
   const cleaned = href.endsWith('/') ? href.slice(0, -1) : href;
   const last = cleaned.split('/').pop();
-  return last ?? href;
+  // Decode URL-encoded characters (e.g. %C3%AC → ì) and NFC-normalize
+  // so slugs match what the router/URL produces
+  try {
+    return decodeURIComponent(last ?? href).normalize('NFC');
+  } catch {
+    return last ?? href;
+  }
 }
 
 /**
@@ -84,10 +94,12 @@ function hubTermsToFilterOptions(
 ): FilterOption[] {
   return terms.map((term) => {
     const slugFromHref = hrefToSlug(term.href);
-    const slug =
-      slugFromHref && slugFromHref !== '#'
-        ? slugFromHref
-        : slugifyName(term.name);
+    // slugifyName uses reverse SLUG_OVERRIDES for canonical slug matching.
+    // This ensures the slug matches what the router/URL produces
+    // (e.g. NeoColibrì → neocolibri, not neocolibrì from href).
+    // Href slug is fallback only when slugifyName produces empty.
+    const nameSlug = slugifyName(term.name);
+    const slug = nameSlug || (slugFromHref !== '#' ? slugFromHref : '');
     return {
       slug,
       label: term.name,
@@ -151,19 +163,20 @@ export async function fetchListingFilterOptions(
     }
 
     case 'prodotto_vetrite': {
-      const [collections, colors] = await Promise.all([
+      const [collections, colors, finishes] = await Promise.all([
         fetchVetriteCollections(locale),
         fetchVetriteColors(locale),
+        fetchVetriteFinishes(locale),
       ]);
       return {
         collection: hubTermsToFilterOptions(collections),
         color: hubTermsToFilterOptions(colors),
+        finish: hubTermsToFilterOptions(finishes),
       };
     }
 
     case 'prodotto_arredo':
-    case 'prodotto_illuminazione':
-    case 'prodotto_tessuto': {
+    case 'prodotto_illuminazione': {
       if (hubParentNid == null) return {};
 
       // Find the P0 filter key for this product type
@@ -176,6 +189,34 @@ export async function fetchListingFilterOptions(
       const categories = await fetchHubCategories(hubParentNid, locale);
       return {
         [p0Filter.key]: categoryItemsToFilterOptions(categories),
+      };
+    }
+
+    case 'prodotto_tessuto': {
+      if (hubParentNid == null) return {};
+
+      // Find the P0 filter key
+      const ptConfig = FILTER_REGISTRY[productType];
+      const p0Filter = ptConfig
+        ? Object.values(ptConfig.filters).find((f) => f.priority === 'P0')
+        : null;
+      if (!p0Filter) return {};
+
+      // Fetch P0 categories + P1 tipologie concurrently
+      const [categories, tipologie] = await Promise.all([
+        fetchHubCategories(hubParentNid, locale),
+        fetchTessutoTipologie(locale),
+      ]);
+
+      const tipologieOptions: FilterOption[] = tipologie.map((item) => ({
+        slug: slugifyName(item.name),
+        label: item.name,
+        id: item.tid,
+      }));
+
+      return {
+        [p0Filter.key]: categoryItemsToFilterOptions(categories),
+        tipologia: tipologieOptions,
       };
     }
 

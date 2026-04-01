@@ -9,7 +9,7 @@ export async function getTranslatedPath(
   const result = await apiGet<TranslatePathResponse>(
     `/${fromLocale}/translate-path`,
     { path, from: fromLocale, to: toLocale },
-    3600,
+    86400,
   );
   return result?.translatedPath ?? null;
 }
