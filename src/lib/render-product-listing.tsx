@@ -322,18 +322,19 @@ async function _fetchListingData(
         finishTid,
       );
 
-      // Helper: merge counts into filter options by matching TID (id) or slug
+      // Helper: merge counts into filter options.
+      // Matches by TID (opt.id) first, then falls back to name (opt.label)
+      // because collections/colors hub endpoints don't include TID.
       const mergeCounts = (
         options: FilterOption[] | undefined,
-        countItems: { tid: number; count: number }[],
+        countItems: { tid: number; name: string; count: number }[],
       ): FilterOption[] | undefined => {
         if (!options || countItems.length === 0) return options;
-        const countMap = new Map(
-          countItems.map((c) => [String(c.tid), c.count]),
-        );
+        const byTid = new Map(countItems.map((c) => [String(c.tid), c.count]));
+        const byName = new Map(countItems.map((c) => [c.name, c.count]));
         return options.map((opt) => ({
           ...opt,
-          count: countMap.get(opt.id ?? opt.slug) ?? 0,
+          count: byTid.get(opt.id ?? '') ?? byName.get(opt.label) ?? 0,
         }));
       };
 
