@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
 import { Typography } from '@/components/composed/Typography';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +27,8 @@ export function ProductPricingCard({
 }: ProductPricingCardProps) {
   if (!price && !inStock) return null;
 
+  const t = useTranslations('products');
+
   return (
     <Card className={cn('md:max-w-sm', className)}>
       <CardContent className="flex flex-col gap-4">
@@ -35,7 +40,7 @@ export function ProductPricingCard({
               as="span"
               className="text-muted-foreground"
             >
-              Starting at
+              {t('startingAt')}
             </Typography>
             <div className="flex items-baseline gap-2">
               <Typography textRole="h3" as="span">
@@ -61,7 +66,7 @@ export function ProductPricingCard({
             <div className="flex flex-col gap-2">
               <Badge variant="default" className="w-fit">
                 <CheckCircleIcon data-icon="inline-start" />
-                In stock
+                {t('inStock')}
               </Badge>
               {shippingWarehouse && (
                 <div className="flex items-center gap-2">
@@ -93,7 +98,7 @@ export function ProductPricingCard({
           <>
             {price && <Separator />}
             <Badge variant="outline" className="w-fit">
-              Out of stock
+              {t('outOfStock')}
             </Badge>
           </>
         )}

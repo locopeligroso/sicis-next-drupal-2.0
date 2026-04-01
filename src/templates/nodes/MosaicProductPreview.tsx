@@ -4,6 +4,14 @@
 // Renders all blocks when collection data is available; gracefully omits blocks
 // when relations are not yet included in the endpoint response.
 
+import { getTranslations } from 'next-intl/server';
+import { SpecProductHero } from '@/components/blocks/SpecProductHero';
+import { SpecProductDetails } from '@/components/blocks/SpecProductDetails';
+import { SpecProductSpecs } from '@/components/blocks/SpecProductSpecs';
+import { SpecProductResources } from '@/components/blocks/SpecProductResources';
+import { SpecProductGallery } from '@/components/blocks/SpecProductGallery';
+import { sanitizeHtml } from '@/lib/sanitize';
+import { formatRetinatura } from '@/lib/product-helpers';
 import type { MosaicProduct } from '@/lib/api/mosaic-product';
 
 export async function MosaicProductPreview({
@@ -13,20 +21,6 @@ export async function MosaicProductPreview({
   product: MosaicProduct;
   locale: string;
 }) {
-  const { SpecProductHero } =
-    await import('@/components/blocks/SpecProductHero');
-  const { SpecProductDetails } =
-    await import('@/components/blocks/SpecProductDetails');
-  const { SpecProductSpecs } =
-    await import('@/components/blocks/SpecProductSpecs');
-  const { SpecProductResources } =
-    await import('@/components/blocks/SpecProductResources');
-  const { SpecProductGallery } =
-    await import('@/components/blocks/SpecProductGallery');
-  const { sanitizeHtml } = await import('@/lib/sanitize');
-  const { formatRetinatura } = await import('@/lib/product-helpers');
-  const { getTranslations } = await import('next-intl/server');
-
   const t = await getTranslations('products');
 
   type ProductCarouselSlide =

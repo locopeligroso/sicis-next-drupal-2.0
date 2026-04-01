@@ -130,7 +130,7 @@ function normalizeMenuUrl(rawUrl: string, locale: string): string {
 
 // ── Menu fetching ─────────────────────────────────────────────────────────
 
-const FETCH_TIMEOUT_MS = 8_000;
+const FETCH_TIMEOUT_MS = 30_000;
 const MENU_REVALIDATE_S = 600;
 
 /**

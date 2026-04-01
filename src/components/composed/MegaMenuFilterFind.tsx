@@ -4,6 +4,7 @@ import { useRef, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { FilterFindSection } from '@/lib/navbar/types';
 import { Separator } from '@/components/ui/separator';
+import { Typography } from '@/components/composed/Typography';
 
 interface MegaMenuFilterFindProps {
   menu: FilterFindSection;
@@ -26,11 +27,37 @@ const THUMB_COLORS: Record<string, string> = {
  * Keyed by lowercase category name fragment for flexible matching.
  */
 const THUMB_VIDEOS: [string[], string][] = [
-  [['mosaico', 'mosaic'], '/video/filter-mosaico.mp4'],
+  [
+    ['mosaico', 'mosaic', 'mosaïque', 'mosaik', 'мозаика'],
+    '/video/filter-mosaico.mp4',
+  ],
   [['vetrite'], '/video/filter-vetrite.mp4'],
-  [['arredo', 'furniture'], '/video/filter-arredo.mp4'],
-  [['illuminazione', 'lighting'], '/video/filter-illuminazione.mp4'],
-  [['tessili', 'textiles', 'tessuto'], '/video/filter-tessili.mp4'],
+  [
+    [
+      'arredo',
+      'furniture',
+      'ameublement',
+      'einrichtung',
+      'mueble',
+      'обстановка',
+    ],
+    '/video/filter-arredo.mp4',
+  ],
+  [
+    [
+      'illuminazione',
+      'lighting',
+      'éclairage',
+      'leuchten',
+      'iluminación',
+      'освещение',
+    ],
+    '/video/filter-illuminazione.mp4',
+  ],
+  [
+    ['tessili', 'textiles', 'tessuto', 'textilien', 'текстильн'],
+    '/video/filter-tessili.mp4',
+  ],
 ];
 
 /** Resolve video source from category title (case-insensitive). */
@@ -47,7 +74,13 @@ function resolveThumbVideo(title: string): string | null {
  * The forward video is always rendered (shows first frame at rest).
  * On leave: pause, fade out to reveal the static first frame underneath, then reset.
  */
-function HoverPlayVideo({ src, isHovered }: { src: string; isHovered: boolean }) {
+function HoverPlayVideo({
+  src,
+  isHovered,
+}: {
+  src: string;
+  isHovered: boolean;
+}) {
   const ref = useRef<HTMLVideoElement>(null);
   const [faded, setFaded] = useState(false);
   const resetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -104,17 +137,47 @@ function HoverPlayVideo({ src, isHovered }: { src: string; isHovered: boolean })
 }
 
 /**
- * Maps category title (lowercase) to the description translation key.
+ * Resolve description translation key from category title (substring match).
+ * Reuses the same keyword lists as THUMB_VIDEOS for consistency across all 6 locales.
  */
-const DESC_KEYS: Record<string, string> = {
-  mosaico: 'filterMosaicoDesc',
-  vetrite: 'filterVetriteDesc',
-  'lastre vetro vetrite': 'filterVetriteDesc',
-  arredo: 'filterArredoDesc',
-  illuminazione: 'filterIlluminazioneDesc',
-  tessili: 'filterTessiliDesc',
-  'prodotti tessili': 'filterTessiliDesc',
-};
+const DESC_KEY_PATTERNS: [string[], string][] = [
+  [['mosaico', 'mosaic', 'mosaïque', 'mosaik', 'мозаика'], 'filterMosaicoDesc'],
+  [['vetrite'], 'filterVetriteDesc'],
+  [
+    [
+      'arredo',
+      'furniture',
+      'ameublement',
+      'einrichtung',
+      'mueble',
+      'обстановка',
+    ],
+    'filterArredoDesc',
+  ],
+  [
+    [
+      'illuminazione',
+      'lighting',
+      'éclairage',
+      'leuchten',
+      'iluminación',
+      'освещение',
+    ],
+    'filterIlluminazioneDesc',
+  ],
+  [
+    ['tessili', 'textiles', 'tessuto', 'textilien', 'текстильн'],
+    'filterTessiliDesc',
+  ],
+];
+
+function resolveDescKey(title: string): string | null {
+  const lower = title.toLowerCase().trim();
+  for (const [keys, key] of DESC_KEY_PATTERNS) {
+    if (keys.some((k) => lower.includes(k))) return key;
+  }
+  return null;
+}
 
 /**
  * Resolves the placeholder gradient for a category title (case-insensitive match).
@@ -137,8 +200,7 @@ export function MegaMenuFilterFind({ menu }: MegaMenuFilterFindProps) {
     <div className="flex px-10 py-9 gap-7">
       {menu.items.map((category) => {
         const title = category.item.title;
-        const titleLower = title.toLowerCase().trim();
-        const descKey = DESC_KEYS[titleLower];
+        const descKey = resolveDescKey(title);
         const background = resolveThumbColor(title);
         const videoSrc = resolveThumbVideo(title);
         const isHovered = hoveredId === category.item.id;
@@ -151,26 +213,36 @@ export function MegaMenuFilterFind({ menu }: MegaMenuFilterFindProps) {
             onMouseLeave={() => setHoveredId(null)}
           >
             {/* Primary link — wraps thumbnail + title + description */}
-            <a
-              href={category.item.url}
-              className="block group/card"
-            >
+            <a href={category.item.url} className="block group/card">
               <div
                 className="h-20 rounded-[10px] overflow-hidden w-full relative"
                 style={{ background: videoSrc ? undefined : background }}
                 aria-hidden="true"
               >
-                {videoSrc && <HoverPlayVideo src={videoSrc} isHovered={isHovered} />}
+                {videoSrc && (
+                  <HoverPlayVideo src={videoSrc} isHovered={isHovered} />
+                )}
               </div>
 
-              <span className="text-[13px] tracking-[2px] uppercase font-bold text-foreground mt-4 block">
-                {title} <span className="inline-block transition-transform duration-200 group-hover/card:translate-x-[3px]">&rarr;</span>
-              </span>
+              <Typography
+                textRole="overline"
+                as="span"
+                className="text-[13px] tracking-[2px] uppercase font-bold text-foreground mt-4 block"
+              >
+                {title}{' '}
+                <span className="inline-block transition-transform duration-200 group-hover/card:translate-x-[3px]">
+                  &rarr;
+                </span>
+              </Typography>
 
               {descKey && (
-                <p className="text-[10px] text-muted-foreground mt-1.5">
+                <Typography
+                  textRole="body-sm"
+                  as="p"
+                  className="text-[10px] text-muted-foreground mt-1.5"
+                >
                   {t(descKey)}
-                </p>
+                </Typography>
               )}
             </a>
 

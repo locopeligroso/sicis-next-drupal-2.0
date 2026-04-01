@@ -101,7 +101,10 @@ function FabricSection({
   const hasMore = !isExpanded && hiddenCount > 0;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div
+      id={`fabric-${fabric.tid}`}
+      className="flex flex-col gap-4 scroll-mt-32"
+    >
       {/* Fabric sub-section header — "K - KENDAL" style */}
       <h4 className="text-[11px] font-medium uppercase tracking-[0.15em] text-muted-foreground">
         {fabric.name}
@@ -189,6 +192,7 @@ function CategorySection({
 
 export function FinitureGallery({ categories }: FinitureGalleryProps) {
   const [expandedTids, setExpandedTids] = useState<Set<number>>(new Set());
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   if (categories.length === 0) return null;
 
@@ -204,25 +208,68 @@ export function FinitureGallery({ categories }: FinitureGalleryProps) {
     });
   }
 
+  function scrollTo(id: string) {
+    setActiveId(id);
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
   return (
     <div className="flex gap-10 lg:gap-16 items-start">
-      {/* ── Left sidebar: sticky anchor nav ── */}
+      {/* ── Left sidebar: sticky anchor nav with fabric children ── */}
       <nav
         aria-label="Sezioni finiture"
-        className="hidden md:flex flex-col gap-1 sticky top-32 shrink-0 w-40"
+        className="hidden md:flex flex-col gap-0.5 sticky top-32 shrink-0 w-44"
       >
-        {categories.map((category) => (
-          <a
-            key={category.tid}
-            href={`#cat-${category.tid}`}
-            className={cn(
-              'text-[11px] uppercase tracking-[0.15em] py-1',
-              'text-muted-foreground hover:text-foreground transition-colors',
-            )}
-          >
-            {category.name}
-          </a>
-        ))}
+        {categories.map((category) => {
+          const catId = `cat-${category.tid}`;
+          const isCatActive = activeId === catId;
+
+          return (
+            <div key={category.tid} className="flex flex-col">
+              <button
+                type="button"
+                onClick={() => scrollTo(catId)}
+                className={cn(
+                  'text-left text-[11px] font-semibold uppercase tracking-[0.15em] py-1',
+                  'transition-colors',
+                  isCatActive
+                    ? 'text-primary'
+                    : 'text-foreground hover:text-primary',
+                )}
+              >
+                {category.name}
+              </button>
+              {category.items.length > 0 && (
+                <div className="flex flex-col ml-2.5 mb-1">
+                  {category.items.map((fabric) => {
+                    const fabricId = `fabric-${fabric.tid}`;
+                    const isFabricActive = activeId === fabricId;
+
+                    return (
+                      <button
+                        type="button"
+                        key={fabric.tid}
+                        onClick={() => scrollTo(fabricId)}
+                        className={cn(
+                          'text-left text-[10px] tracking-[0.08em] py-0.5',
+                          'transition-colors',
+                          isFabricActive
+                            ? 'text-primary font-medium'
+                            : 'text-muted-foreground hover:text-foreground',
+                        )}
+                      >
+                        {fabric.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </nav>
 
       {/* ── Main scrollable content: all categories stacked ── */}

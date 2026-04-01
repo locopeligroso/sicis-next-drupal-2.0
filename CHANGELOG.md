@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### 2026-04-01 — Locale US, fix client/server boundary, i18n multilingua
+
+#### Locale US (`/us/`)
+
+- `i18n/request.ts`: import statici espliciti per tutti i locale — `us` riusa `messages/en.json` senza file dedicato
+- `toDrupalLocale('us')` → `'en'` già gestito in `apiGet`, `resolvePath`, `fetchMenu`
+
+#### Fix client/server component boundary
+
+- **`ProductPricingCard`**: convertito da async server component (`getTranslations`) a client component (`useTranslations`) — era importato dentro `SpecProductHero` (`'use client'`), causava errore SSR su `/us/`
+- **`MosaicProductPreview`**: dynamic import di `next-intl/server` e Spec\* blocks convertiti a import statici
+
+#### Mega menu Filter & Find — i18n video/descrizioni
+
+- `THUMB_VIDEOS`: aggiunte keyword FR (mosaïque, ameublement, éclairage), DE (mosaik, einrichtung, leuchten), ES (iluminación, mueble), RU (мозаика, обстановка, освещение, текстильн)
+- `DESC_KEYS` sostituito con `DESC_KEY_PATTERNS` + `resolveDescKey()` — substring match multilingua al posto di exact match
+
+#### Finiture gallery — sidebar a 2 livelli
+
+- Sidebar mostra categoria + fabric figli indentati (es. LEATHERS → Hamptons, Oregon)
+- Click su sidebar → smooth scroll (`scrollIntoView`) al target con evidenziazione attiva
+- Anchor `id="fabric-{tid}"` + `scroll-mt-32` su ogni fabric section
+
+#### Altro
+
+- `routing-registry.ts`: timeout fetch menu da 8s a 30s (cold cache Drupal)
+
 ### 2026-03-31 — Arredo finiture: pagina dedicata stile Molteni
 
 #### Pagina finiture (`/[locale]/arredo/.../finiture`)
