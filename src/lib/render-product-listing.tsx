@@ -314,13 +314,65 @@ async function _fetchListingData(
     // ── Mosaic cross-filtering: merge faceted counts into all 4 filter dimensions ──
     if (productType === 'prodotto_mosaico') {
       const { fetchMosaicProductCounts } = await import('@/lib/api/mosaic-hub');
-      const counts = await fetchMosaicProductCounts(
-        locale,
-        resolvedTid ?? 'all',
-        resolvedColorTid,
-        shapeTid,
-        finishTid,
-      );
+
+      // For collection groups (NeoColibrì=72→74+75+76, Neoglass=67→77+78+79),
+      // the parent TID has 0 products — counts must be fetched per sub-collection
+      // and summed. Same endpoints, parallel fetches.
+      const collectionGroup = resolvedTid
+        ? resolveCollectionTidGroup(resolvedTid)
+        : 'all';
+      const subTids =
+        typeof collectionGroup === 'string' && collectionGroup.includes('+')
+          ? collectionGroup.split('+').map(Number)
+          : null;
+
+      let counts: Awaited<ReturnType<typeof fetchMosaicProductCounts>>;
+      if (subTids) {
+        // Parallel fetch for each sub-collection, then sum counts
+        const subResults = await Promise.all(
+          subTids.map((tid) =>
+            fetchMosaicProductCounts(
+              locale,
+              tid,
+              resolvedColorTid,
+              shapeTid,
+              finishTid,
+            ),
+          ),
+        );
+        // Merge: sum counts by tid+name across all sub-results
+        type CountItem = { tid: number; name: string; count: number };
+        const sumByKey = (
+          dimension: 'shapes' | 'finishes' | 'collections' | 'colors',
+        ): CountItem[] => {
+          const map = new Map<number, CountItem>();
+          for (const result of subResults) {
+            for (const item of result[dimension]) {
+              const existing = map.get(item.tid);
+              if (existing) {
+                existing.count += item.count;
+              } else {
+                map.set(item.tid, { ...item });
+              }
+            }
+          }
+          return Array.from(map.values());
+        };
+        counts = {
+          shapes: sumByKey('shapes'),
+          finishes: sumByKey('finishes'),
+          collections: sumByKey('collections'),
+          colors: sumByKey('colors'),
+        };
+      } else {
+        counts = await fetchMosaicProductCounts(
+          locale,
+          resolvedTid ?? 'all',
+          resolvedColorTid,
+          shapeTid,
+          finishTid,
+        );
+      }
 
       // Helper: merge counts into filter options.
       // Matches by TID (opt.id) first, then falls back to name (opt.label)
