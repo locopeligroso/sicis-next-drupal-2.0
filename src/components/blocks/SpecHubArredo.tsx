@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import {
@@ -12,6 +13,7 @@ import { FILTER_REGISTRY } from '@/domain/filters/registry';
 import { HubSection } from '@/components/composed/HubSection';
 import { CategoryCard } from '@/components/composed/CategoryCard';
 import { PixallHubCard } from '@/components/composed/PixallHubCard';
+import { Typography } from '@/components/composed/Typography';
 
 /**
  * NFC-normalize + lowercase + slugify a category name.
@@ -64,16 +66,28 @@ export async function SpecHubArredo({
   const typologySection =
     categories.length > 0 ? (
       <HubSection title={isArredo ? 'Indoor' : tHub('exploreByTypology')} titleRole="overline">
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-3">
           {categories.map((cat) => (
-            <CategoryCard
+            <Link
               key={cat.nid}
-              title={cat.name}
-              imageUrl={cat.imageUrl}
               href={`${basePath}/${slugifyName(cat.name)}`}
-              aspectRatio={categoryCardRatio}
-              imageFit={categoryImageFit}
-            />
+              className="flex items-center gap-3 rounded-lg border border-border p-2 transition-colors hover:bg-muted"
+            >
+              {cat.imageUrl ? (
+                <Image
+                  src={cat.imageUrl}
+                  alt={cat.name}
+                  width={48}
+                  height={48}
+                  className="size-12 shrink-0 rounded-sm object-cover"
+                />
+              ) : (
+                <span className="size-12 shrink-0 rounded-sm bg-muted" />
+              )}
+              <Typography textRole="body-sm" as="span" className="line-clamp-2">
+                {cat.name}
+              </Typography>
+            </Link>
           ))}
         </div>
       </HubSection>
