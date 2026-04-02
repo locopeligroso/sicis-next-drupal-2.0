@@ -1,6 +1,8 @@
 import Link from 'next/link';
+import { getLocale } from 'next-intl/server';
 import { getProcessedText } from '@/lib/field-helpers';
 import { sanitizeHtml } from '@/lib/sanitize';
+import { toDrupalLocale } from '@/i18n/config';
 
 /**
  * BloccoE — provisional legacy block for "Info tecniche" sections.
@@ -27,13 +29,17 @@ interface ElementoTecnico {
   field_id_video?: string | null;
 }
 
-function getElementHref(el: ElementoTecnico, locale: string): string | null {
+function getElementHref(
+  el: ElementoTecnico,
+  locale: string,
+  drupalLocale: string,
+): string | null {
   // External link (catalogs, etc.)
   if (el.field_collegamento_esterno) return el.field_collegamento_esterno;
   // PDF attachment
   if (el.field_allegato) return el.field_allegato;
-  // Internal alias
-  const alias = el.aliases?.[locale] ?? el.aliases?.['it'];
+  // Internal alias — use Drupal locale for alias lookup (us→en), Next.js locale for prefix
+  const alias = el.aliases?.[drupalLocale] ?? el.aliases?.['it'];
   if (alias) return `/${locale}${alias}`;
   return null;
 }
@@ -47,13 +53,14 @@ function getTypeLabel(type: string): string {
   return labels[type] ?? type;
 }
 
-export default function BloccoE({
+export default async function BloccoE({
   paragraph,
-  locale = 'it',
 }: {
   paragraph: Record<string, unknown>;
-  locale?: string;
 }) {
+  const locale = await getLocale();
+  // Drupal aliases are keyed by Drupal locale (us → en)
+  const drupalLocale = toDrupalLocale(locale);
   const titleHtml = getProcessedText(paragraph.field_titolo_formattato);
   const title = titleHtml
     ? titleHtml
@@ -98,7 +105,7 @@ export default function BloccoE({
           }}
         >
           {elementi.map((el) => {
-            const href = getElementHref(el, locale);
+            const href = getElementHref(el, locale, drupalLocale);
             const isExternal =
               href?.startsWith('http') || href?.endsWith('.pdf');
 

@@ -15,21 +15,27 @@ interface ImageListFilterProps {
   }[];
   activeValue?: string;
   onChange: (slug: string, isZeroCount?: boolean) => void;
+  hideZeroCount?: boolean;
 }
 
 export function ImageListFilter({
   options,
   activeValue,
   onChange,
+  hideZeroCount = false,
 }: ImageListFilterProps) {
   return (
     <div className="flex flex-col gap-1">
       {options.map((option) => {
         const isActive = activeValue === option.slug;
+        // baseCount=0 means this option doesn't exist for the active P0 filter → hide
+        // count=0 but baseCount>0 means exists but filtered out by P1 → dim
+        const hasNoBase =
+          !isActive && option.baseCount === 0 && option.baseCount != null;
         const isZeroCount =
-          !isActive &&
-          (option.count === 0 || option.baseCount === 0) &&
-          (option.count != null || option.baseCount != null);
+          !isActive && option.count === 0 && option.count != null;
+
+        if (hideZeroCount && hasNoBase) return null;
 
         return (
           <div key={option.slug} className="flex items-center gap-2">
@@ -61,7 +67,7 @@ export function ImageListFilter({
             {isActive && (
               <button
                 type="button"
-                onClick={() => onChange(option.slug)}
+                onClick={() => onChange(option.slug, isZeroCount)}
                 className="shrink-0 cursor-pointer rounded-full p-0.5 text-muted-foreground transition-colors hover:text-foreground"
                 aria-label={`Remove ${option.label}`}
               >

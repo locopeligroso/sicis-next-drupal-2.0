@@ -782,7 +782,13 @@ export default async function SlugPage({
         resolvedForDescCheck.nid,
       );
 
-    if (!isDescriptiveSlug) {
+    // Skip listing intercept for page bundles only. Categoria bundles must pass
+    // through — arredo/illuminazione/tessuto subcategories need the mlHubParentNid
+    // resolution here. Mosaico/vetrite categoria nodes (e.g. /mosaic/marble) are
+    // handled at the subcategory intercept (line ~940) via CATEGORY_LISTING_TYPES guard.
+    const isContentPage = resolvedForDescCheck?.bundle === 'page';
+
+    if (!isDescriptiveSlug && !isContentPage) {
       const sectionConfig = await getSectionConfigAsync(slug, locale);
       if (sectionConfig) {
         // Check if this is a product detail page (3+ segments after base for some types)
@@ -793,52 +799,63 @@ export default async function SlugPage({
           (sp as Record<string, string>) ?? {},
           locale,
         );
+        // Category-based product types that use this intercept for listing
+        const CATEGORY_LISTING_TYPES = new Set([
+          'prodotto_arredo',
+          'prodotto_illuminazione',
+          'prodotto_tessuto',
+        ]);
+
         if (parsed.activeFilters.length > 0) {
-          // Title = the active P0 filter's label (e.g. "Murano Smalto", "Rosso", "Seats")
-          // Falls back to deslugify of the filter value or last slug segment
-          const activeP0 = parsed.activeFilters.find((f) => f.type === 'path');
-          const listingTitle =
-            activeP0?.label ?? deslugify(slug[slug.length - 1]);
-
-          // Resolve hub parent NID for category-based types (illuminazione, tessuto, arredo)
-          // so that subcategory siblings appear in the sidebar.
-          const CATEGORY_LISTING_TYPES = new Set([
-            'prodotto_arredo',
-            'prodotto_illuminazione',
-            'prodotto_tessuto',
-          ]);
-          let mlHubParentNid: number | undefined;
-          let mlResolvedCategoryNid: number | undefined;
-          if (CATEGORY_LISTING_TYPES.has(sectionConfig.productType)) {
-            const ptConfig = FILTER_REGISTRY[sectionConfig.productType];
-            if (sectionConfig.productType === 'prodotto_arredo') {
-              mlHubParentNid = ARREDO_INDOOR_PARENT_NID;
-            } else if (ptConfig) {
-              const basePathSegment = (
-                ptConfig.basePaths[locale] ?? ptConfig.basePaths['it']
-              ).split('/')[0];
-              const baseResolved = await resolvePath(
-                `/${basePathSegment}`,
-                locale,
-              );
-              mlHubParentNid = baseResolved?.nid;
+          // Skip for categoria nodes of non-category-based types (mosaico/vetrite).
+          // e.g. /mosaic/marble is a categoria NID 319 that should render via Categoria
+          // template, not as a filtered product listing. These are Explore landing pages.
+          if (
+            resolvedForDescCheck?.bundle === 'categoria' &&
+            !CATEGORY_LISTING_TYPES.has(sectionConfig.productType)
+          ) {
+            // Fall through to getPageData → Categoria template
+          } else {
+            // Title = the active P0 filter's label (e.g. "Murano Smalto", "Rosso", "Seats")
+            // Falls back to deslugify of the filter value or last slug segment
+            const activeP0 = parsed.activeFilters.find(
+              (f) => f.type === 'path',
+            );
+            const listingTitle =
+              activeP0?.label ?? deslugify(slug[slug.length - 1]);
+            let mlHubParentNid: number | undefined;
+            let mlResolvedCategoryNid: number | undefined;
+            if (CATEGORY_LISTING_TYPES.has(sectionConfig.productType)) {
+              const ptConfig = FILTER_REGISTRY[sectionConfig.productType];
+              if (sectionConfig.productType === 'prodotto_arredo') {
+                mlHubParentNid = ARREDO_INDOOR_PARENT_NID;
+              } else if (ptConfig) {
+                const basePathSegment = (
+                  ptConfig.basePaths[locale] ?? ptConfig.basePaths['it']
+                ).split('/')[0];
+                const baseResolved = await resolvePath(
+                  `/${basePathSegment}`,
+                  locale,
+                );
+                mlHubParentNid = baseResolved?.nid;
+              }
+              // Use parent NID as resolvedCategoryNid so render-product-listing
+              // fetches sibling subcategories for the sidebar
+              if (mlHubParentNid) {
+                mlResolvedCategoryNid = mlHubParentNid;
+              }
             }
-            // Use parent NID as resolvedCategoryNid so render-product-listing
-            // fetches sibling subcategories for the sidebar
-            if (mlHubParentNid) {
-              mlResolvedCategoryNid = mlHubParentNid;
-            }
-          }
 
-          return renderProductListing({
-            productType: sectionConfig.productType,
-            title: listingTitle,
-            slug,
-            searchParams: sp,
-            locale,
-            hubParentNid: mlHubParentNid,
-            resolvedCategoryNid: mlResolvedCategoryNid,
-          });
+            return renderProductListing({
+              productType: sectionConfig.productType,
+              title: listingTitle,
+              slug,
+              searchParams: sp,
+              locale,
+              hubParentNid: mlHubParentNid,
+              resolvedCategoryNid: mlResolvedCategoryNid,
+            });
+          } // end else (non-categoria or category-listing type)
         }
       }
     }
@@ -870,19 +887,50 @@ export default async function SlugPage({
       }
     }
 
-    // Last resort: try as a section listing page
-    const sectionConfig = await getSectionConfigAsync(slug, locale);
-    if (sectionConfig) {
-      const sp = await getSearchParams();
-      return renderProductListing({
-        productType: sectionConfig.productType,
-        title: deslugify(slug[slug.length - 1] ?? slug[0] ?? 'Prodotti'),
-        slug,
-        searchParams: sp,
-        locale,
-      });
+    // If resolved to a content node (page/categoria), build a minimal entity
+    // and render via COMPONENT_MAP — don't hijack as product listing.
+    // Handles /mosaic/marble (categoria NID 319) and similar Explore children.
+    if (
+      resolved &&
+      (resolved.bundle === 'page' || resolved.bundle === 'categoria')
+    ) {
+      const [contentData, blocksData] = await Promise.all([
+        fetchContent(resolved.nid, locale),
+        fetchBlocks(resolved.nid, locale),
+      ]);
+      const blocks = (blocksData ?? []).map(
+        (block: Record<string, unknown>) => ({
+          ...block,
+          type:
+            typeof block.type === 'string' &&
+            !block.type.startsWith('paragraph--')
+              ? `paragraph--${block.type}`
+              : block.type,
+        }),
+      );
+      resource = {
+        ...(contentData ?? {}),
+        type: `${resolved.type}--${resolved.bundle}`,
+        id: String(resolved.nid),
+        _nid: resolved.nid,
+        langcode: locale,
+        field_blocchi: blocks,
+      } as Record<string, unknown>;
+    } else {
+      // Last resort: try as a section listing page
+      const sectionConfig = await getSectionConfigAsync(slug, locale);
+      if (sectionConfig) {
+        const sp = await getSearchParams();
+        return renderProductListing({
+          productType: sectionConfig.productType,
+          title: deslugify(slug[slug.length - 1] ?? slug[0] ?? 'Prodotti'),
+          slug,
+          searchParams: sp,
+          locale,
+        });
+      }
+      notFound();
     }
-    notFound();
   }
 
   // TypeScript narrowing: resource is guaranteed non-null here (notFound() throws above)
@@ -906,9 +954,21 @@ export default async function SlugPage({
       : new Set<number>();
     const isDescriptive = catNid ? descriptiveNids.has(catNid) : false;
 
+    // Only intercept as listing for category-based product types (arredo, illuminazione, tessuto).
+    // Mosaico/vetrite "categoria" nodes (e.g. /mosaic/marble NID 319) are Explore landing pages
+    // that should render via the Categoria template, not as filtered product listings.
+    const CATEGORY_LISTING_TYPES = new Set([
+      'prodotto_arredo',
+      'prodotto_illuminazione',
+      'prodotto_tessuto',
+    ]);
     if (!isDescriptive) {
       const sectionConfig = await getSectionConfigAsync(slug, locale);
-      if (sectionConfig && sectionConfig.filterField) {
+      if (
+        sectionConfig &&
+        sectionConfig.filterField &&
+        CATEGORY_LISTING_TYPES.has(sectionConfig.productType)
+      ) {
         // Use the CMS node title for the page heading (preserves SEO data from Drupal)
         const nodeTitle =
           (resolvedResource.field_titolo_main as { value?: string } | undefined)

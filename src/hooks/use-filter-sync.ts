@@ -59,18 +59,19 @@ export function useFilterSync({
         if (otherPathActive) {
           // Second P0 clicked while another P0 is active in path.
           // Keep current path, add the new P0 as query param (coexist).
-          // Example: /mosaico/blends + click "Gialli" → /mosaico/blends?color=gialli-arancioni
-          // Example: /mosaico/colori/blu-scuro + click "Tephra" → /mosaico/colori/blu-scuro?collection=tephra
+          // Clear all P1 query params (shape, finish, etc.) — context changes.
+          // Example: /mosaico/colori/blu-scuro?finish=metallic + click "Tephra"
+          //        → /mosaico/colori/blu-scuro?collection=tephra (finish cleared)
           const currentPath = window.location.pathname;
-          const params = new URLSearchParams(searchParams.toString());
           const queryKey = key;
-          if (params.get(queryKey) === value) {
-            // Deselect: remove this P0 query param
-            params.delete(queryKey);
+          // Start fresh: only keep the P0 query param, drop all P1 filters
+          const params = new URLSearchParams();
+          const currentP0Value = searchParams.get(queryKey);
+          if (currentP0Value === value) {
+            // Deselect: remove this P0 query param (params already empty)
           } else {
             params.set(queryKey, value);
           }
-          params.delete('page');
           const qs = params.toString();
           router.push(qs ? `${currentPath}?${qs}` : currentPath);
           return;
@@ -122,7 +123,8 @@ export function useFilterSync({
       const filter = activeFilters.find((f) => f.key === key);
       if (!filter) return;
       if (filter.type === 'path') {
-        router.push(`${basePath}?${searchParams.toString()}`);
+        // Clear path P0 → go back to base (drop all query params — context changes)
+        router.push(basePath);
       } else {
         const params = new URLSearchParams(searchParams.toString());
         params.delete(key);

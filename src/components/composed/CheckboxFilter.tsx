@@ -13,12 +13,15 @@ interface CheckboxFilterProps {
   }[];
   activeValues: string[];
   onChange: (slug: string, isZeroCount?: boolean) => void;
+  /** When true, options with count=0 are hidden instead of dimmed (P0 filters: collection/color) */
+  hideZeroCount?: boolean;
 }
 
 export function CheckboxFilter({
   options,
   activeValues,
   onChange,
+  hideZeroCount = false,
 }: CheckboxFilterProps) {
   if (options.length <= 1) return null;
 
@@ -26,9 +29,14 @@ export function CheckboxFilter({
     <div className="flex flex-col gap-0.5">
       {options.map((option) => {
         const isActive = activeValues.includes(option.slug);
+        const hasNoBase =
+          !isActive && option.baseCount === 0 && option.baseCount != null;
         const isZeroCount =
-          (option.count === 0 || option.baseCount === 0) &&
-          (option.count != null || option.baseCount != null);
+          !isActive && option.count === 0 && option.count != null;
+
+        // hideZeroCount: hide options that don't exist for active P0 (baseCount=0)
+        // Keep options that exist but are filtered out by P1 (baseCount>0, count=0) → dimmed
+        if (hideZeroCount && hasNoBase) return null;
 
         return (
           <div key={option.slug} className="flex items-center gap-2">

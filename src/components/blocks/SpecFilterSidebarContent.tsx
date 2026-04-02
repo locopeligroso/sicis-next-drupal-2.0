@@ -140,6 +140,9 @@ export function SpecFilterSidebarContent({
               <ColorSwatchFilter
                 options={options}
                 activeValue={activeValue}
+                hideZeroCount={
+                  group.key === 'collection' || group.key === 'color'
+                }
                 onChange={(slug, zeroCount) =>
                   toggleFilter(
                     group.key,
@@ -154,6 +157,9 @@ export function SpecFilterSidebarContent({
               <ImageListFilter
                 options={options}
                 activeValue={activeValue}
+                hideZeroCount={
+                  group.key === 'collection' || group.key === 'color'
+                }
                 onChange={(slug, zeroCount) =>
                   toggleFilter(
                     group.key,
@@ -168,6 +174,9 @@ export function SpecFilterSidebarContent({
               <CheckboxFilter
                 options={options}
                 activeValues={activeForGroup}
+                hideZeroCount={
+                  group.key === 'collection' || group.key === 'color'
+                }
                 onChange={(slug, zeroCount) =>
                   toggleFilter(
                     group.key,

@@ -1,16 +1,18 @@
 import Link from 'next/link';
 import { getTextValue } from '@/lib/field-helpers';
-import {
-  fetchProducts,
-  getCategoriaProductType,
-  type ProductCard,
-} from '@/lib/api/products';
+import { getCategoriaProductType, type ProductCard } from '@/lib/api/products';
+import { fetchProductListing } from '@/lib/api/product-listing-factory';
 import {
   fetchPagesByCategory,
   fetchSubcategories,
   type PageCard,
   type SubcategoryCard,
 } from '@/lib/api/categories';
+import {
+  fetchMosaicCategoryPages,
+  MOSAIC_CATEGORY_NIDS,
+} from '@/lib/api/mosaic-hub';
+import { SpecMosaicCategoryGrid } from '@/components/blocks/SpecMosaicCategoryGrid';
 import { getDrupalImageUrl } from '@/lib/drupal';
 import DrupalImage from '@/components_legacy/DrupalImage';
 import ParagraphResolver from '@/components_legacy/blocks_legacy/ParagraphResolver';
@@ -194,24 +196,77 @@ function PageCardItem({ page, locale }: { page: PageCard; locale: string }) {
   return card;
 }
 
+/** NIDs that map to mosaic sub-category pages (mosaico-marmo, mosaico-artistico, pixel) */
+const MOSAIC_CATEGORY_NID_SET = new Set<number>(
+  Object.values(MOSAIC_CATEGORY_NIDS),
+);
+
 export default async function Categoria({ node }: CategoriaProps) {
   const title =
     getTextValue(node.field_titolo_main) || getTextValue(node.title) || '';
   const locale = (node.langcode as string) || 'it';
   // entity endpoint provides NID via _nid; fall back to id for legacy compat
   const categoriaId = String(node._nid ?? node.id);
+  const nid = node._nid != null ? Number(node._nid) : NaN;
   const paragraphs =
     (node.field_blocchi as Record<string, unknown>[] | undefined) ?? [];
 
-  const productType = getCategoriaProductType(title);
+  // ── Content page: title + hero image + blocks ──
+  // All categoria nodes render as content pages. If they have paragraph blocks,
+  // render them. If not, show title + hero image (placeholder until Freddi adds blocks).
+  // This prevents Explore children (/mosaic/marble, /mosaic/artistic-mosaic) from
+  // being hijacked as product listings.
+  const heroImage = getDrupalImageUrl(node.field_immagine);
+
+  // ── Mosaic category sub-pages (NIDs 319, 320, 321) ──
+  // These three categoria nodes are Explore landing pages that each display a grid
+  // of child pages. Detect them by NID and inject SpecMosaicCategoryGrid after the
+  // header, leaving paragraph blocks rendering intact below.
+  const isMosaicCategory =
+    !Number.isNaN(nid) && MOSAIC_CATEGORY_NID_SET.has(nid);
+  const mosaicSubPages = isMosaicCategory
+    ? await fetchMosaicCategoryPages(nid, locale)
+    : null;
+
+  return (
+    <article className="flex flex-col gap-(--spacing-section) pt-(--spacing-navbar) pb-(--spacing-section) overflow-x-hidden [&>*]:w-full">
+      {(title || heroImage) && (
+        <header className="max-w-main mx-auto px-(--spacing-page)">
+          {title && (
+            <h1 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-6">
+              {title}
+            </h1>
+          )}
+          {heroImage && (
+            <DrupalImage
+              field={node.field_immagine}
+              alt={title ?? ''}
+              aspectRatio="16/9"
+            />
+          )}
+        </header>
+      )}
+      {mosaicSubPages && mosaicSubPages.length > 0 && (
+        <SpecMosaicCategoryGrid items={mosaicSubPages} />
+      )}
+      {paragraphs.map((p, i) => (
+        <ParagraphResolver
+          key={(p.id as string) ?? i}
+          paragraph={p}
+          pageTitle={title ?? undefined}
+        />
+      ))}
+    </article>
+  );
+
+  /* eslint-disable no-unreachable */
+  // Dead code below — kept for reference during migration.
+  // When all categoria nodes have blocks, remove everything below this line.
+  const productType = getCategoriaProductType(title) as string | null;
 
   // ── Product category (Mosaico, Vetrite, Arredo, etc.) ──
   if (productType) {
-    const { products, total } = await fetchProducts({
-      productType,
-      locale,
-      limit: 24,
-    });
+    const { products, total } = await fetchProductListing(productType!, locale);
     return (
       <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '2rem' }}>
         <div
@@ -281,33 +336,12 @@ export default async function Categoria({ node }: CategoriaProps) {
     const inferredType = getCategoriaProductType(title) || 'prodotto_arredo';
     // products (legacy) `category` param does NOT support multi-value (comma/array).
     // Fetch products for each subcategory in parallel and merge results.
-    const allCatTitles = [title, ...subcategories.map((s) => s.title)];
-    const results = await Promise.all(
-      allCatTitles.map((catTitle) =>
-        fetchProducts({
-          productType: inferredType,
-          locale,
-          limit: 48,
-          filters: [
-            {
-              field: 'field_categoria.title',
-              value: catTitle,
-              operator: '=',
-            },
-          ],
-        }),
-      ),
+    // Fetch all products for this product type (subcategory filtering not
+    // available via factory — legacy products endpoint is dead)
+    const { products: allProducts, total } = await fetchProductListing(
+      inferredType,
+      locale,
     );
-    // Merge and deduplicate by id
-    const seen = new Set<string>();
-    const allProducts = results
-      .flatMap((r) => r.products)
-      .filter((p) => {
-        if (seen.has(p.id)) return false;
-        seen.add(p.id);
-        return true;
-      });
-    const total = allProducts.length;
 
     return (
       <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '2rem' }}>

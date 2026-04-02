@@ -133,6 +133,7 @@ export const fetchVetriteProductCounts = cache(
       params.collection = collectionTid;
     if (colorTid) params.color = colorTid;
     if (finishTid) params.finish = finishTid;
+    if (locale === 'us') params.exclude_no_usa_stock = 1;
 
     const data = await apiGet<VetriteProductCountsRest>(
       `/${locale}/vetrite-product-counts`,

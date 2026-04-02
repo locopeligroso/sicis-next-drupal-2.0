@@ -532,7 +532,12 @@ describe('getCategoriaProductType', () => {
     expect(getCategoriaProductType('')).toBeNull();
   });
 
-  it('is case-sensitive (lowercase fails)', () => {
-    expect(getCategoriaProductType('mosaico')).toBeNull();
+  it('substring fallback matches compound titles case-insensitively', () => {
+    expect(getCategoriaProductType('mosaico')).toBe('prodotto_mosaico');
+    expect(getCategoriaProductType('Mosaico in marmo')).toBe(
+      'prodotto_mosaico',
+    );
+    expect(getCategoriaProductType('Marble mosaic')).toBe('prodotto_mosaico');
+    expect(getCategoriaProductType('Random Page')).toBeNull();
   });
 });

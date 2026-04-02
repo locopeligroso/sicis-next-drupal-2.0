@@ -6,6 +6,32 @@ All notable changes to this project will be documented in this file.
 
 ### 2026-04-02
 
+#### Cross-filtering US stock + baseCount hide/dim
+
+- `mosaic-hub.ts`, `vetrite-hub.ts`: passano `exclude_no_usa_stock=1` a count endpoint su `/us/` — conteggi escludono prodotti out-of-stock.
+- `render-product-listing.tsx`: doppia chiamata count in parallelo (con e senza P1) per calcolare `baseCount`. Senza P1, `baseCount = count` cosi le opzioni P0 a zero vengono nascoste (non dimmate).
+- Logica hide/dim simmetrica per colore↔collezione:
+  - **P0 (collezione/colore) con `baseCount=0`** → hidden (non esiste quella combinazione).
+  - **P0 con `baseCount>0` e `count=0`** → dimmed (esiste ma filtrato da P1 attivo).
+  - **P1 (shape/finish) con `count=0`** → dimmed.
+- `CheckboxFilter`, `ImageListFilter`, `ColorSwatchFilter`: nuova prop `hideZeroCount` con logica `hasNoBase` vs `isZeroCount`.
+- Popover "Cambia": opzioni con `count=0` nascoste.
+- `use-filter-sync.ts`: click su collezione P0 cancella filtri P1 (shape/finish) — contesto pulito.
+
+#### BloccoE — fix link multilingua
+
+- `BloccoE.tsx`: usa `getLocale()` + `toDrupalLocale()` per link alias tradotti (non piu hardcoded IT).
+
+#### Menu description — solo CMS, niente fallback
+
+- Rimosse chiavi `exploreDesc`/`filterFindDesc`/`projectsDesc`/`infoDesc` da tutti i messages/\*.json.
+- NavbarDesktop: mostra description solo se CMS la fornisce, niente fallback.
+- `cleanDescription()`: filtra stringa `"None"` da Drupal.
+
+#### Routing fix — info-tecniche-textiles
+
+- `page.tsx`: slug con bundle `page` in Drupal non vengono piu intercettati come listing (fix per pagine info-tecniche-\* figlie di menu prodotto). Eccezione: slug in `LISTING_SLUG_OVERRIDES` restano listing (es. `prodotti-tessili`).
+
 #### Vetrite finiture USA + R3F finish pill UI
 
 - `vetrite-product.ts`: nuovo campo `finitureUsa` da `field_finiture_usa` (Drupal endpoint).

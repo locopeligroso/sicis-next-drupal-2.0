@@ -387,68 +387,133 @@ async function _fetchListingData(
               .filter((tid) => tid !== effectiveCollectionTid)
           : null;
 
-      let counts: Awaited<ReturnType<typeof fetchMosaicProductCounts>>;
-      if (subTids) {
-        // Parallel fetch for each sub-collection, then sum counts
-        const subResults = await Promise.all(
-          subTids.map((tid) =>
-            fetchMosaicProductCounts(
-              locale,
-              tid,
-              effectiveColorTid,
-              shapeTid,
-              finishTid,
-            ),
-          ),
-        );
-        // Merge: sum counts by tid+name across all sub-results
-        type CountItem = { tid: number; name: string; count: number };
-        const sumByKey = (
-          dimension: 'shapes' | 'finishes' | 'collections' | 'colors',
-        ): CountItem[] => {
-          const map = new Map<number, CountItem>();
-          for (const result of subResults) {
-            for (const item of result[dimension]) {
-              const existing = map.get(item.tid);
-              if (existing) {
-                existing.count += item.count;
-              } else {
-                map.set(item.tid, { ...item });
-              }
+      // Fetch two sets of counts in parallel:
+      // 1. `counts` — with ALL active filters (P0 + P1) → used for P1 filter counts
+      // 2. `baseCounts` — with only P0 filters (no shape/finish) → used as baseCount
+      //    to distinguish "collection doesn't exist for this color" (baseCount=0 → hide)
+      //    from "collection exists but no products with this finish" (baseCount>0, count=0 → dim)
+      const hasP1Filters = shapeTid != null || finishTid != null;
+
+      type CountItem = { tid: number; name: string; count: number };
+      const sumByKey = (
+        results: Awaited<ReturnType<typeof fetchMosaicProductCounts>>[],
+        dimension: 'shapes' | 'finishes' | 'collections' | 'colors',
+      ): CountItem[] => {
+        const map = new Map<number, CountItem>();
+        for (const result of results) {
+          for (const item of result[dimension]) {
+            const existing = map.get(item.tid);
+            if (existing) {
+              existing.count += item.count;
+            } else {
+              map.set(item.tid, { ...item });
             }
           }
-          return Array.from(map.values());
-        };
+        }
+        return Array.from(map.values());
+      };
+
+      let counts: Awaited<ReturnType<typeof fetchMosaicProductCounts>>;
+      let baseCounts: Awaited<
+        ReturnType<typeof fetchMosaicProductCounts>
+      > | null = null;
+
+      if (subTids) {
+        const [subResults, baseSubResults] = await Promise.all([
+          Promise.all(
+            subTids.map((tid) =>
+              fetchMosaicProductCounts(
+                locale,
+                tid,
+                effectiveColorTid,
+                shapeTid,
+                finishTid,
+              ),
+            ),
+          ),
+          hasP1Filters
+            ? Promise.all(
+                subTids.map((tid) =>
+                  fetchMosaicProductCounts(
+                    locale,
+                    tid,
+                    effectiveColorTid,
+                    undefined,
+                    undefined,
+                  ),
+                ),
+              )
+            : null,
+        ]);
         counts = {
-          shapes: sumByKey('shapes'),
-          finishes: sumByKey('finishes'),
-          collections: sumByKey('collections'),
-          colors: sumByKey('colors'),
+          shapes: sumByKey(subResults, 'shapes'),
+          finishes: sumByKey(subResults, 'finishes'),
+          collections: sumByKey(subResults, 'collections'),
+          colors: sumByKey(subResults, 'colors'),
         };
+        if (baseSubResults) {
+          baseCounts = {
+            shapes: sumByKey(baseSubResults, 'shapes'),
+            finishes: sumByKey(baseSubResults, 'finishes'),
+            collections: sumByKey(baseSubResults, 'collections'),
+            colors: sumByKey(baseSubResults, 'colors'),
+          };
+        }
       } else {
-        counts = await fetchMosaicProductCounts(
-          locale,
-          effectiveCollectionTid ?? 'all',
-          effectiveColorTid,
-          shapeTid,
-          finishTid,
-        );
+        const [mainCounts, mainBaseCounts] = await Promise.all([
+          fetchMosaicProductCounts(
+            locale,
+            effectiveCollectionTid ?? 'all',
+            effectiveColorTid,
+            shapeTid,
+            finishTid,
+          ),
+          hasP1Filters
+            ? fetchMosaicProductCounts(
+                locale,
+                effectiveCollectionTid ?? 'all',
+                effectiveColorTid,
+                undefined,
+                undefined,
+              )
+            : null,
+        ]);
+        counts = mainCounts;
+        baseCounts = mainBaseCounts;
       }
 
       // Helper: merge counts into filter options.
       // Matches by TID (opt.id) first, then falls back to name (opt.label)
       // because collections/colors hub endpoints don't include TID.
+      // When baseCountItems is provided, sets baseCount (P0-only count) so the UI
+      // can distinguish "doesn't exist" (baseCount=0 → hide) from "filtered out
+      // by P1" (baseCount>0, count=0 → dim).
       const mergeCounts = (
         options: FilterOption[] | undefined,
         countItems: { tid: number; name: string; count: number }[],
+        baseCountItems?: { tid: number; name: string; count: number }[],
       ): FilterOption[] | undefined => {
         if (!options || countItems.length === 0) return options;
         const byTid = new Map(countItems.map((c) => [String(c.tid), c.count]));
         const byName = new Map(countItems.map((c) => [c.name, c.count]));
-        return options.map((opt) => ({
-          ...opt,
-          count: byTid.get(opt.id ?? '') ?? byName.get(opt.label) ?? 0,
-        }));
+        const baseTid = baseCountItems
+          ? new Map(baseCountItems.map((c) => [String(c.tid), c.count]))
+          : null;
+        const baseName = baseCountItems
+          ? new Map(baseCountItems.map((c) => [c.name, c.count]))
+          : null;
+        return options.map((opt) => {
+          const count = byTid.get(opt.id ?? '') ?? byName.get(opt.label) ?? 0;
+          return {
+            ...opt,
+            count,
+            // When no P1 is active, baseCount = count (same thing — no P1 distinction).
+            // This ensures hideZeroCount hides count=0 options instead of dimming them.
+            baseCount: baseTid
+              ? (baseTid.get(opt.id ?? '') ?? baseName?.get(opt.label) ?? 0)
+              : count,
+          };
+        });
       };
 
       // Special merge for collections: NeoColibrì/Neoglass are single entries
@@ -457,6 +522,7 @@ async function _fetchListingData(
       const mergeCollectionCounts = (
         options: FilterOption[] | undefined,
         countItems: { tid: number; name: string; count: number }[],
+        baseCountItems?: { tid: number; name: string; count: number }[],
       ): FilterOption[] | undefined => {
         if (!options || countItems.length === 0) return options;
 
@@ -471,42 +537,64 @@ async function _fetchListingData(
           }
         }
 
-        // Sum counts: group sub-collection counts under the parent name
-        const byName = new Map<string, number>();
-        for (const item of countItems) {
-          const parentTid = subToParent.get(item.tid);
-          if (parentTid != null) {
-            // This is a sub-collection — find the parent option label to accumulate
-            const parentOpt = options.find(
-              (o) =>
-                o.id === String(parentTid) ||
-                item.name.toLowerCase().startsWith(o.label.toLowerCase()),
-            );
-            if (parentOpt) {
-              byName.set(
-                parentOpt.label,
-                (byName.get(parentOpt.label) ?? 0) + item.count,
+        const sumGroup = (
+          items: { tid: number; name: string; count: number }[],
+        ) => {
+          const byName = new Map<string, number>();
+          for (const item of items) {
+            const parentTid = subToParent.get(item.tid);
+            if (parentTid != null) {
+              const parentOpt = options.find(
+                (o) =>
+                  o.id === String(parentTid) ||
+                  item.name.toLowerCase().startsWith(o.label.toLowerCase()),
               );
-              continue;
+              if (parentOpt) {
+                byName.set(
+                  parentOpt.label,
+                  (byName.get(parentOpt.label) ?? 0) + item.count,
+                );
+                continue;
+              }
             }
+            byName.set(item.name, (byName.get(item.name) ?? 0) + item.count);
           }
-          // Regular collection or parent itself
-          byName.set(item.name, (byName.get(item.name) ?? 0) + item.count);
-        }
+          return byName;
+        };
 
-        return options.map((opt) => ({
-          ...opt,
-          count: byName.get(opt.label) ?? 0,
-        }));
+        const byName = sumGroup(countItems);
+        const baseByName = baseCountItems ? sumGroup(baseCountItems) : null;
+
+        return options.map((opt) => {
+          const count = byName.get(opt.label) ?? 0;
+          return {
+            ...opt,
+            count,
+            baseCount: baseByName ? (baseByName.get(opt.label) ?? 0) : count,
+          };
+        });
       };
 
-      const mergedShape = mergeCounts(filterOptions.shape, counts.shapes);
-      const mergedFinish = mergeCounts(filterOptions.finish, counts.finishes);
+      const mergedShape = mergeCounts(
+        filterOptions.shape,
+        counts.shapes,
+        baseCounts?.shapes,
+      );
+      const mergedFinish = mergeCounts(
+        filterOptions.finish,
+        counts.finishes,
+        baseCounts?.finishes,
+      );
       const mergedCollection = mergeCollectionCounts(
         filterOptions.collection,
         counts.collections,
+        baseCounts?.collections,
       );
-      const mergedColor = mergeCounts(filterOptions.color, counts.colors);
+      const mergedColor = mergeCounts(
+        filterOptions.color,
+        counts.colors,
+        baseCounts?.colors,
+      );
       if (mergedShape) filterOptions.shape = mergedShape;
       if (mergedFinish) filterOptions.finish = mergedFinish;
       if (mergedCollection) filterOptions.collection = mergedCollection;
@@ -645,9 +733,16 @@ async function _fetchListingData(
     const pathPrefix = filters[activePathP0.key]?.pathPrefix?.[locale];
 
     const isTypologyType = TYPOLOGY_TYPES.has(productType);
-    const filteredPopoverOptions = isTypologyType
-      ? popoverOptions.filter((opt) => !opt.parentId)
-      : popoverOptions.filter((opt) => !opt.label.includes(' - '));
+    const filteredPopoverOptions = (
+      isTypologyType
+        ? popoverOptions.filter((opt) => !opt.parentId)
+        : popoverOptions.filter((opt) => !opt.label.includes(' - '))
+    ).filter((opt) => {
+      // Use baseCount (P0-only) to hide genuinely non-existent options.
+      // count=0 with baseCount>0 means option exists but filtered by P1 — keep it.
+      const guard = opt.baseCount ?? opt.count;
+      return guard == null || guard > 0;
+    });
 
     popoverItems = filteredPopoverOptions.map((opt) => ({
       slug: opt.slug,

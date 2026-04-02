@@ -278,5 +278,46 @@ export function getCategoriaProductType(categoriaTitle: string): string | null {
     Iluminación: 'prodotto_illuminazione', // ES
     Освещение: 'prodotto_illuminazione', // RU
   };
-  return map[categoriaTitle] ?? null;
+  const exact = map[categoriaTitle];
+  if (exact) return exact;
+
+  // Substring match for sub-categories (e.g. "Mosaico in marmo", "Marble mosaic",
+  // "Pixel mosaic", "Artistic mosaic", "Mosaico in metallo")
+  const lower = categoriaTitle.toLowerCase();
+  const keywordMap: [string[], string][] = [
+    [
+      ['mosaico', 'mosaic', 'mosaïque', 'mosaik', 'мозаика'],
+      'prodotto_mosaico',
+    ],
+    [['vetrite'], 'prodotto_vetrite'],
+    [
+      [
+        'arredo',
+        'furniture',
+        'ameublement',
+        'einrichtung',
+        'mueble',
+        'обстановка',
+      ],
+      'prodotto_arredo',
+    ],
+    [['tessil', 'textil', 'fabric', 'текстиль'], 'prodotto_tessuto'],
+    [['pixall'], 'prodotto_pixall'],
+    [
+      [
+        'illuminazione',
+        'lighting',
+        'éclairage',
+        'beleuchtung',
+        'iluminación',
+        'освещение',
+      ],
+      'prodotto_illuminazione',
+    ],
+  ];
+  for (const [keywords, productType] of keywordMap) {
+    if (keywords.some((kw) => lower.includes(kw))) return productType;
+  }
+
+  return null;
 }

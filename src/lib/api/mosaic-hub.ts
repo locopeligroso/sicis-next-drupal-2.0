@@ -132,6 +132,8 @@ export const fetchMosaicProductCounts = cache(
     if (colorTid) params.color = colorTid;
     if (shapeTid) params.shape = shapeTid;
     if (finishTid) params.finish = finishTid;
+    // US locale: exclude out-of-stock products from counts
+    if (locale === 'us') params.exclude_no_usa_stock = 1;
 
     const data = await apiGet<MosaicProductCountsRest>(
       `/${locale}/mosaic-product-counts`,
@@ -164,6 +166,55 @@ export const fetchMosaicFinishes = cache(
         imageUrl: null,
         href: pathWithoutLocale ? `/${locale}${pathWithoutLocale}` : '#',
         tid: String(item.tid),
+      };
+    });
+  },
+);
+
+// ── Mosaic category sub-pages ─────────────────────────────────────────────
+
+/** NID mapping for the three mosaic sub-category page endpoints */
+export const MOSAIC_CATEGORY_NIDS = {
+  'mosaico-marmo': 319,
+  'mosaico-artistico': 320,
+  pixel: 321,
+} as const;
+
+/** Raw shape returned by Drupal `pages/{nid}` endpoints */
+interface MosaicCategoryPageItem {
+  nid: string;
+  field_titolo_main: string;
+  field_immagine: string;
+  view_node: string;
+}
+
+/** Normalized shape for consumers */
+export interface MosaicCategoryPage {
+  nid: string;
+  title: string;
+  imageUrl: string | null;
+  href: string | null;
+}
+
+export const fetchMosaicCategoryPages = cache(
+  async (
+    categoryNid: number,
+    locale: string,
+  ): Promise<MosaicCategoryPage[]> => {
+    const data = await apiGet<MosaicCategoryPageItem[]>(
+      `/${locale}/pages/${categoryNid}`,
+      {},
+      300,
+    );
+    if (!data) return [];
+    return data.map((item) => {
+      const rawHref = stripDomain(item.view_node);
+      const hrefWithoutLocale = rawHref ? stripLocalePrefix(rawHref) : null;
+      return {
+        nid: item.nid,
+        title: item.field_titolo_main,
+        imageUrl: stripDomain(emptyToNull(item.field_immagine)),
+        href: hrefWithoutLocale ? `/${locale}${hrefWithoutLocale}` : null,
       };
     });
   },

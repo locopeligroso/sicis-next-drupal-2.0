@@ -20,12 +20,14 @@ interface ColorSwatchFilterProps {
   }[];
   activeValue?: string;
   onChange: (slug: string, isZeroCount?: boolean) => void;
+  hideZeroCount?: boolean;
 }
 
 export function ColorSwatchFilter({
   options,
   activeValue,
   onChange,
+  hideZeroCount = false,
 }: ColorSwatchFilterProps) {
   // base-ui Tooltip generates auto-incremented IDs that differ between SSR and
   // client, causing hydration mismatch. Render Tooltips only after mount.
@@ -47,10 +49,12 @@ export function ColorSwatchFilter({
             ? { backgroundColor: option.cssColor }
             : {};
 
+        const hasNoBase =
+          !isActive && option.baseCount === 0 && option.baseCount != null;
         const isZeroCount =
-          !isActive &&
-          (option.count === 0 || option.baseCount === 0) &&
-          (option.count != null || option.baseCount != null);
+          !isActive && option.count === 0 && option.count != null;
+
+        if (hideZeroCount && hasNoBase) return null;
 
         const swatch = (
           <button
