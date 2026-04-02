@@ -2,13 +2,16 @@
 
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
-import { PackageIcon, FileTextIcon } from 'lucide-react';
+import { FileTextIcon } from 'lucide-react';
 import { useQuoteSheet } from '@/components/composed/QuoteSheetProvider';
+import { AddToSampleCartButton } from '@/components/composed/AddToSampleCartButton';
+import type { SampleCartItem } from '@/domain/sample-cart/types';
 
 interface ProductCtaProps {
   hasSample?: boolean;
   showRequestSample?: boolean;
-  onRequestSample?: () => void;
+  sampleItem?: Omit<SampleCartItem, 'variant'>;
+  variantOptions?: string[];
   onGetQuote?: () => void;
   className?: string;
 }
@@ -16,7 +19,8 @@ interface ProductCtaProps {
 export function ProductCta({
   hasSample = true,
   showRequestSample = true,
-  onRequestSample,
+  sampleItem,
+  variantOptions,
   onGetQuote,
   className,
 }: ProductCtaProps) {
@@ -27,16 +31,12 @@ export function ProductCta({
   return (
     <div className={className}>
       <div className="flex gap-3 md:max-w-sm">
-        {hasSample && showRequestSample && (
-          <Button
-            size="lg"
-            variant="outline"
+        {hasSample && showRequestSample && sampleItem && (
+          <AddToSampleCartButton
+            item={sampleItem}
+            variantOptions={variantOptions}
             className="flex-1"
-            onClick={onRequestSample}
-          >
-            <PackageIcon data-icon="inline-start" />
-            {t('requestSample')}
-          </Button>
+          />
         )}
         <Button size="lg" className="flex-1" onClick={handleGetQuote}>
           <FileTextIcon data-icon="inline-start" />

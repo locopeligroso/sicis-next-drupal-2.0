@@ -441,31 +441,38 @@ export default async function SlugPage({
 
   // Bypass translatePath per slug che devono essere listing prodotti ma hanno nodi Drupal
   // con lo stesso alias (categoria_blog, documento, page) che verrebbero renderizzati al posto.
+  // Exception: if resolve-path says this slug is a regular "page" bundle, skip listing
+  // intercept and render as content page (handles info-tecniche-* children of product menus).
   const isListingSlug =
     registry?.listingSlugs.has(singleSlug!) ||
     LISTING_SLUG_OVERRIDES.has(singleSlug!);
   if (singleSlug && isListingSlug) {
-    if (
-      process.env.NODE_ENV !== 'production' &&
-      LISTING_SLUG_OVERRIDES.has(singleSlug!) &&
-      !registry?.listingSlugs.has(singleSlug!)
-    ) {
-      console.debug('[routing] LISTING_SLUG_OVERRIDES hit:', {
-        slug: singleSlug,
-        locale,
-      });
+    const resolvedListing = await resolvePath(drupalPath, locale);
+    if (resolvedListing?.bundle === 'page') {
+      // Not a listing — fall through to entity rendering below
+    } else {
+      if (
+        process.env.NODE_ENV !== 'production' &&
+        LISTING_SLUG_OVERRIDES.has(singleSlug!) &&
+        !registry?.listingSlugs.has(singleSlug!)
+      ) {
+        console.debug('[routing] LISTING_SLUG_OVERRIDES hit:', {
+          slug: singleSlug,
+          locale,
+        });
+      }
+      return (
+        <Suspense fallback={<ProductListingSkeleton />}>
+          <ListingContent
+            singleSlug={singleSlug}
+            slug={slug}
+            locale={locale}
+            searchParams={searchParams}
+            drupalPath={drupalPath}
+          />
+        </Suspense>
+      );
     }
-    return (
-      <Suspense fallback={<ProductListingSkeleton />}>
-        <ListingContent
-          singleSlug={singleSlug}
-          slug={slug}
-          locale={locale}
-          searchParams={searchParams}
-          drupalPath={drupalPath}
-        />
-      </Suspense>
-    );
   }
 
   // ── Arredo descriptive categories — slug-based detection ────────────────
@@ -589,12 +596,20 @@ export default async function SlugPage({
       if (resolved.bundle === 'prodotto_mosaico') {
         const product = await fetchMosaicProduct(resolved.nid, locale);
         if (product) {
+          // US locale: hide out-of-stock products entirely
+          if (locale === 'us' && product.noUsaStock) {
+            notFound();
+          }
           return <MosaicProductPreview product={product} locale={locale} />;
         }
       }
       if (resolved.bundle === 'prodotto_vetrite') {
         const product = await fetchVetriteProduct(resolved.nid, locale);
         if (product) {
+          // US locale: hide out-of-stock products entirely
+          if (locale === 'us' && product.noUsaStock) {
+            notFound();
+          }
           const legacyNode = vetriteToLegacyNode(product, locale);
           return <ProdottoVetrite node={legacyNode} />;
         }

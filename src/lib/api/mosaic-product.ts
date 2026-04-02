@@ -76,8 +76,9 @@ export interface MosaicProduct {
 
 // ── Normalizers ─────────────────────────────────────────────────────────────
 
-function toBool(val: string | null | undefined): boolean {
-  return val === '1' || val === 'true';
+/** Drupal boolean fields come in many shapes: '1', 'On', 'True', true */
+function toBool(val: string | boolean | null | undefined): boolean {
+  return val === '1' || val === 'On' || val === 'True' || val === true;
 }
 
 function normalizeDocument(
@@ -121,9 +122,9 @@ function normalizeMosaicProduct(raw: MosaicProductRest): MosaicProduct {
     priceEu: raw.field_prezzo_eu,
     priceUsaSheet: raw.field_prezzo_usa_sheet,
     priceUsaSqft: raw.field_prezzo_usa_sqft,
-    hasSample: raw.field_campione === '1',
-    noUsaStock: raw.field_no_usa_stock === '1',
-    priceOnDemand: raw.field_prezzo_on_demand === '1',
+    hasSample: toBool(raw.field_campione),
+    noUsaStock: toBool(raw.field_no_usa_stock),
+    priceOnDemand: toBool(raw.field_prezzo_on_demand),
     imageUrl: emptyToNull(raw.field_immagine),
     imageSampleUrl: emptyToNull(raw.field_immagine_campione),
     gallery: raw.field_gallery ?? [],

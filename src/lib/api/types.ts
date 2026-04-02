@@ -15,6 +15,7 @@ export interface ProductCard {
   imageUrl: string | null; // field_immagine_anteprima (preview for cards)
   price: string | null;
   priceOnDemand: string | null; // Drupal returns "0", "1", or null
+  noUsaStock?: string | null; // "1" | "On" when out of stock in USA
   path: string | null;
 }
 
@@ -194,9 +195,9 @@ export interface MosaicProductRest {
   field_prezzo_eu: string | null;
   field_prezzo_usa_sheet: string | null;
   field_prezzo_usa_sqft: string | null;
-  field_campione: string;
-  field_no_usa_stock: string;
-  field_prezzo_on_demand: string;
+  field_campione: string | boolean;
+  field_no_usa_stock: string | boolean;
+  field_prezzo_on_demand: string | boolean;
   field_immagine: string | null;
   field_immagine_campione: string | null;
   field_gallery: string[];
@@ -255,6 +256,7 @@ export interface VetriteProductRest {
   field_no_usa_stock: string;
   field_prezzo_on_demand: string;
   field_formato_campione: string | null;
+  field_finiture_usa?: string[];
   field_collezione?: VetriteProductCollectionRest;
 }
 

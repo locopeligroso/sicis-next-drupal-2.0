@@ -6,6 +6,65 @@ All notable changes to this project will be documented in this file.
 
 ### 2026-04-02
 
+#### Sample Cart — sistema richiesta campioni per /us/ (mosaico + vetrite)
+
+Riscrittura nativa del widget `sicis-ecommerce-react` (IIFE) come componenti Next.js integrati nel Design System. Carrello campioni con checkout PayPal, solo locale `/us/`.
+
+**Domain layer** (`src/domain/sample-cart/`):
+
+- `types.ts`: tipi cart, pricing, shipping, checkout. `SampleProductType = 'mosaico' | 'vetrite'`.
+- `cart-logic.ts`: funzioni pure — `addItem`, `removeItem`, `clearCart`, `getPricingSummary`. Free tier: 5 mosaici + 3 vetrite, poi $20 flat.
+- `pricing.ts`: calcolo costi spedizione per 4 regioni USA (east/central/west/outer), 4 fasce quantità.
+- `shipping-data.json`: 50 stati + DC mappati alle 4 regioni con costi e tempi.
+- `storage.ts`: persistenza localStorage con contratto `useSyncExternalStore` (SSR-safe, cross-tab sync).
+- `SampleCartProvider.tsx`: React Context + `useSampleCart()` hook. Locale-gated: no-op su non-US.
+- 51 unit test (cart-logic + pricing).
+
+**UI components** (`src/components/composed/`):
+
+- `SampleCartSheet.tsx`: Sheet multi-step (cart review → checkout form 16 campi → summary + PayPal redirect).
+- `SampleCartBadge.tsx`: icona carrello nel Navbar con badge contatore. Auto-hidden su non-US.
+- `AddToSampleCartButton.tsx`: bottone "Request Sample" con stati (default/added/in-cart), selector variante per vetrite.
+- `VetriteSampleSection.tsx`: wrapper client per template legacy ProdottoVetrite.
+
+**Server Action** (`src/lib/actions/sample-checkout.ts`):
+
+- `submitSampleCheckout`: POST a Drupal `/ecstore/checkout/confirm`, ritorna `approval_url` PayPal.
+
+**Wiring**:
+
+- `layout.tsx`: `SampleCartProvider` wrappa tutto il contenuto dentro `NextIntlClientProvider`.
+- `ProductCta.tsx`: prop `sampleItem` sostituisce `onRequestSample` callback (mai implementato). Renderizza `AddToSampleCartButton`.
+- `SpecProductHero.tsx`: passa `sampleItem` + `variantOptions` a `ProductCta`.
+- `MosaicProductPreview.tsx`: costruisce `sampleItem` da `MosaicProduct` data (US + hasSample gated).
+- `ProdottoVetrite.tsx`: aggiunto `VetriteSampleSection` con selector finiture USA.
+- `NavbarDesktop.tsx` + `NavbarMobile.tsx`: aggiunto `SampleCartBadge`.
+
+**i18n**: namespace `sampleCart` aggiunto a tutti e 6 i file `messages/*.json` (~45 chiavi). IT tradotto, altri locali con placeholder EN.
+
+**Zero dipendenze npm nuove.**
+
+#### US out-of-stock — prodotti non disponibili nascosti su /us/
+
+Prodotti mosaico e vetrite con `noUsaStock=true` completamente nascosti su `/us/`:
+
+- **Pagine dettaglio**: `notFound()` in `[...slug]/page.tsx` per mosaico e vetrite.
+- **Listing grids**: filtro `products.filter(p => !p.noUsaStock)` in `product-listing-factory.ts` e `products.ts`.
+- **Normalizer robusto**: `toBool()` ora accetta `'1'`, `'On'`, `'True'`, `true` (Drupal manda formati diversi tra listing e detail endpoint).
+- `ProductListingItemRest`: aggiunto `field_no_usa_stock` al tipo REST.
+- `ProductCard`: aggiunto `noUsaStock: boolean` all'interfaccia normalizzata.
+
+#### Fix — ISR cold start: listing vuoti dopo build
+
+- `product-listing-factory.ts`: `throw` invece di `return { products: [], total: 0 }` quando Drupal non risponde. `unstable_cache` non cacha eccezioni → retry automatico al prossimo request. Su revalidate, Next.js mantiene l'ultima pagina valida in cache.
+- Nuovo `error.tsx` boundary per `[...slug]` — safety net per il primo request in assoluto (mai cachato). Mostra "Riprova" con retry che trova Drupal warm.
+
+#### Vetrite finiture USA
+
+- `vetrite-product.ts`: nuovo campo `finitureUsa: string[]` da `field_finiture_usa` (endpoint Drupal).
+- `ProdottoVetrite.tsx`: su `/us/` mostra solo le finiture da `field_finiture_usa` invece di tutte.
+- R3F fullscreen: `FinishSelector` riscritto con pill buttons (no immagini), filtrati per `availableFinishes` su `/us/`. Usa token DS vetrite (`--hs-surface-on`, `--hs-radius-full`).
+
 #### Fix — hub category/color hrefs perdevano `/us/` locale
 
 - `mosaic-hub.ts`, `vetrite-hub.ts`: gli href delle category card e color swatch nel hub usavano il locale Drupal (`/en/`) invece del locale Next.js (`/us/`). Ora `stripDomain` + `stripLocalePrefix` + `/${locale}` garantiscono la persistenza del prefisso `/us/` su tutti gli hub (mosaico, vetrite, arredo, tessili, illuminazione) e sotto-pagine (collezioni, colori).

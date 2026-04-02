@@ -8,6 +8,7 @@ import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { sanitizeHtml } from '@/lib/sanitize';
 import styles from '@/styles/product.module.css';
 import type { ProdottoVetrite as ProdottoVetriteType } from '@/types/drupal/entities';
+import { VetriteSampleSection } from '@/components/composed/VetriteSampleSection';
 
 // ── Document item type ────────────────────────────────────────────────────────
 interface DocItem {
@@ -67,7 +68,14 @@ export default async function ProdottoVetrite({
 
   // ── Taxonomy arrays ───────────────────────────────────────────────────────
   const colori = typedNode.field_colori ?? [];
-  const finiture = typedNode.field_finiture ?? [];
+  const finitureUsa =
+    (typedNode.field_finiture_usa as string[] | undefined) ?? [];
+  // On /us/, use field_finiture_usa directly (string names from Drupal)
+  // On other locales, use field_finiture (taxonomy term objects with .name)
+  const finiture =
+    isUs && finitureUsa.length > 0
+      ? finitureUsa.map((name) => ({ name }))
+      : (typedNode.field_finiture ?? []);
   const texture = typedNode.field_texture ?? [];
 
   // ── Pricing ───────────────────────────────────────────────────────────────
@@ -159,7 +167,15 @@ export default async function ProdottoVetrite({
               position: 'relative',
             }}
           >
-            <VetriteCanvasLoader textureUrl={textureUrl} alt={title ?? ''} />
+            <VetriteCanvasLoader
+              textureUrl={textureUrl}
+              alt={title ?? ''}
+              productTitle={title ?? undefined}
+              collectionName={collezione ?? undefined}
+              availableFinishes={
+                isUs && finitureUsa.length > 0 ? finitureUsa : undefined
+              }
+            />
           </div>
         ) : (
           <DrupalImage
@@ -510,6 +526,19 @@ export default async function ProdottoVetrite({
             </div>
           )}
         </section>
+      )}
+
+      {/* ── 14b. Sample cart — visible only on /us/ ─────────────────────────── */}
+      {isUs && (
+        <VetriteSampleSection
+          nid={Number(typedNode.nid)}
+          title={String(title ?? '')}
+          imageUrl={getDrupalImageUrl(typedNode.field_immagine)}
+          collection={collezione ?? null}
+          sampleFormat={formatoCampione ?? null}
+          finitureUsa={finitureUsa}
+          hasSample={!!typedNode.field_campione}
+        />
       )}
 
       {/* ── 15. Documenti ────────────────────────────────────────────────────── */}

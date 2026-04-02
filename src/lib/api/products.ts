@@ -20,6 +20,7 @@ export interface ProductCard {
   imageUrl: string | null; // field_immagine_anteprima (preview for cards)
   price: string | null;
   priceOnDemand: boolean;
+  noUsaStock: boolean;
   path: string | null;
 }
 
@@ -110,6 +111,11 @@ function normalizeProduct(item: RestProductCard): ProductCard {
       typeof item.priceOnDemand === 'string'
         ? item.priceOnDemand === '1'
         : Boolean(item.priceOnDemand),
+    noUsaStock:
+      item.noUsaStock === '1' ||
+      item.noUsaStock === 'On' ||
+      item.noUsaStock === 'True' ||
+      item.noUsaStock === 'true',
     path: stripLocalePrefix(stripDomain(item.path)),
   };
 }
@@ -165,9 +171,17 @@ export const fetchProducts = cache(
 
     if (!result) return { products: [], total: 0 };
 
+    let products = result.items.map(normalizeProduct);
+
+    // US locale: hide out-of-stock products from listings.
+    // Drupal REST view now includes field_no_usa_stock (added by Freddi).
+    if (locale === 'us') {
+      products = products.filter((p) => !p.noUsaStock);
+    }
+
     return {
-      products: result.items.map(normalizeProduct),
-      total: result.total,
+      products,
+      total: locale === 'us' ? products.length : result.total,
     };
   },
 );

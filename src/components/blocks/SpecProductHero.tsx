@@ -11,6 +11,7 @@ import { ProductCta } from '@/components/composed/ProductCta';
 import { ProductPricingCard } from '@/components/composed/ProductPricingCard';
 import { ArrowLink } from '@/components/composed/ArrowLink';
 import { cn } from '@/lib/utils';
+import type { SampleCartItem } from '@/domain/sample-cart/types';
 
 export interface SpecProductHeroProps {
   title: string;
@@ -19,7 +20,8 @@ export interface SpecProductHeroProps {
   description?: string;
   slides: ProductCarouselSlide[];
   hasSample?: boolean;
-  onRequestSample?: () => void;
+  sampleItem?: Omit<SampleCartItem, 'variant'>;
+  variantOptions?: string[];
   onGetQuote?: () => void;
   price?: string | null;
   priceUnit?: string;
@@ -38,7 +40,8 @@ export function SpecProductHero({
   description,
   slides,
   hasSample = true,
-  onRequestSample,
+  sampleItem,
+  variantOptions,
   onGetQuote,
   price,
   priceUnit,
@@ -118,7 +121,8 @@ export function SpecProductHero({
               <ProductCta
                 hasSample={hasSample}
                 showRequestSample={isUs}
-                onRequestSample={onRequestSample}
+                sampleItem={sampleItem}
+                variantOptions={variantOptions}
                 onGetQuote={onGetQuote}
               />
             </div>
@@ -158,7 +162,8 @@ export function SpecProductHero({
         <ProductCta
           hasSample={hasSample}
           showRequestSample={isUs}
-          onRequestSample={onRequestSample}
+          sampleItem={sampleItem}
+          variantOptions={variantOptions}
           onGetQuote={onGetQuote}
         />
       </div>

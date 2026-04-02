@@ -14,6 +14,7 @@ import { QuoteSheetProvider } from '@/components/composed/QuoteSheetProvider';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { formatRetinatura } from '@/lib/product-helpers';
 import type { MosaicProduct } from '@/lib/api/mosaic-product';
+import type { SampleCartItem } from '@/domain/sample-cart/types';
 
 export async function MosaicProductPreview({
   product,
@@ -36,6 +37,19 @@ export async function MosaicProductPreview({
 
   const col = product.collection;
   const isUs = locale === 'us';
+
+  // ── Sample cart item (US only, when product has sample) ──
+  const sampleItem: Omit<SampleCartItem, 'variant'> | undefined =
+    isUs && product.hasSample
+      ? {
+          nid: product.nid,
+          type: 'mosaico' as const,
+          title: product.title,
+          imageUrl: product.imageSampleUrl || product.imageUrl,
+          collection: col?.name ?? null,
+          sampleFormat: null,
+        }
+      : undefined;
 
   // ── Build carousel slides (same pattern as ProdottoMosaico) ──
   const heroSlides: ProductCarouselSlide[] = [];
@@ -179,90 +193,91 @@ export async function MosaicProductPreview({
 
   return (
     <QuoteSheetProvider productName={product.title}>
-    <article className="flex flex-col gap-(--spacing-section) pt-(--spacing-navbar) pb-(--spacing-section)">
-      {/* ── Hero Block ── */}
-      <SpecProductHero
-        title={product.title}
-        collection={col?.name}
-        description={product.body ? sanitizeHtml(product.body) : undefined}
-        slides={heroSlides}
-        hasSample={product.hasSample}
-        price={product.priceOnDemand ? undefined : heroPrice}
-        priceUnit={product.priceOnDemand ? undefined : heroPriceUnit}
-        inStock={!product.noUsaStock}
-        shippingWarehouse={
-          !product.noUsaStock ? 'North America Warehouse' : undefined
-        }
-        shippingTime={!product.noUsaStock ? '2-3 weeks' : undefined}
-        discoverUrl={discoverHref}
-        isUs={isUs}
-      />
-
-      {/* ── Details Block ── */}
-      {detailAttributes.length > 0 && (
-        <SpecProductDetails attributes={detailAttributes} />
-      )}
-
-      {/* ── Specs Block ── */}
-      {specsRows.length > 0 && (
-        <SpecProductSpecs
-          specs={specsRows}
-          assemblyValue={
-            col?.meshType ? formatRetinatura(col.meshType) : undefined
+      <article className="flex flex-col gap-(--spacing-section) pt-(--spacing-navbar) pb-(--spacing-section)">
+        {/* ── Hero Block ── */}
+        <SpecProductHero
+          title={product.title}
+          collection={col?.name}
+          description={product.body ? sanitizeHtml(product.body) : undefined}
+          slides={heroSlides}
+          hasSample={product.hasSample}
+          sampleItem={sampleItem}
+          price={product.priceOnDemand ? undefined : heroPrice}
+          priceUnit={product.priceOnDemand ? undefined : heroPriceUnit}
+          inStock={!product.noUsaStock}
+          shippingWarehouse={
+            !product.noUsaStock ? 'North America Warehouse' : undefined
           }
-          assemblyImageSrc={
-            col?.meshType
-              ? '/images/Retinatura-mosaico-rete.jpg.webp'
-              : undefined
-          }
-          groutingValue={
-            product.grouts.length > 0 ? product.grouts[0].name : undefined
-          }
-          groutingImageSrc={
-            product.grouts.length > 0 ? product.grouts[0].imageSrc : undefined
-          }
-          groutConsumption={
-            isUs
-              ? col?.groutConsumptionSqft != null
-                ? `${col.groutConsumptionSqft} kg/sqft`
-                : undefined
-              : col?.groutConsumptionM2 != null
-                ? `${col.groutConsumptionM2} kg/m²`
-                : undefined
-          }
-          maintenanceHtml={maintenanceHtml}
-          maintenanceLabel="Maintenance and installation"
-          maintenanceGuideHref={maintenanceGuideHref ?? '#'}
-          maintenanceGuideLabel="View guide"
+          shippingTime={!product.noUsaStock ? '2-3 weeks' : undefined}
+          discoverUrl={discoverHref}
+          isUs={isUs}
         />
-      )}
 
-      {/* ── Resources Block ── */}
-      {documentItems.length > 0 && (
-        <SpecProductResources
-          title="Get inspired through catalogs"
-          documents={documentItems}
-          downloadLabel="Scopri"
-        />
-      )}
+        {/* ── Details Block ── */}
+        {detailAttributes.length > 0 && (
+          <SpecProductDetails attributes={detailAttributes} />
+        )}
 
-      {/* ── Gallery Block ── */}
-      {galleryImages.length > 0 && (
-        <SpecProductGallery images={galleryImages} />
-      )}
+        {/* ── Specs Block ── */}
+        {specsRows.length > 0 && (
+          <SpecProductSpecs
+            specs={specsRows}
+            assemblyValue={
+              col?.meshType ? formatRetinatura(col.meshType) : undefined
+            }
+            assemblyImageSrc={
+              col?.meshType
+                ? '/images/Retinatura-mosaico-rete.jpg.webp'
+                : undefined
+            }
+            groutingValue={
+              product.grouts.length > 0 ? product.grouts[0].name : undefined
+            }
+            groutingImageSrc={
+              product.grouts.length > 0 ? product.grouts[0].imageSrc : undefined
+            }
+            groutConsumption={
+              isUs
+                ? col?.groutConsumptionSqft != null
+                  ? `${col.groutConsumptionSqft} kg/sqft`
+                  : undefined
+                : col?.groutConsumptionM2 != null
+                  ? `${col.groutConsumptionM2} kg/m²`
+                  : undefined
+            }
+            maintenanceHtml={maintenanceHtml}
+            maintenanceLabel="Maintenance and installation"
+            maintenanceGuideHref={maintenanceGuideHref ?? '#'}
+            maintenanceGuideLabel="View guide"
+          />
+        )}
 
-      {/* Debug: raw data (dev only) */}
-      {process.env.NODE_ENV === 'development' && (
-        <details className="mx-auto max-w-main px-[var(--spacing-page)] rounded-lg border p-4">
-          <summary className="cursor-pointer text-sm text-muted-foreground">
-            Debug: Raw product data (NID {product.nid})
-          </summary>
-          <pre className="mt-2 text-xs overflow-auto">
-            {JSON.stringify(product, null, 2)}
-          </pre>
-        </details>
-      )}
-    </article>
+        {/* ── Resources Block ── */}
+        {documentItems.length > 0 && (
+          <SpecProductResources
+            title="Get inspired through catalogs"
+            documents={documentItems}
+            downloadLabel="Scopri"
+          />
+        )}
+
+        {/* ── Gallery Block ── */}
+        {galleryImages.length > 0 && (
+          <SpecProductGallery images={galleryImages} />
+        )}
+
+        {/* Debug: raw data (dev only) */}
+        {process.env.NODE_ENV === 'development' && (
+          <details className="mx-auto max-w-main px-[var(--spacing-page)] rounded-lg border p-4">
+            <summary className="cursor-pointer text-sm text-muted-foreground">
+              Debug: Raw product data (NID {product.nid})
+            </summary>
+            <pre className="mt-2 text-xs overflow-auto">
+              {JSON.stringify(product, null, 2)}
+            </pre>
+          </details>
+        )}
+      </article>
     </QuoteSheetProvider>
   );
 }

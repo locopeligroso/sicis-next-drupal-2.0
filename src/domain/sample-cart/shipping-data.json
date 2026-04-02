@@ -1,0 +1,77 @@
+{
+  "states": [
+    { "state": "connecticut", "region": "east" },
+    { "state": "delaware", "region": "east" },
+    { "state": "district_of_columbia", "region": "east" },
+    { "state": "florida", "region": "east" },
+    { "state": "georgia", "region": "east" },
+    { "state": "maine", "region": "east" },
+    { "state": "maryland", "region": "east" },
+    { "state": "massachusetts", "region": "east" },
+    { "state": "new_hampshire", "region": "east" },
+    { "state": "new_jersey", "region": "east" },
+    { "state": "new_york", "region": "east" },
+    { "state": "north_carolina", "region": "east" },
+    { "state": "pennsylvania", "region": "east" },
+    { "state": "rhode_island", "region": "east" },
+    { "state": "south_carolina", "region": "east" },
+    { "state": "vermont", "region": "east" },
+    { "state": "virginia", "region": "east" },
+    { "state": "west_virginia", "region": "east" },
+    { "state": "alabama", "region": "central" },
+    { "state": "arkansas", "region": "central" },
+    { "state": "illinois", "region": "central" },
+    { "state": "indiana", "region": "central" },
+    { "state": "iowa", "region": "central" },
+    { "state": "kansas", "region": "central" },
+    { "state": "kentucky", "region": "central" },
+    { "state": "louisiana", "region": "central" },
+    { "state": "michigan", "region": "central" },
+    { "state": "minnesota", "region": "central" },
+    { "state": "mississippi", "region": "central" },
+    { "state": "missouri", "region": "central" },
+    { "state": "nebraska", "region": "central" },
+    { "state": "north_dakota", "region": "central" },
+    { "state": "ohio", "region": "central" },
+    { "state": "oklahoma", "region": "central" },
+    { "state": "south_dakota", "region": "central" },
+    { "state": "tennessee", "region": "central" },
+    { "state": "texas", "region": "central" },
+    { "state": "wisconsin", "region": "central" },
+    { "state": "california", "region": "west" },
+    { "state": "oregon", "region": "west" },
+    { "state": "washington", "region": "west" },
+    { "state": "alaska", "region": "outer" },
+    { "state": "arizona", "region": "outer" },
+    { "state": "colorado", "region": "outer" },
+    { "state": "hawaii", "region": "outer" },
+    { "state": "idaho", "region": "outer" },
+    { "state": "montana", "region": "outer" },
+    { "state": "nevada", "region": "outer" },
+    { "state": "new_mexico", "region": "outer" },
+    { "state": "utah", "region": "outer" },
+    { "state": "wyoming", "region": "outer" }
+  ],
+  "regions": {
+    "east": {
+      "name": "east",
+      "shipping": "3-4 business days (USD)",
+      "cost": [12.71, 18.3, 29.5, 41.08]
+    },
+    "central": {
+      "name": "central",
+      "shipping": "4-5 business days (USD)",
+      "cost": [13.41, 29.69, 35.43, 41.93]
+    },
+    "west": {
+      "name": "west",
+      "shipping": "6-7 business days (USD)",
+      "cost": [27.04, 40.37, 55.74, 56.48]
+    },
+    "outer": {
+      "name": "outer",
+      "shipping": "7-9 business days (USD)",
+      "cost": [28.96, 51.89, 59.24, 61.11]
+    }
+  }
+}

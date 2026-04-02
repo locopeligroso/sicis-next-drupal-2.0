@@ -23,7 +23,9 @@ interface ProductListingItemRest {
   field_prezzo_eu?: string;
   // on-demand flag (mosaic + vetrite only)
   field_prezzo_on_demand?: string; // "On" | "Off"
-  [key: string]: string | undefined;
+  // stock flag (mosaic + vetrite only) — used to filter out-of-stock items on /us/
+  field_no_usa_stock?: string | boolean; // "1" | "On" | true | "0" | "Off" | false | undefined
+  [key: string]: string | boolean | undefined;
 }
 
 // ── Config type ───────────────────────────────────────────────────────────
@@ -172,6 +174,13 @@ function makeNormalizer(
         ? item.field_prezzo_on_demand === 'On'
         : false;
 
+    const noUsaStock =
+      item.field_no_usa_stock === '1' ||
+      item.field_no_usa_stock === 'On' ||
+      item.field_no_usa_stock === 'True' ||
+      item.field_no_usa_stock === 'true' ||
+      item.field_no_usa_stock === true;
+
     return {
       id: item.nid,
       type: config.productType,
@@ -180,6 +189,7 @@ function makeNormalizer(
       imageUrl,
       price,
       priceOnDemand,
+      noUsaStock,
       path,
     };
   };
@@ -246,12 +256,23 @@ function createCachedFetcher(config: ProductListingConfig): CachedFetcher {
       );
 
       if (!items || !Array.isArray(items)) {
-        return { products: [], total: 0 };
+        // Throw instead of returning empty — unstable_cache does NOT cache
+        // thrown errors, so the next request retries the fetch. On ISR
+        // revalidation, Next.js keeps the last valid cached page.
+        throw new Error(`[product-listing] Empty response for ${path}`);
+      }
+
+      let products = items.map(normalize);
+
+      // US locale: hide out-of-stock mosaic/vetrite products from listings.
+      // Drupal REST view now includes field_no_usa_stock (added by Freddi).
+      if (locale === 'us') {
+        products = products.filter((p) => !p.noUsaStock);
       }
 
       return {
-        products: items.map(normalize),
-        total: items.length,
+        products,
+        total: products.length,
       };
     },
   );

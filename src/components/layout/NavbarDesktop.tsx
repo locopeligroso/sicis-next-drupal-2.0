@@ -8,6 +8,7 @@ import type { NavbarMenu } from '@/lib/navbar/types';
 import { Button } from '@/components/ui/button';
 import { NavDarkModeToggle } from '@/components/composed/NavDarkModeToggle';
 import { NavLanguageSwitcher } from '@/components/composed/NavLanguageSwitcher';
+import { SampleCartBadge } from '@/components/composed/SampleCartBadge';
 import { MegaMenuInfo } from '@/components/composed/MegaMenuInfo';
 import { MegaMenuExplore } from '@/components/composed/MegaMenuExplore';
 import { MegaMenuFilterFind } from '@/components/composed/MegaMenuFilterFind';
@@ -144,7 +145,7 @@ export function NavbarDesktop({
       clearCloseTimer();
       setOpenMenu(key);
     },
-    [isTouch, clearCloseTimer, setOpenMenu]
+    [isTouch, clearCloseTimer, setOpenMenu],
   );
 
   const handleMouseLeave = useCallback(() => {
@@ -158,7 +159,7 @@ export function NavbarDesktop({
       e.preventDefault();
       setOpenMenu(openMenu === key ? null : key);
     },
-    [isTouch, openMenu, setOpenMenu]
+    [isTouch, openMenu, setOpenMenu],
   );
 
   // Get the label for the currently open menu (for aria-label)
@@ -166,7 +167,7 @@ export function NavbarDesktop({
     (key: NavItemKey) => {
       return t(`${key}Label`);
     },
-    [t]
+    [t],
   );
 
   return (
@@ -175,7 +176,11 @@ export function NavbarDesktop({
       <div className="flex items-center justify-between px-9 h-[72px]">
         {/* Left — Logo */}
         <Link href={`/${locale}`} className="shrink-0">
-          <img src="/images/logo.png" alt="SICIS" className="h-5 w-auto dark:invert" />
+          <img
+            src="/images/logo.png"
+            alt="SICIS"
+            className="h-5 w-auto dark:invert"
+          />
         </Link>
 
         {/* Center — Nav Items */}
@@ -192,7 +197,7 @@ export function NavbarDesktop({
                 aria-expanded={isActive}
                 className={cn(
                   'flex flex-col items-start text-left transition-opacity duration-150',
-                  hasOpenMenu && !isActive && 'opacity-35'
+                  hasOpenMenu && !isActive && 'opacity-35',
                 )}
                 onMouseEnter={() => handleMouseEnter(key)}
                 onClick={(e) => handleClick(e, key)}
@@ -202,7 +207,7 @@ export function NavbarDesktop({
                     'text-[12px] uppercase tracking-[2px]',
                     isActive
                       ? 'font-semibold text-foreground'
-                      : 'text-foreground'
+                      : 'text-foreground',
                   )}
                 >
                   {t(`${key}Label`)}
@@ -220,6 +225,7 @@ export function NavbarDesktop({
           <Button variant="ghost" size="icon" disabled aria-label="Search">
             <SearchIcon data-icon />
           </Button>
+          <SampleCartBadge />
           <NavDarkModeToggle />
           <NavLanguageSwitcher locale={locale} />
         </div>
@@ -235,7 +241,9 @@ export function NavbarDesktop({
           ref={contentRef}
           className={cn(
             'transition-opacity ease-in-out',
-            contentVisible ? 'opacity-100 duration-400 delay-100' : 'opacity-0 duration-100'
+            contentVisible
+              ? 'opacity-100 duration-400 delay-100'
+              : 'opacity-0 duration-100',
           )}
         >
           {displayedMenu && (

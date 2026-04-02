@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import { MenuIcon, XIcon, ArrowLeftIcon, ArrowRightIcon } from 'lucide-react';
 import type { NavbarMenu } from '@/lib/navbar/types';
 import { Button } from '@/components/ui/button';
+import { SampleCartBadge } from '@/components/composed/SampleCartBadge';
 import { locales } from '@/i18n/config';
 import { getTranslatedPath } from '@/lib/get-translated-path';
 import { cn } from '@/lib/utils';
@@ -77,9 +78,21 @@ function buildSubNav(menu: NavbarMenu, key: SectionKey, title: string): SubNav {
   }
 }
 
-const NAV_SECTIONS: SectionKey[] = ['explore', 'filterFind', 'projects', 'info'];
+const NAV_SECTIONS: SectionKey[] = [
+  'explore',
+  'filterFind',
+  'projects',
+  'info',
+];
 
-export function NavbarMobile({ locale, menu, barOnly, overlayOnly, isOpen, setIsOpen }: NavbarMobileProps) {
+export function NavbarMobile({
+  locale,
+  menu,
+  barOnly,
+  overlayOnly,
+  isOpen,
+  setIsOpen,
+}: NavbarMobileProps) {
   const t = useTranslations('nav');
   const router = useRouter();
   const pathname = usePathname();
@@ -138,7 +151,7 @@ export function NavbarMobile({ locale, menu, barOnly, overlayOnly, isOpen, setIs
         }
       }
     },
-    [menu, t, close, router]
+    [menu, t, close, router],
   );
 
   const handleLocaleChange = useCallback(
@@ -147,14 +160,20 @@ export function NavbarMobile({ locale, menu, barOnly, overlayOnly, isOpen, setIs
       close();
 
       const drupalPath = pathname.replace(new RegExp(`^/${locale}`), '') || '/';
-      const translatedPath = await getTranslatedPath(drupalPath, locale, targetLocale);
-      const targetUrl = translatedPath ?? `/${targetLocale}${drupalPath === '/' ? '' : drupalPath}`;
+      const translatedPath = await getTranslatedPath(
+        drupalPath,
+        locale,
+        targetLocale,
+      );
+      const targetUrl =
+        translatedPath ??
+        `/${targetLocale}${drupalPath === '/' ? '' : drupalPath}`;
 
       startTransition(() => {
         router.push(targetUrl);
       });
     },
-    [locale, pathname, close, router, startTransition]
+    [locale, pathname, close, router, startTransition],
   );
 
   const overlay = isOpen ? (
@@ -162,7 +181,11 @@ export function NavbarMobile({ locale, menu, barOnly, overlayOnly, isOpen, setIs
       {/* Overlay Header */}
       <div className="flex items-center justify-between px-6 h-[56px] shrink-0">
         <Link href={`/${locale}`} className="shrink-0" onClick={close}>
-          <img src="/images/logo.png" alt="SICIS" className="h-5 w-auto invert" />
+          <img
+            src="/images/logo.png"
+            alt="SICIS"
+            className="h-5 w-auto invert"
+          />
         </Link>
         <Button
           variant="ghost"
@@ -187,7 +210,10 @@ export function NavbarMobile({ locale, menu, barOnly, overlayOnly, isOpen, setIs
                   type="button"
                   onClick={() => handleNavItemClick(key)}
                   className="text-left text-[28px] font-light text-white tracking-[1px] py-2 flex items-center gap-3 animate-in slide-in-from-bottom-4 fade-in fill-mode-both"
-                  style={{ animationDelay: `${index * 50}ms`, animationDuration: '300ms' }}
+                  style={{
+                    animationDelay: `${index * 50}ms`,
+                    animationDuration: '300ms',
+                  }}
                 >
                   <span>{t(`${key}Label`)}</span>
                   {withChildren && (
@@ -235,9 +261,7 @@ export function NavbarMobile({ locale, menu, barOnly, overlayOnly, isOpen, setIs
                 onClick={() => handleLocaleChange(loc)}
                 className={cn(
                   'text-sm uppercase tracking-widest',
-                  isCurrent
-                    ? 'text-white font-semibold'
-                    : 'text-white/40'
+                  isCurrent ? 'text-white font-semibold' : 'text-white/40',
                 )}
               >
                 {loc}
@@ -252,20 +276,32 @@ export function NavbarMobile({ locale, menu, barOnly, overlayOnly, isOpen, setIs
   const bar = (
     <div className="flex items-center justify-between px-6 h-[56px]">
       <Link href={`/${locale}`} className="shrink-0">
-        <img src="/images/logo.png" alt="SICIS" className="h-5 w-auto dark:invert" />
+        <img
+          src="/images/logo.png"
+          alt="SICIS"
+          className="h-5 w-auto dark:invert"
+        />
       </Link>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => setIsOpen(true)}
-        aria-label="Open menu"
-      >
-        <MenuIcon />
-      </Button>
+      <div className="flex items-center gap-1">
+        <SampleCartBadge />
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsOpen(true)}
+          aria-label="Open menu"
+        >
+          <MenuIcon />
+        </Button>
+      </div>
     </div>
   );
 
   if (barOnly) return bar;
   if (overlayOnly) return overlay;
-  return <>{bar}{overlay}</>;
+  return (
+    <>
+      {bar}
+      {overlay}
+    </>
+  );
 }
