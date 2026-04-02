@@ -16,13 +16,14 @@ All notable changes to this project will be documented in this file.
 - Filtri P1 non si azzerano automaticamente quando il count scende a 0 — deselect solo su click esplicito.
 - Subcategorie illuminazione e tessili: conteggi NeoColibrì/Neoglass calcolati con fetch parallelo per sub-collection e sommati.
 
-#### Get a Quote — form con Resend email su pagine prodotto mosaico
+#### Form — InfoProdottoForm e InfoGeneraliForm con i18n
 
-- Nuovo form modale "Get a Quote" nelle pagine prodotto mosaico; invio email via Resend API server action.
-
-#### Quote API — email destinatario da env var
-
-- `route.ts`: email destinatario spostata da hardcoded a `process.env.SEND_TO_EMAIL` con guard esplicito (500 se mancante).
+- **InfoProdottoForm** (ex QuoteFormSheet): form "Info prodotto" in Sheet (slide da destra) nelle pagine mosaico, triggerato dal pulsante "Get a Quote" via `QuoteSheetProvider` context. Campi: email, nome, cognome, nazione, professione, nome prodotto (pre-compilato), richiesta, privacy. API: `/api/info-prodotto`.
+- **InfoGeneraliForm**: form "Informazioni generali" in Sheet (slide da destra), triggerato dal pulsante "Contattaci" (`ContactCta`) in fondo a tutte le pagine Ambiente. Campi: email, nome, cognome, nazione, professione, richiesta, privacy. API: `/api/info-generali`.
+- **ContactCta**: pulsante "Contattaci" centrato con icona mail, gestisce stato apertura/chiusura del form InfoGeneraliForm.
+- **i18n**: sezione `forms` aggiunta a tutti e 6 i locali (IT, EN, FR, DE, ES, RU) con namespace `infoProdotto` e `infoGenerali`. Chiave `common.contactUs` aggiunta a tutti i locali. Entrambi i form usano `useTranslations()`.
+- **Naming convention**: componenti form seguono pattern `<NomeForm>Form`, API routes in `/api/info-prodotto` e `/api/info-generali`.
+- Email destinatario letta da `process.env.SEND_TO_EMAIL` con guard esplicito (500 se mancante). Invio email via Resend API.
 
 #### Documentazione — aggiornamento completo e pulizia
 

@@ -2,14 +2,25 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Typography } from '@/components/composed/Typography';
 
-export function InfoGeneraliForm() {
+interface InfoGeneraliFormProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function InfoGeneraliForm({ open, onOpenChange }: InfoGeneraliFormProps) {
   const t = useTranslations('forms.infoGenerali');
   const [pending, setPending] = React.useState(false);
   const [sent, setSent] = React.useState(false);
@@ -58,76 +69,82 @@ export function InfoGeneraliForm() {
     }
   }
 
-  if (sent) {
-    return (
-      <section className="max-w-lg mx-auto px-(--spacing-page) py-(--spacing-section)">
-        <div className="flex flex-col items-center justify-center gap-4 rounded-xl border bg-background p-8 text-center shadow-sm">
-          <Typography textRole="h3">{t('success')}</Typography>
-          <p className="text-sm text-muted-foreground">{t('successMessage')}</p>
-        </div>
-      </section>
-    );
+  function handleOpenChange(next: boolean) {
+    if (!next) {
+      setSent(false);
+      setError(null);
+      setPrivacy(false);
+    }
+    onOpenChange(next);
   }
 
   return (
-    <section className="max-w-lg mx-auto px-(--spacing-page) py-(--spacing-section)">
-      <div className="rounded-xl border bg-background p-6 shadow-sm sm:p-8">
-        <div className="mb-6 flex flex-col gap-1.5">
-          <Typography textRole="h3">{t('title')}</Typography>
-          <p className="text-sm text-muted-foreground">{t('description')}</p>
-        </div>
+    <Sheet open={open} onOpenChange={handleOpenChange}>
+      <SheetContent side="right" className="overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>{t('title')}</SheetTitle>
+          <SheetDescription>{t('description')}</SheetDescription>
+        </SheetHeader>
 
-        <form id="info-generali-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="info-email">{t('email')} *</Label>
-            <Input id="info-email" name="email" type="email" required />
+        {sent ? (
+          <div className="flex flex-col items-center justify-center gap-4 p-6 text-center">
+            <p className="text-lg font-medium">{t('success')}</p>
+            <p className="text-sm text-muted-foreground">{t('successMessage')}</p>
+            <Button variant="outline" onClick={() => handleOpenChange(false)}>
+              {t('close')}
+            </Button>
           </div>
+        ) : (
+          <form id="info-generali-form" onSubmit={handleSubmit} className="flex flex-col gap-4 p-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="info-email">{t('email')} *</Label>
+              <Input id="info-email" name="email" type="email" required />
+            </div>
 
-          <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="info-nome">{t('nome')} *</Label>
               <Input id="info-nome" name="nome" required />
             </div>
+
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="info-cognome">{t('cognome')} *</Label>
               <Input id="info-cognome" name="cognome" required />
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="info-nazione">{t('nazione')}</Label>
               <Input id="info-nazione" name="nazione" />
             </div>
+
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="info-professione">{t('professione')}</Label>
               <Input id="info-professione" name="professione" />
             </div>
-          </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="info-richiesta">{t('richiesta')}</Label>
-            <Textarea id="info-richiesta" name="richiesta" rows={4} />
-          </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="info-richiesta">{t('richiesta')}</Label>
+              <Textarea id="info-richiesta" name="richiesta" rows={4} />
+            </div>
 
-          <div className="flex items-start gap-2">
-            <Checkbox
-              id="info-privacy"
-              checked={privacy}
-              onCheckedChange={(checked) => setPrivacy(checked === true)}
-            />
-            <Label htmlFor="info-privacy" className="text-sm leading-snug cursor-pointer">
-              {t('privacy')} *
-            </Label>
-          </div>
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="info-privacy"
+                checked={privacy}
+                onCheckedChange={(checked) => setPrivacy(checked === true)}
+              />
+              <Label htmlFor="info-privacy" className="text-sm leading-snug cursor-pointer">
+                {t('privacy')} *
+              </Label>
+            </div>
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
+            {error && <p className="text-sm text-destructive">{error}</p>}
 
-          <Button type="submit" disabled={pending}>
-            {pending ? t('submitting') : t('submit')}
-          </Button>
-        </form>
-      </div>
-    </section>
+            <Button type="submit" disabled={pending}>
+              {pending ? t('submitting') : t('submit')}
+            </Button>
+          </form>
+        )}
+      </SheetContent>
+    </Sheet>
   );
 }
