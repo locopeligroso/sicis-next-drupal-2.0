@@ -14,7 +14,7 @@ export async function POST(request: Request) {
 
         const { error } = await resend.emails.send({
             from: 'Sicis <noreply@sicis-stage.com>',
-            to: 'gabri.magni.97@gmail.com',
+            to: process.env.SEND_TO_EMAIL!,
             subject: `Richiesta preventivo: ${prodotto || 'Prodotto non specificato'}`,
             html: `
         <h2>Nuova richiesta preventivo</h2>

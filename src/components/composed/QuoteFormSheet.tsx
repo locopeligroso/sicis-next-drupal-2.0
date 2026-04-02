@@ -2,12 +2,12 @@
 
 import * as React from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -79,17 +79,17 @@ export function QuoteFormSheet({ open, onOpenChange, productName }: QuoteFormShe
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Richiedi un preventivo</DialogTitle>
-          <DialogDescription>
+    <Sheet open={open} onOpenChange={handleOpenChange}>
+      <SheetContent side="right" className="overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>Richiedi un preventivo</SheetTitle>
+          <SheetDescription>
             Compila il form e ti ricontatteremo al più presto.
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
 
         {sent ? (
-          <div className="flex flex-col items-center justify-center gap-4 py-6 text-center">
+          <div className="flex flex-col items-center justify-center gap-4 p-6 text-center">
             <p className="text-lg font-medium">Richiesta inviata!</p>
             <p className="text-sm text-muted-foreground">Ti risponderemo al più presto.</p>
             <Button variant="outline" onClick={() => handleOpenChange(false)}>
@@ -97,32 +97,30 @@ export function QuoteFormSheet({ open, onOpenChange, productName }: QuoteFormShe
             </Button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="quote-email">Email *</Label>
               <Input id="quote-email" name="email" type="email" required />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="quote-nome">Nome *</Label>
-                <Input id="quote-nome" name="nome" required />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="quote-cognome">Cognome *</Label>
-                <Input id="quote-cognome" name="cognome" required />
-              </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="quote-nome">Nome *</Label>
+              <Input id="quote-nome" name="nome" required />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="quote-nazione">Nazione</Label>
-                <Input id="quote-nazione" name="nazione" />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="quote-professione">Professione</Label>
-                <Input id="quote-professione" name="professione" />
-              </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="quote-cognome">Cognome *</Label>
+              <Input id="quote-cognome" name="cognome" required />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="quote-nazione">Nazione</Label>
+              <Input id="quote-nazione" name="nazione" />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="quote-professione">Professione</Label>
+              <Input id="quote-professione" name="professione" />
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -138,7 +136,7 @@ export function QuoteFormSheet({ open, onOpenChange, productName }: QuoteFormShe
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="quote-richiesta">La tua richiesta</Label>
-              <Textarea id="quote-richiesta" name="richiesta" rows={3} />
+              <Textarea id="quote-richiesta" name="richiesta" rows={4} />
             </div>
 
             <div className="flex items-start gap-2">
@@ -159,7 +157,7 @@ export function QuoteFormSheet({ open, onOpenChange, productName }: QuoteFormShe
             </Button>
           </form>
         )}
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }
