@@ -125,7 +125,7 @@ export function GalleryCarousel({
             >
               <div
                 className={cn(
-                  'relative rounded-xl overflow-hidden',
+                  'relative rounded-xl overflow-hidden border border-border',
                   slideClassName,
                 )}
                 style={
@@ -143,6 +143,17 @@ export function GalleryCarousel({
                     fill
                     className="object-cover"
                     sizes="(max-width: 768px) 100vw, 50vw"
+                    onLoad={(e) => {
+                      if (slide.width && slide.height) return;
+                      const img = e.currentTarget;
+                      const { naturalWidth, naturalHeight } = img;
+                      if (naturalWidth && naturalHeight) {
+                        const container = img.closest('[data-gallery-slide]')?.querySelector('[class*="rounded-xl"]') as HTMLElement | null;
+                        if (container) {
+                          container.style.setProperty('--slide-ratio', `${naturalWidth / naturalHeight}`);
+                        }
+                      }
+                    }}
                   />
                 )}
               </div>

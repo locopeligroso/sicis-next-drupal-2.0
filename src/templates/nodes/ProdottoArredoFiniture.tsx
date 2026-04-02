@@ -34,7 +34,7 @@ export default async function ProdottoArredoFiniture({
   ];
 
   return (
-    <div className="pt-(--spacing-navbar) pb-(--spacing-section)">
+    <div className="pb-(--spacing-section)">
       {/* Breadcrumb */}
       <nav
         aria-label="Breadcrumb"

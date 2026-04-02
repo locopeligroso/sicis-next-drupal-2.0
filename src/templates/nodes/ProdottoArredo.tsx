@@ -6,6 +6,11 @@ import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { getDrupalImageUrl } from '@/lib/drupal/image';
 import { DRUPAL_BASE_URL } from '@/lib/drupal/config';
 import { sanitizeHtml } from '@/lib/sanitize';
+import { getFilterConfig } from '@/domain/filters/registry';
+import { DevBlockOverlay } from '@/components/composed/DevBlockOverlay';
+import { SpecArredoHero } from '@/components/blocks/SpecArredoHero';
+import { GenGallery, type GenGallerySlide } from '@/components/blocks/GenGallery';
+import type { BreadcrumbSegment } from '@/components/composed/SmartBreadcrumb';
 import styles from '@/styles/product.module.css';
 import type { ProdottoArredo as ProdottoArredoType } from '@/types/drupal/entities';
 
@@ -71,8 +76,10 @@ interface TessutoItem {
 // ── Component ─────────────────────────────────────────────────────────────────
 export default async function ProdottoArredo({
   node,
+  slug,
 }: {
   node: Record<string, unknown>;
+  slug?: string[];
 }) {
   // Cast sicuro: il node-resolver passa Record<string,unknown>, ma il contenuto
   // è sempre un ProdottoArredo deserializzato da Drupal JSON:API
@@ -86,6 +93,10 @@ export default async function ProdottoArredo({
   const materiali = getProcessedText(typedNode.field_materiali);
   const specifiche = getProcessedText(typedNode.field_specifiche_tecniche);
   const locale = typedNode.langcode ?? 'it';
+
+  // ── Arredo base path (needed early for category path fallback) ────────────
+  const arredoConfig = getFilterConfig('prodotto_arredo');
+  const arredoBasePath = arredoConfig?.basePaths[locale] ?? arredoConfig?.basePaths.it ?? 'arredo';
 
   // ── Pricing ───────────────────────────────────────────────────────────────
   // field_prezzo_eu/usa in Arredo è { value: string } | null | undefined
@@ -110,15 +121,26 @@ export default async function ProdottoArredo({
 
   // ── Categoria parent ──────────────────────────────────────────────────────
   const categoriaData = typedNode.field_categoria;
-  const categoriaName =
+  // Category name: from entity fields, or derive from URL slug as fallback
+  const categoriaNameFromEntity =
     getTextValue(categoriaData?.field_titolo_main) ||
     ((categoriaData as Record<string, unknown> | undefined)?.title as
       | string
+      | undefined) ||
+    ((categoriaData as Record<string, unknown> | undefined)?.name as
+      | string
       | undefined);
+  // slug = ['arredo', 'letti', 'komo-bed'] → slug[1] = 'letti' → 'Letti'
+  const categoriaSlug = slug && slug.length >= 3 ? slug[1] : undefined;
+  const categoriaNameFromSlug = categoriaSlug
+    ? categoriaSlug.charAt(0).toUpperCase() + categoriaSlug.slice(1).replace(/-/g, ' ')
+    : undefined;
+  const categoriaName = categoriaNameFromEntity || categoriaNameFromSlug;
   const categoriaBody = getProcessedText(categoriaData?.field_testo_main);
   const categoriaAlias = (categoriaData as Record<string, unknown> | undefined)
     ?.path as { alias?: string } | undefined;
-  const categoriaPath = categoriaAlias?.alias;
+  const categoriaPath = categoriaAlias?.alias
+    ?? (categoriaSlug ? `/${arredoBasePath}/${categoriaSlug}` : undefined);
 
   // ── Media ─────────────────────────────────────────────────────────────────
   const gallery = typedNode.field_gallery ?? [];
@@ -145,6 +167,36 @@ export default async function ProdottoArredo({
     | undefined;
   const hasFiniture =
     tessutoFiniture.length > 0 || arredoFinitureList.length > 0;
+
+  // ── Hero image ────────────────────────────────────────────────────────────
+  const heroImageSrc = getDrupalImageUrl(typedNode.field_immagine);
+
+  // ── Breadcrumb ───────────────────────────────────────────────────────────
+  const breadcrumbSegments: BreadcrumbSegment[] = [
+    { label: tNav('arredo'), href: `/${locale}/${arredoBasePath}` },
+    ...(categoriaName
+      ? [{
+          label: categoriaName,
+          href: categoriaPath ? `/${locale}${categoriaPath}` : `/${locale}/${arredoBasePath}`,
+        }]
+      : []),
+  ];
+
+  // ── Gallery intro slides (carousel subito dopo hero) ───────────────────────
+  const galleryIntroSlides = galleryIntro
+    .map((img) => {
+      const src = getDrupalImageUrl(img);
+      return src ? ({ src, alt: `${title ?? ''} gallery` } satisfies GenGallerySlide) : null;
+    })
+    .filter((s) => s !== null);
+
+  // ── Gallery slides ────────────────────────────────────────────────────────
+  const galleryMainSlides = gallery
+    .map((img) => {
+      const src = getDrupalImageUrl(img);
+      return src ? ({ src, alt: `${title ?? ''} gallery` } satisfies GenGallerySlide) : null;
+    })
+    .filter((s) => s !== null);
 
   // ── Tessuti (taxonomy terms) — fallback to English if not translated ──────
   const tessutiRaw = (typedNode.field_tessuti ?? []) as TessutoItem[];
@@ -206,86 +258,26 @@ export default async function ProdottoArredo({
   }
 
   return (
-    <article>
-      {/* ── Breadcrumb ──────────────────────────────────────────────────────── */}
-      <nav aria-label="Breadcrumb" style={{ marginBottom: '1.5rem' }}>
-        <ol
-          style={{
-            listStyle: 'none',
-            padding: 0,
-            margin: 0,
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '0.25rem',
-            fontSize: '0.8125rem',
-            color: '#888',
-          }}
-        >
-          <li>
-            <Link
-              href={`/${locale}/arredo`}
-              style={{ color: '#888', textDecoration: 'none' }}
-            >
-              {t('furniture')}
-            </Link>
-          </li>
-          {categoriaName && (
-            <>
-              <li aria-hidden="true">/</li>
-              <li>
-                {categoriaPath ? (
-                  <Link
-                    href={`/${locale}${categoriaPath}`}
-                    style={{ color: '#888', textDecoration: 'none' }}
-                  >
-                    {categoriaName}
-                  </Link>
-                ) : (
-                  <span>{categoriaName}</span>
-                )}
-              </li>
-            </>
-          )}
-          {title && (
-            <>
-              <li aria-hidden="true">/</li>
-              <li aria-current="page" style={{ color: '#333' }}>
-                {title}
-              </li>
-            </>
-          )}
-        </ol>
-      </nav>
-
-      {/* ── 1. Title ─────────────────────────────────────────────────────────── */}
-      {title && (
-        <h1
-          style={{
-            fontSize: '2rem',
-            fontWeight: 700,
-            marginBottom: '1.5rem',
-            lineHeight: 1.2,
-          }}
-        >
-          {title}
-        </h1>
-      )}
-
-      {/* ── 2. Main image ────────────────────────────────────────────────────── */}
-      <DrupalImage
-        field={typedNode.field_immagine}
-        alt={title ?? ''}
-        aspectRatio="4/3"
-        style={{ marginBottom: '2rem' }}
-      />
-
-      {/* ── 3. Testo descrittivo ─────────────────────────────────────────────── */}
-      {body && (
-        <div
-          style={{ lineHeight: 1.7, marginBottom: '2rem' }}
-          dangerouslySetInnerHTML={{ __html: sanitizeHtml(body) }}
+    <article className="flex flex-col gap-(--spacing-section) pb-(--spacing-section)">
+      {/* ── Hero Block (DS) ─────────────────────────────────────────────────── */}
+      <DevBlockOverlay name="SpecArredoHero" status="ds">
+        <SpecArredoHero
+          title={title ?? ''}
+          breadcrumbSegments={breadcrumbSegments}
+          category={categoriaName ?? undefined}
+          categoryHref={categoriaPath ? `/${locale}${categoriaPath}` : undefined}
+          description={body ? sanitizeHtml(body) : undefined}
+          imageSrc={heroImageSrc}
+          priceEu={prezzoEu ?? undefined}
+          priceUsa={prezzoUsa ?? undefined}
+          isUs={locale === 'us'}
         />
-      )}
+      </DevBlockOverlay>
+
+      {/* ── Gallery Intro (DS) ─────────────────────────────────────────────── */}
+      <DevBlockOverlay name="GenGallery" status="ds">
+        <GenGallery slides={galleryIntroSlides} />
+      </DevBlockOverlay>
 
       {/* ── 4. Materiali costruttivi ─────────────────────────────────────────── */}
       {materiali && (
@@ -484,35 +476,6 @@ export default async function ProdottoArredo({
         </section>
       )}
 
-      {/* ── 7. Prezzi ────────────────────────────────────────────────────────── */}
-      {(prezzoEu || prezzoUsa || prezzoOnDemand) && (
-        <section className={styles.section} aria-labelledby="prezzo-heading">
-          <h2 id="prezzo-heading" className={styles.sectionHeading}>
-            {t('price')}
-          </h2>
-          {prezzoOnDemand ? (
-            <p style={{ fontStyle: 'italic', color: '#666', margin: 0 }}>
-              {t('priceOnDemand')}
-            </p>
-          ) : (
-            <div
-              style={{ display: 'flex', gap: '2rem', alignItems: 'baseline' }}
-            >
-              {prezzoEu && (
-                <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>
-                  {Number(prezzoEu).toLocaleString('it-IT')}€
-                </p>
-              )}
-              {prezzoUsa && (
-                <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>
-                  {Number(prezzoUsa).toLocaleString('en-US')}$
-                </p>
-              )}
-            </div>
-          )}
-        </section>
-      )}
-
       {/* ── 8. Categoria parent ──────────────────────────────────────────────── */}
       {categoriaData && (
         <section className={styles.section} aria-labelledby="categoria-heading">
@@ -560,30 +523,10 @@ export default async function ProdottoArredo({
         </section>
       )}
 
-      {/* ── 9. Gallery ───────────────────────────────────────────────────────── */}
-      {(gallery.length > 0 || galleryIntro.length > 0) && (
-        <section className={styles.section} aria-labelledby="gallery-heading">
-          <h2 id="gallery-heading" className={styles.sectionHeading}>
-            {t('gallery')}
-          </h2>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(10rem, 1fr))',
-              gap: '1rem',
-            }}
-          >
-            {[...galleryIntro, ...gallery].map((img, i) => (
-              <DrupalImage
-                key={i}
-                field={img}
-                alt={`${title ?? ''} ${i + 1}`}
-                aspectRatio="1"
-              />
-            ))}
-          </div>
-        </section>
-      )}
+      {/* ── Gallery (DS) ─────────────────────────────────────────────────── */}
+      <DevBlockOverlay name="GenGallery" status="ds">
+        <GenGallery slides={galleryMainSlides} title={t('gallery')} />
+      </DevBlockOverlay>
 
       {/* ── 10. Documenti download ───────────────────────────────────────────── */}
       {documenti.length > 0 && (

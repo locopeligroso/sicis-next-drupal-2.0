@@ -5,8 +5,10 @@
 // when relations are not yet included in the endpoint response.
 
 import { getTranslations } from 'next-intl/server';
+import { getFilterConfig } from '@/domain/filters/registry';
 import { DevBlockOverlay } from '@/components/composed/DevBlockOverlay';
 import { SpecProductHero } from '@/components/blocks/SpecProductHero';
+import type { BreadcrumbSegment } from '@/components/composed/SmartBreadcrumb';
 import { SpecProductDetails } from '@/components/blocks/SpecProductDetails';
 import { SpecProductSpecs } from '@/components/blocks/SpecProductSpecs';
 import { SpecProductResources } from '@/components/blocks/SpecProductResources';
@@ -170,6 +172,17 @@ export async function MosaicProductPreview({
     }
   }
 
+  // ── Breadcrumb data ──
+  const tNav = await getTranslations('nav');
+  const mosaicoConfig = getFilterConfig('prodotto_mosaico');
+  const mosaicoBasePath = mosaicoConfig?.basePaths[locale] ?? mosaicoConfig?.basePaths.it ?? 'mosaico';
+  const breadcrumbSegments: BreadcrumbSegment[] = [
+    { label: tNav('mosaico'), href: `/${locale}/${mosaicoBasePath}` },
+    ...(col?.name
+      ? [{ label: col.name, href: `/${locale}/${mosaicoBasePath}/${col.name.toLowerCase().replace(/\s+/g, '-')}` }]
+      : []),
+  ];
+
   // ── Gallery block data ──
   const galleryImages: ProductGalleryImage[] = product.gallery.map(
     (url, i) => ({
@@ -180,11 +193,12 @@ export async function MosaicProductPreview({
 
   return (
     <QuoteSheetProvider productName={product.title}>
-    <article className="flex flex-col gap-(--spacing-section) pt-(--spacing-navbar) pb-(--spacing-section)">
+    <article className="flex flex-col gap-(--spacing-section) pb-(--spacing-section)">
       {/* ── Hero Block ── */}
       <DevBlockOverlay name="SpecProductHero" status="ds">
         <SpecProductHero
           title={product.title}
+          breadcrumbSegments={breadcrumbSegments}
           collection={col?.name}
           description={product.body ? sanitizeHtml(product.body) : undefined}
           slides={heroSlides}
