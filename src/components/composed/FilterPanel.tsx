@@ -6,23 +6,20 @@ interface FilterPanelProps {
 }
 
 /**
- * Sticky sidebar panel for filter/category navigation.
+ * Fixed sidebar panel for filter/category navigation.
  *
- * Uses CSS `position: sticky` — sticks below the navbar on scroll.
- * When content is taller than viewport, scrolls independently via overflow-y.
- * No JavaScript scroll listeners needed.
+ * Fixed to the left edge, full height below the navbar.
+ * Content scrolls independently when taller than viewport.
  */
 export function FilterPanel({ children, className }: FilterPanelProps) {
   return (
     <aside
       className={cn(
-        'w-[300px] shrink-0 border-r border-border bg-surface-1',
+        'fixed top-0 left-0 bottom-0 w-[300px] border-r border-border bg-surface-1 overflow-y-auto px-(--spacing-content) pt-(--spacing-navbar) pb-6',
         className,
       )}
     >
-      <div className="sticky top-[calc(72px+2rem)] max-h-[calc(100dvh-72px-2rem)] overflow-y-auto px-(--spacing-content) py-6">
-        {children}
-      </div>
+      {children}
     </aside>
   );
 }

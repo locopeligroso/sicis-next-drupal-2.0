@@ -19,7 +19,7 @@ export async function AiryHeader({
   const t = await getTranslations("listing")
 
   return (
-    <div className="flex flex-col gap-(--spacing-element) border-b border-border mb-(--spacing-content) pb-(--spacing-element)">
+    <div className="flex flex-col gap-(--spacing-element) border-b border-border pt-(--spacing-navbar) mb-(--spacing-content) pb-(--spacing-element)">
       <Typography textRole="h1" as="h1" className="max-w-[40ch]">
         {title}
       </Typography>

@@ -34,7 +34,7 @@ export function ContextBar({
   const t = useTranslations('breadcrumb');
 
   return (
-    <div className="flex items-center gap-(--spacing-element) border-b border-border bg-background mb-(--spacing-element) pb-(--spacing-element)">
+    <div className="flex items-center gap-(--spacing-element) border-b border-border bg-background pt-(--spacing-navbar) mb-(--spacing-element) pb-(--spacing-element)">
       {/* Thumbnail or swatch — centered vertically with title + actions */}
       {thumbnail ? (
         // next/image skipped: context bar thumbnail, size-16 = 64px — below 80px threshold

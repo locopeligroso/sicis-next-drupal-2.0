@@ -53,7 +53,7 @@
 
     --container-listing: 96rem;
 
-    --spacing-navbar: calc(72px + 6rem);
+    --spacing-navbar: calc(72px + 2rem);
 
     --spacing-page: 3rem;
     --spacing-section: 3rem;

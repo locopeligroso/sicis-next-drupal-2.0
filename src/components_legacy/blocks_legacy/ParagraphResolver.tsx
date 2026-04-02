@@ -17,6 +17,7 @@ import type { GenBItem } from '@/components/blocks/GenB';
 import { GenC } from '@/components/blocks/GenC';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { getDrupalImageUrl } from '@/lib/drupal/image';
+import { DevBlockOverlay } from '@/components/composed/DevBlockOverlay';
 
 // ── Legacy blocks (remaining — not yet migrated to Gen*) ────────────────────
 import BloccoSliderHome from './BloccoSliderHome';
@@ -25,7 +26,6 @@ import BloccoNewsletter from './BloccoNewsletter';
 import BloccoFormBlog from './BloccoFormBlog';
 import BloccoAnni from './BloccoAnni';
 import BloccoTutorial from './BloccoTutorial';
-import BloccoE from './BloccoE';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ParagraphComponent = (props: {
@@ -421,48 +421,52 @@ export default function ParagraphResolver({
 }: ParagraphResolverProps) {
   const type = paragraph.type as string;
 
+  // ── Gen → block name mapping for debug overlay ──
+  const GEN_MAP: Record<string, { name: string; render: () => React.ReactNode }> = {
+    'paragraph--blocco_intro': { name: 'GenIntro', render: () => adaptGenIntro(paragraph, pageTitle) },
+    'paragraph--blocco_quote': { name: 'GenQuote', render: () => adaptGenQuote(paragraph) },
+    'paragraph--blocco_video': { name: 'GenVideo', render: () => adaptGenVideo(paragraph) },
+    'paragraph--blocco_testo_immagine': { name: 'GenTestoImmagine', render: () => adaptGenTestoImmagine(paragraph) },
+    'paragraph--blocco_gallery': { name: 'GenGallery', render: () => adaptGenGallery(paragraph) },
+    'paragraph--blocco_testo_immagine_big': { name: 'GenTestoImmagineBig', render: () => adaptGenTestoImmagineBig(paragraph) },
+    'paragraph--blocco_testo_immagine_blog': { name: 'GenTestoImmagineBlog', render: () => adaptGenTestoImmagineBlog(paragraph) },
+    'paragraph--blocco_gallery_intro': { name: 'GenGalleryIntro', render: () => adaptGenGalleryIntro(paragraph) },
+    'paragraph--blocco_documenti': { name: 'GenDocumenti', render: () => adaptGenDocumenti(paragraph) },
+    'paragraph--blocco_a': { name: 'GenA', render: () => adaptGenA(paragraph) },
+    'paragraph--blocco_b': { name: 'GenB', render: () => adaptGenB(paragraph) },
+    'paragraph--blocco_c': { name: 'GenC', render: () => adaptGenC(paragraph) },
+  };
+
   // Gen blocks (DS)
-  if (type === 'paragraph--blocco_intro')
-    return adaptGenIntro(paragraph, pageTitle);
-  if (type === 'paragraph--blocco_quote') return adaptGenQuote(paragraph);
-  if (type === 'paragraph--blocco_video') return adaptGenVideo(paragraph);
-  if (type === 'paragraph--blocco_testo_immagine')
-    return adaptGenTestoImmagine(paragraph);
-  if (type === 'paragraph--blocco_gallery') return adaptGenGallery(paragraph);
-  if (type === 'paragraph--blocco_testo_immagine_big')
-    return adaptGenTestoImmagineBig(paragraph);
-  if (type === 'paragraph--blocco_testo_immagine_blog')
-    return adaptGenTestoImmagineBlog(paragraph);
-  if (type === 'paragraph--blocco_gallery_intro')
-    return adaptGenGalleryIntro(paragraph);
-  if (type === 'paragraph--blocco_documenti')
-    return adaptGenDocumenti(paragraph);
-  if (type === 'paragraph--blocco_a') return adaptGenA(paragraph);
-  if (type === 'paragraph--blocco_b') return adaptGenB(paragraph);
-  if (type === 'paragraph--blocco_c') return adaptGenC(paragraph);
-  if (type === 'paragraph--blocco_e') return <BloccoE paragraph={paragraph} />;
+  const gen = GEN_MAP[type];
+  if (gen) {
+    const content = gen.render();
+    if (!content) return null;
+    return <DevBlockOverlay name={gen.name} status="ds">{content}</DevBlockOverlay>;
+  }
 
   // Legacy blocks
   const Component = LEGACY_MAP[type];
   if (!Component) {
     if (process.env.NODE_ENV === 'development') {
       return (
-        <div
-          style={{
-            padding: '1rem',
-            border: '0.0625rem dashed #f59e0b',
-            background: '#fffbeb',
-            marginBottom: '1rem',
-          }}
-        >
-          <p style={{ margin: 0, fontSize: '0.75rem', color: '#92400e' }}>
-            Unknown paragraph: <code>{type}</code>
-          </p>
-        </div>
+        <DevBlockOverlay name={`Unknown: ${type}`} status="legacy">
+          <div style={{ padding: '1rem' }}>
+            <p style={{ margin: 0, fontSize: '0.75rem', color: '#92400e' }}>
+              Unknown paragraph: <code>{type}</code>
+            </p>
+          </div>
+        </DevBlockOverlay>
       );
     }
     return null;
   }
 
-  return <Component paragraph={paragraph} />;
+  const legacyName = type.replace('paragraph--', '').replace(/^blocco_/, 'Blocco');
+  const legacyDisplayName = legacyName.charAt(0).toUpperCase() + legacyName.slice(1);
+  return (
+    <DevBlockOverlay name={legacyDisplayName} status="legacy">
+      <Component paragraph={paragraph} />
+    </DevBlockOverlay>
+  );
 }

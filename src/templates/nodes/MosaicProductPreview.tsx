@@ -5,6 +5,7 @@
 // when relations are not yet included in the endpoint response.
 
 import { getTranslations } from 'next-intl/server';
+import { DevBlockOverlay } from '@/components/composed/DevBlockOverlay';
 import { SpecProductHero } from '@/components/blocks/SpecProductHero';
 import { SpecProductDetails } from '@/components/blocks/SpecProductDetails';
 import { SpecProductSpecs } from '@/components/blocks/SpecProductSpecs';
@@ -14,7 +15,6 @@ import { QuoteSheetProvider } from '@/components/composed/QuoteSheetProvider';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { formatRetinatura } from '@/lib/product-helpers';
 import type { MosaicProduct } from '@/lib/api/mosaic-product';
-import type { SampleCartItem } from '@/domain/sample-cart/types';
 
 export async function MosaicProductPreview({
   product,
@@ -37,19 +37,6 @@ export async function MosaicProductPreview({
 
   const col = product.collection;
   const isUs = locale === 'us';
-
-  // ── Sample cart item (US only, when product has sample) ──
-  const sampleItem: Omit<SampleCartItem, 'variant'> | undefined =
-    isUs && product.hasSample
-      ? {
-          nid: product.nid,
-          type: 'mosaico' as const,
-          title: product.title,
-          imageUrl: product.imageSampleUrl || product.imageUrl,
-          collection: col?.name ?? null,
-          sampleFormat: null,
-        }
-      : undefined;
 
   // ── Build carousel slides (same pattern as ProdottoMosaico) ──
   const heroSlides: ProductCarouselSlide[] = [];
@@ -193,15 +180,15 @@ export async function MosaicProductPreview({
 
   return (
     <QuoteSheetProvider productName={product.title}>
-      <article className="flex flex-col gap-(--spacing-section) pt-(--spacing-navbar) pb-(--spacing-section)">
-        {/* ── Hero Block ── */}
+    <article className="flex flex-col gap-(--spacing-section) pt-(--spacing-navbar) pb-(--spacing-section)">
+      {/* ── Hero Block ── */}
+      <DevBlockOverlay name="SpecProductHero" status="ds">
         <SpecProductHero
           title={product.title}
           collection={col?.name}
           description={product.body ? sanitizeHtml(product.body) : undefined}
           slides={heroSlides}
           hasSample={product.hasSample}
-          sampleItem={sampleItem}
           price={product.priceOnDemand ? undefined : heroPrice}
           priceUnit={product.priceOnDemand ? undefined : heroPriceUnit}
           inStock={!product.noUsaStock}
@@ -212,14 +199,18 @@ export async function MosaicProductPreview({
           discoverUrl={discoverHref}
           isUs={isUs}
         />
+      </DevBlockOverlay>
 
-        {/* ── Details Block ── */}
-        {detailAttributes.length > 0 && (
+      {/* ── Details Block ── */}
+      {detailAttributes.length > 0 && (
+        <DevBlockOverlay name="SpecProductDetails" status="ds">
           <SpecProductDetails attributes={detailAttributes} />
-        )}
+        </DevBlockOverlay>
+      )}
 
-        {/* ── Specs Block ── */}
-        {specsRows.length > 0 && (
+      {/* ── Specs Block ── */}
+      {specsRows.length > 0 && (
+        <DevBlockOverlay name="SpecProductSpecs" status="ds">
           <SpecProductSpecs
             specs={specsRows}
             assemblyValue={
@@ -250,34 +241,39 @@ export async function MosaicProductPreview({
             maintenanceGuideHref={maintenanceGuideHref ?? '#'}
             maintenanceGuideLabel="View guide"
           />
-        )}
+        </DevBlockOverlay>
+      )}
 
-        {/* ── Resources Block ── */}
-        {documentItems.length > 0 && (
+      {/* ── Resources Block ── */}
+      {documentItems.length > 0 && (
+        <DevBlockOverlay name="SpecProductResources" status="ds">
           <SpecProductResources
             title="Get inspired through catalogs"
             documents={documentItems}
             downloadLabel="Scopri"
           />
-        )}
+        </DevBlockOverlay>
+      )}
 
-        {/* ── Gallery Block ── */}
-        {galleryImages.length > 0 && (
+      {/* ── Gallery Block ── */}
+      {galleryImages.length > 0 && (
+        <DevBlockOverlay name="SpecProductGallery" status="ds">
           <SpecProductGallery images={galleryImages} />
-        )}
+        </DevBlockOverlay>
+      )}
 
-        {/* Debug: raw data (dev only) */}
-        {process.env.NODE_ENV === 'development' && (
-          <details className="mx-auto max-w-main px-[var(--spacing-page)] rounded-lg border p-4">
-            <summary className="cursor-pointer text-sm text-muted-foreground">
-              Debug: Raw product data (NID {product.nid})
-            </summary>
-            <pre className="mt-2 text-xs overflow-auto">
-              {JSON.stringify(product, null, 2)}
-            </pre>
-          </details>
-        )}
-      </article>
+      {/* Debug: raw data (dev only) */}
+      {process.env.NODE_ENV === 'development' && (
+        <details className="mx-auto max-w-main px-[var(--spacing-page)] rounded-lg border p-4">
+          <summary className="cursor-pointer text-sm text-muted-foreground">
+            Debug: Raw product data (NID {product.nid})
+          </summary>
+          <pre className="mt-2 text-xs overflow-auto">
+            {JSON.stringify(product, null, 2)}
+          </pre>
+        </details>
+      )}
+    </article>
     </QuoteSheetProvider>
   );
 }

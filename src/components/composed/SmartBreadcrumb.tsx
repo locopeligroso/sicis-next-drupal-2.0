@@ -39,7 +39,7 @@ export function SmartBreadcrumb({ segments, className }: SmartBreadcrumbProps) {
           const hasSiblings = segment.siblings && segment.siblings.length > 0
 
           return (
-            <Fragment key={segment.href}>
+            <Fragment key={i}>
               <BreadcrumbItem>
                 {hasSiblings && segment.siblings ? (
                   <DropdownMenu>

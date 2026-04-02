@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { Typography } from '@/components/composed/Typography';
 import {
   Tooltip,
   TooltipContent,
@@ -34,7 +33,7 @@ export function ColorSwatchFilter({
   useEffect(() => setMounted(true), []);
 
   return (
-    <div className="grid grid-cols-3 gap-3">
+    <div className="grid grid-cols-4 gap-2">
       {options.map((option) => {
         const isActive = activeValue === option.slug;
 
@@ -58,14 +57,14 @@ export function ColorSwatchFilter({
             type="button"
             onClick={() => onChange(option.slug, isZeroCount)}
             className={cn(
-              'flex flex-col items-center gap-1.5 rounded-md p-1.5 cursor-pointer transition-colors hover:bg-muted',
+              'flex items-center justify-center rounded-md p-1 cursor-pointer transition-colors hover:bg-muted',
               isActive && 'bg-accent',
               isZeroCount && 'opacity-40',
             )}
           >
             <span
               className={cn(
-                'relative block size-12 shrink-0 rounded-full shadow-[inset_0_0_0_1px_rgba(128,128,128,0.25),0_0_0_1px_rgba(128,128,128,0.15)]',
+                'relative block size-9 shrink-0 rounded-full shadow-[inset_0_0_0_1px_rgba(128,128,128,0.25),0_0_0_1px_rgba(128,128,128,0.15)]',
                 !option.imageUrl && !option.cssColor && 'bg-muted',
                 isActive && 'ring-2 ring-primary ring-offset-2',
               )}
@@ -77,13 +76,6 @@ export function ColorSwatchFilter({
                 </span>
               )}
             </span>
-            <Typography
-              textRole="caption"
-              as="span"
-              className="truncate w-full text-center text-muted-foreground"
-            >
-              {option.label}
-            </Typography>
           </button>
         );
 

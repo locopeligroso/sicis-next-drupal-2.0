@@ -84,7 +84,7 @@ export function ListingBreadcrumb({
   const activeCategoryLabel = getCategoryLabel(activeCategory)
 
   return (
-    <Breadcrumb className="pt-(--spacing-content) pb-(--spacing-element)">
+    <Breadcrumb className="pb-(--spacing-element)">
       <BreadcrumbList>
         {/* Products link */}
         <BreadcrumbItem>

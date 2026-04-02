@@ -3,6 +3,7 @@ import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { getColorSwatch, formatRetinatura } from '@/lib/product-helpers';
 import { getDrupalImageUrl } from '@/lib/drupal';
+import { DevBlockOverlay } from '@/components/composed/DevBlockOverlay';
 import { SpecProductHero } from '@/components/blocks/SpecProductHero';
 import { SpecProductDetails } from '@/components/blocks/SpecProductDetails';
 import { SpecProductSpecs } from '@/components/blocks/SpecProductSpecs';
@@ -307,70 +308,80 @@ export default async function ProdottoMosaico({
   return (
     <article className="flex flex-col gap-(--spacing-section) pt-(--spacing-navbar) pb-(--spacing-section)">
       {/* ── Hero Block ── */}
-      <SpecProductHero
-        title={title ?? typedNode.title ?? ''}
-        collection={collezione}
-        collectionHref={collectionHref}
-        description={body ? sanitizeHtml(body) : undefined}
-        slides={heroSlides}
-        hasSample={typedNode.field_campione ?? false}
-        price={heroPrice}
-        priceUnit={heroPriceUnit}
-        inStock={!noUsaStock}
-        shippingWarehouse={!noUsaStock ? 'North America Warehouse' : undefined}
-        shippingTime={!noUsaStock ? '2-3 weeks' : undefined}
-        discoverUrl={discoverHref}
-        isUs={isUs}
-      />
+      <DevBlockOverlay name="SpecProductHero" status="ds">
+        <SpecProductHero
+          title={title ?? typedNode.title ?? ''}
+          collection={collezione}
+          collectionHref={collectionHref}
+          description={body ? sanitizeHtml(body) : undefined}
+          slides={heroSlides}
+          hasSample={typedNode.field_campione ?? false}
+          price={heroPrice}
+          priceUnit={heroPriceUnit}
+          inStock={!noUsaStock}
+          shippingWarehouse={!noUsaStock ? 'North America Warehouse' : undefined}
+          shippingTime={!noUsaStock ? '2-3 weeks' : undefined}
+          discoverUrl={discoverHref}
+          isUs={isUs}
+        />
+      </DevBlockOverlay>
 
       {/* ── Details Block ── */}
-      <SpecProductDetails attributes={detailAttributes} />
+      <DevBlockOverlay name="SpecProductDetails" status="ds">
+        <SpecProductDetails attributes={detailAttributes} />
+      </DevBlockOverlay>
 
       {/* ── Specs Block ── */}
-      <SpecProductSpecs
-        specs={specsRows}
-        assemblyValue={
-          collezioneData?.field_retinatura
-            ? formatRetinatura(collezioneData.field_retinatura)
-            : undefined
-        }
-        assemblyImageSrc={
-          collezioneData?.field_retinatura
-            ? '/images/Retinatura-mosaico-rete.jpg.webp'
-            : undefined
-        }
-        groutingValue={stucchi.length > 0 ? stucchi[0].name : undefined}
-        groutingImageSrc={
-          stucchi.length > 0
-            ? getDrupalImageUrl(
-                (stucchi[0] as Record<string, unknown>).field_immagine,
-              )
-            : undefined
-        }
-        groutConsumption={
-          isUs
-            ? collezioneData?.field_consumo_stucco_sqft != null
-              ? `${collezioneData.field_consumo_stucco_sqft} kg/sqft`
+      <DevBlockOverlay name="SpecProductSpecs" status="ds">
+        <SpecProductSpecs
+          specs={specsRows}
+          assemblyValue={
+            collezioneData?.field_retinatura
+              ? formatRetinatura(collezioneData.field_retinatura)
               : undefined
-            : collezioneData?.field_consumo_stucco_m2 != null
-              ? `${collezioneData.field_consumo_stucco_m2} kg/m²`
+          }
+          assemblyImageSrc={
+            collezioneData?.field_retinatura
+              ? '/images/Retinatura-mosaico-rete.jpg.webp'
               : undefined
-        }
-        maintenanceHtml={maintenanceHtml}
-        maintenanceLabel="Maintenance and installation"
-        maintenanceGuideHref={maintenanceGuideHref ?? '#'}
-        maintenanceGuideLabel="View guide"
-      />
+          }
+          groutingValue={stucchi.length > 0 ? stucchi[0].name : undefined}
+          groutingImageSrc={
+            stucchi.length > 0
+              ? getDrupalImageUrl(
+                  (stucchi[0] as Record<string, unknown>).field_immagine,
+                )
+              : undefined
+          }
+          groutConsumption={
+            isUs
+              ? collezioneData?.field_consumo_stucco_sqft != null
+                ? `${collezioneData.field_consumo_stucco_sqft} kg/sqft`
+                : undefined
+              : collezioneData?.field_consumo_stucco_m2 != null
+                ? `${collezioneData.field_consumo_stucco_m2} kg/m²`
+                : undefined
+          }
+          maintenanceHtml={maintenanceHtml}
+          maintenanceLabel="Maintenance and installation"
+          maintenanceGuideHref={maintenanceGuideHref ?? '#'}
+          maintenanceGuideLabel="View guide"
+        />
+      </DevBlockOverlay>
 
       {/* ── Resources Block ── */}
-      <SpecProductResources
-        title="Get inspired through catalogs"
-        documents={documentItems}
-        downloadLabel="Scopri"
-      />
+      <DevBlockOverlay name="SpecProductResources" status="ds">
+        <SpecProductResources
+          title="Get inspired through catalogs"
+          documents={documentItems}
+          downloadLabel="Scopri"
+        />
+      </DevBlockOverlay>
 
       {/* ── Gallery Block ── */}
-      <SpecProductGallery images={galleryImages} />
+      <DevBlockOverlay name="SpecProductGallery" status="ds">
+        <SpecProductGallery images={galleryImages} />
+      </DevBlockOverlay>
     </article>
   );
 }
