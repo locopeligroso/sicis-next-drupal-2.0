@@ -6,7 +6,6 @@ All notable changes to this project will be documented in this file.
 
 ### 2026-04-02
 
-<<<<<<< HEAD
 #### Vetrite finiture USA + R3F finish pill UI
 
 - `vetrite-product.ts`: nuovo campo `finitureUsa` da `field_finiture_usa` (Drupal endpoint).
@@ -91,6 +90,13 @@ Prodotti mosaico e vetrite con `noUsaStock=true` completamente nascosti su `/us/
 - `vetrite-product.ts`: nuovo campo `finitureUsa: string[]` da `field_finiture_usa` (endpoint Drupal).
 - `ProdottoVetrite.tsx`: su `/us/` mostra solo le finiture da `field_finiture_usa` invece di tutte.
 - R3F fullscreen: `FinishSelector` riscritto con pill buttons (no immagini), filtrati per `availableFinishes` su `/us/`. Usa token DS vetrite (`--hs-surface-on`, `--hs-radius-full`).
+
+#### SpecHubMosaico redesign — colori + collezioni affiancati
+
+- Colori e collezioni affiancati su desktop (grid 75%/25%) invece che impilati verticalmente.
+- Collezioni da CategoryCard grandi a lista compatta (thumbnail 32px + label), stile sidebar.
+- Mobile: colori full width, collezioni in Collapsible chiuso di default.
+- Applicato a mosaico e vetrite (entrambi usano SpecHubMosaico).
 
 #### SmartBreadcrumb — breadcrumb generico con dropdown siblings
 
