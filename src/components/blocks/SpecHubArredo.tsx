@@ -7,9 +7,7 @@ import {
   ARREDO_DESCRIPTIVE_PARENT_NID,
 } from '@/lib/api/category-hub';
 import { fetchContent } from '@/lib/api/content';
-import { resolvePath } from '@/lib/api/resolve-path';
 import { emptyToNull } from '@/lib/api/client';
-import { FILTER_REGISTRY } from '@/domain/filters/registry';
 import { HubSection } from '@/components/composed/HubSection';
 import { Typography } from '@/components/composed/Typography';
 
@@ -57,7 +55,6 @@ export async function SpecHubArredo({
   // ── Build "other pages" list (Outdoor, Next Art, descriptive categories) ──
   type PageItem = { name: string; imageUrl: string | null; href: string };
   const otherPages: PageItem[] = [];
-  const crossLinks: PageItem[] = [];
 
   if (isArredo) {
     const [outdoorContent, nextArtContent] = await Promise.all([
@@ -92,117 +89,70 @@ export async function SpecHubArredo({
       });
     }
 
-    // Cross-links: Illuminazione + Tappeti (separate section)
-    const illuminazionePath =
-      FILTER_REGISTRY['prodotto_illuminazione']?.basePaths[locale] ?? 'illuminazione';
-    const [carpetsResolved, illuminazioneContent, carpetsContent] =
-      await Promise.all([
-        resolvePath('/prodotti-tessili/tappeti', locale).catch(() => null),
-        fetchContent(337, locale).catch(() => null),
-        fetchContent(350, locale).catch(() => null),
-      ]);
-    const carpetsAlias =
-      carpetsResolved?.aliases?.[locale] ?? '/textiles/carpets';
-
-    crossLinks.push({
-      name: (illuminazioneContent?.field_titolo_main as string) ?? 'Illuminazione',
-      imageUrl: emptyToNull(illuminazioneContent?.field_immagine as string | null | undefined),
-      href: `/${locale}/${illuminazionePath}`,
-    });
-    crossLinks.push({
-      name: (carpetsContent?.field_titolo_main as string) ?? 'Carpets',
-      imageUrl: emptyToNull(carpetsContent?.field_immagine as string | null | undefined),
-      href: `/${locale}${carpetsAlias}`,
-    });
   }
 
   // ── Indoor mini-card list (shared between desktop and mobile) ──
   const indoorList = (
-    <div className="grid grid-cols-2 gap-2">
+    <div className="grid grid-cols-4 gap-1.5 lg:grid-cols-6">
       {categories.map((cat) => (
         <Link
           key={cat.nid}
           href={`${basePath}/${slugifyName(cat.name)}`}
-          className="flex items-center gap-3 rounded-lg border border-border p-2 transition-colors hover:bg-muted"
+          className="relative overflow-hidden rounded-md transition-opacity hover:opacity-80"
         >
-          {cat.imageUrl ? (
-            <Image
-              src={cat.imageUrl}
-              alt={cat.name}
-              width={48}
-              height={48}
-              className="size-12 shrink-0 rounded-sm object-cover"
-            />
-          ) : (
-            <span className="size-12 shrink-0 rounded-sm bg-muted" />
-          )}
-          <Typography textRole="body-sm" as="span" className="line-clamp-2">
-            {cat.name}
-          </Typography>
-        </Link>
-      ))}
-    </div>
-  );
-
-  // ── Other pages card list (image + text below) ──
-  const otherPagesList = (
-    <div className="grid grid-cols-2 gap-3">
-      {otherPages.map((page) => (
-        <Link
-          key={page.href}
-          href={page.href}
-          className="group flex flex-col overflow-hidden rounded-lg border border-border transition-colors hover:bg-muted"
-        >
-          <div className="relative aspect-4/3">
-            {page.imageUrl ? (
+          <div className="relative aspect-square">
+            {cat.imageUrl ? (
               <Image
-                src={page.imageUrl}
-                alt={page.name}
+                src={cat.imageUrl}
+                alt={cat.name}
                 fill
-                sizes="(min-width: 1024px) 20vw, 40vw"
+                sizes="(min-width: 1024px) 8vw, 15vw"
                 className="object-cover"
               />
             ) : (
               <div className="size-full bg-muted" />
             )}
           </div>
-          <div className="p-2">
-            <Typography textRole="body-sm" as="span" className="line-clamp-1 font-medium">
-              {page.name}
+          <span className="absolute bottom-1 left-1 rounded-sm bg-background px-1 py-0.5">
+            <Typography textRole="caption" as="span" className="line-clamp-1 text-[0.625rem]">
+              {cat.name}
             </Typography>
-          </div>
+          </span>
         </Link>
       ))}
     </div>
   );
 
-  // ── Cross-links list (Illuminazione, Tappeti) ──
-  const crossLinksList = crossLinks.length > 0 ? (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      {crossLinks.map((link) => (
+  // ── Other pages card list (image with overlay title, same style as Indoor) ──
+  const otherPagesList = (
+    <div className="grid grid-cols-2 gap-x-3 gap-y-(--spacing-content) lg:grid-cols-3">
+      {otherPages.map((page) => (
         <Link
-          key={link.href}
-          href={link.href}
-          className="flex items-center gap-3 rounded-lg border border-border p-2 transition-colors hover:bg-muted"
+          key={page.href}
+          href={page.href}
+          className="group flex flex-col"
         >
-          {link.imageUrl ? (
-            <Image
-              src={link.imageUrl}
-              alt={link.name}
-              width={48}
-              height={48}
-              className="size-12 shrink-0 rounded-sm object-cover"
-            />
-          ) : (
-            <span className="size-12 shrink-0 rounded-sm bg-muted" />
-          )}
-          <Typography textRole="body-sm" as="span" className="line-clamp-2">
-            {link.name}
+          <Typography textRole="overline" as="span" className="truncate mb-1">
+            {page.name}
           </Typography>
+          <hr className="border-t border-border mb-2" />
+          <div className="relative aspect-4/3 overflow-hidden rounded-lg border border-border">
+            {page.imageUrl ? (
+              <Image
+                src={page.imageUrl}
+                alt={page.name}
+                fill
+                sizes="(min-width: 1024px) 20vw, 30vw"
+                className="object-cover"
+              />
+            ) : (
+              <div className="size-full bg-muted" />
+            )}
+          </div>
         </Link>
       ))}
     </div>
-  ) : null;
+  );
 
   // ── Non-arredo types (illuminazione, tessuto): simple indoor grid only ──
   if (!isArredo) {
@@ -218,43 +168,19 @@ export async function SpecHubArredo({
   }
 
   return (
-    <div className="max-w-main mx-auto px-(--spacing-page) flex flex-col gap-(--spacing-section)">
-      {/* ── Desktop: side-by-side ──────────────────────────────────────── */}
-      <div className="hidden lg:grid lg:grid-cols-2 lg:gap-(--spacing-content)">
-        {categories.length > 0 && (
-          <HubSection title="Indoor" titleRole="overline" separator={false}>
+    <div className="max-w-main mx-auto px-(--spacing-page) flex flex-col gap-(--spacing-content)">
+      {/* ── Indoor — grid of subcategory thumbnails ─────────────────── */}
+      {categories.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <Typography textRole="overline" as="span">Indoor</Typography>
+          <div className="overflow-hidden rounded-lg border border-border p-3">
             {indoorList}
-          </HubSection>
-        )}
-
-        {otherPages.length > 0 && (
-          <HubSection title={tHub('discoverAlso')} titleRole="overline" separator={false}>
-            {otherPagesList}
-          </HubSection>
-        )}
-      </div>
-
-      {/* ── Mobile: stacked ───────────────────────────────────────────── */}
-      <div className="flex flex-col gap-(--spacing-section) lg:hidden">
-        {categories.length > 0 && (
-          <HubSection title="Indoor" titleRole="overline" separator={false}>
-            {indoorList}
-          </HubSection>
-        )}
-
-        {otherPages.length > 0 && (
-          <HubSection title={tHub('discoverAlso')} titleRole="overline" separator={false}>
-            {otherPagesList}
-          </HubSection>
-        )}
-      </div>
-
-      {/* ── Cross-links: Illuminazione + Tappeti ──────────────────────── */}
-      {crossLinksList && (
-        <HubSection title={tHub('discoverAlso')} titleRole="overline">
-          {crossLinksList}
-        </HubSection>
+          </div>
+        </div>
       )}
+
+      {/* ── Other pages — image cards ─────────────────────────────────── */}
+      {otherPages.length > 0 && otherPagesList}
     </div>
   );
 }
