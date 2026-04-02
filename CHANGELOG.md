@@ -6,6 +6,32 @@ All notable changes to this project will be documented in this file.
 
 ### 2026-04-02
 
+#### Vetrite finiture USA + R3F finish pill UI
+
+- `vetrite-product.ts`: nuovo campo `finitureUsa` da `field_finiture_usa` (Drupal endpoint).
+- `ProdottoVetrite.tsx`: su `/us/` mostra solo finiture da `field_finiture_usa`.
+- R3F `FinishSelector`: riscritto come pill buttons senza immagini, filtrato per `availableFinishes` su `/us/`. Token DS vetrite.
+
+#### BloccoE — pagine Info Tecniche
+
+- Nuovo `BloccoE.tsx` (legacy provvisorio) per `blocco_e` paragraph: griglia card con documenti, tutorial, pagine referenziate.
+- `ParagraphResolver`: dispatch `paragraph--blocco_e`.
+- Fix routing: slug `info-tecniche-textiles` non viene piu intercettato come product listing (resolve-path bundle `page` ha priorita).
+
+#### ISR cold start fix
+
+- `product-listing-factory.ts`: `throw` invece di `return []` su risposta vuota. `unstable_cache` non cacha eccezioni — retry automatico.
+- Nuovo `error.tsx` boundary per `[...slug]`: safety net primo request, pulsante "Riprova".
+
+#### Menu description da CMS
+
+- `MenuItem.description` mappata da endpoint Drupal menu.
+- Navbar Explore subtitle ora da CMS (`menu.sectionDescriptions`) con fallback i18n.
+
+#### Script warmup
+
+- `package.json`: `npm run start:warm`, `npm run warmup`, `npm run warmup:full`.
+
 #### Sample Cart — sistema richiesta campioni per /us/ (mosaico + vetrite)
 
 Riscrittura nativa del widget `sicis-ecommerce-react` (IIFE) come componenti Next.js integrati nel Design System. Carrello campioni con checkout PayPal, solo locale `/us/`.
