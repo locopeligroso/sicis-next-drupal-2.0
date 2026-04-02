@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### 2026-04-02
 
+<<<<<<< HEAD
 #### Vetrite finiture USA + R3F finish pill UI
 
 - `vetrite-product.ts`: nuovo campo `finitureUsa` da `field_finiture_usa` (Drupal endpoint).
@@ -90,6 +91,25 @@ Prodotti mosaico e vetrite con `noUsaStock=true` completamente nascosti su `/us/
 - `vetrite-product.ts`: nuovo campo `finitureUsa: string[]` da `field_finiture_usa` (endpoint Drupal).
 - `ProdottoVetrite.tsx`: su `/us/` mostra solo le finiture da `field_finiture_usa` invece di tutte.
 - R3F fullscreen: `FinishSelector` riscritto con pill buttons (no immagini), filtrati per `availableFinishes` su `/us/`. Usa token DS vetrite (`--hs-surface-on`, `--hs-radius-full`).
+
+#### SmartBreadcrumb — breadcrumb generico con dropdown siblings
+
+- Nuovo Composed `SmartBreadcrumb`: ogni segmento con siblings rende un dropdown per navigare tra pagine allo stesso livello.
+- Sostituisce `ListingBreadcrumb` in `ProductListingTemplate` (hub + listing mode).
+- Segmenti risolti dal chiamante — nessuna logica di dominio nel componente.
+
+#### Debug Mode — overlay visuale blocchi
+
+- Sistema dev-only: outline verde = DS, rosso = legacy, badge con nome blocco.
+- Pulsante toggle "Debug Mode" (bottom-right), stato persistito in localStorage.
+- Indicatore breakpoint visibile quando debug mode attivo.
+- Iniettato in ParagraphResolver (Gen* + Blocco*), ProductListingTemplate, ProdottoMosaico, MosaicProductPreview.
+
+#### Template cleanup — blocchi gestiscono il proprio contenitore
+
+- Rimosso `max-w-main mx-auto px-(--spacing-page)` dal wrapper hub in ProductListingTemplate.
+- `SpecListingHeader`, `SpecHubMosaico`, `SpecHubArredo` ora gestiscono il proprio contenitore.
+- Regola: il breadcrumb va dentro i blocchi intro, non nei template (applicazione incrementale).
 
 #### Fix — hub category/color hrefs perdevano `/us/` locale
 
