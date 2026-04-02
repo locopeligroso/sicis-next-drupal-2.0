@@ -57,6 +57,7 @@ export async function SpecHubArredo({
   // ── Build "other pages" list (Outdoor, Next Art, descriptive categories) ──
   type PageItem = { name: string; imageUrl: string | null; href: string };
   const otherPages: PageItem[] = [];
+  const crossLinks: PageItem[] = [];
 
   if (isArredo) {
     const [outdoorContent, nextArtContent] = await Promise.all([
@@ -91,7 +92,7 @@ export async function SpecHubArredo({
       });
     }
 
-    // Cross-links: Illuminazione + Tappeti
+    // Cross-links: Illuminazione + Tappeti (separate section)
     const illuminazionePath =
       FILTER_REGISTRY['prodotto_illuminazione']?.basePaths[locale] ?? 'illuminazione';
     const [carpetsResolved, illuminazioneContent, carpetsContent] =
@@ -103,12 +104,12 @@ export async function SpecHubArredo({
     const carpetsAlias =
       carpetsResolved?.aliases?.[locale] ?? '/textiles/carpets';
 
-    otherPages.push({
+    crossLinks.push({
       name: (illuminazioneContent?.field_titolo_main as string) ?? 'Illuminazione',
       imageUrl: emptyToNull(illuminazioneContent?.field_immagine as string | null | undefined),
       href: `/${locale}/${illuminazionePath}`,
     });
-    otherPages.push({
+    crossLinks.push({
       name: (carpetsContent?.field_titolo_main as string) ?? 'Carpets',
       imageUrl: emptyToNull(carpetsContent?.field_immagine as string | null | undefined),
       href: `/${locale}${carpetsAlias}`,
@@ -143,33 +144,65 @@ export async function SpecHubArredo({
     </div>
   );
 
-  // ── Other pages card list (slightly larger cards) ──
+  // ── Other pages card list (image + text below) ──
   const otherPagesList = (
     <div className="grid grid-cols-2 gap-3">
       {otherPages.map((page) => (
         <Link
           key={page.href}
           href={page.href}
-          className="flex items-center gap-4 rounded-lg border border-border p-3 transition-colors hover:bg-muted"
+          className="group flex flex-col overflow-hidden rounded-lg border border-border transition-colors hover:bg-muted"
         >
-          {page.imageUrl ? (
-            <Image
-              src={page.imageUrl}
-              alt={page.name}
-              width={64}
-              height={64}
-              className="size-16 shrink-0 rounded-md object-cover"
-            />
-          ) : (
-            <span className="size-16 shrink-0 rounded-md bg-muted" />
-          )}
-          <Typography textRole="body-md" as="span" className="line-clamp-2 font-medium">
-            {page.name}
-          </Typography>
+          <div className="relative aspect-4/3">
+            {page.imageUrl ? (
+              <Image
+                src={page.imageUrl}
+                alt={page.name}
+                fill
+                sizes="(min-width: 1024px) 20vw, 40vw"
+                className="object-cover"
+              />
+            ) : (
+              <div className="size-full bg-muted" />
+            )}
+          </div>
+          <div className="p-2">
+            <Typography textRole="body-sm" as="span" className="line-clamp-1 font-medium">
+              {page.name}
+            </Typography>
+          </div>
         </Link>
       ))}
     </div>
   );
+
+  // ── Cross-links list (Illuminazione, Tappeti) ──
+  const crossLinksList = crossLinks.length > 0 ? (
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      {crossLinks.map((link) => (
+        <Link
+          key={link.href}
+          href={link.href}
+          className="flex items-center gap-3 rounded-lg border border-border p-2 transition-colors hover:bg-muted"
+        >
+          {link.imageUrl ? (
+            <Image
+              src={link.imageUrl}
+              alt={link.name}
+              width={48}
+              height={48}
+              className="size-12 shrink-0 rounded-sm object-cover"
+            />
+          ) : (
+            <span className="size-12 shrink-0 rounded-sm bg-muted" />
+          )}
+          <Typography textRole="body-sm" as="span" className="line-clamp-2">
+            {link.name}
+          </Typography>
+        </Link>
+      ))}
+    </div>
+  ) : null;
 
   // ── Non-arredo types (illuminazione, tessuto): simple indoor grid only ──
   if (!isArredo) {
@@ -185,11 +218,11 @@ export async function SpecHubArredo({
   }
 
   return (
-    <div className="max-w-main mx-auto px-(--spacing-page)">
+    <div className="max-w-main mx-auto px-(--spacing-page) flex flex-col gap-(--spacing-section)">
       {/* ── Desktop: side-by-side ──────────────────────────────────────── */}
       <div className="hidden lg:grid lg:grid-cols-2 lg:gap-(--spacing-content)">
         {categories.length > 0 && (
-          <HubSection title="Indoor" titleRole="overline">
+          <HubSection title="Indoor" titleRole="overline" separator={false}>
             {indoorList}
           </HubSection>
         )}
@@ -204,7 +237,7 @@ export async function SpecHubArredo({
       {/* ── Mobile: stacked ───────────────────────────────────────────── */}
       <div className="flex flex-col gap-(--spacing-section) lg:hidden">
         {categories.length > 0 && (
-          <HubSection title="Indoor" titleRole="overline">
+          <HubSection title="Indoor" titleRole="overline" separator={false}>
             {indoorList}
           </HubSection>
         )}
@@ -215,6 +248,13 @@ export async function SpecHubArredo({
           </HubSection>
         )}
       </div>
+
+      {/* ── Cross-links: Illuminazione + Tappeti ──────────────────────── */}
+      {crossLinksList && (
+        <HubSection title={tHub('discoverAlso')} titleRole="overline">
+          {crossLinksList}
+        </HubSection>
+      )}
     </div>
   );
 }
