@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { apiGet, stripDomain, emptyToNull } from './client';
+import { apiGet, stripDomain, stripLocalePrefix, emptyToNull } from './client';
 
 // ── Raw response shape from Drupal views ─────────────────────────────────
 
@@ -29,12 +29,16 @@ export interface MosaicTermItem {
 
 // ── Normalizer ───────────────────────────────────────────────────────────
 
-function normalize(items: MosaicViewItem[]): MosaicTermItem[] {
-  return items.map((item) => ({
-    name: item.name,
-    imageUrl: emptyToNull(item.field_immagine),
-    href: stripDomain(item.view_taxonomy_term) ?? '#',
-  }));
+function normalize(items: MosaicViewItem[], locale: string): MosaicTermItem[] {
+  return items.map((item) => {
+    const rawPath = stripDomain(item.view_taxonomy_term);
+    const pathWithoutLocale = rawPath ? stripLocalePrefix(rawPath) : null;
+    return {
+      name: item.name,
+      imageUrl: emptyToNull(item.field_immagine),
+      href: pathWithoutLocale ? `/${locale}${pathWithoutLocale}` : '#',
+    };
+  });
 }
 
 // ── Fetchers ─────────────────────────────────────────────────────────────
@@ -46,7 +50,7 @@ export const fetchMosaicColors = cache(
       {},
       86400,
     );
-    return data ? normalize(data) : [];
+    return data ? normalize(data, locale) : [];
   },
 );
 
@@ -57,7 +61,7 @@ export const fetchMosaicCollections = cache(
       {},
       86400,
     );
-    return data ? normalize(data) : [];
+    return data ? normalize(data, locale) : [];
   },
 );
 
@@ -69,12 +73,16 @@ export const fetchMosaicShapes = cache(
       86400,
     );
     if (!data) return [];
-    return data.map((item) => ({
-      name: item.name,
-      imageUrl: null,
-      href: stripDomain(item.view_taxonomy_term) ?? '#',
-      tid: String(item.tid),
-    }));
+    return data.map((item) => {
+      const rawPath = stripDomain(item.view_taxonomy_term);
+      const pathWithoutLocale = rawPath ? stripLocalePrefix(rawPath) : null;
+      return {
+        name: item.name,
+        imageUrl: null,
+        href: pathWithoutLocale ? `/${locale}${pathWithoutLocale}` : '#',
+        tid: String(item.tid),
+      };
+    });
   },
 );
 
@@ -148,11 +156,15 @@ export const fetchMosaicFinishes = cache(
       86400,
     );
     if (!data) return [];
-    return data.map((item) => ({
-      name: item.name,
-      imageUrl: null,
-      href: stripDomain(item.view_taxonomy_term) ?? '#',
-      tid: String(item.tid),
-    }));
+    return data.map((item) => {
+      const rawPath = stripDomain(item.view_taxonomy_term);
+      const pathWithoutLocale = rawPath ? stripLocalePrefix(rawPath) : null;
+      return {
+        name: item.name,
+        imageUrl: null,
+        href: pathWithoutLocale ? `/${locale}${pathWithoutLocale}` : '#',
+        tid: String(item.tid),
+      };
+    });
   },
 );

@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { apiGet, stripDomain, emptyToNull } from './client';
+import { apiGet, stripDomain, stripLocalePrefix, emptyToNull } from './client';
 
 // ── Raw response shape from Drupal views ─────────────────────────────────
 // Same shape as mosaic-hub: { name, field_immagine, view_taxonomy_term }
@@ -30,12 +30,19 @@ export interface VetriteTermItem {
 
 // ── Normalizer ───────────────────────────────────────────────────────────
 
-function normalize(items: VetriteViewItem[]): VetriteTermItem[] {
-  return items.map((item) => ({
-    name: item.name,
-    imageUrl: emptyToNull(item.field_immagine),
-    href: stripDomain(item.view_taxonomy_term) ?? '#',
-  }));
+function normalize(
+  items: VetriteViewItem[],
+  locale: string,
+): VetriteTermItem[] {
+  return items.map((item) => {
+    const rawPath = stripDomain(item.view_taxonomy_term);
+    const pathWithoutLocale = rawPath ? stripLocalePrefix(rawPath) : null;
+    return {
+      name: item.name,
+      imageUrl: emptyToNull(item.field_immagine),
+      href: pathWithoutLocale ? `/${locale}${pathWithoutLocale}` : '#',
+    };
+  });
 }
 
 // ── Fetchers ─────────────────────────────────────────────────────────────
@@ -47,7 +54,7 @@ export const fetchVetriteColors = cache(
       {},
       86400,
     );
-    return data ? normalize(data) : [];
+    return data ? normalize(data, locale) : [];
   },
 );
 
@@ -58,7 +65,7 @@ export const fetchVetriteCollections = cache(
       {},
       86400,
     );
-    return data ? normalize(data) : [];
+    return data ? normalize(data, locale) : [];
   },
 );
 
@@ -70,12 +77,16 @@ export const fetchVetriteFinishes = cache(
       86400,
     );
     if (!data) return [];
-    return data.map((item) => ({
-      name: item.name,
-      imageUrl: null,
-      href: stripDomain(item.view_taxonomy_term) ?? '#',
-      tid: String(item.tid),
-    }));
+    return data.map((item) => {
+      const rawPath = stripDomain(item.view_taxonomy_term);
+      const pathWithoutLocale = rawPath ? stripLocalePrefix(rawPath) : null;
+      return {
+        name: item.name,
+        imageUrl: null,
+        href: pathWithoutLocale ? `/${locale}${pathWithoutLocale}` : '#',
+        tid: String(item.tid),
+      };
+    });
   },
 );
 

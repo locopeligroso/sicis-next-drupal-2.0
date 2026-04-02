@@ -6,6 +6,17 @@ All notable changes to this project will be documented in this file.
 
 ### 2026-04-02
 
+#### Fix — hub category/color hrefs perdevano `/us/` locale
+
+- `mosaic-hub.ts`, `vetrite-hub.ts`: gli href delle category card e color swatch nel hub usavano il locale Drupal (`/en/`) invece del locale Next.js (`/us/`). Ora `stripDomain` + `stripLocalePrefix` + `/${locale}` garantiscono la persistenza del prefisso `/us/` su tutti gli hub (mosaico, vetrite, arredo, tessili, illuminazione) e sotto-pagine (collezioni, colori).
+
+#### Form i18n + rename componenti (Gabriele)
+
+- `QuoteFormSheet` rinominato `InfoProdottoForm` — form richiesta info prodotto con Dialog (non piu Sheet).
+- Nuovo `InfoGeneraliForm` — form richiesta informazioni generali con route dedicata `/api/info-generali`.
+- Route `/api/quote` rinominata `/api/info-prodotto`.
+- Aggiunte 37 chiavi i18n per form a tutti i 6 `messages/*.json` (namespace `forms`).
+
 #### Fix — locale prefix missing on product hrefs (`/us/`)
 
 - `ProductGrid.tsx`: product card `href` ora usa `` `/${locale}${product.path}` `` — in precedenza la rotta `/us/` generava link senza prefisso locale, causando 404 sul click.
