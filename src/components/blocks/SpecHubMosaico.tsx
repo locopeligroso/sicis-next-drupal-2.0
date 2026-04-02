@@ -1,87 +1,144 @@
-import { getTranslations } from 'next-intl/server';
+import Image from "next/image"
+import Link from "next/link"
+import { ChevronRight } from "lucide-react"
+import { getTranslations } from "next-intl/server"
 
 import type {
   FilterGroupConfig,
   ListingConfig,
-} from '@/domain/filters/registry';
-import type { SecondaryLink } from '@/lib/navbar/types';
+} from "@/domain/filters/registry"
+import type { SecondaryLink } from "@/lib/navbar/types"
 import {
   fetchMosaicColors,
   fetchMosaicCollections,
-} from '@/lib/api/mosaic-hub';
+} from "@/lib/api/mosaic-hub"
 import {
   fetchVetriteColors,
   fetchVetriteCollections,
-} from '@/lib/api/vetrite-hub';
-import { HubSection } from '@/components/composed/HubSection';
-import { CategoryCard } from '@/components/composed/CategoryCard';
-import { ColorSwatchLink } from '@/components/composed/ColorSwatchLink';
+} from "@/lib/api/vetrite-hub"
+import { HubSection } from "@/components/composed/HubSection"
+import { ColorSwatchLink } from "@/components/composed/ColorSwatchLink"
+import { Typography } from "@/components/composed/Typography"
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from "@/components/ui/collapsible"
 
 interface SpecHubMosaicoProps {
-  filterOptions: Record<string, unknown[]>;
-  filters: Record<string, FilterGroupConfig>;
-  listingConfig: ListingConfig;
-  basePath: string;
-  locale: string;
-  productType: string;
-  deepDiveLinks?: SecondaryLink[];
+  filterOptions: Record<string, unknown[]>
+  filters: Record<string, FilterGroupConfig>
+  listingConfig: ListingConfig
+  basePath: string
+  locale: string
+  productType: string
+  deepDiveLinks?: SecondaryLink[]
 }
 
 export async function SpecHubMosaico({
-  listingConfig,
   locale,
   productType,
 }: SpecHubMosaicoProps) {
-  const tHub = await getTranslations('hub');
+  const tHub = await getTranslations("hub")
 
-  // Fetch colors and collections from the correct endpoint per product type
   const [colors, rawCollections] = await Promise.all(
-    productType === 'prodotto_vetrite'
+    productType === "prodotto_vetrite"
       ? [fetchVetriteColors(locale), fetchVetriteCollections(locale)]
       : [fetchMosaicColors(locale), fetchMosaicCollections(locale)],
-  );
+  )
 
-  // Filter out sub-collection entries (e.g. "Neocolibrì – Barrels") —
-  // these are taxonomy children that should not appear as top-level hub cards.
-  // Guard against Drupal view changes that temporarily include sub-groups.
   const collections = rawCollections.filter(
-    (c) => !c.name.includes(' – ') && !c.name.includes(' - '),
-  );
+    (c) => !c.name.includes(" – ") && !c.name.includes(" - "),
+  )
+
+  const collectionList = (
+    <div className="flex flex-col gap-1">
+      {collections.map((collection) => (
+        <Link
+          key={collection.name}
+          href={collection.href}
+          className="flex items-center gap-3 rounded-md px-2 py-1.5 transition-colors hover:bg-muted"
+        >
+          {collection.imageUrl ? (
+            <Image
+              src={collection.imageUrl}
+              alt={collection.name}
+              width={32}
+              height={32}
+              className="size-8 shrink-0 rounded-sm object-cover"
+            />
+          ) : (
+            <span className="size-8 shrink-0 rounded-sm bg-muted" />
+          )}
+          <Typography textRole="body-sm" as="span">
+            {collection.name}
+          </Typography>
+        </Link>
+      ))}
+    </div>
+  )
 
   return (
-    <div className="flex flex-col gap-(--spacing-section)">
-      {/* ── Listing 1: Colori ──────────────────────────────────────────── */}
-      {colors.length > 0 && (
-        <HubSection title={tHub('exploreByColor')}>
-          <div className="flex flex-wrap gap-4">
-            {colors.map((color) => (
-              <ColorSwatchLink
-                key={color.name}
-                label={color.name}
-                imageUrl={color.imageUrl}
-                href={color.href}
-              />
-            ))}
-          </div>
-        </HubSection>
-      )}
+    <div className="max-w-main mx-auto px-(--spacing-page) flex flex-col gap-(--spacing-section)">
+      {/* ── Desktop: side-by-side ──────────────────────────────────────── */}
+      <div className="hidden lg:grid lg:grid-cols-[1fr_280px] lg:gap-(--spacing-content)">
+        {/* Colors — main area */}
+        {colors.length > 0 && (
+          <HubSection title={tHub("exploreByColor")}>
+            <div className="flex flex-wrap gap-4">
+              {colors.map((color) => (
+                <ColorSwatchLink
+                  key={color.name}
+                  label={color.name}
+                  imageUrl={color.imageUrl}
+                  href={color.href}
+                />
+              ))}
+            </div>
+          </HubSection>
+        )}
 
-      {/* ── Listing 2: Collezioni ──────────────────────────────────────── */}
-      {collections.length > 0 && (
-        <HubSection title={tHub('exploreByCollection')}>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
-            {collections.map((collection) => (
-              <CategoryCard
-                key={collection.name}
-                title={collection.name}
-                imageUrl={collection.imageUrl}
-                href={collection.href}
-                aspectRatio={listingConfig.categoryCardRatio}
-              />
-            ))}
-          </div>
-        </HubSection>
-      )}
+        {/* Collections — compact sidebar */}
+        {collections.length > 0 && (
+          <HubSection title={tHub("exploreByCollection")}>
+            {collectionList}
+          </HubSection>
+        )}
+      </div>
+
+      {/* ── Mobile: stacked with Collapsible ──────────────────────────── */}
+      <div className="flex flex-col gap-(--spacing-section) lg:hidden">
+        {/* Colors — full width */}
+        {colors.length > 0 && (
+          <HubSection title={tHub("exploreByColor")}>
+            <div className="flex flex-wrap gap-4">
+              {colors.map((color) => (
+                <ColorSwatchLink
+                  key={color.name}
+                  label={color.name}
+                  imageUrl={color.imageUrl}
+                  href={color.href}
+                />
+              ))}
+            </div>
+          </HubSection>
+        )}
+
+        {/* Collections — collapsible */}
+        {collections.length > 0 && (
+          <Collapsible>
+            <CollapsibleTrigger className="flex w-full items-center gap-2 py-2 cursor-pointer transition-colors hover:text-foreground">
+              <Typography textRole="overline" as="span">
+                {tHub("exploreByCollection")}
+              </Typography>
+              <ChevronRight className="size-4 text-muted-foreground transition-transform data-[panel-open]:rotate-90" />
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              {collectionList}
+            </CollapsibleContent>
+          </Collapsible>
+        )}
+      </div>
     </div>
-  );
+  )
 }
