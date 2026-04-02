@@ -6,11 +6,12 @@ import { AiryHeader } from '@/components/composed/AiryHeader';
 import { SpecListingHeader } from '@/components/blocks/SpecListingHeader';
 import { SpecFilterSidebar } from '@/components/blocks/SpecFilterSidebar';
 import { SpecCategory } from '@/components/blocks/SpecCategory';
-import { SpecHubMosaico } from '@/components/blocks/SpecHubMosaico';
+import { SpecHubSurfaces } from '@/components/blocks/SpecHubSurfaces';
 import { SpecHubArredo } from '@/components/blocks/SpecHubArredo';
 import { SpecProductListing } from '@/components/blocks/SpecProductListing';
 import { SpecDeepDiveLinks } from '@/components/blocks/SpecDeepDiveLinks';
 import { SpecHubCrossLinks } from '@/components/blocks/SpecHubCrossLinks';
+import { SpecHubOtherPages } from '@/components/blocks/SpecHubOtherPages';
 import type { SecondaryLink } from '@/lib/navbar/types';
 import type { ProductCard } from '@/lib/api/products';
 import { FILTER_REGISTRY } from '@/domain/filters/registry';
@@ -69,6 +70,9 @@ interface ProductListingTemplateProps {
 
   // Deep dive links from Filter & Find mega-menu (for hub Approfondimenti section)
   deepDiveLinks?: SecondaryLink[];
+
+  // Cross-product links from Filter & Find mega-menu (for hub "Scopri anche" section)
+  crossLinks?: SecondaryLink[];
 
   // Parent NID for category-based hubs (arredo, illuminazione, tessuto)
   // Used by SpecHubArredo to fetch subcategories from categories/{nid} endpoint
@@ -171,6 +175,7 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
     activePathFilterKey,
     hasActiveP0,
     deepDiveLinks,
+    crossLinks,
     hubParentNid,
     tNav,
     tBreadcrumb,
@@ -223,8 +228,8 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
           <SpecListingHeader title={title} description={description} breadcrumbSegments={baseSegments} />
         </DevBlockOverlay>
         {isMosaicoOrVetrite ? (
-          <DevBlockOverlay name="SpecHubMosaico" status="ds">
-            <SpecHubMosaico
+          <DevBlockOverlay name="SpecHubSurfaces" status="ds">
+            <SpecHubSurfaces
               filterOptions={Object.fromEntries(
                 Object.entries(filterOptions).map(([key, opts]) => [
                   key,
@@ -248,12 +253,25 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
             />
           </DevBlockOverlay>
         )}
-        <DevBlockOverlay name="SpecHubCrossLinks" status="ds">
-          <SpecHubCrossLinks productType={productType} locale={locale} />
-        </DevBlockOverlay>
-        <DevBlockOverlay name="SpecDeepDiveLinks" status="ds">
-          <SpecDeepDiveLinks links={deepDiveLinks ?? []} />
-        </DevBlockOverlay>
+        {FILTER_REGISTRY[productType]?.otherPagesParentNid && (
+          <DevBlockOverlay name="SpecHubOtherPages" status="ds">
+            <SpecHubOtherPages
+              parentNid={FILTER_REGISTRY[productType]!.otherPagesParentNid!}
+              basePath={basePath}
+              locale={locale}
+            />
+          </DevBlockOverlay>
+        )}
+        {(crossLinks ?? []).length > 0 && (
+          <DevBlockOverlay name="SpecHubCrossLinks" status="ds">
+            <SpecHubCrossLinks links={crossLinks!} />
+          </DevBlockOverlay>
+        )}
+        {(deepDiveLinks ?? []).length > 0 && (
+          <DevBlockOverlay name="SpecDeepDiveLinks" status="ds">
+            <SpecDeepDiveLinks links={deepDiveLinks!} />
+          </DevBlockOverlay>
+        )}
       </div>
     );
   }

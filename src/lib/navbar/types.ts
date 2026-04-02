@@ -26,8 +26,10 @@ export interface SecondaryLink {
 export interface FilterFindCategory {
   /** The original menu item (e.g. "Mosaico", "Lastre vetro Vetrite") */
   item: MenuItem;
-  /** Hardcoded secondary links (catalogs, certifications, tutorials, etc.) */
+  /** Deep-dive links (catalogs, certifications, tutorials, etc.) */
   secondaryLinks: SecondaryLink[];
+  /** Cross-product links (e.g. Illuminazione, Tappeti from arredo hub) */
+  crossLinks: SecondaryLink[];
 }
 
 export interface FilterFindSection {

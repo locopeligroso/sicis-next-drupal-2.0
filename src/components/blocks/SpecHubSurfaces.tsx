@@ -24,7 +24,7 @@ import {
   CollapsibleContent,
 } from "@/components/ui/collapsible"
 
-interface SpecHubMosaicoProps {
+interface SpecHubSurfacesProps {
   filterOptions: Record<string, unknown[]>
   filters: Record<string, FilterGroupConfig>
   listingConfig: ListingConfig
@@ -33,10 +33,10 @@ interface SpecHubMosaicoProps {
   productType: string
 }
 
-export async function SpecHubMosaico({
+export async function SpecHubSurfaces({
   locale,
   productType,
-}: SpecHubMosaicoProps) {
+}: SpecHubSurfacesProps) {
   const tHub = await getTranslations("hub")
 
   const [colors, rawCollections] = await Promise.all(

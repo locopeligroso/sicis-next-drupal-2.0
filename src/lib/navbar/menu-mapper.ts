@@ -206,16 +206,29 @@ function buildFilterFindSection(
     return { items: [] };
   }
 
-  const items: FilterFindCategory[] = sectionItem.children.map((child) => ({
-    item: {
-      ...child,
-      title: FILTER_FIND_SHORT_TITLES[lc(child.title)] ?? child.title,
-    },
-    secondaryLinks: (child.children ?? []).map((c) => ({
-      title: c.title,
-      url: c.url,
-    })),
-  }));
+  const items: FilterFindCategory[] = sectionItem.children.map((child) => {
+    const secondaryLinks: { title: string; url: string }[] = [];
+    const crossLinks: { title: string; url: string }[] = [];
+    for (const c of child.children ?? []) {
+      const hasChildren = (c.children ?? []).length > 0;
+      if (hasChildren && lc(c.title) === 'cross-link') {
+        for (const gc of c.children!) {
+          crossLinks.push({ title: gc.title, url: gc.url });
+        }
+      } else if (!hasChildren) {
+        secondaryLinks.push({ title: c.title, url: c.url });
+      }
+    }
+
+    return {
+      item: {
+        ...child,
+        title: FILTER_FIND_SHORT_TITLES[lc(child.title)] ?? child.title,
+      },
+      secondaryLinks,
+      crossLinks,
+    };
+  });
 
   return { items };
 }

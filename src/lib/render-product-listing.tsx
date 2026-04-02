@@ -11,7 +11,7 @@ import {
 } from '@/lib/api/product-listing-factory';
 import { fetchListingFilterOptions } from '@/lib/api/filter-options';
 import { resolvePath } from '@/lib/api/resolve-path';
-import { getHubDeepDiveLinks } from '@/lib/navbar/hub-links';
+import { getHubLinks } from '@/lib/navbar/hub-links';
 import { ProductListingTemplate } from '@/templates/nodes/ProductListingTemplate';
 import type { SecondaryLink } from '@/lib/navbar/types';
 import type { ProductCard } from '@/lib/api/products';
@@ -29,6 +29,7 @@ interface ListingData {
   subcategories: { slug: string; label: string; nid?: number }[] | undefined;
   activePathFilterKey: string | undefined;
   deepDiveLinks: SecondaryLink[];
+  crossLinks: SecondaryLink[];
   basePath: string;
   // Parsed filter state — plain serializable objects
   activeFilters: ActiveFilter[];
@@ -76,6 +77,7 @@ async function _fetchListingData(
       subcategories: undefined,
       activePathFilterKey: undefined,
       deepDiveLinks: [],
+      crossLinks: [],
       basePath: `/${locale}`,
       activeFilters: [],
       filterDefinitions: [],
@@ -127,7 +129,7 @@ async function _fetchListingData(
   let filterOptions: Record<string, FilterOption[]> = {};
   // Pre-launch promise for hub deep dive links — declared here so hub mode can
   // start the menu fetch concurrently with the sync variant/filter calculations.
-  let deepDiveLinksPromise: ReturnType<typeof getHubDeepDiveLinks> | undefined;
+  let hubLinksPromise: ReturnType<typeof getHubLinks> | undefined;
 
   // ── Subcategory override (?sub=slug) for category-based types ──────
   // Must run BEFORE product fetch so filterDefinitions are updated.
@@ -213,7 +215,7 @@ async function _fetchListingData(
 
     // Pre-launch menu fetch for deep dive links so it runs concurrently with
     // the sync variant/filter calculations below.
-    deepDiveLinksPromise = getHubDeepDiveLinks(productType, locale);
+    hubLinksPromise = getHubLinks(productType, locale);
   } else {
     // ── State 2: Product grid mode — fetch products + all filter options ───
 
@@ -659,11 +661,11 @@ async function _fetchListingData(
     }));
   }
 
-  // ── Deep dive links for hub mode ──────────────────────────────────────
-  const deepDiveLinks =
+  // ── Deep dive + cross links for hub mode ──────────────────────────────
+  const hubLinks =
     variant === 'hub'
-      ? await (deepDiveLinksPromise ?? getHubDeepDiveLinks(productType, locale))
-      : [];
+      ? await (hubLinksPromise ?? getHubLinks(productType, locale))
+      : { deepDiveLinks: [], crossLinks: [] };
 
   return {
     products,
@@ -675,7 +677,8 @@ async function _fetchListingData(
     swatchColor,
     subcategories,
     activePathFilterKey,
-    deepDiveLinks,
+    deepDiveLinks: hubLinks.deepDiveLinks,
+    crossLinks: hubLinks.crossLinks,
     basePath,
     activeFilters: parsed.activeFilters,
     filterDefinitions: parsed.filterDefinitions,
@@ -794,6 +797,7 @@ export async function renderProductListing({
       subcategories={data.subcategories}
       activePathFilterKey={data.activePathFilterKey}
       deepDiveLinks={data.deepDiveLinks}
+      crossLinks={data.crossLinks}
       hubParentNid={hubParentNid}
       tNav={(key: string) => tNav(key)}
       tBreadcrumb={(key: string) => tBreadcrumb(key)}

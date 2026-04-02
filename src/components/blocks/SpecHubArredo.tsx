@@ -4,17 +4,12 @@ import { getTranslations } from 'next-intl/server';
 import {
   fetchHubCategories,
   ARREDO_INDOOR_PARENT_NID,
-  ARREDO_DESCRIPTIVE_PARENT_NID,
 } from '@/lib/api/category-hub';
-import { fetchContent } from '@/lib/api/content';
-import { emptyToNull } from '@/lib/api/client';
-import { Separator } from '@/components/ui/separator';
 import { HubSection } from '@/components/composed/HubSection';
 import { Typography } from '@/components/composed/Typography';
 
 /**
  * NFC-normalize + lowercase + slugify a category name.
- * Mirrors deriveSlug's fallback path in src/lib/api/filters.ts.
  * Preserves accented Latin (U+00C0–U+024F) and Cyrillic (U+0400–U+04FF) chars.
  */
 function slugifyName(name: string): string {
@@ -42,54 +37,11 @@ export async function SpecHubArredo({
   const tHub = await getTranslations('hub');
 
   const isArredo = productType === 'prodotto_arredo';
-
   const indoorNid = isArredo ? ARREDO_INDOOR_PARENT_NID : parentNid;
-  const [categories, descriptiveCategories] = await Promise.all([
-    fetchHubCategories(indoorNid, locale),
-    isArredo
-      ? fetchHubCategories(ARREDO_DESCRIPTIVE_PARENT_NID, locale)
-      : Promise.resolve([]),
-  ]);
+  const categories = await fetchHubCategories(indoorNid, locale);
 
-  // ── Build "other pages" list (Outdoor, Next Art, descriptive categories) ──
-  type PageItem = { name: string; imageUrl: string | null; href: string };
-  const otherPages: PageItem[] = [];
+  if (categories.length === 0) return null;
 
-  if (isArredo) {
-    const [outdoorContent, nextArtContent] = await Promise.all([
-      fetchContent(348, locale).catch(() => null),
-      fetchContent(3545, locale).catch(() => null),
-    ]);
-
-    const outdoorImageUrl = emptyToNull(
-      outdoorContent?.field_immagine as string | null | undefined,
-    );
-    const nextArtImageUrl = emptyToNull(
-      nextArtContent?.field_immagine as string | null | undefined,
-    );
-
-    otherPages.push({
-      name: 'Outdoor',
-      imageUrl: outdoorImageUrl,
-      href: `${basePath}/outdoor`,
-    });
-    otherPages.push({
-      name: 'Next Art',
-      imageUrl: nextArtImageUrl,
-      href: `/${locale}/next-art`,
-    });
-
-    // Descriptive categories (Bar e ristoranti, Guardaroba, Cucina, etc.)
-    for (const cat of descriptiveCategories) {
-      otherPages.push({
-        name: cat.name,
-        imageUrl: cat.imageUrl,
-        href: `${basePath}/${slugifyName(cat.name)}`,
-      });
-    }
-  }
-
-  // ── Indoor mini-card list (shared between desktop and mobile) ──
   const indoorList = (
     <div className="grid grid-cols-4 gap-1.5 lg:grid-cols-6">
       {categories.map((cat) => (
@@ -121,65 +73,25 @@ export async function SpecHubArredo({
     </div>
   );
 
-  // ── Other pages card list (image with overlay title, same style as Indoor) ──
-  const otherPagesList = (
-    <div className="grid grid-cols-2 gap-x-3 gap-y-(--spacing-content) lg:grid-cols-3">
-      {otherPages.map((page) => (
-        <Link
-          key={page.href}
-          href={page.href}
-          className="group flex flex-col"
-        >
-          <Typography textRole="overline" as="span" className="truncate mb-1">
-            {page.name}
-          </Typography>
-          <Separator className="mb-2" />
-          <div className="relative aspect-4/3 overflow-hidden rounded-lg border border-border">
-            {page.imageUrl ? (
-              <Image
-                src={page.imageUrl}
-                alt={page.name}
-                fill
-                sizes="(min-width: 1024px) 20vw, 30vw"
-                className="object-cover"
-              />
-            ) : (
-              <div className="size-full bg-muted" />
-            )}
-          </div>
-        </Link>
-      ))}
-    </div>
-  );
-
   // ── Non-arredo types (illuminazione, tessuto): simple indoor grid only ──
   if (!isArredo) {
     return (
       <div className="max-w-main mx-auto px-(--spacing-page)">
-        {categories.length > 0 && (
-          <HubSection title={tHub('exploreByTypology')} titleRole="overline">
-            {indoorList}
-          </HubSection>
-        )}
+        <HubSection title={tHub('exploreByTypology')} titleRole="overline">
+          {indoorList}
+        </HubSection>
       </div>
     );
   }
 
   return (
-    <div className="max-w-main mx-auto px-(--spacing-page) flex flex-col gap-(--spacing-content)">
-      {/* ── Indoor — grid of subcategory thumbnails ─────────────────── */}
-      {categories.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <Typography textRole="overline" as="span">{tHub('indoor')}</Typography>
-          <div className="overflow-hidden rounded-lg border border-border p-3">
-            {indoorList}
-          </div>
+    <div className="max-w-main mx-auto px-(--spacing-page)">
+      <div className="flex flex-col gap-2">
+        <Typography textRole="overline" as="span">{tHub('indoor')}</Typography>
+        <div className="overflow-hidden rounded-lg border border-border p-3">
+          {indoorList}
         </div>
-      )}
-
-      {/* ── Other pages — image cards ─────────────────────────────────── */}
-      {otherPages.length > 0 && otherPagesList}
-
+      </div>
     </div>
   );
 }
