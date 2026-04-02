@@ -217,7 +217,7 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
       productType === 'prodotto_mosaico' || productType === 'prodotto_vetrite';
 
     return (
-      <div>
+      <div className="flex flex-col gap-(--spacing-section) pb-(--spacing-section)">
         <DevBlockOverlay name="SpecListingHeader" status="ds">
           <SpecListingHeader title={title} description={description} breadcrumbSegments={baseSegments} />
         </DevBlockOverlay>
