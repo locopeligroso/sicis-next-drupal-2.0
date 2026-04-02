@@ -213,7 +213,7 @@ export const fetchMosaicCategoryPages = cache(
       return {
         nid: item.nid,
         title: item.field_titolo_main,
-        imageUrl: stripDomain(emptyToNull(item.field_immagine)),
+        imageUrl: emptyToNull(item.field_immagine),
         href: hrefWithoutLocale ? `/${locale}${hrefWithoutLocale}` : null,
       };
     });
