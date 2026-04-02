@@ -7,7 +7,10 @@ import {
   ARREDO_DESCRIPTIVE_PARENT_NID,
 } from '@/lib/api/category-hub';
 import { fetchContent } from '@/lib/api/content';
+import { resolvePath } from '@/lib/api/resolve-path';
 import { emptyToNull } from '@/lib/api/client';
+import { FILTER_REGISTRY } from '@/domain/filters/registry';
+import { SpecDeepDiveLinks } from './SpecDeepDiveLinks';
 import { HubSection } from '@/components/composed/HubSection';
 import { Typography } from '@/components/composed/Typography';
 
@@ -88,7 +91,31 @@ export async function SpecHubArredo({
         href: `${basePath}/${slugifyName(cat.name)}`,
       });
     }
+  }
 
+  // ── Cross-links: Illuminazione + Tappeti (arredo only) ──
+  const crossLinks: { title: string; url: string }[] = [];
+
+  if (isArredo) {
+    const illuminazionePath =
+      FILTER_REGISTRY['prodotto_illuminazione']?.basePaths[locale] ?? 'illuminazione';
+    const [carpetsResolved, illuminazioneContent, carpetsContent] =
+      await Promise.all([
+        resolvePath('/prodotti-tessili/tappeti', locale).catch(() => null),
+        fetchContent(337, locale).catch(() => null),
+        fetchContent(350, locale).catch(() => null),
+      ]);
+    const carpetsAlias =
+      carpetsResolved?.aliases?.[locale] ?? '/textiles/carpets';
+
+    crossLinks.push({
+      title: (illuminazioneContent?.field_titolo_main as string) ?? 'Illuminazione',
+      url: `/${locale}/${illuminazionePath}`,
+    });
+    crossLinks.push({
+      title: (carpetsContent?.field_titolo_main as string) ?? 'Carpets',
+      url: `/${locale}${carpetsAlias}`,
+    });
   }
 
   // ── Indoor mini-card list (shared between desktop and mobile) ──
@@ -181,6 +208,9 @@ export async function SpecHubArredo({
 
       {/* ── Other pages — image cards ─────────────────────────────────── */}
       {otherPages.length > 0 && otherPagesList}
+
+      {/* ── Cross-links (Illuminazione, Tappeti) ──────────────────────── */}
+      {crossLinks.length > 0 && <SpecDeepDiveLinks links={crossLinks} />}
     </div>
   );
 }
