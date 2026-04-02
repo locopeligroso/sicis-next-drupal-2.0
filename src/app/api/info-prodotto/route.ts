@@ -35,9 +35,9 @@ export async function POST(request: Request) {
     const { error } = await resend.emails.send({
       from: 'Sicis <noreply@sicis-stage.com>',
       to: sendTo,
-      subject: `Richiesta preventivo: ${prodotto || 'Prodotto non specificato'}`,
+      subject: `Info prodotto: ${prodotto || 'Prodotto non specificato'}`,
       html: `
-        <h2>Nuova richiesta preventivo</h2>
+        <h2>Nuova richiesta info prodotto</h2>
         <table style="border-collapse:collapse;width:100%;max-width:600px">
           <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold">Email</td><td style="padding:8px;border:1px solid #ddd">${email}</td></tr>
           <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold">Nome</td><td style="padding:8px;border:1px solid #ddd">${nome}</td></tr>

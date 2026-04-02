@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { QuoteFormSheet } from './QuoteFormSheet';
+import { InfoProdottoForm } from './InfoProdottoForm';
 
 const QuoteContext = React.createContext<{
   openQuote: () => void;
@@ -25,7 +25,7 @@ export function QuoteSheetProvider({
   return (
     <QuoteContext value={value}>
       {children}
-      <QuoteFormSheet open={open} onOpenChange={setOpen} productName={productName} />
+      <InfoProdottoForm open={open} onOpenChange={setOpen} productName={productName} />
     </QuoteContext>
   );
 }

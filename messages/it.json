@@ -263,5 +263,42 @@
     "prev": "Precedente",
     "first": "Prima",
     "last": "Ultima"
+  },
+  "forms": {
+    "infoProdotto": {
+      "title": "Info prodotto",
+      "description": "Compila il form e ti ricontatteremo al più presto.",
+      "email": "Email",
+      "nome": "Nome",
+      "cognome": "Cognome",
+      "nazione": "Nazione",
+      "professione": "Professione",
+      "prodotto": "Nome prodotto",
+      "richiesta": "La tua richiesta",
+      "privacy": "Acconsento al trattamento dei dati personali",
+      "submit": "Invia richiesta",
+      "submitting": "Invio in corso...",
+      "success": "Richiesta inviata!",
+      "successMessage": "Ti risponderemo al più presto.",
+      "close": "Chiudi",
+      "privacyError": "Devi accettare la privacy policy"
+    },
+    "infoGenerali": {
+      "title": "Informazioni generali",
+      "description": "Compila il form e ti ricontatteremo al più presto.",
+      "email": "Email",
+      "nome": "Nome",
+      "cognome": "Cognome",
+      "nazione": "Nazione",
+      "professione": "Professione",
+      "richiesta": "La tua richiesta",
+      "privacy": "Acconsento al trattamento dei dati personali",
+      "submit": "Invia richiesta",
+      "submitting": "Invio in corso...",
+      "success": "Richiesta inviata!",
+      "successMessage": "Ti risponderemo al più presto.",
+      "close": "Chiudi",
+      "privacyError": "Devi accettare la privacy policy"
+    }
   }
 }

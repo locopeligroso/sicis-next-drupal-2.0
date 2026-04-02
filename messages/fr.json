@@ -263,5 +263,42 @@
     "prev": "Précédent",
     "first": "Premier",
     "last": "Dernier"
+  },
+  "forms": {
+    "infoProdotto": {
+      "title": "Info produit",
+      "description": "Remplissez le formulaire et nous vous recontacterons dans les plus brefs délais.",
+      "email": "E-mail",
+      "nome": "Prénom",
+      "cognome": "Nom",
+      "nazione": "Pays",
+      "professione": "Profession",
+      "prodotto": "Nom du produit",
+      "richiesta": "Votre demande",
+      "privacy": "Je consens au traitement de mes données personnelles",
+      "submit": "Envoyer la demande",
+      "submitting": "Envoi en cours...",
+      "success": "Demande envoyée !",
+      "successMessage": "Nous vous recontacterons dans les plus brefs délais.",
+      "close": "Fermer",
+      "privacyError": "Vous devez accepter la politique de confidentialité"
+    },
+    "infoGenerali": {
+      "title": "Informations générales",
+      "description": "Remplissez le formulaire et nous vous recontacterons dans les plus brefs délais.",
+      "email": "E-mail",
+      "nome": "Prénom",
+      "cognome": "Nom",
+      "nazione": "Pays",
+      "professione": "Profession",
+      "richiesta": "Votre demande",
+      "privacy": "Je consens au traitement de mes données personnelles",
+      "submit": "Envoyer la demande",
+      "submitting": "Envoi en cours...",
+      "success": "Demande envoyée !",
+      "successMessage": "Nous vous recontacterons dans les plus brefs délais.",
+      "close": "Fermer",
+      "privacyError": "Vous devez accepter la politique de confidentialité"
+    }
   }
 }

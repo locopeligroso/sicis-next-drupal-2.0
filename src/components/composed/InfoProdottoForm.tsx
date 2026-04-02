@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import {
   Sheet,
   SheetContent,
@@ -14,13 +15,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 
-interface QuoteFormSheetProps {
+interface InfoProdottoFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   productName?: string;
 }
 
-export function QuoteFormSheet({ open, onOpenChange, productName }: QuoteFormSheetProps) {
+export function InfoProdottoForm({ open, onOpenChange, productName }: InfoProdottoFormProps) {
+  const t = useTranslations('forms.infoProdotto');
   const [pending, setPending] = React.useState(false);
   const [sent, setSent] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -29,7 +31,7 @@ export function QuoteFormSheet({ open, onOpenChange, productName }: QuoteFormShe
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!privacy) {
-      setError('Devi accettare la privacy policy');
+      setError(t('privacyError'));
       return;
     }
     setPending(true);
@@ -50,7 +52,7 @@ export function QuoteFormSheet({ open, onOpenChange, productName }: QuoteFormShe
     };
 
     try {
-      const res = await fetch('/api/quote', {
+      const res = await fetch('/api/info-prodotto', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -82,49 +84,47 @@ export function QuoteFormSheet({ open, onOpenChange, productName }: QuoteFormShe
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent side="right" className="overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>Richiedi un preventivo</SheetTitle>
-          <SheetDescription>
-            Compila il form e ti ricontatteremo al più presto.
-          </SheetDescription>
+          <SheetTitle>{t('title')}</SheetTitle>
+          <SheetDescription>{t('description')}</SheetDescription>
         </SheetHeader>
 
         {sent ? (
           <div className="flex flex-col items-center justify-center gap-4 p-6 text-center">
-            <p className="text-lg font-medium">Richiesta inviata!</p>
-            <p className="text-sm text-muted-foreground">Ti risponderemo al più presto.</p>
+            <p className="text-lg font-medium">{t('success')}</p>
+            <p className="text-sm text-muted-foreground">{t('successMessage')}</p>
             <Button variant="outline" onClick={() => handleOpenChange(false)}>
-              Chiudi
+              {t('close')}
             </Button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4">
+          <form id="info-prodotto-form" onSubmit={handleSubmit} className="flex flex-col gap-4 p-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="quote-email">Email *</Label>
+              <Label htmlFor="quote-email">{t('email')} *</Label>
               <Input id="quote-email" name="email" type="email" required />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="quote-nome">Nome *</Label>
+              <Label htmlFor="quote-nome">{t('nome')} *</Label>
               <Input id="quote-nome" name="nome" required />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="quote-cognome">Cognome *</Label>
+              <Label htmlFor="quote-cognome">{t('cognome')} *</Label>
               <Input id="quote-cognome" name="cognome" required />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="quote-nazione">Nazione</Label>
+              <Label htmlFor="quote-nazione">{t('nazione')}</Label>
               <Input id="quote-nazione" name="nazione" />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="quote-professione">Professione</Label>
+              <Label htmlFor="quote-professione">{t('professione')}</Label>
               <Input id="quote-professione" name="professione" />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="quote-prodotto">Nome prodotto</Label>
+              <Label htmlFor="quote-prodotto">{t('prodotto')}</Label>
               <Input
                 id="quote-prodotto"
                 name="prodotto"
@@ -135,7 +135,7 @@ export function QuoteFormSheet({ open, onOpenChange, productName }: QuoteFormShe
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="quote-richiesta">La tua richiesta</Label>
+              <Label htmlFor="quote-richiesta">{t('richiesta')}</Label>
               <Textarea id="quote-richiesta" name="richiesta" rows={4} />
             </div>
 
@@ -146,14 +146,14 @@ export function QuoteFormSheet({ open, onOpenChange, productName }: QuoteFormShe
                 onCheckedChange={(checked) => setPrivacy(checked === true)}
               />
               <Label htmlFor="quote-privacy" className="text-sm leading-snug cursor-pointer">
-                Acconsento al trattamento dei dati personali *
+                {t('privacy')} *
               </Label>
             </div>
 
             {error && <p className="text-sm text-destructive">{error}</p>}
 
             <Button type="submit" disabled={pending}>
-              {pending ? 'Invio in corso...' : 'Invia richiesta'}
+              {pending ? t('submitting') : t('submit')}
             </Button>
           </form>
         )}

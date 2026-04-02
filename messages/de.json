@@ -263,5 +263,42 @@
     "prev": "Zurück",
     "first": "Erste",
     "last": "Letzte"
+  },
+  "forms": {
+    "infoProdotto": {
+      "title": "Produktinfo",
+      "description": "Füllen Sie das Formular aus und wir werden uns in Kürze bei Ihnen melden.",
+      "email": "E-Mail",
+      "nome": "Vorname",
+      "cognome": "Nachname",
+      "nazione": "Land",
+      "professione": "Beruf",
+      "prodotto": "Produktname",
+      "richiesta": "Ihre Anfrage",
+      "privacy": "Ich stimme der Verarbeitung meiner persönlichen Daten zu",
+      "submit": "Anfrage senden",
+      "submitting": "Wird gesendet...",
+      "success": "Anfrage gesendet!",
+      "successMessage": "Wir werden uns in Kürze bei Ihnen melden.",
+      "close": "Schließen",
+      "privacyError": "Sie müssen die Datenschutzrichtlinie akzeptieren"
+    },
+    "infoGenerali": {
+      "title": "Allgemeine Informationen",
+      "description": "Füllen Sie das Formular aus und wir werden uns in Kürze bei Ihnen melden.",
+      "email": "E-Mail",
+      "nome": "Vorname",
+      "cognome": "Nachname",
+      "nazione": "Land",
+      "professione": "Beruf",
+      "richiesta": "Ihre Anfrage",
+      "privacy": "Ich stimme der Verarbeitung meiner persönlichen Daten zu",
+      "submit": "Anfrage senden",
+      "submitting": "Wird gesendet...",
+      "success": "Anfrage gesendet!",
+      "successMessage": "Wir werden uns in Kürze bei Ihnen melden.",
+      "close": "Schließen",
+      "privacyError": "Sie müssen die Datenschutzrichtlinie akzeptieren"
+    }
   }
 }

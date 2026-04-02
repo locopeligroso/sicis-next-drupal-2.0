@@ -1,5 +1,6 @@
 import DrupalImage from '@/components_legacy/DrupalImage';
 import ParagraphResolver from '@/components_legacy/blocks_legacy/ParagraphResolver';
+import { InfoGeneraliForm } from '@/components/composed/InfoGeneraliForm';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { sanitizeHtml } from '@/lib/sanitize';
 
@@ -23,6 +24,8 @@ export default function Ambiente({ node }: { node: Record<string, unknown> }) {
       {paragraphs.map((p, i) => (
         <ParagraphResolver key={(p.id as string) ?? i} paragraph={p} pageTitle={title ?? undefined} />
       ))}
+
+      <InfoGeneraliForm />
     </article>
   );
 }

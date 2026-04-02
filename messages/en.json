@@ -263,5 +263,42 @@
     "prev": "Previous",
     "first": "First",
     "last": "Last"
+  },
+  "forms": {
+    "infoProdotto": {
+      "title": "Product info",
+      "description": "Fill out the form and we will get back to you shortly.",
+      "email": "Email",
+      "nome": "First name",
+      "cognome": "Last name",
+      "nazione": "Country",
+      "professione": "Profession",
+      "prodotto": "Product name",
+      "richiesta": "Your request",
+      "privacy": "I consent to the processing of personal data",
+      "submit": "Send request",
+      "submitting": "Sending...",
+      "success": "Request sent!",
+      "successMessage": "We will get back to you shortly.",
+      "close": "Close",
+      "privacyError": "You must accept the privacy policy"
+    },
+    "infoGenerali": {
+      "title": "General information",
+      "description": "Fill out the form and we will get back to you shortly.",
+      "email": "Email",
+      "nome": "First name",
+      "cognome": "Last name",
+      "nazione": "Country",
+      "professione": "Profession",
+      "richiesta": "Your request",
+      "privacy": "I consent to the processing of personal data",
+      "submit": "Send request",
+      "submitting": "Sending...",
+      "success": "Request sent!",
+      "successMessage": "We will get back to you shortly.",
+      "close": "Close",
+      "privacyError": "You must accept the privacy policy"
+    }
   }
 }
