@@ -213,7 +213,7 @@ export function NavbarDesktop({
                   {t(`${key}Label`)}
                 </span>
                 <span className="text-[10px] text-muted-foreground mt-[3px]">
-                  {t(`${key}Desc`)}
+                  {menu.sectionDescriptions[key] || t(`${key}Desc`)}
                 </span>
               </button>
             );

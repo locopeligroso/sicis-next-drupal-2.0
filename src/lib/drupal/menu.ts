@@ -9,6 +9,7 @@ import { DRUPAL_BASE_URL } from './config';
 export interface MenuItem {
   id: string;
   title: string;
+  description: string;
   url: string;
   weight: number;
   children: MenuItem[];
@@ -61,6 +62,7 @@ export const fetchMenu = cache(
 function transformItemRecursive(item: MenuItem, locale: string): MenuItem {
   return {
     ...item,
+    description: item.description ?? '',
     url: normalizeUrl(item.url, locale),
     children: item.children.map((child) =>
       transformItemRecursive(child, locale),

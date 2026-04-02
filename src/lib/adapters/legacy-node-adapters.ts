@@ -103,6 +103,7 @@ export function vetriteToLegacyNode(
     // Fields not yet available from vetrite-product — legacy template handles null gracefully
     field_colori: [],
     field_finiture: [],
+    field_finiture_usa: product.finitureUsa,
     field_texture: [],
   };
 }

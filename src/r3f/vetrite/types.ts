@@ -143,4 +143,6 @@ export interface VetriteCanvasProps {
   alt?: string;
   productTitle?: string;
   collectionName?: string;
+  /** When set, only these finishes are shown in the selector (US market filter) */
+  availableFinishes?: string[];
 }

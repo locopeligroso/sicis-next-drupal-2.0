@@ -32,12 +32,14 @@ interface FullscreenControlsProps {
   isVisible: boolean;
   productTitle?: string;
   collectionName?: string;
+  availableFinishes?: string[];
 }
 
 export default function FullscreenControls({
   isVisible,
   productTitle,
   collectionName,
+  availableFinishes,
 }: FullscreenControlsProps) {
   const activeFinish = useMaterialStore((s) => s.activeFinish);
   const isOpalOn = activeFinish === FINISH_OPAL_ON;
@@ -71,7 +73,7 @@ export default function FullscreenControls({
             <span className="hs-fsc__section-num">01</span>
             Select Finish
           </span>
-          <FinishSelector />
+          <FinishSelector availableFinishes={availableFinishes} />
         </div>
 
         <hr className="hs-fsc__divider" />

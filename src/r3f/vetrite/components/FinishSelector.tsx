@@ -2,11 +2,15 @@
 
 /**
  * FinishSelector.tsx
- * Radio group — 4 finish options: Solid, Chrome, OpalOff, OpalOn.
- * Each option has a circular thumbnail image + label.
+ * Radio group — finish options displayed as pill buttons (no images).
+ * When availableFinishes is provided, only matching finishes are shown.
  *
- * DOM structure mirrors sicis-vetrite-next FinishSelector.jsx exactly.
- * All visual styling via CSS classes from vetrite-canvas.css.
+ * Mapping from Drupal field_finiture_usa values to R3F FinishId:
+ *   solid          → Solid
+ *   chrome         → Chrome
+ *   opalescent_off → OpalOff
+ *   opalescent_on  → OpalOn
+ *   satin          → (reserved for future use)
  */
 
 import { useShallow } from 'zustand/react/shallow';
@@ -18,7 +22,22 @@ import useMaterialStore, {
 } from '@/r3f/vetrite/stores/useMaterialStore';
 import type { FinishId } from '@/r3f/vetrite/types';
 
-export default function FinishSelector() {
+/** All finish options in display order */
+const ALL_FINISHES: { id: FinishId; label: string; drupalKey: string }[] = [
+  { id: FINISH_SOLID, label: 'Solid', drupalKey: 'solid' },
+  { id: FINISH_CHROME, label: 'Chrome', drupalKey: 'chrome' },
+  { id: FINISH_OPAL_OFF, label: 'Opal Off', drupalKey: 'opalescent_off' },
+  { id: FINISH_OPAL_ON, label: 'Opal On', drupalKey: 'opalescent_on' },
+];
+
+interface FinishSelectorProps {
+  /** When provided, only finishes whose drupalKey is in this array are shown */
+  availableFinishes?: string[];
+}
+
+export default function FinishSelector({
+  availableFinishes,
+}: FinishSelectorProps) {
   const { activeFinish, setActiveFinish } = useMaterialStore(
     useShallow((s) => ({
       activeFinish: s.activeFinish,
@@ -26,98 +45,64 @@ export default function FinishSelector() {
     })),
   );
 
-  const isActive = (id: FinishId) => activeFinish === id;
-
-  const ringClass = (id: FinishId) =>
-    isActive(id) ? 'hs-thumb-ring hs-thumb-ring--selected' : 'hs-thumb-ring';
+  const finishes =
+    availableFinishes && availableFinishes.length > 0
+      ? ALL_FINISHES.filter((f) => availableFinishes.includes(f.drupalKey))
+      : ALL_FINISHES;
 
   return (
-    <fieldset className="hs-finish-selector" data-name="FinishSelector">
-      <legend className="hs-finish-selector__label">SELECT FINISH</legend>
-
+    <div data-name="FinishSelector">
       <div
-        className="hs-finish-options"
         role="radiogroup"
         aria-label="Select finish"
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '8px',
+          alignItems: 'center',
+          width: '100%',
+        }}
       >
-        {/* Solid */}
-        <button
-          type="button"
-          className="hs-finish-option"
-          role="radio"
-          aria-checked={isActive(FINISH_SOLID)}
-          aria-label="Solid finish"
-          onClick={() => setActiveFinish(FINISH_SOLID)}
-        >
-          <div className={ringClass(FINISH_SOLID)}>
-            <div className="hs-thumb">
-              <img alt="" src="/assets/vetrite/finish-solid.jpg" />
-            </div>
-          </div>
-          <span className="hs-finish-option__name">Solid</span>
-        </button>
-
-        {/* Chrome */}
-        <button
-          type="button"
-          className="hs-finish-option"
-          role="radio"
-          aria-checked={isActive(FINISH_CHROME)}
-          aria-label="Chrome finish"
-          onClick={() => setActiveFinish(FINISH_CHROME)}
-        >
-          <div className={ringClass(FINISH_CHROME)}>
-            <div className="hs-thumb">
-              <img alt="" src="/assets/vetrite/finish-chrome.jpg" />
-            </div>
-          </div>
-          <span className="hs-finish-option__name">Chrome</span>
-        </button>
-
-        {/* Opalescent OFF */}
-        <button
-          type="button"
-          className="hs-finish-option"
-          role="radio"
-          aria-checked={isActive(FINISH_OPAL_OFF)}
-          aria-label="Opalescent finish, backlight off"
-          onClick={() => setActiveFinish(FINISH_OPAL_OFF)}
-        >
-          <div className={ringClass(FINISH_OPAL_OFF)}>
-            <div className="hs-thumb--fixed">
-              <img alt="" src="/assets/vetrite/finish-opal.jpg" />
-            </div>
-            <span className="hs-chip" aria-hidden="true">
-              OFF
-            </span>
-          </div>
-          <span className="hs-finish-option__name">Opalescent</span>
-        </button>
-
-        {/* Opalescent ON */}
-        <button
-          type="button"
-          className="hs-finish-option"
-          role="radio"
-          aria-checked={isActive(FINISH_OPAL_ON)}
-          aria-label="Opalescent finish, backlight on"
-          onClick={() => setActiveFinish(FINISH_OPAL_ON)}
-        >
-          <div className={ringClass(FINISH_OPAL_ON)}>
-            <div className="hs-thumb--fixed">
-              {/* Two images stacked: base + glow layer */}
-              <div aria-hidden="true" className="hs-thumb__layers">
-                <img alt="" src="/assets/vetrite/finish-opal.jpg" />
-                <img alt="" src="/assets/vetrite/finish-opal-glow.jpg" />
-              </div>
-            </div>
-            <span className="hs-chip hs-chip--on-pos" aria-hidden="true">
-              ON
-            </span>
-          </div>
-          <span className="hs-finish-option__name">Opalescent</span>
-        </button>
+        {finishes.map((finish) => {
+          const active = activeFinish === finish.id;
+          return (
+            <button
+              key={finish.id}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              aria-label={`${finish.label} finish`}
+              onClick={() => setActiveFinish(finish.id)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '0.5rem 1rem',
+                fontSize: 'var(--hs-caption, 12px)',
+                fontWeight: 600,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                fontFamily: 'var(--hs-font-body)',
+                border: active
+                  ? '1.5px solid var(--hs-surface-on, #1c1c1a)'
+                  : '1.5px solid var(--hs-surface-high-4, #a8a89f)',
+                borderRadius: 'var(--hs-radius-full, 9999px)',
+                background: active
+                  ? 'var(--hs-surface-on, #1c1c1a)'
+                  : 'transparent',
+                color: active
+                  ? 'var(--hs-surface, #fafaf8)'
+                  : 'var(--hs-surface-on, #1c1c1a)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {finish.label}
+            </button>
+          );
+        })}
       </div>
-    </fieldset>
+    </div>
   );
 }

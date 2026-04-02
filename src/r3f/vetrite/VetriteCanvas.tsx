@@ -103,6 +103,7 @@ export default function VetriteCanvas({
   alt = '3D product preview',
   productTitle,
   collectionName,
+  availableFinishes,
 }: VetriteCanvasProps): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null);
   const { isFullscreen, toggleFullscreen } = useFullscreen(containerRef);
@@ -147,6 +148,7 @@ export default function VetriteCanvas({
         isVisible={isFullscreen}
         productTitle={productTitle}
         collectionName={collectionName}
+        availableFinishes={availableFinishes}
       />
       <CanvasErrorBoundary>
         <Canvas

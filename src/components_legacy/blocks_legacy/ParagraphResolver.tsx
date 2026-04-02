@@ -25,6 +25,7 @@ import BloccoNewsletter from './BloccoNewsletter';
 import BloccoFormBlog from './BloccoFormBlog';
 import BloccoAnni from './BloccoAnni';
 import BloccoTutorial from './BloccoTutorial';
+import BloccoE from './BloccoE';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ParagraphComponent = (props: {
@@ -439,6 +440,7 @@ export default function ParagraphResolver({
   if (type === 'paragraph--blocco_a') return adaptGenA(paragraph);
   if (type === 'paragraph--blocco_b') return adaptGenB(paragraph);
   if (type === 'paragraph--blocco_c') return adaptGenC(paragraph);
+  if (type === 'paragraph--blocco_e') return <BloccoE paragraph={paragraph} />;
 
   // Legacy blocks
   const Component = LEGACY_MAP[type];

@@ -50,6 +50,8 @@ export interface VetriteProduct {
   sampleFormat: string | null;
   noUsaStock: boolean;
   priceOnDemand: boolean;
+  /** Finish variant names available for the US market (empty = all finishes available) */
+  finitureUsa: string[];
   collection: VetriteProductCollection | null;
 }
 
@@ -88,6 +90,7 @@ function normalizeVetriteProduct(raw: VetriteProductRest): VetriteProduct {
     sampleFormat: raw.field_formato_campione,
     noUsaStock: toBool(raw.field_no_usa_stock),
     priceOnDemand: toBool(raw.field_prezzo_on_demand),
+    finitureUsa: raw.field_finiture_usa ?? [],
     collection: col
       ? {
           tid: col.tid,

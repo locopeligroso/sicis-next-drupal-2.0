@@ -15,6 +15,7 @@ function makeItem(
   return {
     id: `menu-${title.toLowerCase().replace(/\s+/g, '-')}`,
     title,
+    description: '',
     url,
     weight,
     children,

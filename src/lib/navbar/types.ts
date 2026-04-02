@@ -61,4 +61,6 @@ export interface NavbarMenu {
   filterFind: FilterFindSection;
   projects: ProjectsSection;
   info: InfoSection;
+  /** CMS descriptions for top-level nav items (from Drupal menu description field) */
+  sectionDescriptions: Record<string, string>;
 }

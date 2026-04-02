@@ -34,20 +34,20 @@ const EXPLORE_GROUP_MAP: Record<string, string> = {
   'artistic mosaic': 'Mosaico',
   // Mosaico — EN
   'solid colours': 'Mosaico',
-  'marble': 'Mosaico',
+  marble: 'Mosaico',
   'metal mosaic': 'Mosaico',
   // Mosaico — FR
-  'couleurs': 'Mosaico',
+  couleurs: 'Mosaico',
   'mosaïque en métal': 'Mosaico',
   // Mosaico — DE
-  'farben': 'Mosaico',
-  'marmormosaik': 'Mosaico',
-  'metallmosaik': 'Mosaico',
+  farben: 'Mosaico',
+  marmormosaik: 'Mosaico',
+  metallmosaik: 'Mosaico',
   // Mosaico — ES
-  'colores': 'Mosaico',
+  colores: 'Mosaico',
   'mosaico metálico': 'Mosaico',
   // Mosaico — RU
-  'цвета': 'Mosaico',
+  цвета: 'Mosaico',
   'металлическая мозаика': 'Mosaico',
 
   // Vetrite — all locales
@@ -59,41 +59,41 @@ const EXPLORE_GROUP_MAP: Record<string, string> = {
   'cтеклянные листы vetrite': 'Vetrite',
 
   // Living — IT
-  'arredo': 'Living',
-  'cucina': 'Living',
-  'illuminazione': 'Living',
+  arredo: 'Living',
+  cucina: 'Living',
+  illuminazione: 'Living',
   'mosaico bagno': 'Living',
   // Living — EN
-  'furniture': 'Living',
-  'kitchen': 'Living',
-  'lighting': 'Living',
+  furniture: 'Living',
+  kitchen: 'Living',
+  lighting: 'Living',
   'bathroom mosaics': 'Living',
   // Living — FR
-  'ameublement': 'Living',
-  'cuisine': 'Living',
-  'éclairage': 'Living',
+  ameublement: 'Living',
+  cuisine: 'Living',
+  éclairage: 'Living',
   'mosaïques pour salle de bain': 'Living',
   // Living — DE
-  'einrichtung': 'Living',
-  'küche': 'Living',
-  'leuchten': 'Living',
-  'badezimmermosaike': 'Living',
+  einrichtung: 'Living',
+  küche: 'Living',
+  leuchten: 'Living',
+  badezimmermosaike: 'Living',
   // Living — ES
-  'mueble': 'Living',
-  'cocina': 'Living',
-  'iluminación': 'Living',
+  mueble: 'Living',
+  cocina: 'Living',
+  iluminación: 'Living',
   'mosaicos para el baño': 'Living',
   // Living — RU
-  'обстановка': 'Living',
-  'кухня': 'Living',
-  'освещение': 'Living',
+  обстановка: 'Living',
+  кухня: 'Living',
+  освещение: 'Living',
   'мозаика для ванной комнаты': 'Living',
 
   // Tessile — all locales
   'prodotti tessili': 'Tessile',
-  'textiles': 'Tessile',
+  textiles: 'Tessile',
   'produits textiles': 'Tessile',
-  'textilien': 'Tessile',
+  textilien: 'Tessile',
   'текстильные изделия': 'Tessile',
 
   // Jewels — same in all locales
@@ -101,20 +101,29 @@ const EXPLORE_GROUP_MAP: Record<string, string> = {
 };
 
 /** Ordered group labels for the Explore section */
-const EXPLORE_GROUP_ORDER = ['Mosaico', 'Vetrite', 'Living', 'Tessile', 'Jewels'];
+const EXPLORE_GROUP_ORDER = [
+  'Mosaico',
+  'Vetrite',
+  'Living',
+  'Tessile',
+  'Jewels',
+];
 
 /**
  * Info section: maps each child title to a sub-section.
  * Key = lowercase title, Value = 'strategic' | 'corporate' | 'professional'.
  */
-const INFO_CATEGORY_MAP: Record<string, 'strategic' | 'corporate' | 'professional'> = {
-  'showroom': 'strategic',
-  'contacts': 'strategic',
+const INFO_CATEGORY_MAP: Record<
+  string,
+  'strategic' | 'corporate' | 'professional'
+> = {
+  showroom: 'strategic',
+  contacts: 'strategic',
   'download catalogues': 'strategic',
-  'heritage': 'corporate',
+  heritage: 'corporate',
   'about us': 'corporate',
   'sicis village': 'corporate',
-  'professional': 'professional',
+  professional: 'professional',
 };
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -126,7 +135,10 @@ function lc(s: string): string {
 }
 
 /** Find a top-level menu item by case-insensitive title match */
-function findSection(items: MenuItem[], sectionTitle: string): MenuItem | undefined {
+function findSection(
+  items: MenuItem[],
+  sectionTitle: string,
+): MenuItem | undefined {
   return items.find((item) => lc(item.title) === sectionTitle);
 }
 
@@ -134,7 +146,9 @@ function findSection(items: MenuItem[], sectionTitle: string): MenuItem | undefi
 // Section builders
 // ════════════════════════════════════════════════════════════════════════════
 
-function buildExploreSection(sectionItem: MenuItem | undefined): ExploreSection {
+function buildExploreSection(
+  sectionItem: MenuItem | undefined,
+): ExploreSection {
   if (!sectionItem?.children?.length) {
     return { items: [] };
   }
@@ -167,9 +181,9 @@ function buildExploreSection(sectionItem: MenuItem | undefined): ExploreSection 
 /** Short display titles for Filter&Find categories */
 const FILTER_FIND_SHORT_TITLES: Record<string, string> = {
   'prodotti tessili': 'Tessili',
-  'textiles': 'Tessili',
+  textiles: 'Tessili',
   'produits textiles': 'Tessili',
-  'textilien': 'Tessili',
+  textilien: 'Tessili',
   'текстильные изделия': 'Tessili',
   'lastre vetro vetrite': 'Vetrite',
   'vetrite glass slabs': 'Vetrite',
@@ -179,7 +193,9 @@ const FILTER_FIND_SHORT_TITLES: Record<string, string> = {
   'cтеклянные листы vetrite': 'Vetrite',
 };
 
-function buildFilterFindSection(sectionItem: MenuItem | undefined): FilterFindSection {
+function buildFilterFindSection(
+  sectionItem: MenuItem | undefined,
+): FilterFindSection {
   if (!sectionItem?.children?.length) {
     return { items: [] };
   }
@@ -198,7 +214,9 @@ function buildFilterFindSection(sectionItem: MenuItem | undefined): FilterFindSe
   return { items };
 }
 
-function buildProjectsSection(sectionItem: MenuItem | undefined): ProjectsSection {
+function buildProjectsSection(
+  sectionItem: MenuItem | undefined,
+): ProjectsSection {
   if (!sectionItem?.children?.length) {
     return { items: [] };
   }
@@ -213,7 +231,11 @@ function buildInfoSection(sectionItem: MenuItem | undefined): InfoSection {
     return empty;
   }
 
-  const result: InfoSection = { strategic: [], corporate: [], professional: [] };
+  const result: InfoSection = {
+    strategic: [],
+    corporate: [],
+    professional: [],
+  };
 
   for (const child of sectionItem.children) {
     const category = INFO_CATEGORY_MAP[lc(child.title)];
@@ -247,5 +269,11 @@ export function mapMenuToNavbar(menuItems: MenuItem[]): NavbarMenu {
     filterFind: buildFilterFindSection(filterFindItem),
     projects: buildProjectsSection(projectsItem),
     info: buildInfoSection(infoItem),
+    sectionDescriptions: {
+      explore: exploreItem?.description ?? '',
+      filterFind: filterFindItem?.description ?? '',
+      projects: projectsItem?.description ?? '',
+      info: infoItem?.description ?? '',
+    },
   };
 }
