@@ -7,7 +7,9 @@ import {
   ARREDO_DESCRIPTIVE_PARENT_NID,
 } from '@/lib/api/category-hub';
 import { fetchContent } from '@/lib/api/content';
+import { resolvePath } from '@/lib/api/resolve-path';
 import { emptyToNull } from '@/lib/api/client';
+import { FILTER_REGISTRY } from '@/domain/filters/registry';
 import { HubSection } from '@/components/composed/HubSection';
 import { Typography } from '@/components/composed/Typography';
 
@@ -88,6 +90,29 @@ export async function SpecHubArredo({
         href: `${basePath}/${slugifyName(cat.name)}`,
       });
     }
+
+    // Cross-links: Illuminazione + Tappeti
+    const illuminazionePath =
+      FILTER_REGISTRY['prodotto_illuminazione']?.basePaths[locale] ?? 'illuminazione';
+    const [carpetsResolved, illuminazioneContent, carpetsContent] =
+      await Promise.all([
+        resolvePath('/prodotti-tessili/tappeti', locale).catch(() => null),
+        fetchContent(337, locale).catch(() => null),
+        fetchContent(350, locale).catch(() => null),
+      ]);
+    const carpetsAlias =
+      carpetsResolved?.aliases?.[locale] ?? '/textiles/carpets';
+
+    otherPages.push({
+      name: (illuminazioneContent?.field_titolo_main as string) ?? 'Illuminazione',
+      imageUrl: emptyToNull(illuminazioneContent?.field_immagine as string | null | undefined),
+      href: `/${locale}/${illuminazionePath}`,
+    });
+    otherPages.push({
+      name: (carpetsContent?.field_titolo_main as string) ?? 'Carpets',
+      imageUrl: emptyToNull(carpetsContent?.field_immagine as string | null | undefined),
+      href: `/${locale}${carpetsAlias}`,
+    });
   }
 
   // ── Indoor mini-card list (shared between desktop and mobile) ──
