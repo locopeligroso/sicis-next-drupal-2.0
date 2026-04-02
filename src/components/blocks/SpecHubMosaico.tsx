@@ -16,6 +16,7 @@ import {
   fetchVetriteColors,
   fetchVetriteCollections,
 } from "@/lib/api/vetrite-hub"
+import { Separator } from "@/components/ui/separator"
 import { HubSection } from "@/components/composed/HubSection"
 import { ColorSwatchLink } from "@/components/composed/ColorSwatchLink"
 import { Typography } from "@/components/composed/Typography"
@@ -52,25 +53,25 @@ export async function SpecHubMosaico({
   )
 
   const collectionList = (
-    <div className="flex flex-col gap-1">
+    <div className="grid grid-cols-2 gap-2">
       {collections.map((collection) => (
         <Link
           key={collection.name}
           href={collection.href}
-          className="flex items-center gap-3 rounded-md px-2 py-1.5 transition-colors hover:bg-muted"
+          className="flex items-center gap-3 rounded-lg border border-border p-2 transition-colors hover:bg-muted"
         >
           {collection.imageUrl ? (
             <Image
               src={collection.imageUrl}
               alt={collection.name}
-              width={32}
-              height={32}
-              className="size-8 shrink-0 rounded-sm object-cover"
+              width={48}
+              height={48}
+              className="size-12 shrink-0 rounded-sm object-cover"
             />
           ) : (
-            <span className="size-8 shrink-0 rounded-sm bg-muted" />
+            <span className="size-12 shrink-0 rounded-sm bg-muted" />
           )}
-          <Typography textRole="body-sm" as="span">
+          <Typography textRole="body-sm" as="span" className="line-clamp-2">
             {collection.name}
           </Typography>
         </Link>
@@ -81,10 +82,10 @@ export async function SpecHubMosaico({
   return (
     <div className="max-w-main mx-auto px-(--spacing-page) flex flex-col gap-(--spacing-section)">
       {/* ── Desktop: side-by-side ──────────────────────────────────────── */}
-      <div className="hidden lg:grid lg:grid-cols-[1fr_280px] lg:gap-(--spacing-content)">
+      <div className="hidden lg:grid lg:grid-cols-[3fr_auto_2fr] lg:gap-(--spacing-content)">
         {/* Colors — main area */}
         {colors.length > 0 && (
-          <HubSection title={tHub("exploreByColor")}>
+          <HubSection title={tHub("exploreByColor")} titleRole="overline">
             <div className="flex flex-wrap gap-4">
               {colors.map((color) => (
                 <ColorSwatchLink
@@ -98,9 +99,11 @@ export async function SpecHubMosaico({
           </HubSection>
         )}
 
+        <Separator orientation="vertical" />
+
         {/* Collections — compact sidebar */}
         {collections.length > 0 && (
-          <HubSection title={tHub("exploreByCollection")}>
+          <HubSection title={tHub("exploreByCollection")} titleRole="overline">
             {collectionList}
           </HubSection>
         )}
@@ -110,7 +113,7 @@ export async function SpecHubMosaico({
       <div className="flex flex-col gap-(--spacing-section) lg:hidden">
         {/* Colors — full width */}
         {colors.length > 0 && (
-          <HubSection title={tHub("exploreByColor")}>
+          <HubSection title={tHub("exploreByColor")} titleRole="overline">
             <div className="flex flex-wrap gap-4">
               {colors.map((color) => (
                 <ColorSwatchLink
