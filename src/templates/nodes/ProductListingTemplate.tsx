@@ -10,6 +10,7 @@ import { SpecHubMosaico } from '@/components/blocks/SpecHubMosaico';
 import { SpecHubArredo } from '@/components/blocks/SpecHubArredo';
 import { SpecProductListing } from '@/components/blocks/SpecProductListing';
 import { SpecDeepDiveLinks } from '@/components/blocks/SpecDeepDiveLinks';
+import { SpecHubCrossLinks } from '@/components/blocks/SpecHubCrossLinks';
 import type { SecondaryLink } from '@/lib/navbar/types';
 import type { ProductCard } from '@/lib/api/products';
 import { FILTER_REGISTRY } from '@/domain/filters/registry';
@@ -243,11 +244,13 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
               parentNid={hubParentNid!}
               basePath={basePath}
               locale={locale}
-              categoryCardRatio={listingConfig.categoryCardRatio}
               productType={productType}
             />
           </DevBlockOverlay>
         )}
+        <DevBlockOverlay name="SpecHubCrossLinks" status="ds">
+          <SpecHubCrossLinks productType={productType} locale={locale} />
+        </DevBlockOverlay>
         <DevBlockOverlay name="SpecDeepDiveLinks" status="ds">
           <SpecDeepDiveLinks links={deepDiveLinks ?? []} />
         </DevBlockOverlay>

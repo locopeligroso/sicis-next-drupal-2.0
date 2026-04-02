@@ -16,27 +16,29 @@ export async function SpecDeepDiveLinks({ links }: SpecDeepDiveLinksProps) {
   const tHub = await getTranslations("hub")
 
   return (
-    <HubSection title={tHub("deepDives")} separator={false}>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
-        {links.map((link) => (
-          <Link
-            key={link.url}
-            href={link.url}
-            className="flex items-center gap-3 rounded-lg border border-border p-(--spacing-element) transition-colors hover:bg-accent"
-          >
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-muted">
-              <ArrowUpRight className="size-5 text-muted-foreground" />
-            </div>
-            <Typography
-              textRole="body-sm"
-              as="span"
-              className="truncate font-medium text-foreground"
+    <div className="max-w-main mx-auto px-(--spacing-page)">
+      <HubSection title={tHub("deepDives")} separator={false}>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
+          {links.map((link) => (
+            <Link
+              key={link.url}
+              href={link.url}
+              className="flex items-center gap-3 rounded-lg border border-border p-(--spacing-element) transition-colors hover:bg-accent"
             >
-              {link.title}
-            </Typography>
-          </Link>
-        ))}
-      </div>
-    </HubSection>
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-muted">
+                <ArrowUpRight className="size-5 text-muted-foreground" />
+              </div>
+              <Typography
+                textRole="body-sm"
+                as="span"
+                className="truncate font-medium"
+              >
+                {link.title}
+              </Typography>
+            </Link>
+          ))}
+        </div>
+      </HubSection>
+    </div>
   )
 }

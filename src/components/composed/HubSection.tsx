@@ -1,3 +1,4 @@
+import { Separator } from "@/components/ui/separator"
 import { Typography } from "@/components/composed/Typography"
 import type { TextRole } from "@/components/composed/Typography"
 import { cn } from "@/lib/utils"
@@ -18,7 +19,7 @@ export function HubSection({ title, titleRole = "h2", separator = true, children
       <Typography textRole={titleRole} as={as}>
         {title}
       </Typography>
-      {separator && <hr className="border-t border-border" />}
+      {separator && <Separator />}
       {children}
     </section>
   )

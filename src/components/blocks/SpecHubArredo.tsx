@@ -7,10 +7,8 @@ import {
   ARREDO_DESCRIPTIVE_PARENT_NID,
 } from '@/lib/api/category-hub';
 import { fetchContent } from '@/lib/api/content';
-import { resolvePath } from '@/lib/api/resolve-path';
 import { emptyToNull } from '@/lib/api/client';
-import { FILTER_REGISTRY } from '@/domain/filters/registry';
-import { SpecDeepDiveLinks } from './SpecDeepDiveLinks';
+import { Separator } from '@/components/ui/separator';
 import { HubSection } from '@/components/composed/HubSection';
 import { Typography } from '@/components/composed/Typography';
 
@@ -32,8 +30,6 @@ interface SpecHubArredoProps {
   parentNid: number;
   basePath: string;
   locale: string;
-  categoryCardRatio?: string;
-  categoryImageFit?: 'cover' | 'contain';
   productType?: string;
 }
 
@@ -93,31 +89,6 @@ export async function SpecHubArredo({
     }
   }
 
-  // ── Cross-links: Illuminazione + Tappeti (arredo only) ──
-  const crossLinks: { title: string; url: string }[] = [];
-
-  if (isArredo) {
-    const illuminazionePath =
-      FILTER_REGISTRY['prodotto_illuminazione']?.basePaths[locale] ?? 'illuminazione';
-    const [carpetsResolved, illuminazioneContent, carpetsContent] =
-      await Promise.all([
-        resolvePath('/prodotti-tessili/tappeti', locale).catch(() => null),
-        fetchContent(337, locale).catch(() => null),
-        fetchContent(350, locale).catch(() => null),
-      ]);
-    const carpetsAlias =
-      carpetsResolved?.aliases?.[locale] ?? '/textiles/carpets';
-
-    crossLinks.push({
-      title: (illuminazioneContent?.field_titolo_main as string) ?? 'Illuminazione',
-      url: `/${locale}/${illuminazionePath}`,
-    });
-    crossLinks.push({
-      title: (carpetsContent?.field_titolo_main as string) ?? 'Carpets',
-      url: `/${locale}${carpetsAlias}`,
-    });
-  }
-
   // ── Indoor mini-card list (shared between desktop and mobile) ──
   const indoorList = (
     <div className="grid grid-cols-4 gap-1.5 lg:grid-cols-6">
@@ -162,7 +133,7 @@ export async function SpecHubArredo({
           <Typography textRole="overline" as="span" className="truncate mb-1">
             {page.name}
           </Typography>
-          <hr className="border-t border-border mb-2" />
+          <Separator className="mb-2" />
           <div className="relative aspect-4/3 overflow-hidden rounded-lg border border-border">
             {page.imageUrl ? (
               <Image
@@ -199,7 +170,7 @@ export async function SpecHubArredo({
       {/* ── Indoor — grid of subcategory thumbnails ─────────────────── */}
       {categories.length > 0 && (
         <div className="flex flex-col gap-2">
-          <Typography textRole="overline" as="span">Indoor</Typography>
+          <Typography textRole="overline" as="span">{tHub('indoor')}</Typography>
           <div className="overflow-hidden rounded-lg border border-border p-3">
             {indoorList}
           </div>
@@ -209,8 +180,6 @@ export async function SpecHubArredo({
       {/* ── Other pages — image cards ─────────────────────────────────── */}
       {otherPages.length > 0 && otherPagesList}
 
-      {/* ── Cross-links (Illuminazione, Tappeti) ──────────────────────── */}
-      {crossLinks.length > 0 && <SpecDeepDiveLinks links={crossLinks} />}
     </div>
   );
 }
