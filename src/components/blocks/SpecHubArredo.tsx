@@ -12,7 +12,6 @@ import { FILTER_REGISTRY } from '@/domain/filters/registry';
 import { HubSection } from '@/components/composed/HubSection';
 import { CategoryCard } from '@/components/composed/CategoryCard';
 import { PixallHubCard } from '@/components/composed/PixallHubCard';
-import { Typography } from '@/components/composed/Typography';
 
 /**
  * NFC-normalize + lowercase + slugify a category name.
@@ -64,11 +63,7 @@ export async function SpecHubArredo({
   // ── 1. Typology cards ────────────────────────────────────────────────
   const typologySection =
     categories.length > 0 ? (
-      <section className="flex flex-col gap-(--spacing-element)">
-        <Typography textRole="h2" as="h2">
-          {isArredo ? 'Indoor' : tHub('exploreByTypology')}
-        </Typography>
-        <hr className="border-t border-border" />
+      <HubSection title={isArredo ? 'Indoor' : tHub('exploreByTypology')} titleRole="overline">
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
           {categories.map((cat) => (
             <CategoryCard
@@ -81,7 +76,7 @@ export async function SpecHubArredo({
             />
           ))}
         </div>
-      </section>
+      </HubSection>
     ) : null;
 
   // ── 1b. Arredo-only: OUTDOOR + NEXT ART hero cards (PixallHubCard layout) ──
@@ -127,11 +122,7 @@ export async function SpecHubArredo({
   // ── 1c. Arredo-only: DESCRIPTIVE categories (NID 3522) — render blocks, not listings ──
   const descriptiveCategoriesSection =
     isArredo && descriptiveCategories.length > 0 ? (
-      <section className="flex flex-col gap-(--spacing-element)">
-        <Typography textRole="h2" as="h2">
-          {tHub('exploreByTypology')}
-        </Typography>
-        <hr className="border-t border-border" />
+      <HubSection title={tHub('exploreByTypology')} titleRole="overline">
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
           {descriptiveCategories.map((cat) => (
             <CategoryCard
@@ -144,7 +135,7 @@ export async function SpecHubArredo({
             />
           ))}
         </div>
-      </section>
+      </HubSection>
     ) : null;
 
   // ── 1d. Arredo-only: "Discover also" — links to Illuminazione + Tappeti ──
@@ -179,11 +170,7 @@ export async function SpecHubArredo({
       (carpetsContent?.field_titolo_main as string) ?? 'Carpets';
 
     discoverAlsoSection = (
-      <section className="flex flex-col gap-(--spacing-element)">
-        <Typography textRole="h2" as="h2">
-          {tHub('discoverAlso')}
-        </Typography>
-        <hr className="border-t border-border" />
+      <HubSection title={tHub('discoverAlso')} titleRole="overline">
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
           <CategoryCard
             title={illuminazioneTitle}
@@ -200,7 +187,7 @@ export async function SpecHubArredo({
             imageFit={categoryImageFit}
           />
         </div>
-      </section>
+      </HubSection>
     );
   }
 

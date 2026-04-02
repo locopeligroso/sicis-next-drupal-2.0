@@ -17,7 +17,7 @@ export async function SpecDeepDiveLinks({ links }: SpecDeepDiveLinksProps) {
 
   return (
     <section className="max-w-main mx-auto px-(--spacing-page)">
-      <HubSection title={tHub("deepDives")}>
+      <HubSection title={tHub("deepDives")} separator={false}>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
           {links.map((link) => (
             <Link
