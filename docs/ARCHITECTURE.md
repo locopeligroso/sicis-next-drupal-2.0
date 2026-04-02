@@ -4,10 +4,17 @@
 
 ## Architecture
 
+### Locale Configuration
+
+6 locales are active: `it` (default), `en`, `fr`, `de`, `es`, `ru`. A 7th locale, `us`, is present in the array but **does not exist in Drupal** — it maps to the `en` Drupal locale for all API calls.
+
+- `src/i18n/config.ts` — `locales` array (includes `us`), `defaultLocale = 'it'`, `toDrupalLocale(locale)` helper
+- `toDrupalLocale('us')` returns `'en'`. All other locales pass through unchanged.
+- Every function that calls `apiGet()` or `resolvePath()` must pass `toDrupalLocale(locale)` — raw locale values from the URL must never be forwarded to Drupal.
+
 ### Data Layer
 
 All Drupal data comes exclusively from the REST endpoints below. No other data source is used.
-One exception: `ProdottoArredo` and `ProdottoIlluminazione` templates use a JSON:API fallback to fetch English tessuti taxonomy terms when current locale data is missing — this is the only JSON:API usage in the project.
 
 **REST API client (`src/lib/api/`):**
 
@@ -16,7 +23,7 @@ One exception: `ProdottoArredo` and `ProdottoIlluminazione` templates use a JSON
 - `entity.ts` — `fetchEntity` (entity ❌ DEAD — do not call at runtime)
 - `products.ts` — `fetchProducts` (products ❌ DEAD), `fetchFilterCounts` (product-counts ❌ DEAD), `getCategoriaProductType`
 - `filters.ts` — `fetchFilterOptions` (taxonomy ❌ DEAD), `fetchCategoryOptions` (category-options ❌ DEAD), `fetchAllFilterOptions`
-- `listings.ts` — `fetchBlogPosts` (blog ❌ DEAD), `fetchProjects` (projects ❌ DEAD), `fetchEnvironments` (environments ❌ DEAD), `fetchShowrooms` (showrooms ❌ DEAD), `fetchDocuments` (documents ❌ DEAD)
+- `listings.ts` — `fetchBlogPosts` (aggregate of articles+news+tutorials), `fetchArticles` (articles), `fetchNews` (news), `fetchTutorials` (tutorials), `fetchProjects` (projects), `fetchEnvironments` (environments), `fetchShowrooms` (showrooms), `fetchDocuments` (documents — confirmed dead 404, kept for forward compat)
 - `categories.ts` — `fetchSubcategories` (subcategories ❌ DEAD), `fetchPagesByCategory` (pages-by-category ❌ DEAD)
 - `translate-path.ts` — `getTranslatedPath` (translate-path ❌ DEAD)
 - `image-fallback.ts` — `enrichWithFallbackImages` (extracts images from entity endpoint for items missing imageUrl)
@@ -25,15 +32,13 @@ One exception: `ProdottoArredo` and `ProdottoIlluminazione` templates use a JSON
 - `vetrite-product.ts` — `fetchVetriteProduct` (vetrite-product) — single vetrite product by NID, normalized with collection + documents
 - `textile-product.ts` — `fetchTextileProduct` (textile-product) — single textile product by NID, normalized with finiture + maintenance + documents
 - `pixall-product.ts` — `fetchPixallProduct` (pixall-product) — single pixall product by NID
-- `mosaic-product-listing.ts` — `fetchMosaicProductListing` (mosaic-products) — TID-based listing, no pagination
-- `vetrite-product-listing.ts` — `fetchVetriteProductListing` (vetrite-products) — TID-based listing, no pagination
-- `textile-product-listing.ts` — `fetchTextileProductListing` (textile-products) — NID-based listing
-- `pixall-product-listing.ts` — `fetchPixallProductListing` (pixall-products) — listing, no filters
-- `vetrite-hub.ts` — `fetchVetriteColors`, `fetchVetriteCollections` (vetrite-colors, vetrite-collections) — hub term listings, no pagination
-- `arredo-product-listing.ts` — `fetchArredoProductListing` (arredo-products/{categoryNid}) — NID-based listing, accepts `"all"` for unfiltered
-- `illuminazione-product-listing.ts` — `fetchIlluminazioneProductListing` (illuminazione-products/{categoryNid}) — NID-based listing, accepts `"all"` for unfiltered
+- `arredo-product.ts` — `fetchArredoProduct` (arredo-product/{nid}) — single arredo product by NID
+- `product-listing-factory.ts` — `fetchProductListing(productType, locale, params)` — consolidated listing fetcher for all 6 product types (+ next_art). Uses `React.cache()` per type. Supports `DualTidParams` (mosaic, vetrite: `tid1`, `tid2`, `shapeTid`, `finishTid`), `SingleNidParams` (arredo, illuminazione, tessuto: `nid`, `tipologiaTid`), and no-params (pixall). Replaces 5 separate listing files. Exports `MOSAIC_COLLECTION_GROUPS` and `resolveCollectionTidGroup` for sub-collection TID expansion (NeoColibrì: 72+74+75+76, Neoglass: 67+77+78+79).
+- `mosaic-hub.ts` — `fetchMosaicColors`, `fetchMosaicCollections` (mosaic-colors, mosaic-collections), `fetchMosaicShapes` (mosaic-shapes), `fetchMosaicFinishes` (mosaic-finishes), `fetchMosaicProductCounts` (mosaic-product-counts — faceted counts for cross-filtering with P0+P1 active filters)
+- `vetrite-hub.ts` — `fetchVetriteColors`, `fetchVetriteCollections` (vetrite-colors, vetrite-collections), `fetchVetriteFinishes` (vetrite-finishes), `fetchVetriteProductCounts` (vetrite-product-counts — faceted counts for cross-filtering)
 - `illuminazione-product.ts` — `fetchIlluminazioneProduct` (illuminazione-product/{nid}) — single illuminazione product by NID, normalized with documents
-- `category-hub.ts` — `fetchHubCategories` (categories/{parentNid}) — child node--categoria items by parent NID; deduplicates by NID. Replaces dead category-options (V4)
+- `category-hub.ts` — `fetchHubCategories` (categories/{parentNid}) — child node--categoria items by parent NID; deduplicates by NID. `fetchTessutoTipologie` (tessuto-tipologie) — all tessuto typology terms. `fetchTessutoProductCounts` (tessuto-product-counts — faceted counts for tipologia cross-filtering). Replaces dead category-options (V4)
+- `filter-options.ts` — `fetchListingFilterOptions(productType, locale)` — orchestrates hub endpoint calls to produce `Record<string, FilterOption[]>` for the sidebar. Mosaic: P0 (collections, colors) + P1 (shapes, finishes) populated. Vetrite: P0 + P1 finishes populated. Tessuto: tipologie populated. Category types (arredo, illuminazione): subcategories populated. Pixall: empty (no taxonomy endpoints).
 - `content.ts` — `fetchContent` (content/{nid}) — single content entity by NID, raw fields. Replaces dead entity endpoint (C1) for basic field access. Revalidate: 300s
 - `blocks.ts` — `fetchBlocks` (blocks/{nid}) — paragraph blocks for a node by NID; normalizes `type` with `paragraph--` prefix and converts `field_immagine*` strings to C1 file-object shape. Replaces dead entity endpoint (C1) for `field_blocchi`. Revalidate: 300s
 
@@ -63,27 +68,40 @@ The project has fully migrated away from generic Drupal Views endpoints to dedic
 
 **✅ NEW — Definitive endpoints (type-specific, NID/TID-based, no pagination):**
 
-| Endpoint               | Purpose                                   | URL pattern                                   |
-| ---------------------- | ----------------------------------------- | --------------------------------------------- |
-| resolve-path           | URL alias → entity metadata               | `resolve-path?path=...`                       |
-| mosaic-product         | Single mosaic by NID                      | `mosaic-product/{nid}`                        |
-| vetrite-product        | Single vetrite by NID                     | `vetrite-product/{nid}`                       |
-| textile-product        | Single textile by NID                     | `textile-product/{nid}`                       |
-| pixall-product         | Single pixall by NID                      | `pixall-product/{nid}`                        |
-| illuminazione-product  | Single illuminazione by NID               | `illuminazione-product/{nid}`                 |
-| mosaic-products        | Mosaic listing by TID                     | `mosaic-products/{collectionTid}/{colorTid}`  |
-| vetrite-products       | Vetrite listing by TID                    | `vetrite-products/{collectionTid}/{colorTid}` |
-| textile-products       | Textile listing by NID                    | `textile-products/{categoryNid}`              |
-| pixall-products        | All pixall products                       | `pixall-products`                             |
-| arredo-products        | Arredo listing by category NID            | `arredo-products/{categoryNid}`               |
-| illuminazione-products | Illuminazione listing by category NID     | `illuminazione-products/{categoryNid}`        |
-| mosaic-colors          | Hub mosaic colors                         | `mosaic-colors`                               |
-| mosaic-collections     | Hub mosaic collections                    | `mosaic-collections`                          |
-| vetrite-colors         | Hub vetrite colors                        | `vetrite-colors`                              |
-| vetrite-collections    | Hub vetrite collections                   | `vetrite-collections`                         |
-| categories/{parentNid} | Child node--categoria by parent NID       | `categories/{parentNid}`                      |
-| content/{nid}          | Basic content fields by NID (replaces C1) | `content/{nid}`                               |
-| blocks/{nid}           | Paragraph blocks for a node (replaces C1) | `blocks/{nid}`                                |
+| Endpoint               | Purpose                                   | URL pattern                                               |
+| ---------------------- | ----------------------------------------- | --------------------------------------------------------- |
+| resolve-path           | URL alias → entity metadata               | `resolve-path?path=...`                                   |
+| mosaic-product         | Single mosaic by NID                      | `mosaic-product/{nid}`                                    |
+| vetrite-product        | Single vetrite by NID                     | `vetrite-product/{nid}`                                   |
+| textile-product        | Single textile by NID                     | `textile-product/{nid}`                                   |
+| pixall-product         | Single pixall by NID                      | `pixall-product/{nid}`                                    |
+| illuminazione-product  | Single illuminazione by NID               | `illuminazione-product/{nid}`                             |
+| mosaic-products        | Mosaic listing by TID                     | `mosaic-products/{collectionTid}/{colorTid}`              |
+| vetrite-products       | Vetrite listing by TID                    | `vetrite-products/{collectionTid}/{colorTid}`             |
+| textile-products       | Textile listing by NID                    | `textile-products/{categoryNid}`                          |
+| pixall-products        | All pixall products                       | `pixall-products`                                         |
+| arredo-products        | Arredo listing by category NID            | `arredo-products/{categoryNid}`                           |
+| illuminazione-products | Illuminazione listing by category NID     | `illuminazione-products/{categoryNid}`                    |
+| mosaic-colors          | Hub mosaic colors                         | `mosaic-colors`                                           |
+| mosaic-collections     | Hub mosaic collections                    | `mosaic-collections`                                      |
+| mosaic-shapes          | Mosaic P1 shape filter options            | `mosaic-shapes`                                           |
+| mosaic-finishes        | Mosaic P1 finish filter options           | `mosaic-finishes`                                         |
+| mosaic-product-counts  | Faceted counts (cross-filtering)          | `mosaic-product-counts?collection=&color=&shape=&finish=` |
+| vetrite-colors         | Hub vetrite colors                        | `vetrite-colors`                                          |
+| vetrite-collections    | Hub vetrite collections                   | `vetrite-collections`                                     |
+| vetrite-finishes       | Vetrite P1 finish filter options          | `vetrite-finishes`                                        |
+| vetrite-product-counts | Vetrite faceted counts (cross-filtering)  | `vetrite-product-counts?collection=&color=&finish=`       |
+| tessuto-tipologie      | Tessuto typology filter options           | `tessuto-tipologie`                                       |
+| tessuto-product-counts | Tessuto faceted counts (cross-filtering)  | `tessuto-product-counts?tipologia=`                       |
+| categories/{parentNid} | Child node--categoria by parent NID       | `categories/{parentNid}`                                  |
+| articles               | Articles listing (replaces blog)          | `articles`                                                |
+| news                   | News listing (replaces blog)              | `news`                                                    |
+| tutorials              | Tutorials listing (replaces blog)         | `tutorials`                                               |
+| projects               | Projects listing                          | `projects`                                                |
+| environments           | Environments listing                      | `environments`                                            |
+| showrooms              | Showrooms listing                         | `showrooms`                                               |
+| content/{nid}          | Basic content fields by NID (replaces C1) | `content/{nid}`                                           |
+| blocks/{nid}           | Paragraph blocks for a node (replaces C1) | `blocks/{nid}`                                            |
 
 **❌ DEAD — Old generic Views (confirmed 404 on current Drupal backend):**
 

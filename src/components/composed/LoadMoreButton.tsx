@@ -1,25 +1,25 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useTranslations } from 'next-intl'
-import type { ProductCard as ProductCardData } from '@/lib/api/products'
-import type { FilterDefinition } from '@/domain/filters/search-params'
-import { loadMoreProducts } from '@/lib/actions/load-more-products'
-import { ProductGrid } from '@/components/composed/ProductGrid'
-import { Typography } from '@/components/composed/Typography'
-import { Button } from '@/components/ui/button'
-import { Spinner } from '@/components/ui/spinner'
+import { useState } from 'react';
+import { useTranslations } from 'next-intl';
+import type { ProductCard as ProductCardData } from '@/lib/api/products';
+import type { FilterDefinition } from '@/domain/filters/search-params';
+import { loadMoreProducts } from '@/lib/actions/load-more-products';
+import { ProductGrid } from '@/components/composed/ProductGrid';
+import { Typography } from '@/components/composed/Typography';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 
 interface LoadMoreButtonProps {
-  productType: string
-  activeFilters: FilterDefinition[]
-  sort: string
-  pageSize: number
-  initialProducts: ProductCardData[]
-  initialTotal: number
-  locale: string
-  productCardRatio?: string
-  imageFit?: "cover" | "contain"
+  productType: string;
+  activeFilters: FilterDefinition[];
+  sort: string;
+  pageSize: number;
+  initialProducts: ProductCardData[];
+  initialTotal: number;
+  locale: string;
+  productCardRatio?: string;
+  imageFit?: 'cover' | 'contain';
 }
 
 export function LoadMoreButton({
@@ -33,14 +33,14 @@ export function LoadMoreButton({
   productCardRatio,
   imageFit,
 }: LoadMoreButtonProps) {
-  const t = useTranslations('listing')
-  const [products, setProducts] = useState(initialProducts)
-  const [offset, setOffset] = useState(initialProducts.length)
-  const [loading, setLoading] = useState(false)
-  const [hasMore, setHasMore] = useState(initialProducts.length < initialTotal)
+  const t = useTranslations('listing');
+  const [products, setProducts] = useState(initialProducts);
+  const [offset, setOffset] = useState(initialProducts.length);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(initialProducts.length < initialTotal);
 
   async function handleLoadMore() {
-    setLoading(true)
+    setLoading(true);
     try {
       const result = await loadMoreProducts(
         productType,
@@ -49,12 +49,12 @@ export function LoadMoreButton({
         offset,
         pageSize,
         locale,
-      )
-      setProducts((prev) => [...prev, ...result.products])
-      setOffset((prev) => prev + pageSize)
-      setHasMore(result.hasMore)
+      );
+      setProducts((prev) => [...prev, ...result.products]);
+      setOffset((prev) => prev + pageSize);
+      setHasMore(result.hasMore);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -65,12 +65,17 @@ export function LoadMoreButton({
           {t('noResults')}
         </Typography>
       </div>
-    )
+    );
   }
 
   return (
     <>
-      <ProductGrid products={products} productCardRatio={productCardRatio} imageFit={imageFit} />
+      <ProductGrid
+        products={products}
+        locale={locale}
+        productCardRatio={productCardRatio}
+        imageFit={imageFit}
+      />
       {hasMore && (
         <div className="flex justify-center py-8">
           <Button
@@ -85,5 +90,5 @@ export function LoadMoreButton({
         </div>
       )}
     </>
-  )
+  );
 }

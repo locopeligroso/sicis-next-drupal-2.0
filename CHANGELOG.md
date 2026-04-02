@@ -4,6 +4,39 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### 2026-04-02
+
+#### Fix — locale prefix missing on product hrefs (`/us/`)
+
+- `ProductGrid.tsx`: product card `href` ora usa `` `/${locale}${product.path}` `` — in precedenza la rotta `/us/` generava link senza prefisso locale, causando 404 sul click.
+
+#### Filtri mosaico P1 — cross-filtering e subcategorie illuminazione/tessili
+
+- P1 sidebar mosaico: click su un filtro attivo lo deseleziona, click su uno diverso mantiene gli altri — logica cross-filtering coerente con il comportamento P0.
+- Filtri P1 non si azzerano automaticamente quando il count scende a 0 — deselect solo su click esplicito.
+- Subcategorie illuminazione e tessili: conteggi NeoColibrì/Neoglass calcolati con fetch parallelo per sub-collection e sommati.
+
+#### Get a Quote — form con Resend email su pagine prodotto mosaico
+
+- Nuovo form modale "Get a Quote" nelle pagine prodotto mosaico; invio email via Resend API server action.
+
+#### Quote API — email destinatario da env var
+
+- `route.ts`: email destinatario spostata da hardcoded a `process.env.SEND_TO_EMAIL` con guard esplicito (500 se mancante).
+
+#### Documentazione — aggiornamento completo e pulizia
+
+- Aggiornati: ARCHITECTURE, DESIGN_SYSTEM, TEMPLATES_MIGRATION, DATA_LAYER_ANALYSIS, CHANGELOG.
+- Rimossi 9 doc obsoleti (REFACTORING_PLAN, ROADMAP, NEXT_SESSION_PLAN, STRATEGIC_IMPROVEMENTS, TYPE_SAFETY_AUDIT, SICIS_VETRITE_NEXT, ARCHITECTURAL_ASSESSMENT, FREDDI-MOSAIC-FILTERS, DRUPAL_BACKEND_BRIEF).
+- Nuovo: `FREDDI-HARDCODED-TEXT-BRIEF.md` — audit completo 109 stringhe hardcoded con priorità e destinazione (i18n/cms).
+- Nuovo: `PLAN-I18N-MIGRATION.md` — piano esecutivo migrazione i18n in 4 fasi.
+
+#### Cleanup — artefatti di test e temp rimossi
+
+- Rimossi `.playwright-mcp/`, `coverage/`, `test-results/`, `PERF_BLOAT_REPORT.md`.
+
+---
+
 ### 2026-04-01 — Locale US, fix client/server boundary, i18n multilingua
 
 #### Locale US (`/us/`)

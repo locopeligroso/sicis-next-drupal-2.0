@@ -7,10 +7,13 @@
 | Template               | Drupal Type                  | Status      | Uses ParagraphResolver | Notes                                                                                 |
 | ---------------------- | ---------------------------- | ----------- | ---------------------- | ------------------------------------------------------------------------------------- |
 | ProdottoMosaico        | node--prodotto_mosaico       | DS          | No                     | 5 blocks (Spec\*), 9 composed; collection-level fallback for body/specs               |
+| MosaicProductPreview   | (mosaic product — typed)     | DS          | No                     | Same 5 Spec\* blocks as ProdottoMosaico; accepts typed `MosaicProduct` (not raw node) |
 | ProductListingTemplate | (unified listing)            | DS          | No                     | Hub mode (SpecCategory) + Grid mode (SpecProductListing); accepts all 6 product types |
+| ProductsMasterPage     | (products index)             | DS          | No                     | Tailwind grid of 5 category cards; locale-aware hrefs via FILTER_REGISTRY             |
+| ProdottoArredoFiniture | (arredo finishes sub-page)   | Partial DS  | No                     | Tailwind layout + FinitureGallery composed; accepts typed `ArredoProduct`             |
 | Page                   | node--page                   | Minimal DS  | Yes                    | title + body + ParagraphResolver                                                      |
 | LandingPage            | node--landing_page           | Minimal DS  | Yes                    | ParagraphResolver only, no title/body                                                 |
-| ProdottoVetrite        | node--prodotto_vetrite       | Legacy      | No                     | DrupalImage + product.module.css; inline styles throughout                            |
+| ProdottoVetrite        | node--prodotto_vetrite       | Legacy      | No                     | DrupalImage + product.module.css; inline styles; VetriteCanvasLoader (WebGL)          |
 | ProdottoArredo         | node--prodotto_arredo        | Legacy      | Yes                    | DrupalImage + product.module.css; async tessuti secondary fetch                       |
 | ProdottoTessuto        | node--prodotto_tessuto       | Legacy      | No                     | DrupalImage + product.module.css                                                      |
 | ProdottoPixall         | node--prodotto_pixall        | Legacy      | No                     | DrupalImage + product.module.css                                                      |
@@ -26,20 +29,47 @@
 | CategoriaBlog          | node--categoria_blog         | Legacy+Para | Yes                    |                                                                                       |
 | Tag                    | node--tag                    | Legacy+Para | Yes                    |                                                                                       |
 
-**Status key:** DS = design system blocks (Spec*/Gen* composed components, Tailwind only). Legacy = DrupalImage + `product.module.css` + inline styles. Minimal DS = Tailwind layout, legacy ParagraphResolver inside. Legacy+Para = legacy render with ParagraphResolver for `field_blocchi`. Hybrid = legacy structure + Tailwind sections.
+**Status key:** DS = design system blocks (Spec*/Gen* composed components, Tailwind only). Partial DS = Tailwind layout + at least one composed component, no Spec\* blocks. Legacy = DrupalImage + `product.module.css` + inline styles. Minimal DS = Tailwind layout, legacy ParagraphResolver inside. Legacy+Para = legacy render with ParagraphResolver for `field_blocchi`.
 
-**Common rule:** All templates receive `node` as `Record<string, unknown>`, cast to a typed interface from `src/types/drupal/entities.ts`.
+**Common rule:** All templates that take a raw Drupal node receive `node` as `Record<string, unknown>`, cast to a typed interface from `src/types/drupal/entities.ts`. Exceptions: `MosaicProductPreview` and `ProdottoArredoFiniture` receive typed structs from their respective fetcher APIs.
 
-Only `ProdottoMosaico` and `ProductListingTemplate` use the design system (Spec\* blocks, no legacy imports).
+Only `ProdottoMosaico`, `MosaicProductPreview`, `ProductListingTemplate`, and `ProductsMasterPage` use the design system exclusively (Spec\* blocks, no legacy imports).
 
 ---
 
 ## Taxonomy Templates (`src/templates/taxonomy/`)
 
-| Template          | Drupal Type                       | Status         | Notes                                                                         |
-| ----------------- | --------------------------------- | -------------- | ----------------------------------------------------------------------------- |
-| MosaicoCollezione | taxonomy_term--mosaico_collezioni | Legacy listing | Legacy FilterSidebar + legacy ProductListing                                  |
-| MosaicoColore     | taxonomy_term--mosaico_colori     | Legacy listing | Legacy FilterSidebar + legacy ProductListing                                  |
-| VetriteCollezione | taxonomy_term--vetrite_collezioni | Hybrid         | Legacy listing + FilterSidebar + Tailwind documents section + getTranslations |
-| VetriteColore     | taxonomy_term--vetrite_colori     | Legacy listing | Legacy FilterSidebar + legacy ProductListing                                  |
-| TaxonomyTerm      | (generic fallback)                | Wireframe      | name + description only                                                       |
+The 4 specialised taxonomy templates (MosaicoCollezione, MosaicoColore, VetriteCollezione, VetriteColore) have been removed. The generic fallback handles all taxonomy term routes.
+
+| Template     | Drupal Type        | Status    | Notes                   |
+| ------------ | ------------------ | --------- | ----------------------- |
+| TaxonomyTerm | (generic fallback) | Wireframe | name + description only |
+
+---
+
+## ParagraphResolver — Block Migration Status
+
+File: `src/components_legacy/blocks_legacy/ParagraphResolver.tsx`
+
+| Paragraph Type                        | Component            | Status |
+| ------------------------------------- | -------------------- | ------ |
+| paragraph--blocco_intro               | GenIntro             | DS     |
+| paragraph--blocco_quote               | GenQuote             | DS     |
+| paragraph--blocco_video               | GenVideo             | DS     |
+| paragraph--blocco_testo_immagine      | GenTestoImmagine     | DS     |
+| paragraph--blocco_gallery             | GenGallery           | DS     |
+| paragraph--blocco_testo_immagine_big  | GenTestoImmagineBig  | DS     |
+| paragraph--blocco_testo_immagine_blog | GenTestoImmagineBlog | DS     |
+| paragraph--blocco_gallery_intro       | GenGalleryIntro      | DS     |
+| paragraph--blocco_documenti           | GenDocumenti         | DS     |
+| paragraph--blocco_a                   | GenA                 | DS     |
+| paragraph--blocco_b                   | GenB                 | DS     |
+| paragraph--blocco_c                   | GenC                 | DS     |
+| paragraph--blocco_slider_home         | BloccoSliderHome     | Legacy |
+| paragraph--blocco_correlati           | BloccoCorrelati      | Legacy |
+| paragraph--blocco_newsletter          | BloccoNewsletter     | Legacy |
+| paragraph--blocco_form_blog           | BloccoFormBlog       | Legacy |
+| paragraph--blocco_anni                | BloccoAnni           | Legacy |
+| paragraph--blocco_tutorial            | BloccoTutorial       | Legacy |
+
+12 of 18 paragraph types are DS. 6 legacy blocks remain to be migrated (GenCorrelati, GenNewsletter, GenFormBlog, GenSliderHome, GenAnni, GenTutorial).
