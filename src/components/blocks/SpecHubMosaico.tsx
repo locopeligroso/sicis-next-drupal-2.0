@@ -16,7 +16,6 @@ import {
   fetchVetriteColors,
   fetchVetriteCollections,
 } from "@/lib/api/vetrite-hub"
-import { Separator } from "@/components/ui/separator"
 import { HubSection } from "@/components/composed/HubSection"
 import { ColorSwatchLink } from "@/components/composed/ColorSwatchLink"
 import { Typography } from "@/components/composed/Typography"
@@ -82,7 +81,7 @@ export async function SpecHubMosaico({
   return (
     <div className="max-w-main mx-auto px-(--spacing-page) flex flex-col gap-(--spacing-section)">
       {/* ── Desktop: side-by-side ──────────────────────────────────────── */}
-      <div className="hidden lg:grid lg:grid-cols-[3fr_auto_2fr] lg:gap-(--spacing-content)">
+      <div className="hidden lg:grid lg:grid-cols-2 lg:gap-(--spacing-content)">
         {/* Colors — main area */}
         {colors.length > 0 && (
           <HubSection title={tHub("exploreByColor")} titleRole="overline">
@@ -99,11 +98,9 @@ export async function SpecHubMosaico({
           </HubSection>
         )}
 
-        <Separator orientation="vertical" />
-
         {/* Collections — compact sidebar */}
         {collections.length > 0 && (
-          <HubSection title={tHub("exploreByCollection")} titleRole="overline">
+          <HubSection title={tHub("exploreByCollection")} titleRole="overline" separator={false}>
             {collectionList}
           </HubSection>
         )}
