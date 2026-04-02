@@ -134,6 +134,12 @@ function lc(s: string): string {
   return s.toLowerCase().trim();
 }
 
+/** Drupal returns "None" (Python repr) for empty descriptions */
+function cleanDescription(desc: string | undefined): string {
+  if (!desc || desc === 'None') return '';
+  return desc;
+}
+
 /** Find a top-level menu item by case-insensitive title match */
 function findSection(
   items: MenuItem[],
@@ -270,10 +276,10 @@ export function mapMenuToNavbar(menuItems: MenuItem[]): NavbarMenu {
     projects: buildProjectsSection(projectsItem),
     info: buildInfoSection(infoItem),
     sectionDescriptions: {
-      explore: exploreItem?.description ?? '',
-      filterFind: filterFindItem?.description ?? '',
-      projects: projectsItem?.description ?? '',
-      info: infoItem?.description ?? '',
+      explore: cleanDescription(exploreItem?.description),
+      filterFind: cleanDescription(filterFindItem?.description),
+      projects: cleanDescription(projectsItem?.description),
+      info: cleanDescription(infoItem?.description),
     },
   };
 }

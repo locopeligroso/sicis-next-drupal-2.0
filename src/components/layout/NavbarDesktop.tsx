@@ -212,9 +212,11 @@ export function NavbarDesktop({
                 >
                   {t(`${key}Label`)}
                 </span>
-                <span className="text-[10px] text-muted-foreground mt-[3px]">
-                  {menu.sectionDescriptions[key] || t(`${key}Desc`)}
-                </span>
+                {menu.sectionDescriptions[key] && (
+                  <span className="text-[10px] text-muted-foreground mt-[3px]">
+                    {menu.sectionDescriptions[key]}
+                  </span>
+                )}
               </button>
             );
           })}

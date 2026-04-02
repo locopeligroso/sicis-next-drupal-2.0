@@ -448,7 +448,14 @@ export default async function SlugPage({
     LISTING_SLUG_OVERRIDES.has(singleSlug!);
   if (singleSlug && isListingSlug) {
     const resolvedListing = await resolvePath(drupalPath, locale);
-    if (resolvedListing?.bundle === 'page') {
+    // Skip listing only if resolve-path says it's a page AND the slug is NOT
+    // in the hardcoded LISTING_SLUG_OVERRIDES (which are known product listings
+    // that happen to share aliases with Drupal page nodes, e.g. "prodotti-tessili").
+    // Only menu-derived slugs (registry-only) can be overridden by page bundle.
+    if (
+      resolvedListing?.bundle === 'page' &&
+      !LISTING_SLUG_OVERRIDES.has(singleSlug!)
+    ) {
       // Not a listing — fall through to entity rendering below
     } else {
       if (
