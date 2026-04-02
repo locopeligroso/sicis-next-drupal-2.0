@@ -9,6 +9,7 @@ import { SpecCategory } from '@/components/blocks/SpecCategory';
 import { SpecHubMosaico } from '@/components/blocks/SpecHubMosaico';
 import { SpecHubArredo } from '@/components/blocks/SpecHubArredo';
 import { SpecProductListing } from '@/components/blocks/SpecProductListing';
+import { SpecDeepDiveLinks } from '@/components/blocks/SpecDeepDiveLinks';
 import type { SecondaryLink } from '@/lib/navbar/types';
 import type { ProductCard } from '@/lib/api/products';
 import { FILTER_REGISTRY } from '@/domain/filters/registry';
@@ -217,11 +218,8 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
 
     return (
       <div>
-        <div className="max-w-main mx-auto px-(--spacing-page)">
-          <SmartBreadcrumb segments={baseSegments} />
-        </div>
         <DevBlockOverlay name="SpecListingHeader" status="ds">
-          <SpecListingHeader title={title} description={description} />
+          <SpecListingHeader title={title} description={description} breadcrumbSegments={baseSegments} />
         </DevBlockOverlay>
         {isMosaicoOrVetrite ? (
           <DevBlockOverlay name="SpecHubMosaico" status="ds">
@@ -237,7 +235,6 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
               basePath={basePath}
               locale={locale}
               productType={productType}
-              deepDiveLinks={deepDiveLinks}
             />
           </DevBlockOverlay>
         ) : (
@@ -247,19 +244,21 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
               basePath={basePath}
               locale={locale}
               categoryCardRatio={listingConfig.categoryCardRatio}
-              deepDiveLinks={deepDiveLinks}
               productType={productType}
             />
           </DevBlockOverlay>
         )}
+        <DevBlockOverlay name="SpecDeepDiveLinks" status="ds">
+          <SpecDeepDiveLinks links={deepDiveLinks ?? []} />
+        </DevBlockOverlay>
       </div>
     );
   }
 
   // ── Listing modes: context-bar or airy-header ─────────────────────────
   return (
-    <div className="flex">
-      {/* Panel — anchored to left edge of viewport */}
+    <div>
+      {/* Panel — fixed to left edge */}
       {hasFilterPanel && (
         <DevBlockOverlay name="SpecFilterSidebar" status="ds">
           <SpecFilterSidebar
@@ -276,13 +275,24 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
           />
         </DevBlockOverlay>
       )}
-      {/* Content — contained */}
-      <main className="flex-1 min-w-0 max-w-listing mx-auto px-(--spacing-page)">
+      {/* Content — offset by sidebar width when panel present */}
+      <main className={`min-w-0 max-w-listing mx-auto px-(--spacing-page) ${hasFilterPanel ? 'md:ml-[300px]' : ''}`}>
         <SmartBreadcrumb
           segments={[
             ...baseSegments,
             ...(title !== getCategoryLabel(productType)
-              ? [{ label: title, href: basePath }]
+              ? [{
+                  label: title,
+                  href: basePath,
+                  siblings: activePathFilterKey && filterOptions[activePathFilterKey]
+                    ? filterOptions[activePathFilterKey]
+                        .filter((o) => !o.parentId)
+                        .map((o) => ({
+                          label: o.label,
+                          href: `${getCategoryHref(productType)}/${o.slug}`,
+                        }))
+                    : undefined,
+                }]
               : []),
           ]}
         />

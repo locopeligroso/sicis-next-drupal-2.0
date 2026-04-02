@@ -7,7 +7,6 @@ import type {
   FilterGroupConfig,
   ListingConfig,
 } from "@/domain/filters/registry"
-import type { SecondaryLink } from "@/lib/navbar/types"
 import {
   fetchMosaicColors,
   fetchMosaicCollections,
@@ -32,7 +31,6 @@ interface SpecHubMosaicoProps {
   basePath: string
   locale: string
   productType: string
-  deepDiveLinks?: SecondaryLink[]
 }
 
 export async function SpecHubMosaico({

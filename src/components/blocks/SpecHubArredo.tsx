@@ -1,8 +1,5 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
-import { ArrowUpRight } from 'lucide-react';
-
-import type { SecondaryLink } from '@/lib/navbar/types';
 import {
   fetchHubCategories,
   ARREDO_INDOOR_PARENT_NID,
@@ -37,7 +34,6 @@ interface SpecHubArredoProps {
   locale: string;
   categoryCardRatio?: string; // default "4/3"
   categoryImageFit?: 'cover' | 'contain'; // default "cover"
-  deepDiveLinks?: SecondaryLink[];
   productType?: string;
 }
 
@@ -47,7 +43,6 @@ export async function SpecHubArredo({
   locale,
   categoryCardRatio = '4/3',
   categoryImageFit = 'cover',
-  deepDiveLinks = [],
   productType,
 }: SpecHubArredoProps) {
   const tHub = await getTranslations('hub');
@@ -209,41 +204,13 @@ export async function SpecHubArredo({
     );
   }
 
-  // ── 2. Approfondimenti (from Filter & Find mega-menu secondary links) ──
-  const deepDiveSection =
-    deepDiveLinks.length > 0 ? (
-      <HubSection title={tHub('deepDives')}>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
-          {deepDiveLinks.map((link) => (
-            <Link
-              key={link.url}
-              href={link.url}
-              className="flex items-center gap-3 rounded-lg border border-border p-(--spacing-element) transition-colors hover:bg-accent"
-            >
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-muted">
-                <ArrowUpRight className="size-5 text-muted-foreground" />
-              </div>
-              <Typography
-                textRole="body-sm"
-                as="span"
-                className="truncate font-medium text-foreground"
-              >
-                {link.title}
-              </Typography>
-            </Link>
-          ))}
-        </div>
-      </HubSection>
-    ) : null;
-
   return (
-    <div className="flex flex-col gap-(--spacing-section)">
+    <div className="max-w-main mx-auto px-(--spacing-page) flex flex-col gap-(--spacing-section)">
       {typologySection}
       {outdoorSection}
       {nextArtSection}
       {descriptiveCategoriesSection}
       {discoverAlsoSection}
-      {deepDiveSection}
     </div>
   );
 }
