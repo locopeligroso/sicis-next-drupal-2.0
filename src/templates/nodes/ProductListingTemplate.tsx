@@ -1,4 +1,6 @@
-import { ListingBreadcrumb } from '@/components/composed/ListingBreadcrumb';
+import { DevBlockOverlay } from '@/components/composed/DevBlockOverlay';
+import { SmartBreadcrumb } from '@/components/composed/SmartBreadcrumb';
+import type { BreadcrumbSegment } from '@/components/composed/SmartBreadcrumb';
 import { ContextBar } from '@/components/composed/ContextBar';
 import { AiryHeader } from '@/components/composed/AiryHeader';
 import { SpecListingHeader } from '@/components/blocks/SpecListingHeader';
@@ -9,6 +11,7 @@ import { SpecHubArredo } from '@/components/blocks/SpecHubArredo';
 import { SpecProductListing } from '@/components/blocks/SpecProductListing';
 import type { SecondaryLink } from '@/lib/navbar/types';
 import type { ProductCard } from '@/lib/api/products';
+import { FILTER_REGISTRY } from '@/domain/filters/registry';
 import type {
   ListingConfig,
   FilterOption,
@@ -68,7 +71,37 @@ interface ProductListingTemplateProps {
   // Parent NID for category-based hubs (arredo, illuminazione, tessuto)
   // Used by SpecHubArredo to fetch subcategories from categories/{nid} endpoint
   hubParentNid?: number;
+
+  // Translation functions for breadcrumb labels
+  tNav?: (key: string) => string;
+  tBreadcrumb?: (key: string) => string;
+  tProducts?: (key: string) => string;
 }
+
+const PRODUCTS_PATH: Record<string, string> = {
+  it: '/it/prodotti',
+  en: '/en/products',
+  fr: '/fr/produits',
+  de: '/de/produkte',
+  es: '/es/productos',
+  ru: '/ru/продукция',
+};
+
+const CATEGORY_TYPES = [
+  'prodotto_mosaico',
+  'prodotto_vetrite',
+  'prodotto_arredo',
+  'prodotto_illuminazione',
+  'prodotto_tessuto',
+] as const;
+
+const CATEGORY_LABEL_KEYS: Record<string, { ns: 'nav' | 'products'; key: string }> = {
+  prodotto_mosaico: { ns: 'nav', key: 'mosaico' },
+  prodotto_vetrite: { ns: 'nav', key: 'vetrite' },
+  prodotto_arredo: { ns: 'nav', key: 'arredo' },
+  prodotto_illuminazione: { ns: 'products', key: 'lighting' },
+  prodotto_tessuto: { ns: 'nav', key: 'tessuto' },
+};
 
 /**
  * Derives the layout variant from legacy props when `variant` is not explicitly set.
@@ -137,7 +170,40 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
     hasActiveP0,
     deepDiveLinks,
     hubParentNid,
+    tNav,
+    tBreadcrumb,
+    tProducts,
   } = props;
+
+  const getCategoryLabel = (type: string) => {
+    const mapping = CATEGORY_LABEL_KEYS[type];
+    if (!mapping || !tNav || !tProducts) return type;
+    return mapping.ns === 'nav' ? tNav(mapping.key) : tProducts(mapping.key);
+  };
+
+  const getCategoryHref = (type: string) => {
+    const config = FILTER_REGISTRY[type];
+    if (!config) return '#';
+    const bp = config.basePaths[locale] ?? config.basePaths.it;
+    return `/${locale}/${bp}`;
+  };
+
+  const categorySiblings = CATEGORY_TYPES.map((type) => ({
+    label: getCategoryLabel(type),
+    href: getCategoryHref(type),
+  }));
+
+  const baseSegments: BreadcrumbSegment[] = [
+    {
+      label: tBreadcrumb?.('filterAndFind') ?? 'Products',
+      href: PRODUCTS_PATH[locale] ?? PRODUCTS_PATH.it,
+    },
+    {
+      label: getCategoryLabel(productType),
+      href: getCategoryHref(productType),
+      siblings: categorySiblings,
+    },
+  ];
 
   const variant = resolveVariant(props.variant, hasActiveP0, listingConfig);
 
@@ -150,33 +216,41 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
       productType === 'prodotto_mosaico' || productType === 'prodotto_vetrite';
 
     return (
-      <div className="max-w-main mx-auto px-(--spacing-page) pt-(--spacing-navbar) pb-(--spacing-section)">
-        <ListingBreadcrumb locale={locale} activeCategory={productType} />
-        <SpecListingHeader title={title} description={description} />
+      <div>
+        <div className="max-w-main mx-auto px-(--spacing-page)">
+          <SmartBreadcrumb segments={baseSegments} />
+        </div>
+        <DevBlockOverlay name="SpecListingHeader" status="ds">
+          <SpecListingHeader title={title} description={description} />
+        </DevBlockOverlay>
         {isMosaicoOrVetrite ? (
-          <SpecHubMosaico
-            filterOptions={Object.fromEntries(
-              Object.entries(filterOptions).map(([key, opts]) => [
-                key,
-                opts.filter((o) => !o.label.includes(' - ')),
-              ]),
-            )}
-            filters={filters}
-            listingConfig={listingConfig}
-            basePath={basePath}
-            locale={locale}
-            productType={productType}
-            deepDiveLinks={deepDiveLinks}
-          />
+          <DevBlockOverlay name="SpecHubMosaico" status="ds">
+            <SpecHubMosaico
+              filterOptions={Object.fromEntries(
+                Object.entries(filterOptions).map(([key, opts]) => [
+                  key,
+                  opts.filter((o) => !o.label.includes(' - ')),
+                ]),
+              )}
+              filters={filters}
+              listingConfig={listingConfig}
+              basePath={basePath}
+              locale={locale}
+              productType={productType}
+              deepDiveLinks={deepDiveLinks}
+            />
+          </DevBlockOverlay>
         ) : (
-          <SpecHubArredo
-            parentNid={hubParentNid!}
-            basePath={basePath}
-            locale={locale}
-            categoryCardRatio={listingConfig.categoryCardRatio}
-            deepDiveLinks={deepDiveLinks}
-            productType={productType}
-          />
+          <DevBlockOverlay name="SpecHubArredo" status="ds">
+            <SpecHubArredo
+              parentNid={hubParentNid!}
+              basePath={basePath}
+              locale={locale}
+              categoryCardRatio={listingConfig.categoryCardRatio}
+              deepDiveLinks={deepDiveLinks}
+              productType={productType}
+            />
+          </DevBlockOverlay>
         )}
       </div>
     );
@@ -184,28 +258,33 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
 
   // ── Listing modes: context-bar or airy-header ─────────────────────────
   return (
-    <div className="flex pt-(--spacing-navbar)">
+    <div className="flex">
       {/* Panel — anchored to left edge of viewport */}
       {hasFilterPanel && (
-        <SpecFilterSidebar
-          filters={filters}
-          filterOptions={filterOptions}
-          activeFilters={activeFilters}
-          hasActiveP0={true}
-          listingConfig={listingConfig}
-          basePath={basePath}
-          locale={locale}
-          totalCount={total}
-          subcategories={subcategories}
-          activePathFilterKey={activePathFilterKey}
-        />
+        <DevBlockOverlay name="SpecFilterSidebar" status="ds">
+          <SpecFilterSidebar
+            filters={filters}
+            filterOptions={filterOptions}
+            activeFilters={activeFilters}
+            hasActiveP0={true}
+            listingConfig={listingConfig}
+            basePath={basePath}
+            locale={locale}
+            totalCount={total}
+            subcategories={subcategories}
+            activePathFilterKey={activePathFilterKey}
+          />
+        </DevBlockOverlay>
       )}
       {/* Content — contained */}
-      <main className="flex-1 min-w-0 max-w-listing mx-auto px-(--spacing-page) pb-(--spacing-section)">
-        <ListingBreadcrumb
-          locale={locale}
-          activeCategory={productType}
-          subcategoryLabel={title}
+      <main className="flex-1 min-w-0 max-w-listing mx-auto px-(--spacing-page)">
+        <SmartBreadcrumb
+          segments={[
+            ...baseSegments,
+            ...(title !== getCategoryLabel(productType)
+              ? [{ label: title, href: basePath }]
+              : []),
+          ]}
         />
         {variant === 'context-bar' ? (
           <ContextBar
@@ -223,23 +302,25 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
             productCount={total}
           />
         )}
-        <SpecProductListing
-          products={products ?? []}
-          total={total ?? 0}
-          currentSort={currentSort ?? ''}
-          productType={productType}
-          activeFilters={filterDefinitions}
-          pageSize={listingConfig.pageSize}
-          locale={locale}
-          basePath={basePath}
-          productCardRatio={listingConfig.productCardRatio}
-          imageFit={
-            productType === 'prodotto_illuminazione' ||
-            productType === 'prodotto_arredo'
-              ? 'contain'
-              : 'cover'
-          }
-        />
+        <DevBlockOverlay name="SpecProductListing" status="ds">
+          <SpecProductListing
+            products={products ?? []}
+            total={total ?? 0}
+            currentSort={currentSort ?? ''}
+            productType={productType}
+            activeFilters={filterDefinitions}
+            pageSize={listingConfig.pageSize}
+            locale={locale}
+            basePath={basePath}
+            productCardRatio={listingConfig.productCardRatio}
+            imageFit={
+              productType === 'prodotto_illuminazione' ||
+              productType === 'prodotto_arredo'
+                ? 'contain'
+                : 'cover'
+            }
+          />
+        </DevBlockOverlay>
       </main>
     </div>
   );

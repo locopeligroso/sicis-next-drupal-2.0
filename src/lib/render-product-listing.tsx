@@ -1,4 +1,5 @@
 import { unstable_cache } from 'next/cache';
+import { getTranslations } from 'next-intl/server';
 import { parseFiltersFromUrl } from '@/domain/filters/search-params';
 import { FILTER_REGISTRY } from '@/domain/filters/registry';
 import type { FilterOption, ActiveFilter } from '@/domain/filters/registry';
@@ -737,6 +738,10 @@ export async function renderProductListing({
   const config = FILTER_REGISTRY[productType];
   if (!config) return null;
 
+  const tNav = await getTranslations('nav');
+  const tBreadcrumb = await getTranslations('breadcrumb');
+  const tProducts = await getTranslations('products');
+
   // Fetch all plain data — module-scope cached function (unstable_cache, 300s TTL).
   // Argument order matches _fetchListingData signature; Next.js auto-appends them to the cache key.
   const data = await _cachedFetchListingData(
@@ -790,6 +795,9 @@ export async function renderProductListing({
       activePathFilterKey={data.activePathFilterKey}
       deepDiveLinks={data.deepDiveLinks}
       hubParentNid={hubParentNid}
+      tNav={(key: string) => tNav(key)}
+      tBreadcrumb={(key: string) => tBreadcrumb(key)}
+      tProducts={(key: string) => tProducts(key)}
     />
   );
 }
