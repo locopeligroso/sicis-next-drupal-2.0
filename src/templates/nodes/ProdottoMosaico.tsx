@@ -3,6 +3,7 @@ import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { getColorSwatch, formatRetinatura } from '@/lib/product-helpers';
 import { getDrupalImageUrl } from '@/lib/drupal';
+import { getFilterConfig } from '@/domain/filters/registry';
 import { DevBlockOverlay } from '@/components/composed/DevBlockOverlay';
 import { SpecProductHero } from '@/components/blocks/SpecProductHero';
 import { SpecProductDetails } from '@/components/blocks/SpecProductDetails';
@@ -15,6 +16,7 @@ import type { AttributeItem } from '@/components/composed/AttributeGrid';
 import type { SpecsRow } from '@/components/composed/SpecsTable';
 import type { DocumentCardItem } from '@/components/composed/DocumentCard';
 import type { ProductGalleryImage } from '@/components/blocks/SpecProductGallery';
+import type { BreadcrumbSegment } from '@/components/composed/SmartBreadcrumb';
 import type { ProdottoMosaico as ProdottoMosaicoType } from '@/types/drupal/entities';
 
 export default async function ProdottoMosaico({
@@ -297,6 +299,17 @@ export default async function ProdottoMosaico({
     }
   }
 
+  // ── Breadcrumb data ──
+  const tNav = await getTranslations('nav');
+  const mosaicoConfig = getFilterConfig('prodotto_mosaico');
+  const mosaicoBasePath = mosaicoConfig?.basePaths[locale] ?? mosaicoConfig?.basePaths.it ?? 'mosaico';
+  const breadcrumbSegments: BreadcrumbSegment[] = [
+    { label: tNav('mosaico'), href: `/${locale}/${mosaicoBasePath}` },
+    ...(collezione
+      ? [{ label: collezione, href: collectionHref ?? '#' }]
+      : []),
+  ];
+
   // ── Gallery Block data ──
   const galleryImages: ProductGalleryImage[] = gallery
     .map((img) => {
@@ -306,11 +319,12 @@ export default async function ProdottoMosaico({
     .filter((img): img is ProductGalleryImage => img !== null);
 
   return (
-    <article className="flex flex-col gap-(--spacing-section) pt-(--spacing-navbar) pb-(--spacing-section)">
+    <article className="flex flex-col gap-(--spacing-section) pb-(--spacing-section)">
       {/* ── Hero Block ── */}
       <DevBlockOverlay name="SpecProductHero" status="ds">
         <SpecProductHero
           title={title ?? typedNode.title ?? ''}
+          breadcrumbSegments={breadcrumbSegments}
           collection={collezione}
           collectionHref={collectionHref}
           description={body ? sanitizeHtml(body) : undefined}

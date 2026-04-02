@@ -641,7 +641,7 @@ export default async function SlugPage({
           const legacyNode = arredoToLegacyNode(product, locale);
           // Inject finiture page href so ProdottoArredo can render the "Vedi finiture" link
           legacyNode._finitureHref = `/${locale}/${slug.join('/')}/finiture`;
-          return <ProdottoArredo node={legacyNode} />;
+          return <ProdottoArredo node={legacyNode} slug={slug} />;
         }
       }
       if (resolved.bundle === 'prodotto_illuminazione') {

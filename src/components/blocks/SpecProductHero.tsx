@@ -4,6 +4,10 @@ import * as React from 'react';
 import Link from 'next/link';
 import { Typography } from '@/components/composed/Typography';
 import {
+  SmartBreadcrumb,
+  type BreadcrumbSegment,
+} from '@/components/composed/SmartBreadcrumb';
+import {
   ProductCarousel,
   type ProductCarouselSlide,
 } from '@/components/composed/ProductCarousel';
@@ -15,6 +19,7 @@ import type { SampleCartItem } from '@/domain/sample-cart/types';
 
 export interface SpecProductHeroProps {
   title: string;
+  breadcrumbSegments?: BreadcrumbSegment[];
   collection?: string;
   collectionHref?: string;
   description?: string;
@@ -35,6 +40,7 @@ export interface SpecProductHeroProps {
 
 export function SpecProductHero({
   title,
+  breadcrumbSegments,
   collection,
   collectionHref,
   description,
@@ -89,7 +95,10 @@ export function SpecProductHero({
 
   return (
     <>
-      <section className="max-w-main mx-auto px-(--spacing-page)">
+      <section className="max-w-main mx-auto px-(--spacing-page) pt-(--spacing-navbar) flex flex-col gap-2">
+        {breadcrumbSegments && breadcrumbSegments.length > 0 && (
+          <SmartBreadcrumb segments={breadcrumbSegments} />
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-(--spacing-content) md:gap-(--spacing-section)">
           {/* Title + Collection — first on mobile */}
           <div className="flex flex-col gap-1 md:hidden">
