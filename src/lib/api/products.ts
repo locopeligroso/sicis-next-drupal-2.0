@@ -130,7 +130,7 @@ function normalizeProduct(item: RestProductCard): ProductCard {
  *
  * @returns `{ products: ProductCard[], total: number }` — same shape as before
  */
-export const fetchProducts = cache(
+export const fetchProductsPaginated = cache(
   async (options: FetchProductsOptions): Promise<ProductsResult> => {
     const {
       productType,

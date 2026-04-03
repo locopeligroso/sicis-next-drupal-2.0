@@ -35,11 +35,11 @@ vi.mock('@/lib/api/client', async (importOriginal) => {
 // ── Imports after mocks ───────────────────────────────────────────────────────
 
 // normalizeProduct and filtersToQueryParams are not exported; we test them
-// indirectly via fetchProducts (which calls both internally) and through the
+// indirectly via fetchProductsPaginated (which calls both internally) and through the
 // exported getCategoriaProductType.
-// For white-box coverage we use fetchProducts with a mocked apiGet response.
+// For white-box coverage we use fetchProductsPaginated with a mocked apiGet response.
 
-import { fetchProducts, getCategoriaProductType } from '../products';
+import { fetchProductsPaginated, getCategoriaProductType } from '../products';
 import { apiGet } from '@/lib/api/client';
 import type { FilterDefinition } from '@/domain/filters/search-params';
 import type {
@@ -86,7 +86,7 @@ describe('normalizeProduct — type prefix', () => {
     mockApiGet.mockResolvedValue(
       makePaginatedResponse([makeRestCard({ type: 'prodotto_mosaico' })]),
     );
-    const { products } = await fetchProducts({
+    const { products } = await fetchProductsPaginated({
       productType: 'prodotto_mosaico',
     });
     expect(products[0].type).toBe('node--prodotto_mosaico');
@@ -96,7 +96,7 @@ describe('normalizeProduct — type prefix', () => {
     mockApiGet.mockResolvedValue(
       makePaginatedResponse([makeRestCard({ type: 'node--prodotto_vetrite' })]),
     );
-    const { products } = await fetchProducts({
+    const { products } = await fetchProductsPaginated({
       productType: 'prodotto_mosaico',
     });
     expect(products[0].type).toBe('node--prodotto_vetrite');
@@ -110,7 +110,7 @@ describe('normalizeProduct — priceOnDemand casting', () => {
     mockApiGet.mockResolvedValue(
       makePaginatedResponse([makeRestCard({ priceOnDemand: '0' })]),
     );
-    const { products } = await fetchProducts({
+    const { products } = await fetchProductsPaginated({
       productType: 'prodotto_mosaico',
     });
     expect(products[0].priceOnDemand).toBe(false);
@@ -120,7 +120,7 @@ describe('normalizeProduct — priceOnDemand casting', () => {
     mockApiGet.mockResolvedValue(
       makePaginatedResponse([makeRestCard({ priceOnDemand: '1' })]),
     );
-    const { products } = await fetchProducts({
+    const { products } = await fetchProductsPaginated({
       productType: 'prodotto_mosaico',
     });
     expect(products[0].priceOnDemand).toBe(true);
@@ -132,7 +132,7 @@ describe('normalizeProduct — priceOnDemand casting', () => {
         makeRestCard({ priceOnDemand: true as unknown as string }),
       ]),
     );
-    const { products } = await fetchProducts({
+    const { products } = await fetchProductsPaginated({
       productType: 'prodotto_mosaico',
     });
     expect(products[0].priceOnDemand).toBe(true);
@@ -144,7 +144,7 @@ describe('normalizeProduct — priceOnDemand casting', () => {
         makeRestCard({ priceOnDemand: false as unknown as string }),
       ]),
     );
-    const { products } = await fetchProducts({
+    const { products } = await fetchProductsPaginated({
       productType: 'prodotto_mosaico',
     });
     expect(products[0].priceOnDemand).toBe(false);
@@ -156,7 +156,7 @@ describe('normalizeProduct — priceOnDemand casting', () => {
         makeRestCard({ priceOnDemand: null as unknown as string }),
       ]),
     );
-    const { products } = await fetchProducts({
+    const { products } = await fetchProductsPaginated({
       productType: 'prodotto_mosaico',
     });
     expect(products[0].priceOnDemand).toBe(false);
@@ -170,7 +170,7 @@ describe('normalizeProduct — emptyToNull for imageUrl', () => {
     mockApiGet.mockResolvedValue(
       makePaginatedResponse([makeRestCard({ imageUrl: '' })]),
     );
-    const { products } = await fetchProducts({
+    const { products } = await fetchProductsPaginated({
       productType: 'prodotto_mosaico',
     });
     expect(products[0].imageUrl).toBeNull();
@@ -181,7 +181,7 @@ describe('normalizeProduct — emptyToNull for imageUrl', () => {
     mockApiGet.mockResolvedValue(
       makePaginatedResponse([makeRestCard({ imageUrl: previewUrl })]),
     );
-    const { products } = await fetchProducts({
+    const { products } = await fetchProductsPaginated({
       productType: 'prodotto_mosaico',
     });
     expect(products[0].imageUrl).toBe(previewUrl);
@@ -197,7 +197,7 @@ describe('normalizeProduct — path stripping', () => {
         makeRestCard({ path: 'https://drupal.example.com/it/mosaico/product' }),
       ]),
     );
-    const { products } = await fetchProducts({
+    const { products } = await fetchProductsPaginated({
       productType: 'prodotto_mosaico',
     });
     expect(products[0].path).toBe('/mosaico/product');
@@ -209,7 +209,7 @@ describe('normalizeProduct — path stripping', () => {
         makeRestCard({ path: 'https://drupal.example.com/fr/mosaico/product' }),
       ]),
     );
-    const { products } = await fetchProducts({
+    const { products } = await fetchProductsPaginated({
       productType: 'prodotto_mosaico',
       locale: 'fr',
     });
@@ -220,29 +220,34 @@ describe('normalizeProduct — path stripping', () => {
     mockApiGet.mockResolvedValue(
       makePaginatedResponse([makeRestCard({ path: '/mosaico/product' })]),
     );
-    const { products } = await fetchProducts({
+    const { products } = await fetchProductsPaginated({
       productType: 'prodotto_mosaico',
     });
     expect(products[0].path).toBe('/mosaico/product');
   });
 });
 
-// ── fetchProducts: apiGet returns null ────────────────────────────────────────
+// ── fetchProductsPaginated: apiGet returns null ────────────────────────────────────────
 
-describe('fetchProducts — null response', () => {
+describe('fetchProductsPaginated — null response', () => {
   it('returns empty products and total 0 when apiGet returns null', async () => {
     mockApiGet.mockResolvedValue(null);
-    const result = await fetchProducts({ productType: 'prodotto_mosaico' });
+    const result = await fetchProductsPaginated({
+      productType: 'prodotto_mosaico',
+    });
     expect(result).toEqual({ products: [], total: 0 });
   });
 });
 
-// ── fetchProducts: URL and params construction ────────────────────────────────
+// ── fetchProductsPaginated: URL and params construction ────────────────────────────────
 
-describe('fetchProducts — URL construction', () => {
+describe('fetchProductsPaginated — URL construction', () => {
   it('builds correct URL with locale and productType', async () => {
     mockApiGet.mockResolvedValue(makePaginatedResponse([]));
-    await fetchProducts({ productType: 'prodotto_mosaico', locale: 'en' });
+    await fetchProductsPaginated({
+      productType: 'prodotto_mosaico',
+      locale: 'en',
+    });
     expect(mockApiGet).toHaveBeenCalledWith(
       '/en/products/prodotto_mosaico',
       expect.objectContaining({ items_per_page: 24, page: 0 }),
@@ -252,7 +257,7 @@ describe('fetchProducts — URL construction', () => {
 
   it('defaults to locale "it" when not specified', async () => {
     mockApiGet.mockResolvedValue(makePaginatedResponse([]));
-    await fetchProducts({ productType: 'prodotto_mosaico' });
+    await fetchProductsPaginated({ productType: 'prodotto_mosaico' });
     expect(mockApiGet).toHaveBeenCalledWith(
       '/it/products/prodotto_mosaico',
       expect.any(Object),
@@ -262,13 +267,16 @@ describe('fetchProducts — URL construction', () => {
 
   it('passes sort param when provided', async () => {
     mockApiGet.mockResolvedValue(makePaginatedResponse([]));
-    await fetchProducts({ productType: 'prodotto_mosaico', sort: '-title' });
+    await fetchProductsPaginated({
+      productType: 'prodotto_mosaico',
+      sort: '-title',
+    });
     const callArgs = mockApiGet.mock.calls[0][1] as Record<string, unknown>;
     expect(callArgs.sort).toBe('-title');
   });
 });
 
-// ── filtersToQueryParams (via fetchProducts) ──────────────────────────────────
+// ── filtersToQueryParams (via fetchProductsPaginated) ──────────────────────────────────
 
 describe('filtersToQueryParams — field mapping', () => {
   it('maps field_collezione.name → collection', async () => {
@@ -276,7 +284,7 @@ describe('filtersToQueryParams — field mapping', () => {
     const filters: FilterDefinition[] = [
       { field: 'field_collezione.name', value: 'Murano', operator: '=' },
     ];
-    await fetchProducts({ productType: 'prodotto_mosaico', filters });
+    await fetchProductsPaginated({ productType: 'prodotto_mosaico', filters });
     const callArgs = mockApiGet.mock.calls[0][1] as Record<string, unknown>;
     expect(callArgs.collection).toBe('Murano');
   });
@@ -286,7 +294,7 @@ describe('filtersToQueryParams — field mapping', () => {
     const filters: FilterDefinition[] = [
       { field: 'field_colori.name', value: 'Grigio', operator: '=' },
     ];
-    await fetchProducts({ productType: 'prodotto_mosaico', filters });
+    await fetchProductsPaginated({ productType: 'prodotto_mosaico', filters });
     const callArgs = mockApiGet.mock.calls[0][1] as Record<string, unknown>;
     expect(callArgs.color).toBe('Grigio');
   });
@@ -296,7 +304,7 @@ describe('filtersToQueryParams — field mapping', () => {
     const filters: FilterDefinition[] = [
       { field: 'field_forma.name', value: 'Hexagon', operator: '=' },
     ];
-    await fetchProducts({ productType: 'prodotto_mosaico', filters });
+    await fetchProductsPaginated({ productType: 'prodotto_mosaico', filters });
     const callArgs = mockApiGet.mock.calls[0][1] as Record<string, unknown>;
     expect(callArgs.shape).toBe('Hexagon');
   });
@@ -306,7 +314,7 @@ describe('filtersToQueryParams — field mapping', () => {
     const filters: FilterDefinition[] = [
       { field: 'field_finitura.name', value: 'Polished', operator: '=' },
     ];
-    await fetchProducts({ productType: 'prodotto_mosaico', filters });
+    await fetchProductsPaginated({ productType: 'prodotto_mosaico', filters });
     const callArgs = mockApiGet.mock.calls[0][1] as Record<string, unknown>;
     expect(callArgs.finish).toBe('Polished');
   });
@@ -316,7 +324,7 @@ describe('filtersToQueryParams — field mapping', () => {
     const filters: FilterDefinition[] = [
       { field: 'field_stucco.name', value: 'Bianco', operator: '=' },
     ];
-    await fetchProducts({ productType: 'prodotto_mosaico', filters });
+    await fetchProductsPaginated({ productType: 'prodotto_mosaico', filters });
     const callArgs = mockApiGet.mock.calls[0][1] as Record<string, unknown>;
     expect(callArgs.grout).toBe('Bianco');
   });
@@ -326,7 +334,7 @@ describe('filtersToQueryParams — field mapping', () => {
     const filters: FilterDefinition[] = [
       { field: 'field_texture.name', value: 'Matte', operator: '=' },
     ];
-    await fetchProducts({ productType: 'prodotto_vetrite', filters });
+    await fetchProductsPaginated({ productType: 'prodotto_vetrite', filters });
     const callArgs = mockApiGet.mock.calls[0][1] as Record<string, unknown>;
     expect(callArgs.texture).toBe('Matte');
   });
@@ -336,7 +344,7 @@ describe('filtersToQueryParams — field mapping', () => {
     const filters: FilterDefinition[] = [
       { field: 'field_tessuto.name', value: 'Velvet', operator: '=' },
     ];
-    await fetchProducts({ productType: 'prodotto_arredo', filters });
+    await fetchProductsPaginated({ productType: 'prodotto_arredo', filters });
     const callArgs = mockApiGet.mock.calls[0][1] as Record<string, unknown>;
     expect(callArgs.fabric).toBe('Velvet');
   });
@@ -346,7 +354,7 @@ describe('filtersToQueryParams — field mapping', () => {
     const filters: FilterDefinition[] = [
       { field: 'field_categoria.title', value: 'Sedute', operator: '=' },
     ];
-    await fetchProducts({ productType: 'prodotto_arredo', filters });
+    await fetchProductsPaginated({ productType: 'prodotto_arredo', filters });
     const callArgs = mockApiGet.mock.calls[0][1] as Record<string, unknown>;
     expect(callArgs.category).toBe('Sedute');
   });
@@ -356,7 +364,7 @@ describe('filtersToQueryParams — field mapping', () => {
     const filters: FilterDefinition[] = [
       { field: 'field_tipologia.name', value: 'Runner', operator: '=' },
     ];
-    await fetchProducts({ productType: 'prodotto_tessuto', filters });
+    await fetchProductsPaginated({ productType: 'prodotto_tessuto', filters });
     const callArgs = mockApiGet.mock.calls[0][1] as Record<string, unknown>;
     expect(callArgs.type).toBe('Runner');
   });
@@ -366,7 +374,7 @@ describe('filtersToQueryParams — field mapping', () => {
     const filters: FilterDefinition[] = [
       { field: 'field_colore.name', value: 'Rosso', operator: '=' },
     ];
-    await fetchProducts({ productType: 'prodotto_tessuto', filters });
+    await fetchProductsPaginated({ productType: 'prodotto_tessuto', filters });
     const callArgs = mockApiGet.mock.calls[0][1] as Record<string, unknown>;
     expect(callArgs.color).toBe('Rosso');
   });
@@ -380,7 +388,7 @@ describe('filtersToQueryParams — field mapping', () => {
         operator: 'IN',
       },
     ];
-    await fetchProducts({ productType: 'prodotto_mosaico', filters });
+    await fetchProductsPaginated({ productType: 'prodotto_mosaico', filters });
     const callArgs = mockApiGet.mock.calls[0][1] as Record<string, unknown>;
     expect(callArgs.shape).toBe('Hexagon,Square,Round');
   });
@@ -391,7 +399,7 @@ describe('filtersToQueryParams — field mapping', () => {
       { field: 'field_collezione.name', value: 'Murano', operator: '=' },
       { field: 'field_colori.name', value: 'Grigio', operator: '=' },
     ];
-    await fetchProducts({ productType: 'prodotto_mosaico', filters });
+    await fetchProductsPaginated({ productType: 'prodotto_mosaico', filters });
     const callArgs = mockApiGet.mock.calls[0][1] as Record<string, unknown>;
     expect(callArgs.collection).toBe('Murano');
     expect(callArgs.color).toBe('Grigio');
@@ -403,7 +411,7 @@ describe('filtersToQueryParams — field mapping', () => {
     const filters: FilterDefinition[] = [
       { field: 'field_unknown_field.name', value: 'SomeValue', operator: '=' },
     ];
-    await fetchProducts({ productType: 'prodotto_mosaico', filters });
+    await fetchProductsPaginated({ productType: 'prodotto_mosaico', filters });
     const callArgs = mockApiGet.mock.calls[0][1] as Record<string, unknown>;
     // Unknown field must not appear in params
     expect(callArgs).not.toHaveProperty('field_unknown_field.name');

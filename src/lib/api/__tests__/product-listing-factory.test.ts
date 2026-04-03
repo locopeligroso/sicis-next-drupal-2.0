@@ -137,9 +137,9 @@ describe('PRODUCT_LISTING_CONFIGS', () => {
     );
   });
 
-  it('prodotto_vetrite uses field_immagine_anteprima (preview image)', () => {
+  it('prodotto_vetrite uses field_immagine (full image)', () => {
     expect(PRODUCT_LISTING_CONFIGS.prodotto_vetrite.imageField).toBe(
-      'field_immagine_anteprima',
+      'field_immagine',
     );
   });
 
@@ -234,16 +234,18 @@ describe('fetchProductListing — unknown product type', () => {
 // ── fetchProductListing: null / non-array apiGet response ─────────────────────
 
 describe('fetchProductListing — apiGet returns null or non-array', () => {
-  it('returns empty result when apiGet returns null', async () => {
+  it('throws when apiGet returns null (ISR pattern — keeps last valid cache)', async () => {
     mockApiGet.mockResolvedValue(null);
-    const result = await fetchProductListing('prodotto_arredo', 'it');
-    expect(result).toEqual({ products: [], total: 0 });
+    await expect(fetchProductListing('prodotto_arredo', 'it')).rejects.toThrow(
+      '[product-listing]',
+    );
   });
 
-  it('returns empty result when apiGet returns a non-array (e.g. object)', async () => {
+  it('throws when apiGet returns a non-array (e.g. object)', async () => {
     mockApiGet.mockResolvedValue({ error: 'unexpected' } as unknown);
-    const result = await fetchProductListing('prodotto_arredo', 'it');
-    expect(result).toEqual({ products: [], total: 0 });
+    await expect(fetchProductListing('prodotto_arredo', 'it')).rejects.toThrow(
+      '[product-listing]',
+    );
   });
 });
 
@@ -403,10 +405,10 @@ describe('normalizer — ProductCard shape', () => {
   });
 });
 
-// ── Normalizer: vetrite uses field_immagine_anteprima ─────────────────────────
+// ── Normalizer: vetrite uses field_immagine ───────────────────────────────────
 
-describe('normalizer — vetrite imageField is anteprima', () => {
-  it('uses field_immagine_anteprima (not field_immagine) for vetrite', async () => {
+describe('normalizer — vetrite imageField is field_immagine', () => {
+  it('uses field_immagine (not field_immagine_anteprima) for vetrite', async () => {
     const mainImg = 'https://drupal.example.com/main.jpg';
     const previewImg = 'https://drupal.example.com/preview.jpg';
     mockApiGet.mockResolvedValue([
@@ -416,7 +418,7 @@ describe('normalizer — vetrite imageField is anteprima', () => {
       }),
     ]);
     const { products } = await fetchProductListing('prodotto_vetrite', 'it');
-    // Config says imageField: 'field_immagine_anteprima' for vetrite
-    expect(products[0].imageUrl).toBe(previewImg);
+    // Config says imageField: 'field_immagine' for vetrite
+    expect(products[0].imageUrl).toBe(mainImg);
   });
 });

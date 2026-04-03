@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### 2026-04-03
+
+#### Infra & security hardening
+
+- **Texture proxy SSRF fix**: `/api/texture` ora accetta solo URL da `DRUPAL_BASE_URL` e domini sicis.com/sicis-stage.com. Blocca protocolli non-http e origini sconosciute con 403.
+- **Form sanitization**: `info-generali` e `info-prodotto` route ora escapano HTML in tutti i campi utente (previene XSS in email), validano formato email, e impongono limiti lunghezza (500 char campi brevi, 2000 richiesta).
+- **BloccoE eliminato**: componente legacy orfano (191 righe, zero import).
+
+#### Data layer cleanup
+
+- **`resolveImageUrl()`**: nuova utility in `client.ts` — gestisce sia string URL che oggetti Drupal `{uri: {url}}` in un'unica funzione. Additive, nessun caller migrato ancora.
+- **`fetchProductsPaginated`**: rinominato da `fetchProducts` per distinguere dal factory (che carica tutto). 2 caller aggiornati.
+- **Vetrite cross-filtering baseCount**: stessa logica dual-count di mosaico. Quando finitura P1 attiva, doppia chiamata count (con/senza P1). `baseCount=0` → hidden, `count=0` + `baseCount>0` → dimmed.
+
+#### Vetrite product card — fix image stretching
+
+- **ProductListingTemplate**: vetrite usa `object-contain` per le card prodotto (come illuminazione/arredo). Immagini quadrate non vengono più stretchate nel container 1:2.
+
+#### Test fixes
+
+- Aggiornati 6 test stale: registry vetrite ora include finish P1, factory vetrite usa `field_immagine`, empty response testa il throw ISR.
+- **32 nuovi test e2e** (`filters-mosaic-vetrite.spec.ts`): hub + collection + filtri P0/P1 + cross-filtering + persistenza locale /us/ per mosaico e vetrite in IT/EN/US/FR/DE/ES.
+
 ### 2026-04-02
 
 #### Cross-filtering US stock + baseCount hide/dim

@@ -1,6 +1,6 @@
 'use server';
 
-import { fetchProducts, type ProductCard } from '@/lib/api/products';
+import { fetchProductsPaginated, type ProductCard } from '@/lib/api/products';
 import type { FilterDefinition } from '@/domain/filters/search-params';
 
 export async function loadMoreProducts(
@@ -11,7 +11,7 @@ export async function loadMoreProducts(
   pageSize: number,
   locale: string,
 ): Promise<{ products: ProductCard[]; hasMore: boolean }> {
-  const { products, total } = await fetchProducts({
+  const { products, total } = await fetchProductsPaginated({
     productType,
     locale,
     limit: pageSize,

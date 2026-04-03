@@ -101,7 +101,10 @@ const CATEGORY_TYPES = [
   'prodotto_tessuto',
 ] as const;
 
-const CATEGORY_LABEL_KEYS: Record<string, { ns: 'nav' | 'products'; key: string }> = {
+const CATEGORY_LABEL_KEYS: Record<
+  string,
+  { ns: 'nav' | 'products'; key: string }
+> = {
   prodotto_mosaico: { ns: 'nav', key: 'mosaico' },
   prodotto_vetrite: { ns: 'nav', key: 'vetrite' },
   prodotto_arredo: { ns: 'nav', key: 'arredo' },
@@ -225,7 +228,11 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
     return (
       <div className="flex flex-col gap-(--spacing-section) pb-(--spacing-section)">
         <DevBlockOverlay name="SpecListingHeader" status="ds">
-          <SpecListingHeader title={title} description={description} breadcrumbSegments={baseSegments} />
+          <SpecListingHeader
+            title={title}
+            description={description}
+            breadcrumbSegments={baseSegments}
+          />
         </DevBlockOverlay>
         {isMosaicoOrVetrite ? (
           <DevBlockOverlay name="SpecHubSurfaces" status="ds">
@@ -297,23 +304,28 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
         </DevBlockOverlay>
       )}
       {/* Content — offset by sidebar width when panel present */}
-      <main className={`min-w-0 max-w-listing mx-auto px-(--spacing-page) ${hasFilterPanel ? 'md:ml-[300px]' : ''}`}>
+      <main
+        className={`min-w-0 max-w-listing mx-auto px-(--spacing-page) ${hasFilterPanel ? 'md:ml-[300px]' : ''}`}
+      >
         <SmartBreadcrumb
           segments={[
             ...baseSegments,
             ...(title !== getCategoryLabel(productType)
-              ? [{
-                  label: title,
-                  href: basePath,
-                  siblings: activePathFilterKey && filterOptions[activePathFilterKey]
-                    ? filterOptions[activePathFilterKey]
-                        .filter((o) => !o.parentId)
-                        .map((o) => ({
-                          label: o.label,
-                          href: `${getCategoryHref(productType)}/${o.slug}`,
-                        }))
-                    : undefined,
-                }]
+              ? [
+                  {
+                    label: title,
+                    href: basePath,
+                    siblings:
+                      activePathFilterKey && filterOptions[activePathFilterKey]
+                        ? filterOptions[activePathFilterKey]
+                            .filter((o) => !o.parentId)
+                            .map((o) => ({
+                              label: o.label,
+                              href: `${getCategoryHref(productType)}/${o.slug}`,
+                            }))
+                        : undefined,
+                  },
+                ]
               : []),
           ]}
         />
@@ -346,7 +358,8 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
             productCardRatio={listingConfig.productCardRatio}
             imageFit={
               productType === 'prodotto_illuminazione' ||
-              productType === 'prodotto_arredo'
+              productType === 'prodotto_arredo' ||
+              productType === 'prodotto_vetrite'
                 ? 'contain'
                 : 'cover'
             }

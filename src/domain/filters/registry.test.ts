@@ -162,11 +162,11 @@ describe('FILTER_REGISTRY completeness', () => {
 });
 
 describe('filter removal — unused P1/P2 filters', () => {
-  it('prodotto_vetrite has ONLY collection and color filters', () => {
+  it('prodotto_vetrite has collection, color, and finish filters', () => {
     const config = getFilterConfig('prodotto_vetrite')!;
     const keys = Object.keys(config.filters);
-    expect(keys).toEqual(['collection', 'color']);
-    expect(config.filters).not.toHaveProperty('finish');
+    expect(keys).toEqual(['collection', 'color', 'finish']);
+    expect(config.filters.finish.priority).toBe('P1');
     expect(config.filters).not.toHaveProperty('texture');
   });
 
@@ -192,10 +192,12 @@ describe('filter removal — unused P1/P2 filters', () => {
     expect(config.filters).not.toHaveProperty('grout');
   });
 
-  it('prodotto_tessuto retains ALL its filters including tipologia', () => {
+  it('prodotto_tessuto has category and type filters', () => {
     const config = getFilterConfig('prodotto_tessuto')!;
     const keys = Object.keys(config.filters);
     expect(keys).toEqual(['category', 'type', 'tipologia']);
+    expect(config.filters.type.queryKey).toBe('type');
+    expect(config.filters.type.priority).toBe('P1');
     expect(config.filters.tipologia.queryKey).toBe('tipologia');
     expect(config.filters.tipologia.priority).toBe('P1');
   });

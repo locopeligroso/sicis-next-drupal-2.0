@@ -5,13 +5,65 @@ import { NextRequest, NextResponse } from 'next/server';
  * with same-origin to avoid CORS issues with WebGL TextureLoader.
  *
  * Usage: /api/texture?url=<encoded-drupal-image-url>
+ *
+ * Only URLs from allowed origins are proxied (DRUPAL_BASE_URL, sicis.com,
+ * sicis-stage.com). All other origins receive 403.
  */
+
+const ALLOWED_HOSTNAMES = new Set([
+  'sicis.com',
+  'www.sicis.com',
+  'sicis-stage.com',
+  'www.sicis-stage.com',
+]);
+
+function isAllowedUrl(rawUrl: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    return false;
+  }
+
+  // Must be http or https
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return false;
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+
+  // Check static allowlist
+  if (ALLOWED_HOSTNAMES.has(hostname)) return true;
+
+  // Check DRUPAL_BASE_URL origin at runtime (supports both public and
+  // server-side env var names)
+  const drupalBase =
+    process.env.DRUPAL_BASE_URL ?? process.env.NEXT_PUBLIC_DRUPAL_BASE_URL;
+  if (drupalBase) {
+    try {
+      const drupalHostname = new URL(drupalBase).hostname.toLowerCase();
+      if (hostname === drupalHostname) return true;
+    } catch {
+      // malformed env var — ignore
+    }
+  }
+
+  return false;
+}
+
 export async function GET(request: NextRequest) {
   const url = request.nextUrl.searchParams.get('url');
   if (!url) {
     return NextResponse.json(
       { error: 'Missing url parameter' },
       { status: 400 },
+    );
+  }
+
+  if (!isAllowedUrl(url)) {
+    return NextResponse.json(
+      { error: 'URL origin not allowed' },
+      { status: 403 },
     );
   }
 

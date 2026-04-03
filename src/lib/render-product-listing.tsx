@@ -606,37 +606,79 @@ async function _fetchListingData(
       const { fetchVetriteProductCounts } =
         await import('@/lib/api/vetrite-hub');
 
-      // Vetrite has no collection groups (no NeoColibrì/Neoglass equivalent),
-      // so counts are always fetched in a single request.
-      const counts = await fetchVetriteProductCounts(
-        locale,
-        effectiveCollectionTid ?? 'all',
-        effectiveColorTid,
-        finishTid,
-      );
+      // Fetch two sets of counts in parallel when a P1 filter (finish) is active:
+      // 1. `counts` — with ALL active filters (P0 + P1) → used for P1 filter counts
+      // 2. `baseCounts` — with only P0 filters (no finish) → used as baseCount
+      //    to distinguish "collection doesn't exist for this color" (baseCount=0 → hide)
+      //    from "collection exists but no products with this finish" (baseCount>0, count=0 → dim)
+      const hasP1Filters = finishTid != null;
+
+      const [counts, baseCounts] = await Promise.all([
+        fetchVetriteProductCounts(
+          locale,
+          effectiveCollectionTid ?? 'all',
+          effectiveColorTid,
+          finishTid,
+        ),
+        hasP1Filters
+          ? fetchVetriteProductCounts(
+              locale,
+              effectiveCollectionTid ?? 'all',
+              effectiveColorTid,
+              undefined,
+            )
+          : null,
+      ]);
 
       // Helper: merge counts into filter options.
       // Matches by TID (opt.id) first, then falls back to name (opt.label)
       // because collections/colors hub endpoints don't include TID.
+      // When baseCountItems is provided, sets baseCount (P0-only count) so the UI
+      // can distinguish "doesn't exist" (baseCount=0 → hide) from "filtered out
+      // by P1" (baseCount>0, count=0 → dim).
       const mergeCounts = (
         options: FilterOption[] | undefined,
         countItems: { tid: number; name: string; count: number }[],
+        baseCountItems?: { tid: number; name: string; count: number }[],
       ): FilterOption[] | undefined => {
         if (!options || countItems.length === 0) return options;
         const byTid = new Map(countItems.map((c) => [String(c.tid), c.count]));
         const byName = new Map(countItems.map((c) => [c.name, c.count]));
-        return options.map((opt) => ({
-          ...opt,
-          count: byTid.get(opt.id ?? '') ?? byName.get(opt.label) ?? 0,
-        }));
+        const baseTid = baseCountItems
+          ? new Map(baseCountItems.map((c) => [String(c.tid), c.count]))
+          : null;
+        const baseName = baseCountItems
+          ? new Map(baseCountItems.map((c) => [c.name, c.count]))
+          : null;
+        return options.map((opt) => {
+          const count = byTid.get(opt.id ?? '') ?? byName.get(opt.label) ?? 0;
+          return {
+            ...opt,
+            count,
+            // When no P1 is active, baseCount = count (same thing — no P1 distinction).
+            // This ensures hideZeroCount hides count=0 options instead of dimming them.
+            baseCount: baseTid
+              ? (baseTid.get(opt.id ?? '') ?? baseName?.get(opt.label) ?? 0)
+              : count,
+          };
+        });
       };
 
-      const mergedFinish = mergeCounts(filterOptions.finish, counts.finishes);
+      const mergedFinish = mergeCounts(
+        filterOptions.finish,
+        counts.finishes,
+        baseCounts?.finishes,
+      );
       const mergedCollection = mergeCounts(
         filterOptions.collection,
         counts.collections,
+        baseCounts?.collections,
       );
-      const mergedColor = mergeCounts(filterOptions.color, counts.colors);
+      const mergedColor = mergeCounts(
+        filterOptions.color,
+        counts.colors,
+        baseCounts?.colors,
+      );
       if (mergedFinish) filterOptions.finish = mergedFinish;
       if (mergedCollection) filterOptions.collection = mergedCollection;
       if (mergedColor) filterOptions.color = mergedColor;
