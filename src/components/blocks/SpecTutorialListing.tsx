@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import Link from 'next/link';
 
 import { Typography } from '@/components/composed/Typography';
@@ -78,21 +77,23 @@ function TutorialCardItem({
 }) {
   const href = tutorial.path ? `/${locale}${tutorial.path}` : null;
 
-  // Resolve thumbnail: YouTube hqdefault > imageUrl > null (placeholder)
-  const thumbnailSrc = tutorial.videoId
-    ? `https://img.youtube.com/vi/${tutorial.videoId}/hqdefault.jpg`
-    : (tutorial.imageUrl ?? null);
+  // Resolve thumbnail: Drupal image > YouTube hqdefault > null
+  const thumbnailSrc =
+    tutorial.imageUrl ??
+    (tutorial.videoId
+      ? `https://img.youtube.com/vi/${tutorial.videoId}/hqdefault.jpg`
+      : null);
 
   const inner = (
     <article>
       <div className="relative aspect-video overflow-hidden rounded-lg bg-muted">
         {thumbnailSrc ? (
-          <Image
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
             src={thumbnailSrc}
             alt={tutorial.title}
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
