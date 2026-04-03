@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { ClientFilterProvider, ClientFilteredGrid } from '@/components/composed/ClientFilteredListing';
 import { DevBlockOverlay } from '@/components/composed/DevBlockOverlay';
 import { SmartBreadcrumb } from '@/components/composed/SmartBreadcrumb';
 import type { BreadcrumbSegment } from '@/components/composed/SmartBreadcrumb';
@@ -326,8 +327,15 @@ export async function ProductListingTemplate(
   }
 
   // ── Listing modes: context-bar or airy-header ─────────────────────────
-  return (
-    <div>
+  const imageFit =
+    productType === 'prodotto_illuminazione' ||
+    productType === 'prodotto_arredo' ||
+    productType === 'prodotto_vetrite'
+      ? 'contain' as const
+      : 'cover' as const;
+
+  const listingContent = (
+    <>
       {/* Panel — fixed to left edge */}
       {hasFilterPanel && (
         <DevBlockOverlay name="SpecFilterSidebar" status="ds">
@@ -387,43 +395,64 @@ export async function ProductListingTemplate(
             productCount={total}
           />
         )}
-        <Suspense
-          fallback={
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 py-8">
-              {Array.from({ length: 12 }).map((_, i) => (
-                <div key={i} className="flex flex-col gap-2">
-                  <div className="aspect-square bg-muted animate-pulse rounded-lg" />
-                  <div className="h-4 w-3/4 bg-muted animate-pulse rounded" />
-                  <div className="h-3 w-1/2 bg-muted animate-pulse rounded" />
-                </div>
-              ))}
-            </div>
-          }
-        >
-          <DevBlockOverlay name="SpecProductListing" status="ds">
-            <SpecProductListing
-              products={products ?? []}
-              total={total ?? 0}
-              currentSort={currentSort ?? ''}
-              productType={productType}
-              activeFilters={filterDefinitions}
-              pageSize={listingConfig.pageSize}
-              locale={locale}
-              basePath={basePath}
-              productCardRatio={listingConfig.productCardRatio}
-              imageFit={
-                productType === 'prodotto_illuminazione' ||
-                productType === 'prodotto_arredo' ||
-                productType === 'prodotto_vetrite'
-                  ? 'contain'
-                  : 'cover'
-              }
-              allProducts={allProducts}
-              activeCollectionSlug={activeCollectionSlug}
-            />
-          </DevBlockOverlay>
-        </Suspense>
+        {allProducts ? (
+          <ClientFilteredGrid
+            productCardRatio={listingConfig.productCardRatio}
+            imageFit={imageFit}
+          />
+        ) : (
+          <Suspense
+            fallback={
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 py-8">
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <div key={i} className="flex flex-col gap-2">
+                    <div className="aspect-square bg-muted animate-pulse rounded-lg" />
+                    <div className="h-4 w-3/4 bg-muted animate-pulse rounded" />
+                    <div className="h-3 w-1/2 bg-muted animate-pulse rounded" />
+                  </div>
+                ))}
+              </div>
+            }
+          >
+            <DevBlockOverlay name="SpecProductListing" status="ds">
+              <SpecProductListing
+                products={products ?? []}
+                total={total ?? 0}
+                currentSort={currentSort ?? ''}
+                productType={productType}
+                activeFilters={filterDefinitions}
+                pageSize={listingConfig.pageSize}
+                locale={locale}
+                basePath={basePath}
+                productCardRatio={listingConfig.productCardRatio}
+                imageFit={imageFit}
+              />
+            </DevBlockOverlay>
+          </Suspense>
+        )}
       </main>
-    </div>
+    </>
   );
+
+  // When allProducts is available (mosaico collection mode), wrap everything
+  // in ClientFilterProvider — it provides the context for sidebar to use
+  // client-side collection switching AND renders the filtered product grid.
+  if (allProducts) {
+    return (
+      <div>
+        <ClientFilterProvider
+          allProducts={allProducts}
+          activeCollectionSlug={activeCollectionSlug ?? null}
+          basePath={basePath}
+          locale={locale}
+          productCardRatio={listingConfig.productCardRatio}
+          imageFit={imageFit}
+        >
+          {listingContent}
+        </ClientFilterProvider>
+      </div>
+    );
+  }
+
+  return <div>{listingContent}</div>;
 }

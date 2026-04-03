@@ -6,6 +6,16 @@ All notable changes to this project will be documented in this file.
 
 ### 2026-04-03
 
+#### Client-side P0 collection filtering for mosaico
+
+- **`ClientFilteredListing`**: new client component — receives all ~640 mosaico products, filters by collection slug derived from product path. Collection switch is instant (no server round-trip).
+- **`ClientFilterContext`**: React context that bridges the filter sidebar with `ClientFilteredListing`. When `allProducts` is available, sidebar clicks bypass `router.push` and call client-side `navigateToCollection` instead.
+- **`render-product-listing.tsx`**: for mosaico with collection P0 active (no color), fetches `all/all` in parallel and passes full product set to client.
+- **`use-filter-sync.ts`**: all `router.push` calls wrapped in `startTransition` for non-blocking navigation. `isPending` exposed for future UI feedback.
+- **`ProductListingTemplate`**: `<Suspense>` boundary around `SpecProductListing` with skeleton fallback grid.
+- **`warmup.mjs`**: post-deploy cache warming script (`npm run warmup` quick 17 URLs, `npm run warmup:full` 29 URLs).
+- **Color P0** and P1 filters remain server-side. Only collection P0 is client-side.
+
 #### Cross-link images + listing routing fix
 
 - **`SpecHubCrossLinks`**: ora risolve `resolvePath` → `content/{nid}` → `field_immagine` per ogni cross-link. Immagini mostrate con `next/image` (era placeholder grigio).
