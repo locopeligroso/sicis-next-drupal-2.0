@@ -2,16 +2,18 @@
 // §5  Image URL helper
 // ════════════════════════════════════════════════════════════════════════════
 
+import { resolveImageUrl } from '@/lib/api/client';
+
 /**
- * Extract image URL from a deserialized Drupal file--file relationship.
+ * Extract image URL from any Drupal image field shape.
  *
- * The entity endpoint returns absolute URLs in uri.url — no origin prefix needed.
+ * Handles all formats:
+ *   - string: "https://...foto.jpg" (blocks endpoint, legacy)
+ *   - { url, width, height } (blocks endpoint, new Freddi format)
+ *   - { uri: { url } } (entity/content endpoint)
+ *
+ * Delegates to resolveImageUrl for unified handling.
  */
 export function getDrupalImageUrl(field: unknown): string | null {
-  if (!field || typeof field !== 'object') return null;
-  const f = field as Record<string, unknown>;
-  const uri = f.uri as Record<string, unknown> | undefined;
-  const url = uri?.url;
-  if (typeof url === 'string') return url;
-  return null;
+  return resolveImageUrl(field);
 }

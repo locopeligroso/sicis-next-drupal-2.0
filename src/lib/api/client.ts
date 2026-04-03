@@ -115,9 +115,71 @@ export function resolveImageUrl(raw: unknown): string | null {
       if (typeof uriUrl === 'string') return emptyToNull(uriUrl);
     }
 
-    // Pattern 3: { url: "..." }  — flat object variant
+    // Pattern 3: { url: "..." }  — flat object variant (also covers new { url, width, height })
     if (typeof obj.url === 'string') return emptyToNull(obj.url);
   }
 
   return null;
+}
+
+/**
+ * Resolved image with optional dimensions.
+ * When Drupal returns the new { url, width, height } format, all three are populated.
+ * When it returns the legacy string format, width and height are null.
+ */
+export interface ResolvedImage {
+  url: string;
+  width: number | null;
+  height: number | null;
+}
+
+/**
+ * Resolve a single Drupal image field to { url, width, height }.
+ * Handles both legacy string format and new { url, width, height } object format.
+ * Returns null when the field is empty or not recognisable as an image.
+ */
+export function resolveImage(raw: unknown): ResolvedImage | null {
+  if (raw == null) return null;
+
+  // Legacy: plain string URL
+  if (typeof raw === 'string') {
+    const url = emptyToNull(raw);
+    return url ? { url, width: null, height: null } : null;
+  }
+
+  if (typeof raw === 'object') {
+    const obj = raw as Record<string, unknown>;
+
+    // New format: { url: string, width: number, height: number }
+    if (typeof obj.url === 'string') {
+      const url = emptyToNull(obj.url);
+      if (!url) return null;
+      const width = typeof obj.width === 'number' ? obj.width : null;
+      const height = typeof obj.height === 'number' ? obj.height : null;
+      return { url, width, height };
+    }
+
+    // Legacy object: { uri: { url: string } }  — Drupal file--file relationship
+    const uri = obj.uri;
+    if (uri != null && typeof uri === 'object') {
+      const uriUrl = (uri as Record<string, unknown>).url;
+      if (typeof uriUrl === 'string') {
+        const url = emptyToNull(uriUrl);
+        return url ? { url, width: null, height: null } : null;
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Resolve an array of Drupal image fields.
+ * Filters out any entries that cannot be resolved.
+ */
+export function resolveImageArray(raw: unknown): ResolvedImage[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item: unknown) => resolveImage(item))
+    .filter((img): img is ResolvedImage => img !== null);
 }

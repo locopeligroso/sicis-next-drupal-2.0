@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { Typography } from '@/components/composed/Typography';
 import { ArrowLink } from '@/components/composed/ArrowLink';
 import { sanitizeHtml } from '@/lib/sanitize';
@@ -6,6 +7,8 @@ import { cn } from '@/lib/utils';
 export interface GenTestoImmagineBigProps {
   imageSrc: string;
   imageAlt: string;
+  imageWidth?: number | null;
+  imageHeight?: number | null;
   title?: string | null;
   bodyHtml?: string | null;
   linkHref?: string | null;
@@ -16,6 +19,8 @@ export interface GenTestoImmagineBigProps {
 export function GenTestoImmagineBig({
   imageSrc,
   imageAlt,
+  imageWidth,
+  imageHeight,
   title,
   bodyHtml,
   linkHref,
@@ -23,6 +28,7 @@ export function GenTestoImmagineBig({
   className,
 }: GenTestoImmagineBigProps) {
   const hasText = title || bodyHtml;
+  const hasDimensions = imageWidth != null && imageHeight != null;
 
   return (
     <section className={cn('flex flex-col gap-(--spacing-content)', className)}>
@@ -56,12 +62,22 @@ export function GenTestoImmagineBig({
       )}
 
       <div className="w-full overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={imageSrc}
-          alt={imageAlt}
-          className="w-full h-auto object-cover"
-        />
+        {hasDimensions ? (
+          <Image
+            src={imageSrc}
+            alt={imageAlt}
+            width={imageWidth}
+            height={imageHeight}
+            className="w-full h-auto object-cover"
+          />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={imageSrc}
+            alt={imageAlt}
+            className="w-full h-auto object-cover"
+          />
+        )}
       </div>
     </section>
   );

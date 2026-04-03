@@ -18,6 +18,7 @@ import { GenC } from '@/components/blocks/GenC';
 import { GenE } from '@/components/blocks/GenE';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { getDrupalImageUrl } from '@/lib/drupal/image';
+import { resolveImage } from '@/lib/api/client';
 import { DevBlockOverlay } from '@/components/composed/DevBlockOverlay';
 
 // ── Legacy blocks (remaining — not yet migrated to Gen*) ────────────────────
@@ -49,7 +50,7 @@ function adaptGenIntro(p: Record<string, unknown>, pageTitle?: string) {
   const subtitle =
     pageTitle ?? getTextValue(p.field_sopratitolo_approfondiment) ?? '';
   const bodyHtml = getProcessedText(p.field_testo);
-  const imageSrc = getDrupalImageUrl(p.field_immagine);
+  const resolvedImage = resolveImage(p.field_immagine);
   const imageAlt = (p.field_immagine as Record<string, unknown> | undefined)
     ?.meta
     ? (((
@@ -73,7 +74,9 @@ function adaptGenIntro(p: Record<string, unknown>, pageTitle?: string) {
       title={title}
       subtitle={subtitle}
       bodyHtml={bodyHtml}
-      imageSrc={imageSrc ?? undefined}
+      imageSrc={resolvedImage?.url ?? undefined}
+      imageWidth={resolvedImage?.width ?? null}
+      imageHeight={resolvedImage?.height ?? null}
       imageAlt={imageAlt}
       linkHref={linkHref}
       linkLabel={linkLabel}
@@ -92,8 +95,8 @@ function adaptGenVideo(p: Record<string, unknown>) {
 
 function adaptGenTestoImmagine(p: Record<string, unknown>) {
   const bodyHtml = getProcessedText(p.field_testo);
-  const imageSrc = getDrupalImageUrl(p.field_immagine);
-  if (!bodyHtml || !imageSrc) return null;
+  const resolvedImage = resolveImage(p.field_immagine);
+  if (!bodyHtml || !resolvedImage) return null;
 
   const imgMeta = (p.field_immagine as Record<string, unknown> | undefined)
     ?.meta as Record<string, unknown> | undefined;
@@ -120,7 +123,9 @@ function adaptGenTestoImmagine(p: Record<string, unknown>) {
   return (
     <GenTestoImmagine
       bodyHtml={bodyHtml}
-      imageSrc={imageSrc}
+      imageSrc={resolvedImage.url}
+      imageWidth={resolvedImage.width}
+      imageHeight={resolvedImage.height}
       imageAlt={imageAlt}
       title={title}
       layout={layout}
@@ -135,17 +140,18 @@ function adaptGenGallery(p: Record<string, unknown>) {
     (p.field_slide as Array<Record<string, unknown>> | undefined) ?? [];
   const slides: GenGallerySlide[] = slideData
     .map((slide) => {
-      const src = getDrupalImageUrl(slide.field_immagine);
-      if (!src) return null;
+      const resolved = resolveImage(slide.field_immagine);
+      if (!resolved) return null;
       const img = slide.field_immagine as Record<string, unknown> | undefined;
       const meta = img?.meta as Record<string, unknown> | undefined;
       const alt = (meta?.alt as string) ?? '';
-      const width = meta?.width as number | undefined;
-      const height = meta?.height as number | undefined;
+      // Prefer dimensions from new format; fall back to meta dimensions
+      const width = resolved.width ?? (meta?.width as number | undefined);
+      const height = resolved.height ?? (meta?.height as number | undefined);
       // Use alt text as caption when available; skip filename fallback
       // (blocks/{nid} returns images without alt — filename makes ugly captions)
       const caption = alt || null;
-      return { src, alt: alt || '', caption, width, height };
+      return { src: resolved.url, alt: alt || '', caption, width, height };
     })
     .filter((s) => s !== null) as GenGallerySlide[];
 
@@ -163,8 +169,8 @@ function adaptGenGallery(p: Record<string, unknown>) {
 }
 
 function adaptGenTestoImmagineBig(p: Record<string, unknown>) {
-  const imageSrc = getDrupalImageUrl(p.field_immagine);
-  if (!imageSrc) return null;
+  const resolvedImage = resolveImage(p.field_immagine);
+  if (!resolvedImage) return null;
 
   const imgMeta = (p.field_immagine as Record<string, unknown> | undefined)
     ?.meta as Record<string, unknown> | undefined;
@@ -186,7 +192,9 @@ function adaptGenTestoImmagineBig(p: Record<string, unknown>) {
 
   return (
     <GenTestoImmagineBig
-      imageSrc={imageSrc}
+      imageSrc={resolvedImage.url}
+      imageWidth={resolvedImage.width}
+      imageHeight={resolvedImage.height}
       imageAlt={imageAlt}
       title={title}
       bodyHtml={bodyHtml}
@@ -207,7 +215,7 @@ function adaptGenTestoImmagineBlog(p: Record<string, unknown>) {
         .replace(/&nbsp;/g, ' ')
         .trim()
     : null;
-  const imageSrc = getDrupalImageUrl(p.field_immagine);
+  const resolvedImage = resolveImage(p.field_immagine);
   const imgMeta = (p.field_immagine as Record<string, unknown> | undefined)
     ?.meta as Record<string, unknown> | undefined;
   const imageAlt = (imgMeta?.alt as string) ?? '';
@@ -216,7 +224,9 @@ function adaptGenTestoImmagineBlog(p: Record<string, unknown>) {
     <GenTestoImmagineBlog
       bodyHtml={bodyHtml}
       title={title}
-      imageSrc={imageSrc}
+      imageSrc={resolvedImage?.url ?? undefined}
+      imageWidth={resolvedImage?.width ?? null}
+      imageHeight={resolvedImage?.height ?? null}
       imageAlt={imageAlt}
     />
   );
@@ -234,14 +244,14 @@ function adaptGenGalleryIntro(p: Record<string, unknown>) {
     (p.field_slide as Array<Record<string, unknown>> | undefined) ?? [];
   const slides: GenGalleryIntroSlide[] = slideData
     .map((slide) => {
-      const src = getDrupalImageUrl(slide.field_immagine);
-      if (!src) return null;
+      const resolved = resolveImage(slide.field_immagine);
+      if (!resolved) return null;
       const img = slide.field_immagine as Record<string, unknown> | undefined;
       const meta = img?.meta as Record<string, unknown> | undefined;
       const alt = (meta?.alt as string) ?? '';
-      const width = meta?.width as number | undefined;
-      const height = meta?.height as number | undefined;
-      return { src, alt, width, height };
+      const width = resolved.width ?? (meta?.width as number | undefined);
+      const height = resolved.height ?? (meta?.height as number | undefined);
+      return { src: resolved.url, alt, width, height };
     })
     .filter((s) => s !== null) as GenGalleryIntroSlide[];
 
@@ -298,7 +308,8 @@ function drupalRatioToNumber(ratio: string | null | undefined): number {
 }
 
 function adaptGenA(p: Record<string, unknown>) {
-  const imageSrc = getDrupalImageUrl(p.field_immagine);
+  const resolvedImage = resolveImage(p.field_immagine);
+  const imageSrc = resolvedImage?.url ?? null;
   const imageAlt =
     ((
       (p.field_immagine as Record<string, unknown> | undefined)?.meta as
@@ -309,7 +320,8 @@ function adaptGenA(p: Record<string, unknown>) {
   const ratio = drupalRatioToNumber(getTextValue(p.field_ratio));
   const captionHtml = getProcessedText(p.field_caption);
 
-  const imageSmallSrc = getDrupalImageUrl(p.field_immagine_small);
+  const resolvedImageSmall = resolveImage(p.field_immagine_small);
+  const imageSmallSrc = resolvedImageSmall?.url ?? null;
   const imageSmallAlt =
     ((
       (p.field_immagine_small as Record<string, unknown> | undefined)?.meta as
@@ -349,7 +361,7 @@ function adaptGenB(p: Record<string, unknown>) {
   const videos = (p.field_3_video as Array<string> | undefined) ?? [];
 
   const items: GenBItem[] = images.map((img, i) => ({
-    imageSrc: getDrupalImageUrl(img),
+    imageSrc: resolveImage(img)?.url ?? null,
     imageAlt:
       ((
         (img as Record<string, unknown>)?.meta as
@@ -373,7 +385,8 @@ function adaptGenC(p: Record<string, unknown>) {
         .trim()
     : null;
   const bodyHtml = getProcessedText(p.field_testo);
-  const imageSrc = getDrupalImageUrl(p.field_immagine);
+  const resolvedImage = resolveImage(p.field_immagine);
+  const imageSrc = resolvedImage?.url ?? null;
   const imageAlt =
     ((
       (p.field_immagine as Record<string, unknown> | undefined)?.meta as

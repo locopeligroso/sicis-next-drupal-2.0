@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { Typography } from '@/components/composed/Typography';
 import { ResponsiveImage } from '@/components/composed/ResponsiveImage';
 import { ArrowLink } from '@/components/composed/ArrowLink';
@@ -9,6 +10,8 @@ export interface GenIntroProps {
   subtitle: string;
   bodyHtml: string;
   imageSrc?: string | null;
+  imageWidth?: number | null;
+  imageHeight?: number | null;
   imageAlt?: string;
   linkHref?: string | null;
   linkLabel?: string | null;
@@ -20,21 +23,36 @@ export function GenIntro({
   subtitle,
   bodyHtml,
   imageSrc,
+  imageWidth,
+  imageHeight,
   imageAlt,
   linkHref,
   linkLabel,
   className,
 }: GenIntroProps) {
+  const hasDimensions = imageWidth != null && imageHeight != null;
+
   return (
     <section className={cn('flex flex-col gap-(--spacing-content)', className)}>
-      {imageSrc && (
-        <ResponsiveImage
-          src={imageSrc}
-          alt={imageAlt ?? ''}
-          ratio={16 / 3}
-          className="rounded-none"
-        />
-      )}
+      {imageSrc &&
+        (hasDimensions ? (
+          <div className="w-full overflow-hidden">
+            <Image
+              src={imageSrc}
+              alt={imageAlt ?? ''}
+              width={imageWidth}
+              height={imageHeight}
+              className="w-full h-auto object-cover"
+            />
+          </div>
+        ) : (
+          <ResponsiveImage
+            src={imageSrc}
+            alt={imageAlt ?? ''}
+            ratio={16 / 3}
+            className="rounded-none"
+          />
+        ))}
 
       <div className="max-w-main mx-auto px-(--spacing-page) w-full flex flex-col gap-(--spacing-element)">
         <Typography
