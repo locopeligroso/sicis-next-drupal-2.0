@@ -248,29 +248,50 @@ const _fetchArticlesBlog = cache(async (locale = 'it'): Promise<BlogResult> => {
   };
 });
 
+/** Raw shape from /api/v1/categories-blog and /api/v1/tags endpoints */
+interface RawBlogFilterItem {
+  nid: string;
+  field_titolo_main: string;
+}
+
+export interface BlogTag {
+  nid: number;
+  name: string;
+}
+
 /**
- * Fetches unique blog categories extracted from the articles endpoint.
- * There is no dedicated categories endpoint — categories are derived from articles data.
- * Returns categories sorted alphabetically by name.
+ * Fetches blog categories from the dedicated categories-blog endpoint.
  */
 export const fetchBlogCategories = cache(
   async (locale = 'it'): Promise<BlogCategory[]> => {
-    const items = await apiGet<RawArticleItem[]>(
-      `/${locale}/articles`,
+    const items = await apiGet<RawBlogFilterItem[]>(
+      `/${locale}/categories-blog`,
       {},
-      1800,
+      3600,
     );
     if (!items || !Array.isArray(items)) return [];
-    const seen = new Map<number, string>();
-    for (const item of items) {
-      const cat = item.field_categoria_blog;
-      if (cat?.nid && cat?.field_titolo_main) {
-        seen.set(cat.nid, cat.field_titolo_main.replace(/&amp;/g, '&'));
-      }
-    }
-    return Array.from(seen.entries())
-      .map(([nid, name]) => ({ nid, name }))
-      .sort((a, b) => a.name.localeCompare(b.name));
+    return items.map((item) => ({
+      nid: Number(item.nid),
+      name: item.field_titolo_main.replace(/&amp;/g, '&'),
+    }));
+  },
+);
+
+/**
+ * Fetches blog tags from the dedicated tags endpoint.
+ */
+export const fetchBlogTags = cache(
+  async (locale = 'it'): Promise<BlogTag[]> => {
+    const items = await apiGet<RawBlogFilterItem[]>(
+      `/${locale}/tags`,
+      {},
+      3600,
+    );
+    if (!items || !Array.isArray(items)) return [];
+    return items.map((item) => ({
+      nid: Number(item.nid),
+      name: item.field_titolo_main.replace(/&amp;/g, '&'),
+    }));
   },
 );
 

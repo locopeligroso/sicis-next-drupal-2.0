@@ -22,6 +22,12 @@ export interface SpecInspirationListingProps {
 
 // ── Category filter pills ─────────────────────────────────────────────────────
 
+const PILL_BASE =
+  'inline-flex items-center px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-wider transition-colors whitespace-nowrap';
+const PILL_ACTIVE = 'bg-foreground text-background';
+const PILL_INACTIVE =
+  'border border-border text-muted-foreground hover:text-foreground';
+
 function CategoryPills({
   categories,
   activeCategory,
@@ -33,34 +39,26 @@ function CategoryPills({
 }) {
   if (categories.length === 0) return null;
 
-  const pillBase =
-    'inline-flex items-center px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-wider transition-colors whitespace-nowrap';
-  const pillActive = 'bg-foreground text-background';
-  const pillInactive =
-    'border border-border text-muted-foreground hover:text-foreground';
-
   return (
     <div
       className="flex flex-wrap gap-2"
       role="navigation"
       aria-label="Filtra per categoria"
     >
-      {/* All pill */}
       <a
         href={basePath}
-        className={`${pillBase} ${activeCategory === null ? pillActive : pillInactive}`}
+        className={`${PILL_BASE} ${activeCategory === null ? PILL_ACTIVE : PILL_INACTIVE}`}
         aria-current={activeCategory === null ? 'true' : undefined}
       >
         All
       </a>
-
       {categories.map((cat) => {
         const isActive = activeCategory === cat.nid;
         return (
           <a
             key={cat.nid}
             href={`${basePath}?cat=${cat.nid}`}
-            className={`${pillBase} ${isActive ? pillActive : pillInactive}`}
+            className={`${PILL_BASE} ${isActive ? PILL_ACTIVE : PILL_INACTIVE}`}
             aria-current={isActive ? 'true' : undefined}
           >
             {cat.name}
@@ -90,7 +88,6 @@ function ArticleCardItem({
 
   const inner = (
     <article>
-      {/* Image */}
       <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-muted">
         {article.imageUrl ? (
           <Image
@@ -107,7 +104,6 @@ function ArticleCardItem({
         )}
       </div>
 
-      {/* Card body */}
       <div className="mt-3 flex flex-col gap-1">
         {article.categoryName && (
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -161,7 +157,6 @@ function Pagination({
     return qs ? `${basePath}?${qs}` : basePath;
   };
 
-  // Build visible page list: always show first/last + ±2 around current.
   const pages = new Set<number>();
   pages.add(1);
   pages.add(totalPages);
@@ -264,7 +259,7 @@ export function SpecInspirationListing({
         )}
       </header>
 
-      {/* Category filter bar */}
+      {/* Category filter */}
       {categories.length > 0 && (
         <div className="max-w-main mx-auto w-full px-(--spacing-page)">
           <CategoryPills
