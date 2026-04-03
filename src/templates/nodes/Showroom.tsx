@@ -1,11 +1,11 @@
-import { getTextValue, getProcessedText } from '@/lib/field-helpers';
+import { getTitle, getBody } from '@/lib/field-helpers';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { getDrupalImageUrl } from '@/lib/drupal';
 
 export default function Showroom({ node }: { node: Record<string, unknown> }) {
   const title =
-    getTextValue(node.field_titolo_main) || getTextValue(node.title);
-  const body = getProcessedText(node.field_testo_main);
+    getTitle(node);
+  const body = getBody(node);
 
   // Showroom-specific fields
   const address = node.field_indirizzo as string | undefined;

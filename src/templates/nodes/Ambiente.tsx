@@ -1,18 +1,31 @@
-import DrupalImage from '@/components_legacy/DrupalImage';
+import Image from 'next/image';
 import ParagraphResolver from '@/components_legacy/blocks_legacy/ParagraphResolver';
 import { ContactCta } from '@/components/composed/ContactCta';
-import { getTextValue, getProcessedText } from '@/lib/field-helpers';
+import { getTitle, getBody } from '@/lib/field-helpers';
 import { sanitizeHtml } from '@/lib/sanitize';
+import { resolveImageUrl } from '@/lib/api/client';
 
 export default function Ambiente({ node }: { node: Record<string, unknown> }) {
-  const title = getTextValue(node.field_titolo_main) || getTextValue(node.title);
-  const body = getProcessedText(node.field_testo_main);
-  const paragraphs = (node.field_blocchi as Record<string, unknown>[] | undefined) ?? [];
+  const title =
+    getTitle(node);
+  const body = getBody(node);
+  const paragraphs =
+    (node.field_blocchi as Record<string, unknown>[] | undefined) ?? [];
+  const imageUrl = resolveImageUrl(node.field_immagine);
 
   return (
     <article className="flex flex-col gap-(--spacing-section) pb-(--spacing-section)">
-
-      <DrupalImage field={node.field_immagine} alt={title ?? ''} aspectRatio="16/9" style={{ marginBottom: '2rem' }} />
+      {imageUrl && (
+        <div className="relative aspect-video overflow-hidden">
+          <Image
+            src={imageUrl}
+            alt={title ?? ''}
+            fill
+            sizes="100vw"
+            className="object-cover"
+          />
+        </div>
+      )}
 
       {body && (
         <div
@@ -22,7 +35,11 @@ export default function Ambiente({ node }: { node: Record<string, unknown> }) {
       )}
 
       {paragraphs.map((p, i) => (
-        <ParagraphResolver key={(p.id as string) ?? i} paragraph={p} pageTitle={title ?? undefined} />
+        <ParagraphResolver
+          key={(p.id as string) ?? i}
+          paragraph={p}
+          pageTitle={title ?? undefined}
+        />
       ))}
 
       <ContactCta />

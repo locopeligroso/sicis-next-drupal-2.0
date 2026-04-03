@@ -32,6 +32,7 @@ import {
 } from '@/lib/adapters/legacy-node-adapters';
 import { getComponentName } from '@/lib/node-resolver';
 import UnknownEntity from '@/components_legacy/UnknownEntity';
+import { PageBreadcrumb } from '@/components/composed/PageBreadcrumb';
 import {
   getSectionConfigAsync,
   PRODUCT_LISTING_SLUGS,
@@ -236,6 +237,13 @@ const COMPONENT_MAP: Record<
 
 const PAGE_SIZE = 48;
 
+/** Category-based product types that use subcategory listing intercept */
+const CATEGORY_LISTING_TYPES = new Set([
+  'prodotto_arredo',
+  'prodotto_illuminazione',
+  'prodotto_tessuto',
+]);
+
 interface SlugPageProps {
   params: Promise<{ locale: string; slug: string[] }>;
   searchParams?: Promise<Record<string, string | string[]>>;
@@ -306,7 +314,12 @@ export default async function SlugPage({
   // /prodotti (IT), /products (EN), etc. — static page listing all product categories.
   // Must be checked BEFORE LISTING_SLUG_OVERRIDES to avoid falling through to Drupal.
   if (singleSlug && PRODUCTS_MASTER_SLUGS.has(singleSlug)) {
-    return <ProductsMasterPage locale={locale} />;
+    return (
+      <>
+        <PageBreadcrumb slug={slug} locale={locale} />
+        <ProductsMasterPage locale={locale} />
+      </>
+    );
   }
 
   // ── Content listing slug interception ─────────────────────────────────────
@@ -607,7 +620,16 @@ export default async function SlugPage({
           if (locale === 'us' && product.noUsaStock) {
             notFound();
           }
-          return <MosaicProductPreview product={product} locale={locale} />;
+          return (
+            <>
+              <PageBreadcrumb
+                slug={slug}
+                locale={locale}
+                lastLabel={product.title}
+              />
+              <MosaicProductPreview product={product} locale={locale} />
+            </>
+          );
         }
       }
       if (resolved.bundle === 'prodotto_vetrite') {
@@ -618,21 +640,48 @@ export default async function SlugPage({
             notFound();
           }
           const legacyNode = vetriteToLegacyNode(product, locale);
-          return <ProdottoVetrite node={legacyNode} />;
+          return (
+            <>
+              <PageBreadcrumb
+                slug={slug}
+                locale={locale}
+                lastLabel={product.title}
+              />
+              <ProdottoVetrite node={legacyNode} />
+            </>
+          );
         }
       }
       if (resolved.bundle === 'prodotto_tessuto') {
         const product = await fetchTextileProduct(resolved.nid, locale);
         if (product) {
           const legacyNode = textileToLegacyNode(product, locale);
-          return <ProdottoTessuto node={legacyNode} />;
+          return (
+            <>
+              <PageBreadcrumb
+                slug={slug}
+                locale={locale}
+                lastLabel={product.title}
+              />
+              <ProdottoTessuto node={legacyNode} />
+            </>
+          );
         }
       }
       if (resolved.bundle === 'prodotto_pixall') {
         const product = await fetchPixallProduct(resolved.nid, locale);
         if (product) {
           const legacyNode = pixallToLegacyNode(product, locale);
-          return <ProdottoPixall node={legacyNode} />;
+          return (
+            <>
+              <PageBreadcrumb
+                slug={slug}
+                locale={locale}
+                lastLabel={product.title}
+              />
+              <ProdottoPixall node={legacyNode} />
+            </>
+          );
         }
       }
       if (resolved.bundle === 'prodotto_arredo') {
@@ -641,7 +690,16 @@ export default async function SlugPage({
           const legacyNode = arredoToLegacyNode(product, locale);
           // Inject finiture page href so ProdottoArredo can render the "Vedi finiture" link
           legacyNode._finitureHref = `/${locale}/${slug.join('/')}/finiture`;
-          return <ProdottoArredo node={legacyNode} slug={slug} />;
+          return (
+            <>
+              <PageBreadcrumb
+                slug={slug}
+                locale={locale}
+                lastLabel={product.title}
+              />
+              <ProdottoArredo node={legacyNode} slug={slug} />
+            </>
+          );
         }
       }
       if (resolved.bundle === 'prodotto_illuminazione') {
@@ -649,7 +707,16 @@ export default async function SlugPage({
         if (product) {
           // TODO: migrate to DS template — for now use legacy with adapter
           const legacyNode = illuminazioneToLegacyNode(product, locale);
-          return <ProdottoIlluminazione node={legacyNode} />;
+          return (
+            <>
+              <PageBreadcrumb
+                slug={slug}
+                locale={locale}
+                lastLabel={product.title}
+              />
+              <ProdottoIlluminazione node={legacyNode} />
+            </>
+          );
         }
       }
       // ── Showroom detail — uses showroom/{nid} endpoint ──
@@ -658,7 +725,12 @@ export default async function SlugPage({
           await import('@/lib/api/showroom-detail');
         const showroomData = await fetchShowroomDetail(resolved.nid, locale);
         if (showroomData) {
-          return <Showroom node={showroomData} />;
+          return (
+            <>
+              <PageBreadcrumb slug={slug} locale={locale} />
+              <Showroom node={showroomData} />
+            </>
+          );
         }
       }
       // ── Taxonomy terms: mosaico_collezioni / mosaico_colori → mosaic-products endpoint ──
@@ -776,6 +848,24 @@ export default async function SlugPage({
   // Arredo descriptive categories (NID 3522 children) are excluded — they render blocks.
   if (slug.length > 1) {
     const resolvedForDescCheck = await resolvePath(drupalPath, locale);
+
+    // ── Pixall under Mosaic hub: /mosaico/pixall → product listing ──
+    // Pixall is a separate product line but lives under the Mosaic parent in Drupal
+    // (categoria NID 342). Route it to the Pixall product listing instead of Categoria.
+    if (resolvedForDescCheck?.bundle === 'categoria') {
+      const sc = await getSectionConfigAsync(slug, locale);
+      if (sc?.productType === 'prodotto_pixall') {
+        const sp = await getSearchParams();
+        return renderProductListing({
+          productType: 'prodotto_pixall',
+          title: 'Pixall',
+          slug,
+          searchParams: sp,
+          locale,
+        });
+      }
+    }
+
     const isDescriptiveSlug =
       resolvedForDescCheck?.bundle === 'categoria' &&
       (await fetchDescriptiveCategoryNids(locale)).has(
@@ -799,13 +889,6 @@ export default async function SlugPage({
           (sp as Record<string, string>) ?? {},
           locale,
         );
-        // Category-based product types that use this intercept for listing
-        const CATEGORY_LISTING_TYPES = new Set([
-          'prodotto_arredo',
-          'prodotto_illuminazione',
-          'prodotto_tessuto',
-        ]);
-
         if (parsed.activeFilters.length > 0) {
           // Skip for categoria nodes of non-category-based types (mosaico/vetrite).
           // e.g. /mosaic/marble is a categoria NID 319 that should render via Categoria
@@ -883,7 +966,16 @@ export default async function SlugPage({
     if (resolved?.bundle === 'prodotto_mosaico') {
       const product = await fetchMosaicProduct(resolved.nid, locale);
       if (product) {
-        return <MosaicProductPreview product={product} locale={locale} />;
+        return (
+          <>
+            <PageBreadcrumb
+              slug={slug}
+              locale={locale}
+              lastLabel={product.title}
+            />
+            <MosaicProductPreview product={product} locale={locale} />
+          </>
+        );
       }
     }
 
@@ -957,11 +1049,6 @@ export default async function SlugPage({
     // Only intercept as listing for category-based product types (arredo, illuminazione, tessuto).
     // Mosaico/vetrite "categoria" nodes (e.g. /mosaic/marble NID 319) are Explore landing pages
     // that should render via the Categoria template, not as filtered product listings.
-    const CATEGORY_LISTING_TYPES = new Set([
-      'prodotto_arredo',
-      'prodotto_illuminazione',
-      'prodotto_tessuto',
-    ]);
     if (!isDescriptive) {
       const sectionConfig = await getSectionConfigAsync(slug, locale);
       if (
@@ -1004,21 +1091,34 @@ export default async function SlugPage({
 
   if (!Component) {
     console.warn(`[SlugPage] No component mapped for type: ${type}`);
-    return <UnknownEntity node={resolvedResource} />;
+    return (
+      <>
+        <PageBreadcrumb slug={slug} locale={locale} />
+        <UnknownEntity node={resolvedResource} />
+      </>
+    );
   }
 
   const sp = await getSearchParams();
   const pageStr = Array.isArray(sp?.page) ? sp.page[0] : sp?.page;
   const currentPage = Math.max(1, parseInt(pageStr ?? '1', 10));
 
+  const nodeTitle =
+    (resolvedResource?.field_titolo_main as string) ??
+    (resolvedResource?.title as string) ??
+    undefined;
+
   return (
-    <Component
-      node={resolvedResource}
-      currentPage={currentPage}
-      pageSize={PAGE_SIZE}
-      basePath={path}
-      searchParams={sp}
-    />
+    <>
+      <PageBreadcrumb slug={slug} locale={locale} lastLabel={nodeTitle} />
+      <Component
+        node={resolvedResource}
+        currentPage={currentPage}
+        pageSize={PAGE_SIZE}
+        basePath={path}
+        searchParams={sp}
+      />
+    </>
   );
 }
 

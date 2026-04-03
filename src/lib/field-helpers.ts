@@ -46,6 +46,22 @@ export function getProcessedText(field: unknown): string | undefined {
  * Extract a boolean value from a Drupal field.
  * Handles both plain boolean and { value: boolean } shapes.
  */
+/**
+ * Extract the title from a Drupal node.
+ * Tries field_titolo_main first, falls back to title.
+ */
+export function getTitle(node: Record<string, unknown>): string {
+  return getTextValue(node.field_titolo_main) || getTextValue(node.title) || '';
+}
+
+/**
+ * Extract the body HTML from a Drupal node.
+ * Uses field_testo_main (processed text).
+ */
+export function getBody(node: Record<string, unknown>): string {
+  return getProcessedText(node.field_testo_main) || '';
+}
+
 export function getBoolValue(field: unknown): boolean {
   if (typeof field === 'boolean') return field;
   if (field && typeof field === 'object') {

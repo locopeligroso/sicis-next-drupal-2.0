@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import DrupalImage from '@/components_legacy/DrupalImage';
-import { getTextValue, getProcessedText } from '@/lib/field-helpers';
+import { getTitle, getBody } from '@/lib/field-helpers';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { getDrupalImageUrl } from '@/lib/drupal';
 
@@ -12,8 +12,8 @@ export default async function Documento({
   const tCommon = await getTranslations('common');
 
   const title =
-    getTextValue(node.field_titolo_main) || getTextValue(node.title);
-  const body = getProcessedText(node.field_testo_main);
+    getTitle(node);
+  const body = getBody(node);
   const allegato = node.field_allegato as Record<string, unknown> | undefined;
   const allegatoUrl = getDrupalImageUrl(allegato);
 

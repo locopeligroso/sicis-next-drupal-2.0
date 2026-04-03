@@ -1,11 +1,11 @@
 import DrupalImage from '@/components_legacy/DrupalImage';
 import ParagraphResolver from '@/components_legacy/blocks_legacy/ParagraphResolver';
-import { getTextValue, getProcessedText } from '@/lib/field-helpers';
+import { getTitle, getBody } from '@/lib/field-helpers';
 import { sanitizeHtml } from '@/lib/sanitize';
 
 export default function Tutorial({ node }: { node: Record<string, unknown> }) {
-  const title = getTextValue(node.field_titolo_main) || getTextValue(node.title);
-  const body = getProcessedText(node.field_testo_main);
+  const title = getTitle(node);
+  const body = getBody(node);
   const paragraphs = (node.field_blocchi as Record<string, unknown>[] | undefined) ?? [];
 
   return (

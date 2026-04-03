@@ -15,6 +15,9 @@ import { SpecHubOtherPages } from '@/components/blocks/SpecHubOtherPages';
 import type { SecondaryLink } from '@/lib/navbar/types';
 import type { ProductCard } from '@/lib/api/products';
 import { FILTER_REGISTRY } from '@/domain/filters/registry';
+import { fetchHubCategories } from '@/lib/api/category-hub';
+import { resolvePath } from '@/lib/api/resolve-path';
+import { toDrupalLocale } from '@/i18n/config';
 import type {
   ListingConfig,
   FilterOption,
@@ -99,6 +102,7 @@ const CATEGORY_TYPES = [
   'prodotto_arredo',
   'prodotto_illuminazione',
   'prodotto_tessuto',
+  'prodotto_pixall',
 ] as const;
 
 const CATEGORY_LABEL_KEYS: Record<
@@ -110,6 +114,7 @@ const CATEGORY_LABEL_KEYS: Record<
   prodotto_arredo: { ns: 'nav', key: 'arredo' },
   prodotto_illuminazione: { ns: 'products', key: 'lighting' },
   prodotto_tessuto: { ns: 'nav', key: 'tessuto' },
+  prodotto_pixall: { ns: 'nav', key: 'pixall' },
 };
 
 /**
@@ -154,7 +159,9 @@ function mapCategoriesToHubArredo(
   }));
 }
 
-export function ProductListingTemplate(props: ProductListingTemplateProps) {
+export async function ProductListingTemplate(
+  props: ProductListingTemplateProps,
+) {
   const {
     title,
     description,
@@ -203,6 +210,34 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
     href: getCategoryHref(type),
   }));
 
+  // Fetch "other pages" (Marble, Artistic Mosaic, etc.) for breadcrumb siblings
+  const otherPagesParentNid = FILTER_REGISTRY[productType]?.otherPagesParentNid;
+  let otherPageSiblings: { label: string; href: string }[] = [];
+  if (otherPagesParentNid) {
+    const drupalLocale = toDrupalLocale(locale);
+    const cats = await fetchHubCategories(otherPagesParentNid, locale);
+    const categoryHref = getCategoryHref(productType);
+    // Resolve actual aliases for each category page
+    const resolved = await Promise.all(
+      cats.map(async (cat) => {
+        const r = await resolvePath(
+          `/${categoryHref.split('/').pop() ?? ''}/${cat.name
+            .toLowerCase()
+            .replace(/\s+/g, '-')}`,
+          drupalLocale,
+        ).catch(() => null);
+        const alias = r?.aliases?.[drupalLocale] ?? r?.aliases?.[locale];
+        return {
+          label: cat.name,
+          href: alias
+            ? `/${locale}${alias}`
+            : `${categoryHref}/${cat.name.toLowerCase().replace(/\s+/g, '-')}`,
+        };
+      }),
+    );
+    otherPageSiblings = resolved;
+  }
+
   const baseSegments: BreadcrumbSegment[] = [
     {
       label: tBreadcrumb?.('filterAndFind') ?? 'Products',
@@ -211,7 +246,7 @@ export function ProductListingTemplate(props: ProductListingTemplateProps) {
     {
       label: getCategoryLabel(productType),
       href: getCategoryHref(productType),
-      siblings: categorySiblings,
+      siblings: [...categorySiblings, ...otherPageSiblings],
     },
   ];
 

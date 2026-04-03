@@ -1,13 +1,13 @@
 import Link from 'next/link';
 import DrupalImage from '@/components_legacy/DrupalImage';
 import ParagraphResolver from '@/components_legacy/blocks_legacy/ParagraphResolver';
-import { getTextValue, getProcessedText } from '@/lib/field-helpers';
+import { getTitle, getBody } from '@/lib/field-helpers';
 import { sanitizeHtml } from '@/lib/sanitize';
 
 export default function Progetto({ node }: { node: Record<string, unknown> }) {
   const title =
-    getTextValue(node.field_titolo_main) || getTextValue(node.title);
-  const body = getProcessedText(node.field_testo_main);
+    getTitle(node);
+  const body = getBody(node);
   const paragraphs =
     (node.field_blocchi as Record<string, unknown>[] | undefined) ?? [];
 
@@ -20,7 +20,7 @@ export default function Progetto({ node }: { node: Record<string, unknown> }) {
   )?.alias as string | undefined;
 
   return (
-    <article style={{ maxWidth: '60rem', margin: '0 auto', padding: '2rem' }}>
+    <article className="flex flex-col gap-(--spacing-section) pb-(--spacing-section)">
       {categoriaName && (
         <p style={{ marginBottom: '0.75rem' }}>
           {categoriaAlias ? (
@@ -70,7 +70,11 @@ export default function Progetto({ node }: { node: Record<string, unknown> }) {
       )}
 
       {paragraphs.map((p, i) => (
-        <ParagraphResolver key={(p.id as string) ?? i} paragraph={p} pageTitle={title ?? undefined} />
+        <ParagraphResolver
+          key={(p.id as string) ?? i}
+          paragraph={p}
+          pageTitle={title ?? undefined}
+        />
       ))}
     </article>
   );

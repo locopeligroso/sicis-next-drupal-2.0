@@ -15,6 +15,7 @@ import { GenA } from '@/components/blocks/GenA';
 import { GenB } from '@/components/blocks/GenB';
 import type { GenBItem } from '@/components/blocks/GenB';
 import { GenC } from '@/components/blocks/GenC';
+import { GenE } from '@/components/blocks/GenE';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { getDrupalImageUrl } from '@/lib/drupal/image';
 import { DevBlockOverlay } from '@/components/composed/DevBlockOverlay';
@@ -422,19 +423,53 @@ export default function ParagraphResolver({
   const type = paragraph.type as string;
 
   // ── Gen → block name mapping for debug overlay ──
-  const GEN_MAP: Record<string, { name: string; render: () => React.ReactNode }> = {
-    'paragraph--blocco_intro': { name: 'GenIntro', render: () => adaptGenIntro(paragraph, pageTitle) },
-    'paragraph--blocco_quote': { name: 'GenQuote', render: () => adaptGenQuote(paragraph) },
-    'paragraph--blocco_video': { name: 'GenVideo', render: () => adaptGenVideo(paragraph) },
-    'paragraph--blocco_testo_immagine': { name: 'GenTestoImmagine', render: () => adaptGenTestoImmagine(paragraph) },
-    'paragraph--blocco_gallery': { name: 'GenGallery', render: () => adaptGenGallery(paragraph) },
-    'paragraph--blocco_testo_immagine_big': { name: 'GenTestoImmagineBig', render: () => adaptGenTestoImmagineBig(paragraph) },
-    'paragraph--blocco_testo_immagine_blog': { name: 'GenTestoImmagineBlog', render: () => adaptGenTestoImmagineBlog(paragraph) },
-    'paragraph--blocco_gallery_intro': { name: 'GenGalleryIntro', render: () => adaptGenGalleryIntro(paragraph) },
-    'paragraph--blocco_documenti': { name: 'GenDocumenti', render: () => adaptGenDocumenti(paragraph) },
+  const GEN_MAP: Record<
+    string,
+    { name: string; render: () => React.ReactNode }
+  > = {
+    'paragraph--blocco_intro': {
+      name: 'GenIntro',
+      render: () => adaptGenIntro(paragraph, pageTitle),
+    },
+    'paragraph--blocco_quote': {
+      name: 'GenQuote',
+      render: () => adaptGenQuote(paragraph),
+    },
+    'paragraph--blocco_video': {
+      name: 'GenVideo',
+      render: () => adaptGenVideo(paragraph),
+    },
+    'paragraph--blocco_testo_immagine': {
+      name: 'GenTestoImmagine',
+      render: () => adaptGenTestoImmagine(paragraph),
+    },
+    'paragraph--blocco_gallery': {
+      name: 'GenGallery',
+      render: () => adaptGenGallery(paragraph),
+    },
+    'paragraph--blocco_testo_immagine_big': {
+      name: 'GenTestoImmagineBig',
+      render: () => adaptGenTestoImmagineBig(paragraph),
+    },
+    'paragraph--blocco_testo_immagine_blog': {
+      name: 'GenTestoImmagineBlog',
+      render: () => adaptGenTestoImmagineBlog(paragraph),
+    },
+    'paragraph--blocco_gallery_intro': {
+      name: 'GenGalleryIntro',
+      render: () => adaptGenGalleryIntro(paragraph),
+    },
+    'paragraph--blocco_documenti': {
+      name: 'GenDocumenti',
+      render: () => adaptGenDocumenti(paragraph),
+    },
     'paragraph--blocco_a': { name: 'GenA', render: () => adaptGenA(paragraph) },
     'paragraph--blocco_b': { name: 'GenB', render: () => adaptGenB(paragraph) },
     'paragraph--blocco_c': { name: 'GenC', render: () => adaptGenC(paragraph) },
+    'paragraph--blocco_e': {
+      name: 'GenE',
+      render: () => <GenE paragraph={paragraph} />,
+    },
   };
 
   // Gen blocks (DS)
@@ -442,7 +477,11 @@ export default function ParagraphResolver({
   if (gen) {
     const content = gen.render();
     if (!content) return null;
-    return <DevBlockOverlay name={gen.name} status="ds">{content}</DevBlockOverlay>;
+    return (
+      <DevBlockOverlay name={gen.name} status="ds">
+        {content}
+      </DevBlockOverlay>
+    );
   }
 
   // Legacy blocks
@@ -462,8 +501,11 @@ export default function ParagraphResolver({
     return null;
   }
 
-  const legacyName = type.replace('paragraph--', '').replace(/^blocco_/, 'Blocco');
-  const legacyDisplayName = legacyName.charAt(0).toUpperCase() + legacyName.slice(1);
+  const legacyName = type
+    .replace('paragraph--', '')
+    .replace(/^blocco_/, 'Blocco');
+  const legacyDisplayName =
+    legacyName.charAt(0).toUpperCase() + legacyName.slice(1);
   return (
     <DevBlockOverlay name={legacyDisplayName} status="legacy">
       <Component paragraph={paragraph} />
