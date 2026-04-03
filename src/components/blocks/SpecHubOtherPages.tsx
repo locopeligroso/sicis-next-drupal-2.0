@@ -78,75 +78,30 @@ export async function SpecHubOtherPages({
     return { ...cat, href };
   });
 
-  // Compact layout (≤3 items) — same style as cross-links (small image + title)
-  // Grid layout (4+ items) — large cards with overline + 4/3 image
-  const useCompact = pages.length <= 3;
-
   return (
     <div className="max-w-main mx-auto px-(--spacing-page)">
-      {useCompact ? (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
-          {pages.map((page) => (
-            <Link
-              key={page.nid}
-              href={page.href}
-              className="group flex items-stretch overflow-hidden rounded-lg border border-border transition-colors hover:bg-muted"
-            >
-              <div className="relative w-20 shrink-0 bg-muted overflow-hidden">
-                {page.imageUrl ? (
-                  <Image
-                    src={page.imageUrl}
-                    alt={page.name}
-                    fill
-                    sizes="80px"
-                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                ) : null}
-              </div>
-              <div className="flex items-center p-(--spacing-element)">
-                <Typography
-                  textRole="body-sm"
-                  as="span"
-                  className="line-clamp-2 font-medium"
-                >
-                  {page.name}
-                </Typography>
-              </div>
-            </Link>
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-x-3 gap-y-(--spacing-content) lg:grid-cols-3">
-          {pages.map((page) => (
-            <Link
-              key={page.nid}
-              href={page.href}
-              className="group flex flex-col"
-            >
-              <Typography
-                textRole="overline"
-                as="span"
-                className="truncate mb-1"
-              >
-                {page.name}
-              </Typography>
-              <div className="relative aspect-4/3 overflow-hidden rounded-lg border border-border">
-                {page.imageUrl ? (
-                  <Image
-                    src={page.imageUrl}
-                    alt={page.name}
-                    fill
-                    sizes="(min-width: 1024px) 20vw, 30vw"
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="size-full bg-muted" />
-                )}
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+      <div className="grid grid-cols-2 gap-x-3 gap-y-(--spacing-content) lg:grid-cols-3">
+        {pages.map((page) => (
+          <Link key={page.nid} href={page.href} className="group flex flex-col">
+            <Typography textRole="overline" as="span" className="truncate mb-1">
+              {page.name}
+            </Typography>
+            <div className="relative aspect-4/3 overflow-hidden rounded-lg border border-border">
+              {page.imageUrl ? (
+                <Image
+                  src={page.imageUrl}
+                  alt={page.name}
+                  fill
+                  sizes="(min-width: 1024px) 20vw, 30vw"
+                  className="object-cover"
+                />
+              ) : (
+                <div className="size-full bg-muted" />
+              )}
+            </div>
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }
