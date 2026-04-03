@@ -11,6 +11,7 @@ import { DevBlockOverlay } from '@/components/composed/DevBlockOverlay';
 import { SpecArredoHero } from '@/components/blocks/SpecArredoHero';
 import { GenGallery, type GenGallerySlide } from '@/components/blocks/GenGallery';
 import type { BreadcrumbSegment } from '@/components/composed/SmartBreadcrumb';
+import { QuoteSheetProvider } from '@/components/composed/QuoteSheetProvider';
 import styles from '@/styles/product.module.css';
 import type { ProdottoArredo as ProdottoArredoType } from '@/types/drupal/entities';
 
@@ -258,6 +259,7 @@ export default async function ProdottoArredo({
   }
 
   return (
+    <QuoteSheetProvider productName={title ?? undefined}>
     <article className="flex flex-col gap-(--spacing-section) pb-(--spacing-section)">
       {/* ── Hero Block (DS) ─────────────────────────────────────────────────── */}
       <DevBlockOverlay name="SpecArredoHero" status="ds">
@@ -678,5 +680,6 @@ export default async function ProdottoArredo({
         />
       ))}
     </article>
+    </QuoteSheetProvider>
   );
 }

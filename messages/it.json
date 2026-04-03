@@ -17,7 +17,8 @@
     "discover": "Scopri",
     "watchVideo": "Guarda video",
     "browseCatalogue": "Sfoglia catalogo",
-    "contactUs": "Contattaci"
+    "contactUs": "Contattaci",
+    "requestInfo": "Richiedi informazioni"
   },
   "nav": {
     "home": "Home",
@@ -274,6 +275,19 @@
       "success": "Richiesta inviata!",
       "successMessage": "Ti risponderemo al più presto.",
       "close": "Chiudi",
+      "privacyError": "Devi accettare la privacy policy"
+    },
+    "contattaci": {
+      "title": "Contattaci",
+      "description": "Compila il form e ti ricontatteremo al più presto.",
+      "email": "Email",
+      "nome": "Nome",
+      "messaggio": "Il tuo messaggio",
+      "privacy": "Acconsento al trattamento dei dati personali",
+      "submit": "Invia messaggio",
+      "submitting": "Invio in corso...",
+      "success": "Messaggio inviato!",
+      "successMessage": "Ti risponderemo al più presto.",
       "privacyError": "Devi accettare la privacy policy"
     }
   },

@@ -5,6 +5,8 @@ import { getColorSwatch, formatRetinatura } from '@/lib/product-helpers';
 import DrupalImage from '@/components_legacy/DrupalImage';
 import { getDrupalImageUrl } from '@/lib/drupal/image';
 import styles from '@/styles/product.module.css';
+import { QuoteSheetProvider } from '@/components/composed/QuoteSheetProvider';
+import { ProductCta } from '@/components/composed/ProductCta';
 import type { ProdottoPixall as ProdottoPixallType } from '@/types/drupal/entities';
 
 // ── Document item type ────────────────────────────────────────────────────────
@@ -85,6 +87,7 @@ export default async function ProdottoPixall({
     hasDimensions || hasConsumption || retinatura || numeroModuli;
 
   return (
+    <QuoteSheetProvider productName={title ?? undefined}>
     <article>
       {/* ── 1. Title ─────────────────────────────────────────────────────────── */}
       {title && (
@@ -107,6 +110,9 @@ export default async function ProdottoPixall({
         aspectRatio="4/3"
         style={{ marginBottom: '2rem' }}
       />
+
+      {/* ── CTA ── */}
+      <ProductCta />
 
       {/* ── 3. Description ───────────────────────────────────────────────────── */}
       {body ? (
@@ -525,5 +531,6 @@ export default async function ProdottoPixall({
         </section>
       )}
     </article>
+    </QuoteSheetProvider>
   );
 }

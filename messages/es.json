@@ -17,7 +17,8 @@
     "discover": "Descubrir",
     "watchVideo": "Ver vídeo",
     "browseCatalogue": "Hojear catálogo",
-    "contactUs": "Contáctenos"
+    "contactUs": "Contáctenos",
+    "requestInfo": "Solicitar información"
   },
   "nav": {
     "home": "Inicio",
@@ -274,6 +275,19 @@
       "success": "¡Solicitud enviada!",
       "successMessage": "Te contactaremos lo antes posible.",
       "close": "Cerrar",
+      "privacyError": "Debes aceptar la política de privacidad"
+    },
+    "contattaci": {
+      "title": "Contáctanos",
+      "description": "Completa el formulario y te contactaremos lo antes posible.",
+      "email": "Correo electrónico",
+      "nome": "Nombre",
+      "messaggio": "Tu mensaje",
+      "privacy": "Acepto el tratamiento de mis datos personales",
+      "submit": "Enviar mensaje",
+      "submitting": "Enviando...",
+      "success": "¡Mensaje enviado!",
+      "successMessage": "Te contactaremos lo antes posible.",
       "privacyError": "Debes aceptar la política de privacidad"
     }
   },

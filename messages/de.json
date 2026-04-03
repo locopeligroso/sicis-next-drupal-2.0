@@ -17,7 +17,8 @@
     "discover": "Entdecken",
     "watchVideo": "Video ansehen",
     "browseCatalogue": "Katalog durchblättern",
-    "contactUs": "Kontaktieren Sie uns"
+    "contactUs": "Kontaktieren Sie uns",
+    "requestInfo": "Informationen anfordern"
   },
   "nav": {
     "home": "Startseite",
@@ -274,6 +275,19 @@
       "success": "Anfrage gesendet!",
       "successMessage": "Wir werden uns in Kürze bei Ihnen melden.",
       "close": "Schließen",
+      "privacyError": "Sie müssen die Datenschutzrichtlinie akzeptieren"
+    },
+    "contattaci": {
+      "title": "Kontaktieren Sie uns",
+      "description": "Füllen Sie das Formular aus und wir werden uns in Kürze bei Ihnen melden.",
+      "email": "E-Mail",
+      "nome": "Vorname",
+      "messaggio": "Ihre Nachricht",
+      "privacy": "Ich stimme der Verarbeitung meiner persönlichen Daten zu",
+      "submit": "Nachricht senden",
+      "submitting": "Wird gesendet...",
+      "success": "Nachricht gesendet!",
+      "successMessage": "Wir werden uns in Kürze bei Ihnen melden.",
       "privacyError": "Sie müssen die Datenschutzrichtlinie akzeptieren"
     }
   },

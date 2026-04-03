@@ -6,6 +6,8 @@ import { DRUPAL_BASE_URL } from '@/lib/drupal/config';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { sanitizeHtml } from '@/lib/sanitize';
 import styles from '@/styles/product.module.css';
+import { QuoteSheetProvider } from '@/components/composed/QuoteSheetProvider';
+import { ProductCta } from '@/components/composed/ProductCta';
 import type { ProdottoIlluminazione as ProdottoIlluminazioneType } from '@/types/drupal/entities';
 
 // ── Document item type ────────────────────────────────────────────────────────
@@ -168,6 +170,7 @@ export default async function ProdottoIlluminazione({
   }
 
   return (
+    <QuoteSheetProvider productName={title ?? undefined}>
     <article>
       {/* ── 1. Title ─────────────────────────────────────────────────────────── */}
       {title && (
@@ -190,6 +193,9 @@ export default async function ProdottoIlluminazione({
         aspectRatio="4/3"
         style={{ marginBottom: '2rem' }}
       />
+
+      {/* ── CTA ── */}
+      <ProductCta />
 
       {/* ── 3. Testo descrittivo ─────────────────────────────────────────────── */}
       {body && (
@@ -604,5 +610,6 @@ export default async function ProdottoIlluminazione({
         </section>
       )}
     </article>
+    </QuoteSheetProvider>
   );
 }

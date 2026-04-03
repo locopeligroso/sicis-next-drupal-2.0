@@ -1,6 +1,5 @@
 import Image from 'next/image';
 import ParagraphResolver from '@/components_legacy/blocks_legacy/ParagraphResolver';
-import { ContactCta } from '@/components/composed/ContactCta';
 import { getTitle, getBody } from '@/lib/field-helpers';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { resolveImageUrl } from '@/lib/api/client';
@@ -42,7 +41,6 @@ export default function Ambiente({ node }: { node: Record<string, unknown> }) {
         />
       ))}
 
-      <ContactCta />
     </article>
   );
 }

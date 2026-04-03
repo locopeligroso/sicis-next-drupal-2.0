@@ -17,7 +17,8 @@
     "discover": "Discover",
     "watchVideo": "Watch video",
     "browseCatalogue": "Browse catalogue",
-    "contactUs": "Contact us"
+    "contactUs": "Contact us",
+    "requestInfo": "Request information"
   },
   "nav": {
     "home": "Home",
@@ -274,6 +275,19 @@
       "success": "Request sent!",
       "successMessage": "We will get back to you shortly.",
       "close": "Close",
+      "privacyError": "You must accept the privacy policy"
+    },
+    "contattaci": {
+      "title": "Contact us",
+      "description": "Fill out the form and we will get back to you shortly.",
+      "email": "Email",
+      "nome": "First name",
+      "messaggio": "Your message",
+      "privacy": "I consent to the processing of personal data",
+      "submit": "Send message",
+      "submitting": "Sending...",
+      "success": "Message sent!",
+      "successMessage": "We will get back to you shortly.",
       "privacyError": "You must accept the privacy policy"
     }
   },

@@ -15,7 +15,7 @@ export function ContactCta() {
       <div className="flex justify-center">
         <Button size="lg" onClick={() => setOpen(true)}>
           <MailIcon data-icon="inline-start" />
-          {t('contactUs')}
+          {t('requestInfo')}
         </Button>
       </div>
       <InfoGeneraliForm open={open} onOpenChange={setOpen} />

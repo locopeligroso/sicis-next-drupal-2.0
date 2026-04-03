@@ -6,6 +6,7 @@ import { getMessages, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { locales } from '@/i18n/request';
 import Footer from '@/components_legacy/Footer';
+import { ContactCta } from '@/components/composed/ContactCta';
 import { Navbar } from '@/components/layout/Navbar';
 import { fetchMenu, transformMenuToNavItems } from '@/lib/drupal';
 import { mapMenuToNavbar } from '@/lib/navbar/menu-mapper';
@@ -96,6 +97,9 @@ export default async function LocaleLayout({
               >
                 <main style={{ minHeight: '60vh' }}>{children}</main>
               </Suspense>
+              <div className="bg-background py-(--spacing-section)">
+                <ContactCta />
+              </div>
               <Footer locale={locale} initialMenu={footerMenuItems} />
               <Toaster />
               </DevBlockDebugProvider>

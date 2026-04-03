@@ -5,6 +5,8 @@ import { getDrupalImageUrl } from '@/lib/drupal/image';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { sanitizeHtml } from '@/lib/sanitize';
 import styles from '@/styles/product.module.css';
+import { QuoteSheetProvider } from '@/components/composed/QuoteSheetProvider';
+import { ProductCta } from '@/components/composed/ProductCta';
 import type { ProdottoTessuto as ProdottoTessutoType } from '@/types/drupal/entities';
 
 // ── Document item type ────────────────────────────────────────────────────────
@@ -116,6 +118,7 @@ export default async function ProdottoTessuto({
     .join(' · ');
 
   return (
+    <QuoteSheetProvider productName={title ?? undefined}>
     <article>
       {/* ── 1. Title + tipologia ─────────────────────────────────────────────── */}
       {title && (
@@ -178,6 +181,9 @@ export default async function ProdottoTessuto({
         aspectRatio="4/3"
         style={{ marginBottom: '2rem' }}
       />
+
+      {/* ── CTA ── */}
+      <ProductCta />
 
       {/* ── 4. Composizione tessile ──────────────────────────────────────────── */}
       {composizione && (
@@ -596,5 +602,6 @@ export default async function ProdottoTessuto({
         </section>
       )}
     </article>
+    </QuoteSheetProvider>
   );
 }

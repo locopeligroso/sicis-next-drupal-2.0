@@ -9,6 +9,8 @@ import { sanitizeHtml } from '@/lib/sanitize';
 import styles from '@/styles/product.module.css';
 import type { ProdottoVetrite as ProdottoVetriteType } from '@/types/drupal/entities';
 import { VetriteSampleSection } from '@/components/composed/VetriteSampleSection';
+import { QuoteSheetProvider } from '@/components/composed/QuoteSheetProvider';
+import { ProductCta } from '@/components/composed/ProductCta';
 
 // ── Document item type ────────────────────────────────────────────────────────
 interface DocItem {
@@ -137,6 +139,7 @@ export default async function ProdottoVetrite({
     formatoCampione;
 
   return (
+    <QuoteSheetProvider productName={title ?? undefined}>
     <article>
       {/* ── 1. Title ─────────────────────────────────────────────────────────── */}
       {title && (
@@ -186,6 +189,9 @@ export default async function ProdottoVetrite({
           />
         );
       })()}
+
+      {/* ── CTA ── */}
+      <ProductCta />
 
       {/* ── 3. Testo descrittivo (prodotto o fallback collezione) ─────────────── */}
       {body && (
@@ -643,5 +649,6 @@ export default async function ProdottoVetrite({
         </section>
       )}
     </article>
+    </QuoteSheetProvider>
   );
 }

@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import ParagraphResolver from '@/components_legacy/blocks_legacy/ParagraphResolver';
 import { getTitle } from '@/lib/field-helpers';
+import { ContattaciForm } from '@/components/composed/ContattaciForm';
 
 export default async function Contatti({
   node,
@@ -133,6 +134,11 @@ export default async function Contatti({
           pageTitle={title ?? undefined}
         />
       ))}
+
+      {/* ── Contact form ── */}
+      <section className="max-w-main mx-auto w-full px-(--spacing-page) py-(--spacing-section)">
+        <ContattaciForm />
+      </section>
     </article>
   );
 }

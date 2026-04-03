@@ -6,6 +6,17 @@ All notable changes to this project will be documented in this file.
 
 ### 2026-04-03
 
+#### Contact forms system — Info Prodotto, Info Generali, Contattaci
+
+- **Info Prodotto form** (`InfoProdottoForm`): Sheet (right slide) on all product templates — Mosaico, Vetrite, Arredo, Tessuto, Pixall, Illuminazione. Triggered by "Get a Quote" (`ProductCta`) button via `QuoteSheetProvider` context. Fields: email, nome, cognome, nazione, professione, prodotto (pre-filled), richiesta, privacy. API: `/api/info-prodotto`.
+- **Info Generali form** (`InfoGeneraliForm`): Sheet (right slide) triggered by "Contattaci" CTA banner placed above the footer in the global layout (visible on every page). Fields: email, nome, cognome, nazione, professione, richiesta, privacy. API: `/api/info-generali`.
+- **Contattaci form** (`ContattaciForm`): Inline form (no Sheet, no CTA — rendered directly in-page). Fields: email, nome, messaggio, privacy. API: `/api/contattaci`. Component created, not yet placed in any page.
+- **QuoteSheetProvider** added to: `ProdottoArredo`, `ProdottoVetrite`, `ProdottoTessuto`, `ProdottoPixall`, `ProdottoIlluminazione` (was already on `MosaicProductPreview`). `ProductCta` placed after the first image in each legacy template.
+- **ContactCta** removed from `Ambiente.tsx`, moved to global layout (`layout.tsx`) as a white background banner above the Footer.
+- **Email delivery**: All forms via Resend API. Recipient from `SEND_TO_EMAIL` env var.
+- **i18n**: `forms.infoProdotto`, `forms.infoGenerali`, `forms.contattaci` sections added to all 6 locales (IT/EN/FR/DE/ES/RU).
+- **Security**: HTML escape, email validation, field length limits on all 3 API routes.
+
 #### Contacts page — dedicated template
 
 - **`Contatti.tsx`**: nuovo template dedicato per la pagina contatti, con contenuto hardcoded (sede legale, recapiti, showroom) tradotto in 6 lingue + US.
