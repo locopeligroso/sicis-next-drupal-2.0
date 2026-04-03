@@ -8,7 +8,6 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useTransition } from 'react';
 import type { ActiveFilter } from '@/domain/filters/registry';
-import { useClientFilter } from '@/hooks/client-filter-context';
 
 interface UseFilterSyncOptions {
   basePath: string; // es. '/it/mosaico'
@@ -38,7 +37,6 @@ export function useFilterSync({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
-  const clientFilter = useClientFilter();
 
   const isActive = useCallback(
     (key: string, value: string) =>
@@ -84,20 +82,12 @@ export function useFilterSync({
         // First P0 → existing path navigation logic
         const currentActive = activeFilters.find((f) => f.key === key);
         if (currentActive?.value === value) {
-          // Deselect: go back to base path
-          if (clientFilter && key === 'collection') {
-            clientFilter.navigateToCollection(null);
-          } else {
-            startTransition(() => router.push(basePath));
-          }
+          // Deselect: go back to base path (clear all query params — new context)
+          startTransition(() => router.push(basePath));
         } else {
-          // Select: navigate to path with filter
-          if (clientFilter && key === 'collection') {
-            clientFilter.navigateToCollection(value);
-          } else {
-            const prefix = pathPrefix ? `/${pathPrefix}` : '';
-            startTransition(() => router.push(`${basePath}${prefix}/${value}`));
-          }
+          // Select: navigate to path with filter (clear query params — context changes)
+          const prefix = pathPrefix ? `/${pathPrefix}` : '';
+          startTransition(() => router.push(`${basePath}${prefix}/${value}`));
         }
       } else {
         // Toggle query param filter — keep current pathname (preserves active P0 in path)
