@@ -257,6 +257,7 @@ interface RawBlogFilterItem {
 export interface BlogTag {
   nid: number;
   name: string;
+  path?: string | null;
 }
 
 /**
@@ -277,21 +278,74 @@ export const fetchBlogCategories = cache(
   },
 );
 
+/** Slugify a title for path alias resolution */
+function slugifyTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim();
+}
+
 /**
- * Fetches blog tags from the dedicated tags endpoint.
+ * Fetches blog tags. Tries the dedicated /tags endpoint first,
+ * falls back to hardcoded NID list via content/{nid} if endpoint is down.
+ * Resolves path aliases via slugified title + resolvePath.
  */
 export const fetchBlogTags = cache(
   async (locale = 'it'): Promise<BlogTag[]> => {
-    const items = await apiGet<RawBlogFilterItem[]>(
-      `/${locale}/tags`,
-      {},
-      3600,
+    // Try dedicated endpoint first
+    let items = await apiGet<RawBlogFilterItem[]>(`/${locale}/tags`, {}, 3600);
+
+    // Fallback: fetch each known tag NID via content endpoint
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      const TAG_NIDS = [3206, 3204, 3203, 3202, 3207, 3205, 3201, 3208];
+      const contentResults = await Promise.all(
+        TAG_NIDS.map((nid) =>
+          apiGet<{ nid: string; field_titolo_main: string }[]>(
+            `/${locale}/content/${nid}`,
+            {},
+            3600,
+          ),
+        ),
+      );
+      items = contentResults
+        .filter(
+          (r): r is { nid: string; field_titolo_main: string }[] =>
+            Array.isArray(r) && r.length > 0,
+        )
+        .map((r) => ({
+          nid: r[0].nid,
+          field_titolo_main: r[0].field_titolo_main,
+        }));
+    }
+
+    if (!items || items.length === 0) return [];
+
+    // Resolve path aliases in parallel via slugified titles
+    const { resolvePath } = await import('./resolve-path');
+    const tags = await Promise.all(
+      items.map(async (item) => {
+        const nid = Number(item.nid);
+        const name = item.field_titolo_main.replace(/&amp;/g, '&');
+        const slug = slugifyTitle(name);
+        let path: string | null = null;
+        try {
+          const resolved = await resolvePath(`/${slug}`, locale);
+          if (resolved?.nid === nid) {
+            path = resolved.aliases?.[locale] ?? `/${slug}`;
+          }
+        } catch {
+          // slug doesn't match — path stays null
+        }
+        return { nid, name, path };
+      }),
     );
-    if (!items || !Array.isArray(items)) return [];
-    return items.map((item) => ({
-      nid: Number(item.nid),
-      name: item.field_titolo_main.replace(/&amp;/g, '&'),
-    }));
+
+    return tags;
   },
 );
 

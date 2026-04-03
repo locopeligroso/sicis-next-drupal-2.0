@@ -49,7 +49,11 @@ export default async function Articolo({
             {tags.map((tag) => (
               <Link
                 key={tag.nid}
-                href={`/${locale}/blog?tag=${tag.nid}`}
+                href={
+                  tag.path
+                    ? `/${locale}${tag.path}`
+                    : `/${locale}/blog?tag=${tag.nid}`
+                }
                 className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium border border-border text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
               >
                 {tag.name}
