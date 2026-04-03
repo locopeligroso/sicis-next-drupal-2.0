@@ -6,6 +6,14 @@ All notable changes to this project will be documented in this file.
 
 ### 2026-04-03
 
+#### Contacts page — dedicated template
+
+- **`Contatti.tsx`**: nuovo template dedicato per la pagina contatti, con contenuto hardcoded (sede legale, recapiti, showroom) tradotto in 6 lingue + US.
+- **`page.tsx`**: `CONTATTI_SLUGS` set (5 slug localizzati) intercetta prima del dispatch generico `Page` → `Contatti`.
+- **i18n**: namespace `contacts` aggiunto a tutti i 6 file `messages/*.json` (8 chiavi: heroTitle, recapiti, showroomWarehouse, phone, fax, email, address, discoverShowrooms).
+- **Blocchi Drupal preservati**: `ParagraphResolver` renderizza i paragraph dal CMS sotto il contenuto hardcoded.
+- **Form**: placeholder per Gabriele (commento nel codice).
+
 #### Menu CMS-driven — rimozione hardcoded labels
 
 - **Titoli sezione navbar** (Explore, Filter&Find, Projects, Info): ora da `sectionTitles` CMS, non più da `messages/*.json`. Fallback su i18n se CMS vuoto.

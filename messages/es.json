@@ -332,5 +332,15 @@
     "finishLabel": "Finish",
     "checkoutError": "An error occurred. Please try again.",
     "paypalFallback": "If you are not redirected, click here to complete payment."
+  },
+  "contacts": {
+    "heroTitle": "Siempre a tu disposición",
+    "recapiti": "Datos de contacto",
+    "showroomWarehouse": "Showroom y almacén",
+    "phone": "Teléfono",
+    "fax": "Fax",
+    "email": "Email",
+    "address": "Dirección",
+    "discoverShowrooms": "Descubre nuestros showrooms"
   }
 }

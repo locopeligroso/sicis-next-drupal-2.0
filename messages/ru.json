@@ -332,5 +332,15 @@
     "finishLabel": "Finish",
     "checkoutError": "An error occurred. Please try again.",
     "paypalFallback": "If you are not redirected, click here to complete payment."
+  },
+  "contacts": {
+    "heroTitle": "Всегда к вашим услугам",
+    "recapiti": "Контактные данные",
+    "showroomWarehouse": "Шоурум и склад",
+    "phone": "Телефон",
+    "fax": "Факс",
+    "email": "Эл. почта",
+    "address": "Адрес",
+    "discoverShowrooms": "Откройте наши шоурумы"
   }
 }

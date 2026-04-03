@@ -59,6 +59,7 @@ import {
 
 // Node components
 import Page from '@/templates/nodes/Page';
+import Contatti from '@/templates/nodes/Contatti';
 import LandingPage from '@/templates/nodes/LandingPage';
 import ProdottoMosaico from '@/templates/nodes/ProdottoMosaico';
 import ProdottoArredo from '@/templates/nodes/ProdottoArredo';
@@ -213,6 +214,15 @@ const COMPONENT_MAP: Record<
 };
 
 const PAGE_SIZE = 48;
+
+/** Locale variants of the Contacts page slug — routes to dedicated Contatti template */
+const CONTATTI_SLUGS = new Set([
+  'contatti', // IT
+  'contacts', // EN / FR
+  'kontakte', // DE
+  'contactos', // ES
+  '\u043a\u043e\u043d\u0442\u0430\u043a\u0442\u044b', // RU (контакты)
+]);
 
 /** Category-based product types that use subcategory listing intercept */
 const CATEGORY_LISTING_TYPES = new Set([
@@ -1017,7 +1027,11 @@ export default async function SlugPage({
     componentName === 'UnknownEntity' && type.startsWith('taxonomy_term--')
       ? 'TaxonomyTerm'
       : componentName;
-  const Component = COMPONENT_MAP[resolvedName];
+  // Swap Page → Contatti for the contacts page (all locale slug variants)
+  const Component =
+    resolvedName === 'Page' && singleSlug && CONTATTI_SLUGS.has(singleSlug)
+      ? Contatti
+      : COMPONENT_MAP[resolvedName];
 
   if (!Component) {
     console.warn(`[SlugPage] No component mapped for type: ${type}`);
