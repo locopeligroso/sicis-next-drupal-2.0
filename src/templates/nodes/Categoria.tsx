@@ -230,20 +230,11 @@ export default async function Categoria({ node }: CategoriaProps) {
 
   return (
     <article className="flex flex-col gap-(--spacing-section) pt-(--spacing-navbar) pb-(--spacing-section) overflow-x-hidden [&>*]:w-full">
-      {(title || (heroImage && paragraphs.length === 0)) && (
+      {title && (
         <header className="max-w-main mx-auto px-(--spacing-page)">
-          {title && (
-            <h1 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-6">
-              {title}
-            </h1>
-          )}
-          {heroImage && paragraphs.length === 0 && (
-            <DrupalImage
-              field={node.field_immagine}
-              alt={title ?? ''}
-              aspectRatio="16/9"
-            />
-          )}
+          <h1 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-6">
+            {title}
+          </h1>
         </header>
       )}
       {mosaicSubPages && mosaicSubPages.length > 0 && (
