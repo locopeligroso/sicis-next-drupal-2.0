@@ -6,6 +6,35 @@ All notable changes to this project will be documented in this file.
 
 ### 2026-04-03
 
+#### Descriptive categories for tessili and mosaico
+
+- **`SpecHubOtherPages`**: supporta `number | number[]` per multi-parent NID. Layout griglia (overline + 4/3 image) per 4+ items, identico ad arredo.
+- **Tessili**: `otherPagesParentNid: 4272` → mostra FAUX MOSAIQUE® nel hub `/prodotti-tessili`.
+- **Mosaico**: `otherPagesParentNid: [338, 4274]` → categorie esistenti (Marmo, Artistico, Metallo, Ipix) + future categorie da NID 4274.
+- **Routing descrittivo**: `/prodotti-tessili/faux-mosaique` e `/mosaico/{slug}` renderizzano via template Categoria con blocchi Drupal (stesso pattern di `/arredo/bar-e-ristoranti`). Esteso `fetchDescriptiveCategorySlugToNid` per accettare qualsiasi parent NID.
+- **Cross-link ®**: `SpecHubCrossLinks` ora strippa `® ™ ©` dai path prima di risolvere (fix FAUX MOSAIQUE® senza immagine).
+
+#### Tutorial listing pages
+
+- **`SpecTutorialListing.tsx`**: listing tutorial con pill filtri per 10 tipologie vetrite, grid video con play overlay, thumbnail da Drupal `field_immagine` (fallback YouTube `hqdefault.jpg`).
+- **Route**: `/tutorial-vetrite` (con filtri tipologia), `/tutorial-mosaico` (senza filtri).
+- **`fetchTutorialsByCategory`**: fetcher con filtro categoria `vetrite`/`mosaico` + tipologia (preparato, attivabile quando Freddi aggiunge `field_tipologia`).
+- **`fetchTutorialTipologie`**: 10 tipologie da `/api/v1/tutorial-tipologie`.
+- **`img.youtube.com`** aggiunto a `remotePatterns` in `next.config.mjs`.
+
+#### Tag pages + article tag links
+
+- **`Tag.tsx`**: riscritto a template DS con Typography + prose body.
+- **`Articolo.tsx`**: tag in fondo a ogni articolo come pill link → puntano alla pagina tag (es. `/camera-da-letto`) con fallback a `/blog?tag={nid}`.
+- **`fetchBlogTags`**: risolve path alias via slugify + `resolvePath`, con fallback a `content/{nid}` quando endpoint `/tags` è down.
+- **`BlogTag`**: aggiunto campo `path`.
+
+#### Blog listing with category filter (categories-blog endpoint)
+
+- **`SpecInspirationListing`**: aggiornato per usare endpoint dedicato `/api/v1/categories-blog` (13 categorie).
+- **`fetchBlogCategories`**: riscritto per usare endpoint dedicato (prima estraeva dai dati articoli).
+- **`fetchBlogTags`**: nuovo fetcher da `/api/v1/tags` (8 tag).
+
 #### Client-side P0 collection filtering for mosaico
 
 - **`ClientFilteredListing`**: new client component — receives all ~640 mosaico products, filters by collection slug derived from product path. Collection switch is instant (no server round-trip).
