@@ -86,7 +86,6 @@ interface ProductListingTemplateProps {
   tNav?: (key: string) => string;
   tBreadcrumb?: (key: string) => string;
   tProducts?: (key: string) => string;
-
 }
 
 const PRODUCTS_PATH: Record<string, string> = {
@@ -213,11 +212,20 @@ export async function ProductListingTemplate(
   }));
 
   // Fetch "other pages" (Marble, Artistic Mosaic, etc.) for breadcrumb siblings
-  const otherPagesParentNid = FILTER_REGISTRY[productType]?.otherPagesParentNid;
+  const otherPagesParentNidRaw =
+    FILTER_REGISTRY[productType]?.otherPagesParentNid;
+  const otherPagesParentNids = otherPagesParentNidRaw
+    ? Array.isArray(otherPagesParentNidRaw)
+      ? otherPagesParentNidRaw
+      : [otherPagesParentNidRaw]
+    : [];
   let otherPageSiblings: { label: string; href: string }[] = [];
-  if (otherPagesParentNid) {
+  if (otherPagesParentNids.length > 0) {
     const drupalLocale = toDrupalLocale(locale);
-    const cats = await fetchHubCategories(otherPagesParentNid, locale);
+    const allCats = await Promise.all(
+      otherPagesParentNids.map((nid) => fetchHubCategories(nid, locale)),
+    );
+    const cats = allCats.flat();
     const categoryHref = getCategoryHref(productType);
     // Resolve actual aliases for each category page
     const resolved = await Promise.all(
@@ -297,10 +305,14 @@ export async function ProductListingTemplate(
             />
           </DevBlockOverlay>
         )}
-        {FILTER_REGISTRY[productType]?.otherPagesParentNid && (
+        {otherPagesParentNids.length > 0 && (
           <DevBlockOverlay name="SpecHubOtherPages" status="ds">
             <SpecHubOtherPages
-              parentNid={FILTER_REGISTRY[productType]!.otherPagesParentNid!}
+              parentNid={
+                otherPagesParentNids.length === 1
+                  ? otherPagesParentNids[0]
+                  : otherPagesParentNids
+              }
               basePath={basePath}
               locale={locale}
             />
@@ -325,8 +337,8 @@ export async function ProductListingTemplate(
     productType === 'prodotto_illuminazione' ||
     productType === 'prodotto_arredo' ||
     productType === 'prodotto_vetrite'
-      ? 'contain' as const
-      : 'cover' as const;
+      ? ('contain' as const)
+      : ('cover' as const);
 
   return (
     <div>

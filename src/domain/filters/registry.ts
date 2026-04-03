@@ -76,8 +76,8 @@ export interface ProductTypeConfig {
   includes: string[];
   filters: Record<string, FilterGroupConfig>;
   listing: ListingConfig;
-  /** Parent NID for "other pages" section in hub (descriptive categories) */
-  otherPagesParentNid?: number;
+  /** Parent NID(s) for "other pages" section in hub (descriptive categories) */
+  otherPagesParentNid?: number | number[];
 }
 
 // ── Unified slug → term name map ──────────────────────────────────────────
@@ -279,7 +279,7 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
       ],
       pageSize: 48,
     },
-    otherPagesParentNid: 338,
+    otherPagesParentNid: [338, 4274],
   },
 
   prodotto_vetrite: {
@@ -506,6 +506,7 @@ export const FILTER_REGISTRY: Record<string, ProductTypeConfig> = {
       ],
       pageSize: 48,
     },
+    otherPagesParentNid: 4272,
   },
 
   prodotto_pixall: {

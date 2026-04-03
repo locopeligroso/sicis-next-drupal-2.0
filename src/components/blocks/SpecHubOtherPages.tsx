@@ -17,31 +17,41 @@ function slugifyName(name: string): string {
 }
 
 interface SpecHubOtherPagesProps {
-  parentNid: number;
+  parentNid: number | number[];
   basePath: string;
   locale: string;
 }
 
 export async function SpecHubOtherPages({
-  parentNid,
+  parentNid: parentNidProp,
   basePath,
   locale,
 }: SpecHubOtherPagesProps) {
+  // Support array of parent NIDs — render categories from all parents
+  const parentNids = Array.isArray(parentNidProp)
+    ? parentNidProp
+    : [parentNidProp];
+
+  // Fetch categories from all parent NIDs in parallel, then merge
+  const allCategoriesArrays = await Promise.all(
+    parentNids.map((nid) => fetchHubCategories(nid, locale)),
+  );
+  const mergedCategories = allCategoriesArrays.flat();
+  if (mergedCategories.length === 0) return null;
+
   const drupalLocale = toDrupalLocale(locale);
+  const categories = mergedCategories;
 
-  // Fetch categories in current locale (for display names/images) AND in EN
-  // (for reliable slug-based resolve-path). EN slugifyName matches EN Drupal
-  // aliases (e.g. "Metal mosaic" → "metal-mosaic" = /mosaic/metal-mosaic).
-  const [categories, enCategories, baseResolved] = await Promise.all([
-    fetchHubCategories(parentNid, locale),
-    fetchHubCategories(parentNid, 'en'),
-    // Resolve basePath to discover EN base alias (e.g. /mosaico → aliases.en = /mosaic)
-    resolvePath(stripLocalePrefix(basePath) ?? basePath, drupalLocale).catch(
-      () => null,
-    ),
-  ]);
+  // Fetch EN categories for reliable slug-based resolve-path
+  const allEnArrays = await Promise.all(
+    parentNids.map((nid) => fetchHubCategories(nid, 'en')),
+  );
+  const enCategories = allEnArrays.flat();
 
-  if (categories.length === 0) return null;
+  const baseResolved = await resolvePath(
+    stripLocalePrefix(basePath) ?? basePath,
+    drupalLocale,
+  ).catch(() => null);
 
   const enBasePath = baseResolved?.aliases?.en ?? stripLocalePrefix(basePath);
 
