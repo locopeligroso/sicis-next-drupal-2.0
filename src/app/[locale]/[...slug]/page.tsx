@@ -134,38 +134,14 @@ const getPageData = cache(async (locale: string, drupalPath: string) => {
   return null;
 });
 
-// Legacy SEO aliases NOT covered by PRODUCT_LISTING_SLUGS in section-config.
-// These exist purely for backward-compat/SEO — do NOT remove without verifying
-// there are no inbound links or Drupal routes that still use these paths.
-//
-// мозаика    — RU mosaico (MOSAICO_SLUGS omits the Cyrillic variant)
-// furniture  — legacy EN arredo (in ARREDO_PREFIXES only, not ARREDO_SLUGS)
-// mobilier   — legacy FR arredo (in ARREDO_PREFIXES only)
-// moebel     — legacy DE arredo (in ARREDO_PREFIXES only)
-// leuchten   — old DE illuminazione slug (section-config now uses 'beleuchtung')
-// iluminación — ES illuminazione with accent (section-config uses 'iluminacion')
-const LEGACY_SEO_ALIASES = new Set([
-  'мозаика', // RU mosaico
-  'furniture', // legacy EN arredo
-  'mobilier', // legacy FR arredo
-  'moebel', // legacy DE arredo
-  'leuchten', // old DE illuminazione
-  'iluminación', // ES illuminazione with accent variant
-]);
-
-// Fallback: used when registry is null (Drupal menu unavailable).
-// Slug che devono bypassare translatePath perché Drupal ha nodi (categoria_blog,
-// documento, page) con lo stesso alias che verrebbero renderizzati al posto del
-// listing prodotti corretto. getSectionConfig gestisce il productType.
-// Derived programmatically from section-config slug Sets (PRODUCT_LISTING_SLUGS)
-// plus the small LEGACY_SEO_ALIASES above — 58 entries reduced to 6 kept manually.
-const LISTING_SLUG_OVERRIDES: ReadonlySet<string> = new Set([
-  ...PRODUCT_LISTING_SLUGS,
-  ...LEGACY_SEO_ALIASES,
-]);
+// listing slug detection eliminated — all product listing slugs now come from
+// the CMS-driven routing registry (built from Drupal menu API).
+// LEGACY_SEO_ALIASES (furniture, mobilier, moebel, leuchten, iluminación, мозаика)
+// removed: Freddi fixed URL collisions in Drupal + registry covers via UUID cross-ref.
+// Fallback: PRODUCT_LISTING_SLUGS from section-config used only when registry is null.
 
 // Products master page slugs — one per locale.
-// Must be checked BEFORE LISTING_SLUG_OVERRIDES because "prodotti" is a
+// Must be checked BEFORE listing slug detection because "prodotti" is a
 // single-slug path that should render the master page, not a product listing.
 const PRODUCTS_MASTER_SLUGS = new Set([
   'prodotti', // IT
@@ -329,14 +305,14 @@ export default async function SlugPage({
 
   const singleSlugRaw = slug.length === 1 ? slug[0] : null;
   // Decode + NFC-normalize so encoded slugs (mosa%C3%AFque, %D0%BC%D0%BE%D0%B7%D0%B0%D0%B8%D0%BA%D0%B0)
-  // match the literal entries in LISTING_SLUG_OVERRIDES / PRODUCTS_MASTER_SLUGS.
+  // match the literal entries in listing slug detection / PRODUCTS_MASTER_SLUGS.
   const singleSlug = singleSlugRaw
     ? decodeURIComponent(singleSlugRaw).normalize('NFC')
     : null;
 
   // ── Products master page interception ─────────────────────────────────────
   // /prodotti (IT), /products (EN), etc. — static page listing all product categories.
-  // Must be checked BEFORE LISTING_SLUG_OVERRIDES to avoid falling through to Drupal.
+  // Must be checked BEFORE listing slug detection to avoid falling through to Drupal.
   if (singleSlug && PRODUCTS_MASTER_SLUGS.has(singleSlug)) {
     return (
       <>
@@ -347,7 +323,7 @@ export default async function SlugPage({
   }
 
   // ── Content listing slug interception ─────────────────────────────────────
-  // Must be checked BEFORE LISTING_SLUG_OVERRIDES — otherwise slugs like "blog",
+  // Must be checked BEFORE listing slug detection — otherwise slugs like "blog",
   // "showroom", "environments" that exist in the Drupal routing registry would be
   // caught by the product listing check, getSectionConfigAsync returns null, → 404.
   if (singleSlug && CONTENT_LISTING_SLUGS[singleSlug]) {
@@ -476,35 +452,16 @@ export default async function SlugPage({
     }
   }
 
-  // Bypass translatePath per slug che devono essere listing prodotti ma hanno nodi Drupal
-  // con lo stesso alias (categoria_blog, documento, page) che verrebbero renderizzati al posto.
-  // Exception: if resolve-path says this slug is a regular "page" bundle, skip listing
-  // intercept and render as content page (handles info-tecniche-* children of product menus).
+  // Product listing slug detection — CMS-driven via routing registry.
+  // Fallback to hardcoded PRODUCT_LISTING_SLUGS when registry is unavailable.
   const isListingSlug =
     registry?.listingSlugs.has(singleSlug!) ||
-    LISTING_SLUG_OVERRIDES.has(singleSlug!);
+    (!registry && PRODUCT_LISTING_SLUGS.has(singleSlug!));
   if (singleSlug && isListingSlug) {
     const resolvedListing = await resolvePath(drupalPath, locale);
-    // Skip listing only if resolve-path says it's a page AND the slug is NOT
-    // in the hardcoded LISTING_SLUG_OVERRIDES (which are known product listings
-    // that happen to share aliases with Drupal page nodes, e.g. "prodotti-tessili").
-    // Only menu-derived slugs (registry-only) can be overridden by page bundle.
-    if (
-      resolvedListing?.bundle === 'page' &&
-      !LISTING_SLUG_OVERRIDES.has(singleSlug!)
-    ) {
-      // Not a listing — fall through to entity rendering below
-    } else {
-      if (
-        process.env.NODE_ENV !== 'production' &&
-        LISTING_SLUG_OVERRIDES.has(singleSlug!) &&
-        !registry?.listingSlugs.has(singleSlug!)
-      ) {
-        console.debug('[routing] LISTING_SLUG_OVERRIDES hit:', {
-          slug: singleSlug,
-          locale,
-        });
-      }
+    // If Drupal says this is a "page" bundle, let it render as content page
+    // (e.g. info-tecniche-* children of product menus). Otherwise render listing.
+    if (resolvedListing?.bundle !== 'page') {
       return (
         <Suspense fallback={<ProductListingSkeleton />}>
           <ListingContent
