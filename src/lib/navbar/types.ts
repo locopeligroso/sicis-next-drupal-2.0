@@ -1,21 +1,7 @@
 import type { MenuItem } from '@/lib/drupal';
 
 // ════════════════════════════════════════════════════════════════════════════
-// Explore section — 12 Drupal children reorganized into 5 category groups
-// ════════════════════════════════════════════════════════════════════════════
-
-export interface ExploreCategoryGroup {
-  /** Group label (e.g. "Mosaico", "Vetrite", "Living", "Tessile", "Jewels") */
-  label: string;
-  items: MenuItem[];
-}
-
-export interface ExploreSection {
-  items: ExploreCategoryGroup[];
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-// Filter & Find section — 5 product categories with secondary links
+// Generic section model — fully CMS-driven, no hardcoded section names
 // ════════════════════════════════════════════════════════════════════════════
 
 export interface SecondaryLink {
@@ -23,35 +9,37 @@ export interface SecondaryLink {
   url: string;
 }
 
-export interface FilterFindCategory {
-  /** The original menu item (e.g. "Mosaico", "Lastre vetro Vetrite") */
+/**
+ * A single item within a nav section.
+ * For 'product' sections: represents a product category (Mosaico, Vetrite, etc.)
+ * For 'list' sections: represents a child page (Progetti, Showroom, etc.)
+ */
+export interface NavSectionItem {
+  /** The original menu item from Drupal */
   item: MenuItem;
-  /** Deep-dive links (catalogs, certifications, tutorials, etc.) */
+  /** Deep-dive links (info tecniche, catalogs, certifications) */
   secondaryLinks: SecondaryLink[];
   /** Cross-product links (e.g. Illuminazione, Tappeti from arredo hub) */
   crossLinks: SecondaryLink[];
 }
 
-export interface FilterFindSection {
-  items: FilterFindCategory[];
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-// Projects section — 4 items kept as-is
-// ════════════════════════════════════════════════════════════════════════════
-
-export interface ProjectsSection {
-  items: MenuItem[];
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-// Info section — split into strategic, corporate, professional
-// ════════════════════════════════════════════════════════════════════════════
-
-export interface InfoSection {
-  strategic: MenuItem[];
-  corporate: MenuItem[];
-  professional: MenuItem[];
+/**
+ * A top-level navigation section.
+ * Variant is inferred structurally:
+ * - 'product': children have sub-children (info tecniche, cross-links)
+ * - 'list': children are flat links
+ */
+export interface NavSection {
+  /** CMS title (e.g. "Products", "Projects", "Info & Services") */
+  title: string;
+  /** CMS description */
+  description: string;
+  /** URL of the section itself (may be empty/<nolink> for container sections) */
+  url: string;
+  /** Structural variant — determines mega-menu renderer */
+  variant: 'product' | 'list';
+  /** Children of this section */
+  items: NavSectionItem[];
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -59,12 +47,6 @@ export interface InfoSection {
 // ════════════════════════════════════════════════════════════════════════════
 
 export interface NavbarMenu {
-  explore: ExploreSection;
-  filterFind: FilterFindSection;
-  projects: ProjectsSection;
-  info: InfoSection;
-  /** CMS titles for top-level nav items (from Drupal menu title field, translated per locale) */
-  sectionTitles: Record<string, string>;
-  /** CMS descriptions for top-level nav items (from Drupal menu description field) */
-  sectionDescriptions: Record<string, string>;
+  /** Ordered sections from CMS — each becomes a mega-menu tab */
+  sections: NavSection[];
 }

@@ -5,7 +5,7 @@ import { mapMenuToNavbar } from '@/lib/navbar/menu-mapper';
 import { FILTER_REGISTRY } from '@/domain/filters/registry';
 import { resolvePath } from '@/lib/api/resolve-path';
 import { apiGet } from '@/lib/api/client';
-import type { SecondaryLink } from './types';
+import type { SecondaryLink, NavSectionItem } from './types';
 
 interface HubLinks {
   deepDiveLinks: SecondaryLink[];
@@ -28,14 +28,24 @@ async function expandDeepDiveLink(
     if (!resolved?.nid) return [link];
 
     const blocks = await apiGet<
-      { type: string; field_elementi_tecnici?: { nid: number; field_titolo_main: string; aliases: Record<string, string> }[] }[]
+      {
+        type: string;
+        field_elementi_tecnici?: {
+          nid: number;
+          field_titolo_main: string;
+          aliases: Record<string, string>;
+        }[];
+      }[]
     >(`/${locale}/blocks/${resolved.nid}`, {}, 1800);
 
     if (!blocks || !Array.isArray(blocks)) return [link];
 
     // Find a blocco_e with referenced pages
     const bloccoE = blocks.find(
-      (b) => b.type === 'blocco_e' && Array.isArray(b.field_elementi_tecnici) && b.field_elementi_tecnici.length > 0,
+      (b) =>
+        b.type === 'blocco_e' &&
+        Array.isArray(b.field_elementi_tecnici) &&
+        b.field_elementi_tecnici.length > 0,
     );
 
     if (!bloccoE) return [link];
@@ -73,10 +83,16 @@ const _getHubLinksISR = unstable_cache(
 
     const basePath = config.basePaths[locale] ?? config.basePaths['it'];
 
-    const category = navbarMenu.filterFind.items.find((cat) => {
-      const url = cat.item.url;
-      return url.endsWith(`/${basePath}`) || url.endsWith(`/${basePath}/`);
-    });
+    // Find the product section (variant-based, no title matching)
+    const productSection = navbarMenu.sections.find(
+      (s) => s.variant === 'product',
+    );
+    const category: NavSectionItem | undefined = productSection?.items.find(
+      (cat) => {
+        const url = cat.item.url;
+        return url.endsWith(`/${basePath}`) || url.endsWith(`/${basePath}/`);
+      },
+    );
 
     const rawLinks = category?.secondaryLinks ?? [];
 

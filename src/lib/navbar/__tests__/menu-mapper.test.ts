@@ -11,11 +11,12 @@ function makeItem(
   url: string,
   children: MenuItem[] = [],
   weight = 0,
+  description = '',
 ): MenuItem {
   return {
     id: `menu-${title.toLowerCase().replace(/\s+/g, '-')}`,
     title,
-    description: '',
+    description,
     url,
     weight,
     children,
@@ -23,47 +24,54 @@ function makeItem(
 }
 
 const fixtureMenuItems: MenuItem[] = [
-  // Home
+  // Home (no children — should be skipped)
   makeItem('Home', '/it'),
-  // Explore (12 children)
-  makeItem('Explore', '/it', [
-    makeItem('Tinte unite', '/it/mosaico/tinte-unite', [], 0),
-    makeItem('Mosaico in marmo', '/it/mosaico/marmo', [], 1),
-    makeItem('Mosaico in metallo', '/it/mosaico/metallo', [], 2),
-    makeItem('Pixel mosaic', '/it/mosaico/pixel', [], 3),
-    makeItem('Artistic mosaic', '/it/mosaico/artistico', [], 4),
-    makeItem('Lastre vetro Vetrite', '/it/vetrite', [], 5),
-    makeItem('Arredo', '/it/arredo', [], 6),
-    makeItem('Cucina', '/it/cucina', [], 7),
-    makeItem('Illuminazione', '/it/illuminazione', [], 8),
-    makeItem('Prodotti Tessili', '/it/tessile', [], 9),
-    makeItem('Mosaico bagno', '/it/mosaico/bagno', [], 10),
-    makeItem('Sicis Jewels', '/it/jewels', [], 11),
+  // Products (children with sub-children → variant: 'product')
+  makeItem('Products', '/it', [
+    makeItem('Mosaico', '/it/mosaico', [
+      makeItem('Info tecniche', '/it/info-tecniche-mosaico'),
+    ]),
+    makeItem('Lastre vetro Vetrite', '/it/vetrite', [
+      makeItem('Info tecniche', '/it/info-tecniche-vetrite'),
+    ]),
+    makeItem('Arredo', '/it/arredo', [
+      makeItem('Info tecniche', '/it/info-tecniche-arredo'),
+      makeItem('Cross-Link', '', [
+        makeItem('Lighting', '/it/illuminazione'),
+        makeItem('Carpets', '/it/tessile/tappeti'),
+      ]),
+    ]),
+    makeItem('Illuminazione', '/it/illuminazione', [
+      makeItem('Info tecniche', '/it/info-tecniche-illuminazione'),
+    ]),
+    makeItem('Prodotti Tessili', '/it/tessile', [
+      makeItem('Info tecniche', '/it/info-tecniche-tessuti'),
+    ]),
+    makeItem('Sicis Jewels', '/it/sicis-jewels', [
+      makeItem('Dedicated website', 'https://www.sicisjewels.com/'),
+    ]),
   ]),
-  // Filter and Find (5 children)
-  makeItem('Filter and Find', '/it', [
-    makeItem('Mosaico', '/it/mosaico', [], 0),
-    makeItem('Lastre vetro Vetrite', '/it/vetrite', [], 1),
-    makeItem('Arredo', '/it/arredo', [], 2),
-    makeItem('Illuminazione', '/it/illuminazione', [], 3),
-    makeItem('Prodotti Tessili', '/it/tessile', [], 4),
-  ]),
-  // Projects (4 children)
+  // Projects (flat children → variant: 'list')
   makeItem('Projects', '/it', [
-    makeItem('Progetti', '/it/progetti', [], 0),
-    makeItem('Ambienti', '/it/ambienti', [], 1),
-    makeItem('Inspiration', '/it/inspiration', [], 2),
-    makeItem('Interior Design Service', '/it/interior-design-service', [], 3),
+    makeItem('Progetti', '/it/progetti', [], 0, 'Le realizzazioni SICIS'),
+    makeItem('Ambienti', '/it/ambienti', [], 1, 'Ispirazioni per ogni spazio'),
+    makeItem('Inspiration', '/it/blog', [], 2, 'Tendenze e idee'),
+    makeItem(
+      'Interior Design Service',
+      '/it/interior-design-service',
+      [],
+      3,
+      'Progettazione personalizzata',
+    ),
   ]),
-  // Info & Services (7 children)
+  // Info & Services (flat children → variant: 'list')
   makeItem('Info & Services', '/it', [
-    makeItem('Heritage', '/it/heritage', [], 0),
-    makeItem('About us', '/it/about-us', [], 1),
-    makeItem('Sicis Village', '/it/sicis-village', [], 2),
-    makeItem('Showroom', '/it/showroom', [], 3),
-    makeItem('Contacts', '/it/contacts', [], 4),
-    makeItem('Professional', '/it/professional', [], 5),
-    makeItem('Download Catalogues', '/it/download-catalogues', [], 6),
+    makeItem('Heritage', '/it/heritage'),
+    makeItem('About us', '/it/about-us'),
+    makeItem('Sicis Village', '/it/sicis-village'),
+    makeItem('Showroom', '/it/showroom', [], 0, 'I nostri spazi espositivi'),
+    makeItem('Contacts', '/it/contacts', [], 0, 'Scrivici'),
+    makeItem('Download Catalogues', '/it/download-catalogues'),
   ]),
 ];
 
@@ -74,103 +82,83 @@ const fixtureMenuItems: MenuItem[] = [
 describe('mapMenuToNavbar', () => {
   const result = mapMenuToNavbar(fixtureMenuItems);
 
-  // ── Explore section ───────────────────────────────────────────────────
+  // ── Generic section structure ────────────────────────────────────────
 
-  describe('explore section', () => {
-    it('has 5 category groups', () => {
-      expect(result.explore.items).toHaveLength(5);
+  describe('section structure', () => {
+    it('creates 3 sections (skips Home with no children)', () => {
+      expect(result.sections).toHaveLength(3);
     });
 
-    it('groups Mosaico items correctly', () => {
-      const mosaico = result.explore.items.find((g) => g.label === 'Mosaico');
-      expect(mosaico).toBeDefined();
-      expect(mosaico!.items).toHaveLength(5);
-      const titles = mosaico!.items.map((i) => i.title);
-      expect(titles).toContain('Tinte unite');
-      expect(titles).toContain('Mosaico in marmo');
-      expect(titles).toContain('Mosaico in metallo');
-      expect(titles).toContain('Pixel mosaic');
-      expect(titles).toContain('Artistic mosaic');
+    it('preserves CMS order: Products, Projects, Info & Services', () => {
+      const titles = result.sections.map((s) => s.title);
+      expect(titles).toEqual(['Products', 'Projects', 'Info & Services']);
     });
 
-    it('groups Vetrite items correctly', () => {
-      const vetrite = result.explore.items.find((g) => g.label === 'Vetrite');
-      expect(vetrite).toBeDefined();
-      expect(vetrite!.items).toHaveLength(1);
-      expect(vetrite!.items[0].title).toBe('Lastre vetro Vetrite');
+    it('infers product variant for sections with sub-children', () => {
+      const products = result.sections[0];
+      expect(products.variant).toBe('product');
     });
 
-    it('groups Living items correctly', () => {
-      const living = result.explore.items.find((g) => g.label === 'Living');
-      expect(living).toBeDefined();
-      expect(living!.items).toHaveLength(4);
-      const titles = living!.items.map((i) => i.title);
-      expect(titles).toContain('Arredo');
-      expect(titles).toContain('Cucina');
-      expect(titles).toContain('Illuminazione');
-      expect(titles).toContain('Mosaico bagno');
-    });
-
-    it('groups Tessile items correctly', () => {
-      const tessile = result.explore.items.find((g) => g.label === 'Tessile');
-      expect(tessile).toBeDefined();
-      expect(tessile!.items).toHaveLength(1);
-      expect(tessile!.items[0].title).toBe('Prodotti Tessili');
-    });
-
-    it('groups Jewels items correctly', () => {
-      const jewels = result.explore.items.find((g) => g.label === 'Jewels');
-      expect(jewels).toBeDefined();
-      expect(jewels!.items).toHaveLength(1);
-      expect(jewels!.items[0].title).toBe('Sicis Jewels');
-    });
-
-    it('preserves group order: Mosaico, Vetrite, Living, Tessile, Jewels', () => {
-      const labels = result.explore.items.map((g) => g.label);
-      expect(labels).toEqual([
-        'Mosaico',
-        'Vetrite',
-        'Living',
-        'Tessile',
-        'Jewels',
-      ]);
+    it('infers list variant for flat sections', () => {
+      const projects = result.sections[1];
+      const info = result.sections[2];
+      expect(projects.variant).toBe('list');
+      expect(info.variant).toBe('list');
     });
   });
 
-  // ── FilterFind section ────────────────────────────────────────────────
+  // ── Products section ────────────────────────────────────────────────
 
-  describe('filterFind section', () => {
-    it('has 5 filter categories', () => {
-      expect(result.filterFind.items).toHaveLength(5);
+  describe('products section', () => {
+    const products = result.sections[0];
+
+    it('has 6 product categories', () => {
+      expect(products.items).toHaveLength(6);
     });
 
-    it('preserves the original menu items', () => {
-      const titles = result.filterFind.items.map((c) => c.item.title);
+    it('preserves item titles from CMS', () => {
+      const titles = products.items.map((c) => c.item.title);
       expect(titles).toEqual([
         'Mosaico',
         'Lastre vetro Vetrite',
         'Arredo',
         'Illuminazione',
         'Prodotti Tessili',
+        'Sicis Jewels',
       ]);
     });
 
-    it('each category has a secondaryLinks array', () => {
-      for (const cat of result.filterFind.items) {
-        expect(Array.isArray(cat.secondaryLinks)).toBe(true);
-      }
+    it('extracts secondaryLinks from sub-children', () => {
+      const mosaico = products.items[0];
+      expect(mosaico.secondaryLinks).toHaveLength(1);
+      expect(mosaico.secondaryLinks[0].title).toBe('Info tecniche');
+    });
+
+    it('extracts crossLinks from Cross-Link sub-children', () => {
+      const arredo = products.items[2];
+      expect(arredo.crossLinks).toHaveLength(2);
+      expect(arredo.crossLinks[0].title).toBe('Lighting');
+      expect(arredo.crossLinks[1].title).toBe('Carpets');
+    });
+
+    it('does not put cross-link items into secondaryLinks', () => {
+      const arredo = products.items[2];
+      expect(arredo.secondaryLinks).toHaveLength(1);
+      expect(arredo.secondaryLinks[0].title).toBe('Info tecniche');
     });
   });
 
-  // ── Projects section ──────────────────────────────────────────────────
+  // ── Projects section ────────────────────────────────────────────────
 
   describe('projects section', () => {
+    const projects = result.sections[1];
+
     it('has 4 items', () => {
-      expect(result.projects.items).toHaveLength(4);
+      expect(projects.items).toHaveLength(4);
     });
 
-    it('preserves the items in order', () => {
-      const titles = result.projects.items.map((i) => i.title);
+    it('preserves items in CMS order', () => {
+      const titles = projects.items.map((i) => i.item.title);
       expect(titles).toEqual([
         'Progetti',
         'Ambienti',
@@ -180,76 +168,51 @@ describe('mapMenuToNavbar', () => {
     });
   });
 
-  // ── Info section ──────────────────────────────────────────────────────
+  // ── Info section ────────────────────────────────────────────────────
 
   describe('info section', () => {
-    it('assigns strategic items correctly', () => {
-      const titles = result.info.strategic.map((i) => i.title);
-      expect(titles).toContain('Showroom');
-      expect(titles).toContain('Contacts');
-      expect(titles).toContain('Download Catalogues');
-      expect(titles).toHaveLength(3);
-    });
+    const info = result.sections[2];
 
-    it('assigns corporate items correctly', () => {
-      const titles = result.info.corporate.map((i) => i.title);
-      expect(titles).toContain('Heritage');
-      expect(titles).toContain('About us');
-      expect(titles).toContain('Sicis Village');
-      expect(titles).toHaveLength(3);
-    });
-
-    it('assigns professional items correctly', () => {
-      const titles = result.info.professional.map((i) => i.title);
-      expect(titles).toContain('Professional');
-      expect(titles).toHaveLength(1);
+    it('has 6 items in CMS order', () => {
+      expect(info.items).toHaveLength(6);
+      const titles = info.items.map((i) => i.item.title);
+      expect(titles).toEqual([
+        'Heritage',
+        'About us',
+        'Sicis Village',
+        'Showroom',
+        'Contacts',
+        'Download Catalogues',
+      ]);
     });
   });
 
-  // ── Edge cases ────────────────────────────────────────────────────────
+  // ── Edge cases ──────────────────────────────────────────────────────
 
   describe('edge cases', () => {
-    it('returns empty sections for empty input', () => {
+    it('returns empty sections array for empty input', () => {
       const empty = mapMenuToNavbar([]);
-      expect(empty.explore.items).toEqual([]);
-      expect(empty.filterFind.items).toEqual([]);
-      expect(empty.projects.items).toEqual([]);
-      expect(empty.info.strategic).toEqual([]);
-      expect(empty.info.corporate).toEqual([]);
-      expect(empty.info.professional).toEqual([]);
+      expect(empty.sections).toEqual([]);
     });
 
-    it('handles missing top-level sections gracefully', () => {
-      const partial = mapMenuToNavbar([
+    it('skips items without children', () => {
+      const minimal = mapMenuToNavbar([
         makeItem('Home', '/it'),
         makeItem('Projects', '/it', [makeItem('Progetti', '/it/progetti')]),
       ]);
-      expect(partial.explore.items).toEqual([]);
-      expect(partial.filterFind.items).toEqual([]);
-      expect(partial.projects.items).toHaveLength(1);
-      expect(partial.info.strategic).toEqual([]);
+      expect(minimal.sections).toHaveLength(1);
+      expect(minimal.sections[0].title).toBe('Projects');
     });
 
-    it('handles case-insensitive title matching for top-level sections', () => {
-      const caseVariant = mapMenuToNavbar([
-        makeItem('EXPLORE', '/it', [
-          makeItem('Tinte unite', '/it/mosaico/tinte-unite'),
+    it('adapts to any section title — no hardcoded matching', () => {
+      const renamed = mapMenuToNavbar([
+        makeItem('Completely New Name', '/it', [
+          makeItem('Child A', '/it/a', [makeItem('Sub', '/it/a/sub')]),
         ]),
       ]);
-      expect(caseVariant.explore.items.length).toBeGreaterThan(0);
-    });
-
-    it('handles case-insensitive title matching for info sub-items', () => {
-      const caseVariant = mapMenuToNavbar([
-        makeItem('Info & Services', '/it', [
-          makeItem('SHOWROOM', '/it/showroom'),
-          makeItem('heritage', '/it/heritage'),
-          makeItem('professional', '/it/professional'),
-        ]),
-      ]);
-      expect(caseVariant.info.strategic).toHaveLength(1);
-      expect(caseVariant.info.corporate).toHaveLength(1);
-      expect(caseVariant.info.professional).toHaveLength(1);
+      expect(renamed.sections).toHaveLength(1);
+      expect(renamed.sections[0].title).toBe('Completely New Name');
+      expect(renamed.sections[0].variant).toBe('product');
     });
   });
 });

@@ -28,6 +28,7 @@ interface RawArticleItem {
   field_data: string;
   field_immagine_anteprima: string | null;
   view_node: string;
+  field_categoria_blog: { nid: number; field_titolo_main: string } | null;
 }
 
 interface RawNewsItem {
@@ -54,6 +55,7 @@ interface RawProjectItem {
   field_tipologia?: string | null;
   field_categoria_progetto?: { tid: number; name: string } | null;
   view_node: string;
+  field_collegamento_esterno?: string | null;
 }
 
 // Documents endpoint is confirmed dead (404) but we keep the fetcher intact.
@@ -91,8 +93,18 @@ export interface ShowroomCard {
 }
 
 /**
+ * Blog category extracted from articles endpoint.
+ * There is no separate categories endpoint — categories are derived from articles data.
+ */
+export interface BlogCategory {
+  nid: number;
+  name: string;
+}
+
+/**
  * Legacy-compatible BlogCard shape.
  * Matches `src/lib/drupal/blog.ts` → `BlogCard`.
+ * categoryNid/categoryName are populated only for articolo type.
  */
 export interface BlogCard {
   id: string;
@@ -101,6 +113,8 @@ export interface BlogCard {
   path: string | null;
   type: 'articolo' | 'news' | 'tutorial';
   created: string;
+  categoryNid: number | null;
+  categoryName: string | null;
 }
 
 export interface BlogResult {
@@ -116,7 +130,10 @@ export interface ProgettoCard {
   id: string;
   title: string;
   imageUrl: string | null;
+  /** External link (field_collegamento_esterno) or internal path fallback */
   path: string | null;
+  categoryTid: number | null;
+  categoryName: string | null;
 }
 
 export interface ProjectsResult {
@@ -202,26 +219,102 @@ export const fetchShowrooms = cache(
 
 // ── articles endpoint ────────────────────────────────────────────────────────
 
-export const fetchArticles = cache(
-  async (locale = 'it'): Promise<BlogResult> => {
+/**
+ * Internal helper used by fetchBlogPosts aggregate.
+ * Returns all articles as BlogResult (posts+total shape).
+ * Not exported — use fetchArticles for public access.
+ */
+const _fetchArticlesBlog = cache(async (locale = 'it'): Promise<BlogResult> => {
+  const items = await apiGet<RawArticleItem[]>(`/${locale}/articles`, {}, 1800);
+  if (!items || !Array.isArray(items)) return { posts: [], total: 0 };
+  return {
+    posts: items.map(
+      (item): BlogCard => ({
+        id: item.nid,
+        title: item.field_titolo_main.replace(/&amp;/g, '&'),
+        imageUrl: emptyToNull(item.field_immagine_anteprima),
+        path: stripLocalePrefix(stripDomain(item.view_node)),
+        type: 'articolo',
+        created: item.field_data,
+        categoryNid: item.field_categoria_blog?.nid ?? null,
+        categoryName:
+          item.field_categoria_blog?.field_titolo_main?.replace(
+            /&amp;/g,
+            '&',
+          ) ?? null,
+      }),
+    ),
+    total: items.length,
+  };
+});
+
+/**
+ * Fetches unique blog categories extracted from the articles endpoint.
+ * There is no dedicated categories endpoint — categories are derived from articles data.
+ * Returns categories sorted alphabetically by name.
+ */
+export const fetchBlogCategories = cache(
+  async (locale = 'it'): Promise<BlogCategory[]> => {
     const items = await apiGet<RawArticleItem[]>(
       `/${locale}/articles`,
       {},
       1800,
     );
-    if (!items || !Array.isArray(items)) return { posts: [], total: 0 };
+    if (!items || !Array.isArray(items)) return [];
+    const seen = new Map<number, string>();
+    for (const item of items) {
+      const cat = item.field_categoria_blog;
+      if (cat?.nid && cat?.field_titolo_main) {
+        seen.set(cat.nid, cat.field_titolo_main.replace(/&amp;/g, '&'));
+      }
+    }
+    return Array.from(seen.entries())
+      .map(([nid, name]) => ({ nid, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  },
+);
+
+/**
+ * Fetches articles only (excludes news and tutorials).
+ * Supports optional categoryNid filter and client-side pagination.
+ */
+export const fetchArticles = cache(
+  async (
+    locale = 'it',
+    limit = 48,
+    offset = 0,
+    categoryNid?: number,
+  ): Promise<{ articles: BlogCard[]; total: number }> => {
+    const items = await apiGet<RawArticleItem[]>(
+      `/${locale}/articles`,
+      {},
+      1800,
+    );
+    if (!items || !Array.isArray(items)) return { articles: [], total: 0 };
+    const filtered =
+      categoryNid !== undefined
+        ? items.filter((item) => item.field_categoria_blog?.nid === categoryNid)
+        : items;
+    const total = filtered.length;
+    const paginated = filtered.slice(offset, offset + limit);
     return {
-      posts: items.map(
+      articles: paginated.map(
         (item): BlogCard => ({
           id: item.nid,
-          title: item.field_titolo_main,
+          title: item.field_titolo_main.replace(/&amp;/g, '&'),
           imageUrl: emptyToNull(item.field_immagine_anteprima),
           path: stripLocalePrefix(stripDomain(item.view_node)),
           type: 'articolo',
           created: item.field_data,
+          categoryNid: item.field_categoria_blog?.nid ?? null,
+          categoryName:
+            item.field_categoria_blog?.field_titolo_main?.replace(
+              /&amp;/g,
+              '&',
+            ) ?? null,
         }),
       ),
-      total: items.length,
+      total,
     };
   },
 );
@@ -240,11 +333,45 @@ export const fetchNews = cache(async (locale = 'it'): Promise<BlogResult> => {
         path: stripLocalePrefix(stripDomain(item.view_node)),
         type: 'news',
         created: item.field_data,
+        categoryNid: null,
+        categoryName: null,
       }),
     ),
     total: items.length,
   };
 });
+
+/**
+ * Fetches news items only (excludes articles and tutorials).
+ * Supports client-side pagination.
+ */
+export const fetchNewsItems = cache(
+  async (
+    locale = 'it',
+    limit = 48,
+    offset = 0,
+  ): Promise<{ news: BlogCard[]; total: number }> => {
+    const items = await apiGet<RawNewsItem[]>(`/${locale}/news`, {}, 1800);
+    if (!items || !Array.isArray(items)) return { news: [], total: 0 };
+    const total = items.length;
+    const paginated = items.slice(offset, offset + limit);
+    return {
+      news: paginated.map(
+        (item): BlogCard => ({
+          id: item.nid,
+          title: item.field_titolo_main,
+          imageUrl: emptyToNull(item.field_immagine_anteprima),
+          path: stripLocalePrefix(stripDomain(item.view_node)),
+          type: 'news',
+          created: item.field_data,
+          categoryNid: null,
+          categoryName: null,
+        }),
+      ),
+      total,
+    };
+  },
+);
 
 // ── tutorials endpoint ───────────────────────────────────────────────────────
 
@@ -266,6 +393,8 @@ export const fetchTutorials = cache(
           type: 'tutorial',
           // tutorials have no field_data — use empty string as fallback
           created: '',
+          categoryNid: null,
+          categoryName: null,
         }),
       ),
       total: items.length,
@@ -280,7 +409,7 @@ export const fetchBlogPosts = cache(
     // Fetch all 3 types in parallel — total is small (29+12+43 = 84 items),
     // so we fetch everything from each endpoint and paginate client-side.
     const [articles, news, tutorials] = await Promise.all([
-      fetchArticles(locale),
+      _fetchArticlesBlog(locale),
       fetchNews(locale),
       fetchTutorials(locale),
     ]);
@@ -305,25 +434,69 @@ export const fetchBlogPosts = cache(
   },
 );
 
+// ── project categories ──────────────────────────────────────────────────────
+
+interface RawProjectCategory {
+  tid: string;
+  name: string;
+  view_taxonomy_term: string;
+}
+
+export interface ProjectCategory {
+  tid: number;
+  name: string;
+}
+
+export const fetchProjectCategories = cache(
+  async (locale = 'it'): Promise<ProjectCategory[]> => {
+    const items = await apiGet<RawProjectCategory[]>(
+      `/${locale}/project-categories`,
+      {},
+      3600,
+    );
+    if (!items || !Array.isArray(items)) return [];
+    return items.map((item) => ({
+      tid: Number(item.tid),
+      name: item.name.replace(/&amp;/g, '&'),
+    }));
+  },
+);
+
 // ── projects endpoint ───────────────────────────────────────────────────────
 
 export const fetchProjects = cache(
-  async (locale = 'it', limit = 48, offset = 0): Promise<ProjectsResult> => {
+  async (
+    locale = 'it',
+    limit = 48,
+    offset = 0,
+    categoryTid?: number,
+  ): Promise<ProjectsResult> => {
     const items = await apiGet<RawProjectItem[]>(
       `/${locale}/projects`,
       {},
       1800,
     );
     if (!items || !Array.isArray(items)) return { projects: [], total: 0 };
-    const total = items.length;
-    const paginated = items.slice(offset, offset + limit);
+    let filtered = items;
+    if (categoryTid !== undefined) {
+      filtered = items.filter(
+        (item) => item.field_categoria_progetto?.tid === categoryTid,
+      );
+    }
+    const total = filtered.length;
+    const paginated = filtered.slice(offset, offset + limit);
     return {
       projects: paginated.map(
         (item): ProgettoCard => ({
           id: item.nid,
-          title: item.field_titolo_main,
+          title: item.field_titolo_main.replace(/&amp;/g, '&'),
           imageUrl: emptyToNull(item.field_immagine),
-          path: stripLocalePrefix(stripDomain(item.view_node)),
+          path:
+            emptyToNull(item.field_collegamento_esterno) ??
+            stripLocalePrefix(stripDomain(item.view_node)),
+          categoryTid: item.field_categoria_progetto?.tid ?? null,
+          categoryName:
+            item.field_categoria_progetto?.name?.replace(/&amp;/g, '&') ?? null,
         }),
       ),
       total,

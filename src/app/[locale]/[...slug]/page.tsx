@@ -44,16 +44,20 @@ import { parseFiltersFromUrl } from '@/domain/filters/search-params';
 // fetchProducts (V1 legacy) removed — all product types use type-specific listing endpoints
 import { FILTER_REGISTRY, deslugify } from '@/domain/filters/registry';
 import { MosaicProductPreview } from '@/templates/nodes/MosaicProductPreview';
-import ProjectListing from '@/components_legacy/ProjectListing';
+import { SpecProjectListing } from '@/components/blocks/SpecProjectListing';
+import { SpecInspirationListing } from '@/components/blocks/SpecInspirationListing';
+import { SpecNewsListing } from '@/components/blocks/SpecNewsListing';
 import EnvironmentListing from '@/components_legacy/EnvironmentListing';
-import BlogListing from '@/components_legacy/BlogListing';
 import ShowroomListing from '@/components_legacy/ShowroomListing';
 import DocumentListing from '@/components_legacy/DocumentListing';
 import {
   fetchEnvironments,
   fetchShowrooms,
   fetchProjects,
-  fetchBlogPosts,
+  fetchProjectCategories,
+  fetchArticles,
+  fetchBlogCategories,
+  fetchNewsItems,
   fetchDocuments,
 } from '@/lib/api/listings';
 
@@ -170,6 +174,8 @@ const CONTENT_LISTING_SLUGS: Record<string, string> = {
   // Ambienti
   ambienti: 'environments',
   environments: 'environments',
+  // Newsroom
+  newsroom: 'newsroom',
   // Showroom
   showroom: 'showroom',
   // Download cataloghi
@@ -365,15 +371,18 @@ export default async function SlugPage({
       () => Promise<React.ReactElement>
     > = {
       progetti: async () => {
-        const { projects, total } = await fetchProjects(
-          locale,
-          PAGE_SIZE,
-          offset,
-        );
+        const catStr = Array.isArray(sp?.cat) ? sp.cat[0] : sp?.cat;
+        const categoryTid = catStr ? parseInt(catStr, 10) : undefined;
+        const [{ projects, total }, categories] = await Promise.all([
+          fetchProjects(locale, PAGE_SIZE, offset, categoryTid),
+          fetchProjectCategories(locale),
+        ]);
         return (
-          <ProjectListing
+          <SpecProjectListing
             title={nodeTitle}
             projects={projects}
+            categories={categories}
+            activeCategory={categoryTid ?? null}
             total={total}
             locale={locale}
             currentPage={currentPage}
@@ -437,15 +446,32 @@ export default async function SlugPage({
         );
       },
       blog: async () => {
-        const { posts, total } = await fetchBlogPosts(
-          locale,
-          PAGE_SIZE,
-          offset,
-        );
+        const catStr = Array.isArray(sp?.cat) ? sp.cat[0] : sp?.cat;
+        const categoryNid = catStr ? parseInt(catStr, 10) : undefined;
+        const [{ articles, total }, categories] = await Promise.all([
+          fetchArticles(locale, PAGE_SIZE, offset, categoryNid),
+          fetchBlogCategories(locale),
+        ]);
         return (
-          <BlogListing
+          <SpecInspirationListing
             title={nodeTitle}
-            posts={posts}
+            articles={articles}
+            categories={categories}
+            activeCategory={categoryNid ?? null}
+            total={total}
+            locale={locale}
+            currentPage={currentPage}
+            pageSize={PAGE_SIZE}
+            basePath={basePath}
+          />
+        );
+      },
+      newsroom: async () => {
+        const { news, total } = await fetchNewsItems(locale, PAGE_SIZE, offset);
+        return (
+          <SpecNewsListing
+            title={nodeTitle}
+            news={news}
             total={total}
             locale={locale}
             currentPage={currentPage}

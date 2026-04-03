@@ -1,9 +1,11 @@
 import Link from 'next/link';
-import type { ProgettoCard } from '@/lib/api/listings';
+import type { ProgettoCard, ProjectCategory } from '@/lib/api/listings';
 
 interface ProjectListingProps {
   title: string;
   projects: ProgettoCard[];
+  categories?: ProjectCategory[];
+  activeCategory?: number | null;
   total: number;
   locale: string;
   currentPage?: number;
@@ -83,7 +85,10 @@ function ProjectCardItem({
 
   if (href) {
     return (
-      <Link href={href} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+      <Link
+        href={href}
+        style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
+      >
         {card}
       </Link>
     );
@@ -106,7 +111,11 @@ function Pagination({
   const pages = new Set<number>();
   pages.add(1);
   pages.add(totalPages);
-  for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
+  for (
+    let i = Math.max(1, currentPage - 2);
+    i <= Math.min(totalPages, currentPage + 2);
+    i++
+  ) {
     pages.add(i);
   }
   const pageList = Array.from(pages).sort((a, b) => a - b);
@@ -148,9 +157,18 @@ function Pagination({
         const prev = pageList[i - 1];
         const showEllipsis = prev !== undefined && p - prev > 1;
         return (
-          <span key={p} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+          <span
+            key={p}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+          >
             {showEllipsis && (
-              <span style={{ padding: '0.5rem 0.25rem', color: '#9ca3af', fontSize: '0.875rem' }}>
+              <span
+                style={{
+                  padding: '0.5rem 0.25rem',
+                  color: '#9ca3af',
+                  fontSize: '0.875rem',
+                }}
+              >
                 …
               </span>
             )}
@@ -197,6 +215,8 @@ function Pagination({
 export default function ProjectListing({
   title,
   projects,
+  categories = [],
+  activeCategory = null,
   total,
   locale,
   currentPage = 1,
@@ -217,13 +237,73 @@ export default function ProjectListing({
           marginBottom: '2rem',
         }}
       >
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+        <h1
+          style={{
+            fontSize: '1.75rem',
+            fontWeight: 700,
+            marginBottom: '0.5rem',
+          }}
+        >
           {title}
         </h1>
+
+        {/* Category filter pills */}
+        {categories.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              gap: '0.5rem',
+              flexWrap: 'wrap',
+              marginTop: '1rem',
+            }}
+          >
+            <Link
+              href={basePath}
+              style={{
+                padding: '0.375rem 1rem',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                borderRadius: '9999px',
+                textDecoration: 'none',
+                border: '1px solid',
+                borderColor: activeCategory === null ? '#111' : '#e5e7eb',
+                background: activeCategory === null ? '#111' : 'transparent',
+                color: activeCategory === null ? '#fff' : '#6b7280',
+              }}
+            >
+              All
+            </Link>
+            {categories.map((cat) => (
+              <Link
+                key={cat.tid}
+                href={`${basePath}?cat=${cat.tid}`}
+                style={{
+                  padding: '0.375rem 1rem',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  borderRadius: '9999px',
+                  textDecoration: 'none',
+                  border: '1px solid',
+                  borderColor: activeCategory === cat.tid ? '#111' : '#e5e7eb',
+                  background:
+                    activeCategory === cat.tid ? '#111' : 'transparent',
+                  color: activeCategory === cat.tid ? '#fff' : '#6b7280',
+                }}
+              >
+                {cat.name}
+              </Link>
+            ))}
+          </div>
+        )}
         {total > 0 && (
           <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
             {total} {total === 1 ? 'progetto' : 'progetti'}
-            {totalPages > 1 && ` — pagina ${currentPage} di ${totalPages} (${from}–${to})`}
+            {totalPages > 1 &&
+              ` — pagina ${currentPage} di ${totalPages} (${from}–${to})`}
           </p>
         )}
       </div>
@@ -238,7 +318,11 @@ export default function ProjectListing({
           }}
         >
           {projects.map((project) => (
-            <ProjectCardItem key={project.id} project={project} locale={locale} />
+            <ProjectCardItem
+              key={project.id}
+              project={project}
+              locale={locale}
+            />
           ))}
         </div>
       ) : (

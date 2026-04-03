@@ -173,23 +173,27 @@ async function fetchMenuForLocale(
 // ── Menu traversal helpers ────────────────────────────────────────────────
 
 /**
- * Recursively searches menu items for the "Filter and Find" section.
- * Matches by title containing "filter" (case-insensitive).
+ * Finds the products section by structural detection — no title matching.
+ * Identifies the top-level item whose children link to known product base
+ * paths (from PRODUCT_TYPE_ANCHORS). This is stable regardless of how the
+ * section is titled in Drupal.
  */
-function findFilterAndFindSection(items: MenuApiItem[]): MenuApiItem | null {
+function findProductsSection(items: MenuApiItem[]): MenuApiItem | null {
+  const anchors = new Set(Object.keys(PRODUCT_TYPE_ANCHORS));
+
   for (const item of items) {
-    if (item.title.toLowerCase().includes('filter')) {
-      return item;
-    }
-    const found = findFilterAndFindSection(item.children);
-    if (found) return found;
+    const hasProductChild = item.children.some((child) => {
+      const slug = normalizeMenuUrl(child.url, defaultLocale).split('/')[0];
+      return anchors.has(slug);
+    });
+    if (hasProductChild) return item;
   }
   return null;
 }
 
 /**
  * Builds a lookup map from menu item UUID → menu item for a given
- * "Filter and Find" section and all its descendants.
+ * Products section and all its descendants.
  */
 function buildUuidMap(section: MenuApiItem): Map<string, MenuApiItem> {
   const map = new Map<string, MenuApiItem>();
@@ -229,7 +233,7 @@ export async function buildRoutingRegistry(): Promise<RoutingRegistry> {
     }
   }
 
-  // 2. Find "Filter and Find" section in the default (IT) menu
+  // 2. Find products section in the default (IT) menu — structural detection
   const itMenu = menuByLocale[defaultLocale];
   if (!itMenu) {
     throw new Error(
@@ -237,10 +241,10 @@ export async function buildRoutingRegistry(): Promise<RoutingRegistry> {
     );
   }
 
-  const filterSection = findFilterAndFindSection(itMenu.items);
+  const filterSection = findProductsSection(itMenu.items);
   if (!filterSection) {
     throw new Error(
-      '[RoutingRegistry] "Filter and Find" section not found in IT menu',
+      '[RoutingRegistry] Products section not found in IT menu (no children match PRODUCT_TYPE_ANCHORS)',
     );
   }
 
@@ -263,7 +267,7 @@ export async function buildRoutingRegistry(): Promise<RoutingRegistry> {
         filterSectionByLocale[locale] = localeSection;
       } else {
         console.warn(
-          `[RoutingRegistry] "Filter and Find" section not found by UUID in "${locale}" menu`,
+          `[RoutingRegistry] Products section not found by UUID in "${locale}" menu`,
         );
         continue;
       }
@@ -283,7 +287,7 @@ export async function buildRoutingRegistry(): Promise<RoutingRegistry> {
   >();
   const slugToTermName = new Map<string, string>();
 
-  // 5. Process IT menu children of "Filter and Find"
+  // 5. Process IT menu children of Products
   for (const hubItem of filterSection.children) {
     const itSlug = normalizeMenuUrl(hubItem.url, defaultLocale);
     if (!itSlug) continue;
@@ -294,7 +298,7 @@ export async function buildRoutingRegistry(): Promise<RoutingRegistry> {
 
     if (!productType) {
       // This hub doesn't map to a product type (e.g. could be a non-product
-      // menu item under "Filter and Find"). Skip.
+      // menu item under Products). Skip.
       continue;
     }
 

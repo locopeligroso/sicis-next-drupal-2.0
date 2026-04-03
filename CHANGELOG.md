@@ -17,6 +17,37 @@ All notable changes to this project will be documented in this file.
 - **i18n**: `forms.infoProdotto`, `forms.infoGenerali`, `forms.contattaci` sections added to all 6 locales (IT/EN/FR/DE/ES/RU).
 - **Security**: HTML escape, email validation, field length limits on all 3 API routes.
 
+#### Menu fully CMS-driven — zero title matching
+
+- **Navbar refactor**: eliminati `SECTION_TITLES`, `EXPLORE_GROUP_MAP`, `INFO_CATEGORY_MAP` (~130 righe hardcoded). Ora il menu itera le sezioni top-level da Drupal in ordine CMS.
+- **`NavSection`** generico con `variant: 'product' | 'list'` inferito dalla struttura (figli con sotto-figli → product, figli piatti → list).
+- **`MegaMenuSection.tsx`**: 3 layout — `ProductLayout` (card+video hover), `ListLayout` (con hover images), `SplitLayout` (2 colonne per mix described/undescribed come vecchio Info).
+- **Explore eliminato**: la sezione non esiste più nel menu Drupal.
+- **`routing-registry.ts`**: `findProductsSection` usa URL matching via `PRODUCT_TYPE_ANCHORS` (non più title matching).
+- **`hub-links.ts`**: trova la sezione prodotti via `variant === 'product'`.
+- Eliminati 4 componenti: `MegaMenuExplore`, `MegaMenuFilterFind`, `MegaMenuProjects`, `MegaMenuInfo`.
+
+#### Project listing with category filter
+
+- **`SpecProjectListing.tsx`**: nuovo componente DS con pill filtri per 8 categorie progetto (`project-categories` endpoint), grid responsive 1/2/3 colonne, paginazione.
+- **`fetchProjectCategories`**: nuovo fetcher, ISR 3600s.
+- **`fetchProjects`**: aggiunto parametro opzionale `categoryTid` per filtro client-side.
+- **`ProgettoCard`**: aggiunti `categoryTid`, `categoryName`. Link da `field_collegamento_esterno` (priorità) con fallback su `view_node`.
+- HTML entities decodificate nei nomi categorie e titoli.
+
+#### Inspiration listing with category filter
+
+- **`SpecInspirationListing.tsx`**: listing articoli con pill filtri per categoria blog, date localizzate, badge categoria.
+- **`fetchArticles`**: nuovo fetcher standalone (articoli only, filtro per `categoryNid`).
+- **`fetchBlogCategories`**: estrae categorie uniche dagli articoli.
+- **`BlogCard`**: aggiunti `categoryNid`, `categoryName`.
+
+#### News listing
+
+- **`SpecNewsListing.tsx`**: listing news senza filtri, date localizzate.
+- **`fetchNewsItems`**: nuovo fetcher standalone (news only).
+- **`newsroom`** aggiunto a `CONTENT_LISTING_SLUGS` per route `/newsroom`.
+
 #### Contacts page — dedicated template
 
 - **`Contatti.tsx`**: nuovo template dedicato per la pagina contatti, con contenuto hardcoded (sede legale, recapiti, showroom) tradotto in 6 lingue + US.
