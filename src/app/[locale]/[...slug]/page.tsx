@@ -9,6 +9,8 @@ import {
   fetchDescriptiveCategoryNids,
   fetchDescriptiveCategorySlugToNid,
   ARREDO_INDOOR_PARENT_NID,
+  TESSILI_DESCRIPTIVE_PARENT_NID,
+  MOSAICO_DESCRIPTIVE_PARENT_NID,
 } from '@/lib/api/category-hub';
 import { fetchContent } from '@/lib/api/content';
 import { fetchBlocks } from '@/lib/api/blocks';
@@ -562,21 +564,45 @@ export default async function SlugPage({
     );
   }
 
-  // ── Arredo descriptive categories — slug-based detection ────────────────
-  // Pages like /arredo/bar-e-ristoranti have no Drupal path alias, so resolvePath
-  // returns null and all NID-based guards are ineffective. Detect by matching the
-  // second slug against slugified names from the NID 3522 children, then fetch
+  // ── Descriptive categories — slug-based detection ──────────────────────
+  // Pages like /arredo/bar-e-ristoranti or /prodotti-tessili/faux-mosaique have
+  // no Drupal path alias, so resolvePath returns null. Detect by matching the
+  // second slug against slugified names from the parent NID children, then fetch
   // content+blocks directly by NID and render via Categoria template.
-  // Must run BEFORE the product-detail and multi-slug listing interceptors.
+  // Applies to: arredo (3522), tessili (4272), mosaico (4274).
   if (slug.length >= 2) {
     const firstSlug = decodeURIComponent(slug[0]).normalize('NFC');
-    const arredoConfig = FILTER_REGISTRY['prodotto_arredo'];
-    const isArredoPrefix =
-      arredoConfig !== undefined &&
-      Object.values(arredoConfig.basePaths).some(
+
+    // Detect which product type this prefix belongs to
+    const DESCRIPTIVE_CONFIGS: { productType: string; parentNid: number }[] = [
+      { productType: 'prodotto_arredo', parentNid: 3522 },
+      {
+        productType: 'prodotto_tessuto',
+        parentNid: TESSILI_DESCRIPTIVE_PARENT_NID,
+      },
+      {
+        productType: 'prodotto_mosaico',
+        parentNid: MOSAICO_DESCRIPTIVE_PARENT_NID,
+      },
+    ];
+
+    let matchedDescriptiveParentNid: number | null = null;
+    let isArredoPrefix = false;
+
+    for (const cfg of DESCRIPTIVE_CONFIGS) {
+      const config = FILTER_REGISTRY[cfg.productType];
+      if (!config) continue;
+      const matches = Object.values(config.basePaths).some(
         (bp) => firstSlug === bp.split('/')[0],
       );
-    if (isArredoPrefix) {
+      if (matches) {
+        matchedDescriptiveParentNid = cfg.parentNid;
+        if (cfg.productType === 'prodotto_arredo') isArredoPrefix = true;
+        break;
+      }
+    }
+
+    if (matchedDescriptiveParentNid !== null) {
       const secondSlug = decodeURIComponent(slug[1]).normalize('NFC');
 
       // ── Exception: /arredo/outdoor — no Drupal alias, hardcoded NID 348 ──
@@ -588,7 +614,7 @@ export default async function SlugPage({
       // Guard: slug.length === 2 only. A third segment means a product detail page
       // (e.g. /arredo/outdoor/filicudi-outdoor-coffee-table) — let it fall through
       // to the product-detail interception block below (resolvePath → prodotto_arredo).
-      if (secondSlug === 'outdoor' && slug.length === 2) {
+      if (isArredoPrefix && secondSlug === 'outdoor' && slug.length === 2) {
         const outdoorTitle =
           ((await fetchContent(348, locale).catch(() => null))
             ?.field_titolo_main as string | undefined) ?? 'Outdoor';
@@ -610,7 +636,10 @@ export default async function SlugPage({
       // Let those fall through to the product-detail interception block.
       const descriptiveSlugToNid =
         slug.length === 2
-          ? await fetchDescriptiveCategorySlugToNid(locale)
+          ? await fetchDescriptiveCategorySlugToNid(
+              locale,
+              matchedDescriptiveParentNid,
+            )
           : new Map<string, number>();
       const descriptiveNid = descriptiveSlugToNid.get(secondSlug);
       if (descriptiveNid != null) {

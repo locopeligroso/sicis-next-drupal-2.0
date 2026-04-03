@@ -30,6 +30,12 @@ export const ARREDO_INDOOR_PARENT_NID = 4261;
 /** Parent NID for Arredo Descriptive categories (render blocks, NOT product listings) */
 export const ARREDO_DESCRIPTIVE_PARENT_NID = 3522;
 
+/** Parent NID for Tessili Descriptive categories (FAUX MOSAIQUE®, etc.) */
+export const TESSILI_DESCRIPTIVE_PARENT_NID = 4272;
+
+/** Parent NID for Mosaico Descriptive categories (bagno, piscina — currently empty) */
+export const MOSAICO_DESCRIPTIVE_PARENT_NID = 4274;
+
 // ── Raw response shape from Drupal views ─────────────────────────────────
 
 interface CategoryHubRawItem {
@@ -108,17 +114,15 @@ function slugifyDescriptiveName(name: string): string {
 }
 
 /**
- * Returns a Map<slug, nid> for all Arredo descriptive categories (NID 3522 children).
+ * Returns a Map<slug, nid> for descriptive categories (children of a parent NID).
  * Used by the routing layer for slug-based detection — these pages have no Drupal path
  * alias, so resolvePath returns null and NID-based guards cannot be used.
  * Cached at 86400s (same as hub data).
  */
 export const fetchDescriptiveCategorySlugToNid = cache(
-  async (locale: string): Promise<Map<string, number>> => {
-    const cats = await fetchHubCategories(
-      ARREDO_DESCRIPTIVE_PARENT_NID,
-      locale,
-    );
+  async (locale: string, parentNid?: number): Promise<Map<string, number>> => {
+    const nid = parentNid ?? ARREDO_DESCRIPTIVE_PARENT_NID;
+    const cats = await fetchHubCategories(nid, locale);
     const map = new Map<string, number>();
     for (const cat of cats) {
       map.set(slugifyDescriptiveName(cat.name), parseInt(cat.nid, 10));
