@@ -36,6 +36,9 @@ interface ListingData {
   filterDefinitions: FilterDefinition[];
   sort: string | undefined;
   hasActiveP0: boolean;
+  // Client-side P0 filtering (mosaico collection)
+  allProducts: ProductCard[] | undefined;
+  activeCollectionSlug: string | undefined;
   // Popover data (JSX is built in renderProductListing from these plain values)
   popoverItems:
     | {
@@ -83,6 +86,8 @@ async function _fetchListingData(
       filterDefinitions: [],
       sort: undefined,
       hasActiveP0: false,
+      allProducts: undefined,
+      activeCollectionSlug: undefined,
       popoverItems: undefined,
       popoverIsColorSwatch: false,
     };
@@ -127,6 +132,7 @@ async function _fetchListingData(
   let products: ProductCard[] | undefined;
   let total: number | undefined;
   let filterOptions: Record<string, FilterOption[]> = {};
+  let allProductsResult: { products: ProductCard[]; total: number } | undefined;
   // Pre-launch promise for hub deep dive links — declared here so hub mode can
   // start the menu fetch concurrently with the sync variant/filter calculations.
   let hubLinksPromise: ReturnType<typeof getHubLinks> | undefined;
@@ -360,13 +366,25 @@ async function _fetchListingData(
       productFetch = fetchProductListing(productType, locale, listingParams);
     }
 
-    const [productResult, allFilterOptions] = await Promise.all([
+    // For mosaico with collection P0 active (no color P0): also fetch ALL products
+    // for client-side collection filtering (instant switching without server round-trip).
+    const isMosaicCollectionP0 =
+      productType === 'prodotto_mosaico' &&
+      effectiveCollectionTid != null &&
+      effectiveColorTid == null;
+    const allProductsFetch = isMosaicCollectionP0
+      ? fetchProductListing(productType, locale, { tid1: 'all', tid2: 'all' })
+      : undefined;
+
+    const [productResult, allFilterOptions, allProdResult] = await Promise.all([
       productFetch,
       filterOptionsPromise,
+      allProductsFetch ?? Promise.resolve(undefined),
     ]);
     products = productResult.products;
     total = productResult.total;
     filterOptions = allFilterOptions;
+    allProductsResult = allProdResult;
 
     // ── Mosaic cross-filtering: merge faceted counts into all 4 filter dimensions ──
     if (productType === 'prodotto_mosaico') {
@@ -804,6 +822,11 @@ async function _fetchListingData(
       ? await (hubLinksPromise ?? getHubLinks(productType, locale))
       : { deepDiveLinks: [], crossLinks: [] };
 
+  // Derive active collection slug from path P0 filter (for client-side filtering)
+  const collectionP0 = parsed.activeFilters.find(
+    (f) => f.key === 'collection' && f.type === 'path',
+  );
+
   return {
     products,
     total,
@@ -821,6 +844,8 @@ async function _fetchListingData(
     filterDefinitions: parsed.filterDefinitions,
     sort: parsed.sort,
     hasActiveP0,
+    allProducts: allProductsResult?.products,
+    activeCollectionSlug: collectionP0?.value,
     popoverItems,
     popoverIsColorSwatch,
   };
@@ -936,6 +961,8 @@ export async function renderProductListing({
       deepDiveLinks={data.deepDiveLinks}
       crossLinks={data.crossLinks}
       hubParentNid={hubParentNid}
+      allProducts={data.allProducts}
+      activeCollectionSlug={data.activeCollectionSlug}
       tNav={(key: string) => tNav(key)}
       tBreadcrumb={(key: string) => tBreadcrumb(key)}
       tProducts={(key: string) => tProducts(key)}

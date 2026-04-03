@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { DevBlockOverlay } from '@/components/composed/DevBlockOverlay';
 import { SmartBreadcrumb } from '@/components/composed/SmartBreadcrumb';
 import type { BreadcrumbSegment } from '@/components/composed/SmartBreadcrumb';
@@ -85,6 +86,10 @@ interface ProductListingTemplateProps {
   tNav?: (key: string) => string;
   tBreadcrumb?: (key: string) => string;
   tProducts?: (key: string) => string;
+
+  // Client-side P0 filtering (mosaico/pixall)
+  allProducts?: ProductCard[];
+  activeCollectionSlug?: string | null;
 }
 
 const PRODUCTS_PATH: Record<string, string> = {
@@ -190,6 +195,8 @@ export async function ProductListingTemplate(
     tNav,
     tBreadcrumb,
     tProducts,
+    allProducts,
+    activeCollectionSlug,
   } = props;
 
   const getCategoryLabel = (type: string) => {
@@ -380,26 +387,42 @@ export async function ProductListingTemplate(
             productCount={total}
           />
         )}
-        <DevBlockOverlay name="SpecProductListing" status="ds">
-          <SpecProductListing
-            products={products ?? []}
-            total={total ?? 0}
-            currentSort={currentSort ?? ''}
-            productType={productType}
-            activeFilters={filterDefinitions}
-            pageSize={listingConfig.pageSize}
-            locale={locale}
-            basePath={basePath}
-            productCardRatio={listingConfig.productCardRatio}
-            imageFit={
-              productType === 'prodotto_illuminazione' ||
-              productType === 'prodotto_arredo' ||
-              productType === 'prodotto_vetrite'
-                ? 'contain'
-                : 'cover'
-            }
-          />
-        </DevBlockOverlay>
+        <Suspense
+          fallback={
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 py-8">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="flex flex-col gap-2">
+                  <div className="aspect-square bg-muted animate-pulse rounded-lg" />
+                  <div className="h-4 w-3/4 bg-muted animate-pulse rounded" />
+                  <div className="h-3 w-1/2 bg-muted animate-pulse rounded" />
+                </div>
+              ))}
+            </div>
+          }
+        >
+          <DevBlockOverlay name="SpecProductListing" status="ds">
+            <SpecProductListing
+              products={products ?? []}
+              total={total ?? 0}
+              currentSort={currentSort ?? ''}
+              productType={productType}
+              activeFilters={filterDefinitions}
+              pageSize={listingConfig.pageSize}
+              locale={locale}
+              basePath={basePath}
+              productCardRatio={listingConfig.productCardRatio}
+              imageFit={
+                productType === 'prodotto_illuminazione' ||
+                productType === 'prodotto_arredo' ||
+                productType === 'prodotto_vetrite'
+                  ? 'contain'
+                  : 'cover'
+              }
+              allProducts={allProducts}
+              activeCollectionSlug={activeCollectionSlug}
+            />
+          </DevBlockOverlay>
+        </Suspense>
       </main>
     </div>
   );

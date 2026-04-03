@@ -6,7 +6,7 @@
  */
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback } from 'react';
+import { useCallback, useTransition } from 'react';
 import type { ActiveFilter } from '@/domain/filters/registry';
 
 interface UseFilterSyncOptions {
@@ -26,6 +26,7 @@ interface UseFilterSyncReturn {
   clearFilter: (key: string) => void;
   clearAll: () => void;
   isActive: (key: string, value: string) => boolean;
+  isPending: boolean;
 }
 
 export function useFilterSync({
@@ -35,6 +36,7 @@ export function useFilterSync({
 }: UseFilterSyncOptions): UseFilterSyncReturn {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
   const isActive = useCallback(
     (key: string, value: string) =>
@@ -73,7 +75,7 @@ export function useFilterSync({
             params.set(queryKey, value);
           }
           const qs = params.toString();
-          router.push(qs ? `${currentPath}?${qs}` : currentPath);
+          startTransition(() => router.push(qs ? `${currentPath}?${qs}` : currentPath));
           return;
         }
 
@@ -81,11 +83,11 @@ export function useFilterSync({
         const currentActive = activeFilters.find((f) => f.key === key);
         if (currentActive?.value === value) {
           // Deselect: go back to base path (clear all query params — new context)
-          router.push(basePath);
+          startTransition(() => router.push(basePath));
         } else {
           // Select: navigate to path with filter (clear query params — context changes)
           const prefix = pathPrefix ? `/${pathPrefix}` : '';
-          router.push(`${basePath}${prefix}/${value}`);
+          startTransition(() => router.push(`${basePath}${prefix}/${value}`));
         }
       } else {
         // Toggle query param filter — keep current pathname (preserves active P0 in path)
@@ -97,20 +99,20 @@ export function useFilterSync({
           params.delete(key);
           params.delete('page');
           const qs = params.toString();
-          router.push(qs ? `${currentPath}?${qs}` : currentPath);
+          startTransition(() => router.push(qs ? `${currentPath}?${qs}` : currentPath));
         } else if (isZeroCount) {
           // Select count=0 option: clear all other P1 query params (context switch)
           const params = new URLSearchParams();
           params.set(key, value);
           const qs = params.toString();
-          router.push(qs ? `${currentPath}?${qs}` : currentPath);
+          startTransition(() => router.push(qs ? `${currentPath}?${qs}` : currentPath));
         } else {
           // Select count>0 option: keep existing P1 params, add/replace this one
           const params = new URLSearchParams(searchParams.toString());
           params.set(key, value);
           params.delete('page');
           const qs = params.toString();
-          router.push(qs ? `${currentPath}?${qs}` : currentPath);
+          startTransition(() => router.push(qs ? `${currentPath}?${qs}` : currentPath));
         }
         return;
       }
@@ -124,20 +126,20 @@ export function useFilterSync({
       if (!filter) return;
       if (filter.type === 'path') {
         // Clear path P0 → go back to base (drop all query params — context changes)
-        router.push(basePath);
+        startTransition(() => router.push(basePath));
       } else {
         const params = new URLSearchParams(searchParams.toString());
         params.delete(key);
         params.delete('page');
-        router.push(`${basePath}?${params.toString()}`);
+        startTransition(() => router.push(`${basePath}?${params.toString()}`));
       }
     },
     [basePath, activeFilters, router, searchParams],
   );
 
   const clearAll = useCallback(() => {
-    router.push(basePath);
+    startTransition(() => router.push(basePath));
   }, [basePath, router]);
 
-  return { toggleFilter, clearFilter, clearAll, isActive };
+  return { toggleFilter, clearFilter, clearAll, isActive, isPending };
 }
