@@ -37,6 +37,24 @@ All notable changes to this project will be documented in this file.
 - Aggiornati 6 test stale: registry vetrite ora include finish P1, factory vetrite usa `field_immagine`, empty response testa il throw ISR.
 - **32 nuovi test e2e** (`filters-mosaic-vetrite.spec.ts`): hub + collection + filtri P0/P1 + cross-filtering + persistenza locale /us/ per mosaico e vetrite in IT/EN/US/FR/DE/ES.
 
+#### Tier 1+2 simplification
+
+- **Dead code sweep**: deleted 6 composed components (ActiveFiltersBar, ListingBreadcrumb, ListingToolbar, PixallHubCard) + 2 legacy (FilterSidebar, ProductListing). ~800 lines removed.
+- **132 dead nav keys** removed from messages/\*.json (22 keys x 6 locales) after CMS menu migration.
+- **`getTitle(node)` + `getBody(node)`** helpers: extracted to field-helpers.ts, 11 templates updated.
+- **`CATEGORY_LISTING_TYPES`** deduplicated to module scope in page.tsx.
+- **`TAXONOMY_LISTING_MAP`**: 4 identical taxonomy interception blocks consolidated to 1 lookup + handler.
+- **`resolveHubParentNid()`**: 3 identical hub NID resolution blocks extracted to `_helpers.ts`.
+- **Legacy breadcrumbs removed** from ProdottoTessuto, ProdottoIlluminazione, ProdottoArredoFiniture (PageBreadcrumb from page.tsx replaces them).
+- **Menu mapper test** updated for CMS-driven titles (no more FILTER_FIND_SHORT_TITLES abbreviations).
+- **page.tsx**: 1133 → 1008 lines (-11%).
+
+#### GenE block + Pixall routing
+
+- **GenE block** (`blocco_e`): renders technical links grid (catalogs, certifications, tutorials, display solutions) with locale-aware aliases. Wired in ParagraphResolver.
+- **Pixall under Mosaic**: `/mosaico/pixall` now intercepts as product listing (prodotto_pixall) instead of empty categoria page.
+- **ProductListingTemplate**: Pixall added to CATEGORY_TYPES + CATEGORY_LABEL_KEYS for correct breadcrumb labels.
+
 ### 2026-04-02
 
 #### Cross-filtering US stock + baseCount hide/dim

@@ -18,7 +18,7 @@ All Drupal data comes exclusively from the REST endpoints below. No other data s
 
 **REST API client (`src/lib/api/`):**
 
-- `client.ts` — `apiGet` (base fetcher), `stripDomain`, `stripLocalePrefix`, `emptyToNull` (normalizers)
+- `client.ts` — `apiGet` (base fetcher), `stripDomain`, `stripLocalePrefix`, `emptyToNull` (normalizers), `resolveImageUrl` (unified image URL resolver — handles 4 patterns: direct string, `{ uri: { url } }`, `{ url }`, null)
 - `types.ts` — Response interfaces for all endpoints (source of truth for REST response shapes)
 - `entity.ts` — `fetchEntity` (entity ❌ DEAD — do not call at runtime)
 - `products.ts` — `fetchProducts` (products ❌ DEAD), `fetchFilterCounts` (product-counts ❌ DEAD), `getCategoriaProductType`
@@ -45,7 +45,7 @@ All Drupal data comes exclusively from the REST endpoints below. No other data s
 **Drupal utilities (`src/lib/drupal/`):**
 
 - `config.ts` — DRUPAL_BASE_URL (single source of truth)
-- `menu.ts` — `fetchMenu` (menu — ✅ still active), `transformMenuToNavItems` — uses `fetch()` directly (NOT `apiGet`), different URL pattern (`/api/menu/` without `v1`)
+- `menu.ts` — `fetchMenu` (menu — ✅ still active), `transformMenuToNavItems` — uses `fetch()` directly (NOT `apiGet`), different URL pattern (`/api/menu/` without `v1`). `transformMenuToNavItems` extracts `sectionTitles` and `sectionDescriptions` directly from Drupal menu item title/description fields — `FILTER_FIND_SHORT_TITLES` has been removed; all navbar section labels are now fully CMS-driven.
 - `image.ts` — `getDrupalImageUrl` (extracts `uri.url` from entity endpoint image shape)
 - `index.ts` — barrel re-export
 
@@ -332,33 +332,84 @@ The project has fully migrated away from generic Drupal Views endpoints to dedic
 
 ### Domain Layer
 
-- `src/domain/filters/` — `registry.ts` (FILTER_REGISTRY, SLUG_OVERRIDES), `search-params.ts` (nuqs integration)
+- `src/domain/filters/` — `registry.ts` (FILTER_REGISTRY, SLUG_OVERRIDES), `search-params.ts` (nuqs integration). `FilterOption` carries optional `baseCount` field — see Cross-filtering below.
 - `src/domain/routing/` — `routing-registry.ts` (shadow mode), `section-config.ts`
 
 ### Routing
 
-Entry point: `src/app/[locale]/[...slug]/page.tsx`
+Entry point: `src/app/[locale]/[...slug]/page.tsx` (~1008 lines)
+
+Module-scope constants in `page.tsx`:
+
+- `PRODUCTS_MASTER_SLUGS` — one slug per locale for the all-products hub page
+- `CONTENT_LISTING_SLUGS` — all locales for blog, projects, environments, showroom, download_catalogues
+- `LISTING_SLUG_OVERRIDES` — product listing slugs that must bypass Drupal resolution (derived from `PRODUCT_LISTING_SLUGS` + `LEGACY_SEO_ALIASES`)
+- `CATEGORY_LISTING_TYPES` — product types that use category-NID-based listing: `prodotto_arredo`, `prodotto_illuminazione`, `prodotto_tessuto`
+- `TAXONOMY_LISTING_MAP` — maps taxonomy bundles (`mosaico_collezioni`, `mosaico_colori`, `vetrite_collezioni`, `vetrite_colori`) to their product type and TID key
+
+Co-located helpers: `src/app/[locale]/[...slug]/_helpers.ts`
+
+- `resolveHubParentNid(productType, locale)` — returns hub parent NID for a product type. Arredo uses hardcoded `ARREDO_INDOOR_PARENT_NID` (4261); all other types resolve the base listing path from `FILTER_REGISTRY` via `resolvePath`.
+
+**Stage 0 — PRODUCTS_MASTER_SLUGS**
+Single-segment slugs that render `ProductsMasterPage` (all-products hub). Checked before all other stages.
+
+**Stage 0.5 — CONTENT_LISTING_SLUGS**
+Single-segment slugs for content listings (blog, projects, environments, showroom, download_catalogues). Checked before listing slug overrides to prevent misrouting through `getSectionConfigAsync`.
 
 **Stage 1 — LISTING_SLUG_OVERRIDES**
-Set of hardcoded product slugs (mosaico, mosaic, arredo, furniture-and-accessories, pixall, illuminazione, vetrite variants, tessile variants, etc.) that bypass `translatePath`. These slugs have Drupal nodes (categoria_blog, documento, page) with the same alias that would be rendered instead of the correct product listing. `getSectionConfigAsync` resolves the `productType` → `renderProductListing()`.
+Single-segment product listing slugs that bypass Drupal resolution. These slugs have Drupal nodes (categoria_blog, documento, page) with the same alias that would be rendered instead of the correct product listing. If `resolvePath` returns `bundle === 'page'` for a registry-only slug, falls through to entity rendering (handles info-tecniche-\* CMS pages). Delegates to `ListingContent` (Suspense boundary with `ProductListingSkeleton`).
 
-**Stage 1.5 — Product detail via resolve-path (NEW)**
-URLs with 2+ segments. `resolvePath()` is called BEFORE the listing interception. If the path resolves to a product bundle (`prodotto_mosaico`, `prodotto_vetrite`, `prodotto_tessuto`), the type-specific fetcher is called and the product page rendered. Mosaico uses DS Spec\* blocks; vetrite and tessuto use legacy templates with adapter functions (`vetriteToLegacyNode`, `textileToLegacyNode`).
+**Stage 2 — Arredo descriptive categories (slug-based)**
+2-segment URLs under arredo prefix. Matches the second slug against NID 3522 children (slugified). If matched, fetches content+blocks by NID and renders via `Categoria` template. Exceptions: `/arredo/outdoor` (hardcoded NID 348, no sidebar) is handled inline; `slug.length >= 3` falls through to product-detail interception.
 
-**Stage 2 — Multi-slug interception**
-URLs with 2+ segments (e.g. `/mosaico/murano-smalto`). `getSectionConfigAsync` runs first; if a config is found and `parseFiltersFromUrl` detects at least one active filter → `renderProductListing()` with filter active.
+**Stage 3 — Arredo finiture page**
+When the last segment is `'finiture'` and the preceding path resolves to `prodotto_arredo`, renders `ProdottoArredoFiniture`.
 
-**Stage 3 — Drupal entity resolution**
-`resolvePath()` returns the NID and bundle; the appropriate type-specific fetcher is called. For content types not yet migrated, `fetchContent` (content/{nid}) and `fetchBlocks` (blocks/{nid}) replace the dead entity endpoint. Rendered via `COMPONENT_MAP[getComponentName(entityType)]`.
+**Stage 4 — Product detail via resolve-path**
+2+ segment URLs. `resolvePath()` runs first. Handles all 6 product bundles plus `showroom` detail:
 
-**Interception: node--categoria**
-If `translatePath` resolves to `node--categoria` AND `getSectionConfigAsync` returns a config with `filterField` set → the node is a subcategory listing, not a hub category. Renders via `renderProductListing()` using the Drupal node title for the heading.
+- `prodotto_mosaico` → `fetchMosaicProduct` → `MosaicProductPreview` (DS blocks) + `PageBreadcrumb`
+- `prodotto_vetrite` → `fetchVetriteProduct` → `ProdottoVetrite` (legacy + `vetriteToLegacyNode`) + `PageBreadcrumb`
+- `prodotto_tessuto` → `fetchTextileProduct` → `ProdottoTessuto` (legacy + `textileToLegacyNode`) + `PageBreadcrumb`
+- `prodotto_pixall` → `fetchPixallProduct` → `ProdottoPixall` (legacy + `pixallToLegacyNode`) + `PageBreadcrumb`
+- `prodotto_arredo` → `fetchArredoProduct` → `ProdottoArredo` (legacy + `arredoToLegacyNode`) + `PageBreadcrumb`. Injects `_finitureHref` into legacy node.
+- `prodotto_illuminazione` → `fetchIlluminazioneProduct` → `ProdottoIlluminazione` (legacy + `illuminazioneToLegacyNode`) + `PageBreadcrumb`
+- `showroom` → `fetchShowroomDetail` (lazy import) → `Showroom` + `PageBreadcrumb`
+- Taxonomy bundles in `TAXONOMY_LISTING_MAP` → `renderProductListing()` passing resolved TID directly (no extra taxonomy fetch)
+- `categoria` bundle (non-descriptive) → matched against `CATEGORY_LISTING_TYPES` basePaths across all locales → `renderProductListing()` with `resolvedCategoryNid`
+
+**Stage 5 — Pixall under Mosaic hub**
+`/mosaico/pixall` (and locale equivalents) resolves as `categoria` NID 342 but must render the Pixall product listing. Detected when `getSectionConfigAsync` returns `productType === 'prodotto_pixall'` → `renderProductListing({ productType: 'prodotto_pixall' })`.
+
+**Stage 6 — Multi-slug listing interception**
+2+ segment URLs not matched by stages 2–5. `getSectionConfigAsync` + `parseFiltersFromUrl`: if at least one active filter is present and the resolved bundle is not a non-category-type `categoria` node → `renderProductListing()`. Mosaico/vetrite `categoria` nodes (e.g. `/mosaic/marble` NID 319) fall through to `getPageData` → `Categoria` template.
+
+**Stage 7 — Drupal entity resolution (getPageData)**
+`getPageData(locale, drupalPath)` is `React.cache()`-wrapped, deduplicating between `generateMetadata` and `SlugPage`. Primary path: `resolvePath` → `content/{nid}` + `blocks/{nid}` in parallel. When `content/{nid}` returns empty, creates a minimal entity (`type + id + field_blocchi`) so `COMPONENT_MAP` can dispatch correctly. Rendered via `COMPONENT_MAP[getComponentName(entityType)]`.
+
+**Interception: node--categoria (subcategory listing)**
+After `getPageData`, if `type === 'node--categoria'` and `getSectionConfigAsync` returns a config for a `CATEGORY_LISTING_TYPES` product type → renders via `renderProductListing()`. Non-category types (mosaico/vetrite) fall through to `Categoria` template.
 
 **Interception: node--page with field_page_id**
 Drupal uses `node--page` nodes as hub pages for listing sections. `field_page_id` maps to a content type:
 
 - `tessile` → `prodotto_tessuto` → `renderProductListing()`
 - `progetti`, `environments`, `blog`, `showroom`, `download_catalogues` → fetcher + legacy listing component
+
+#### Cross-filtering and baseCount
+
+Mosaic and vetrite listings use `baseCount` to provide two-tier filter visibility in the sidebar. When a P0 filter (collection or color) is active, the render pipeline fetches `baseCounts` — product counts with only P0 active (no P1 shape/finish). Filter options use `baseCount` as follows:
+
+- `baseCount === 0` — option does not exist for the active P0 filter → hidden
+- `baseCount > 0` but `count === 0` — option exists but no products match the current P1 combination → dimmed
+- `count > 0` — option has matches → shown normally
+
+`baseCount` is surfaced on `FilterOption` (defined in `registry.ts`) and consumed by `CheckboxFilter`, `ColorSwatchFilter`, and `ImageListFilter`.
+
+#### PageBreadcrumb
+
+`src/components/composed/PageBreadcrumb.tsx` — async server component. Renders URL-based breadcrumbs on all pages. For 2+ segment paths, fetches sibling pages at the same level: resolves the parent path via `resolvePath`, fetches `categories/{parentNid}` in both current locale and EN, then resolves each sibling's alias via EN slug path. The last breadcrumb segment includes a siblings dropdown when at least 2 siblings exist. `lastLabel` prop accepts the CMS node title to override the URL-derived humanized label.
 
 #### Revalidation Strategy
 

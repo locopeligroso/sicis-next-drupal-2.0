@@ -2,7 +2,7 @@
 
 > **Source of truth:** The code is always the source of truth. This document may be outdated — when in doubt, read the code. For Drupal data (fields, entities, menus, paragraphs), the only real source is what Drupal returns via REST endpoints — never assume field presence or structure from this doc alone, always verify against the actual API response.
 
-> **⚠️ Cambiamenti recenti (2026-03-30):** Refactoring completo del data layer. Factory listing fetcher (`product-listing-factory.ts`) consolida 6 fetcher prodotto. `renderProductListing` estratto in modulo dedicato. 4 taxonomy templates eliminati (unreachable). 6 content listing endpoint integrati (articles, news, tutorials separati da blog). Sidebar filtri riattivata per mosaico/vetrite via hub endpoints. Arredo hub: sezioni Indoor/Outdoor/Next Art/Discover Also. Showroom detail via `showroom/{nid}`. `getPageData()` crea entità minimale quando `content/{nid}` è vuoto. Content listing slugs intercettati prima di `LISTING_SLUG_OVERRIDES`. 184 test data layer.
+> **⚠️ Cambiamenti recenti (2026-04-03):** Dead code sweep: rimossi ActiveFiltersBar, ListingBreadcrumb, ListingToolbar, PixallHubCard, FilterSidebar, ProductListing, BloccoE — 6 composed components eliminati (42→36). GenE aggiunto (ora 13 Gen blocks). Menu completamente CMS-driven: `sectionTitles` + `sectionDescriptions` da Drupal, 132 chiavi nav hardcoded rimosse (22 per locale). `PageBreadcrumb` renderizzato su tutte le pagine tranne homepage (URL-based, siblings dropdown per categoria). `resolveImageUrl()` utility in `client.ts`. `fetchProductsPaginated` rinominato da `fetchProducts`. `getTitle(node)` / `getBody(node)` helpers in `field-helpers.ts` usati da 11 template. Pixall routing: `/mosaico/pixall` renderizza listing prodotti. Vetrite cross-filtering: baseCount dual-count pattern. Security: texture proxy SSRF allowlist, form HTML escape + email validation + length limits. Legacy breadcrumbs rimossi da ProdottoTessuto, ProdottoIlluminazione, ProdottoArredoFiniture. Ambiente: `resolveImageUrl` + `next/image`. `page.tsx` ~1008 righe, `TAXONOMY_LISTING_MAP`/`CATEGORY_LISTING_TYPES` a module scope, `resolveHubParentNid` in `_helpers.ts`.
 >
 > **📋 Prossimo lavoro:** I template prodotto **vetrite** (`ProdottoVetrite`) e **tessuto** (`ProdottoTessuto`) usano ancora il rendering legacy (DrupalImage, CSS modules, inline styles). Devono essere migrati ai blocchi DS (Spec\*) come è già stato fatto per mosaico (`MosaicProductPreview`). I dati normalizzati dai fetcher `vetrite-product`/`textile-product` sono già pronti — serve solo costruire i template DS e rimuovere gli adapter legacy (`vetriteToLegacyNode`, `textileToLegacyNode`).
 
@@ -27,8 +27,8 @@ Next 16.1.7 | React 19.2.4 | Tailwind 4.2.2 | Storybook 10.3.1 | next-intl | nuq
 
 > Full details in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 
-- **Data layer:** All data from Drupal REST endpoints via `apiGet()`. Primary path: `resolvePath` → `content/{nid}` + `blocks/{nid}`. Product detail: `mosaic-product`, `vetrite-product`, `textile-product`, `pixall-product`, `illuminazione-product`, `arredo-product`, `showroom` (singular). Product listings: factory in `product-listing-factory.ts` (6 types). Content listings: `articles`, `news`, `tutorials`, `projects`, `environments`, `showrooms` (all return raw arrays). Filter options: `filter-options.ts` uses hub endpoints (`mosaic-colors/collections`, `vetrite-colors/collections`, `categories/{nid}`). `renderProductListing` extracted to `src/lib/render-product-listing.tsx`.
-- **Routing:** 5-stage pipeline in `[...slug]/page.tsx` — PRODUCTS_MASTER_SLUGS → CONTENT_LISTING_SLUGS → LISTING_SLUG_OVERRIDES → resolve-path product/showroom/taxonomy detail → multi-slug filter interception → entity fallback.
+- **Data layer:** All data from Drupal REST endpoints via `apiGet()`. Primary path: `resolvePath` → `content/{nid}` + `blocks/{nid}`. Product detail: `mosaic-product`, `vetrite-product`, `textile-product`, `pixall-product`, `illuminazione-product`, `arredo-product`, `showroom` (singular). Product listings: factory in `product-listing-factory.ts` (6 types); paginated fetch via `fetchProductsPaginated` (renamed from `fetchProducts`). Content listings: `articles`, `news`, `tutorials`, `projects`, `environments`, `showrooms` (all return raw arrays). Filter options: `filter-options.ts` uses hub endpoints (`mosaic-colors/collections`, `vetrite-colors/collections`, `categories/{nid}`). `renderProductListing` extracted to `src/lib/render-product-listing.tsx`. Image URLs unified via `resolveImageUrl()` in `src/lib/drupal/client.ts`. Field access helpers: `getTitle(node)` / `getBody(node)` in `field-helpers.ts` (used by 11 templates). Vetrite cross-filtering: baseCount dual-count pattern (same as mosaico).
+- **Routing:** 5-stage pipeline in `[...slug]/page.tsx` (~1008 lines) — PRODUCTS_MASTER_SLUGS → CONTENT_LISTING_SLUGS → LISTING_SLUG_OVERRIDES → resolve-path product/showroom/taxonomy detail → multi-slug filter interception → entity fallback. `TAXONOMY_LISTING_MAP` and `CATEGORY_LISTING_TYPES` at module scope. `resolveHubParentNid` extracted to `_helpers.ts`. `/mosaico/pixall` renders as product listing (not empty categoria).
 - **Revalidation:** 3 ISR tiers — 60s (products), 300s (editorial), 3600s (taxonomy/menu).
 - **Domain layer:** `src/domain/filters/` (FILTER_REGISTRY, 6 product types, P0/P1/P2 filter priorities) + `src/domain/routing/` (section-config, routing-registry shadow mode).
 - **Server actions:** `loadMoreProducts` (Load More button), `getTranslatedPath` (cross-locale in client components).
@@ -37,8 +37,8 @@ Next 16.1.7 | React 19.2.4 | Tailwind 4.2.2 | Storybook 10.3.1 | next-intl | nuq
 
 > Full details in [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md)
 
-- **Blocks:** 12 `Spec*` (product/listing-specific) + 12 `Gen*` (paragraph-driven). 6 Gen blocks remaining: GenCorrelati, GenNewsletter, GenFormBlog, GenSliderHome, GenAnni, GenTutorial.
-- **Composed:** 42 components in `src/components/composed/`. Key: Typography, ProductCard, CategoryCard, GalleryCarousel, DocumentCard, MediaElement.
+- **Blocks:** 12 `Spec*` (product/listing-specific) + 13 `Gen*` (paragraph-driven). 6 Gen blocks remaining: GenCorrelati, GenNewsletter, GenFormBlog, GenSliderHome, GenAnni, GenTutorial.
+- **Composed:** 36 components in `src/components/composed/` (42 before dead code sweep — removed: ActiveFiltersBar, ListingBreadcrumb, ListingToolbar, PixallHubCard, FilterSidebar, ProductListing). Key: Typography, ProductCard, CategoryCard, GalleryCarousel, DocumentCard, MediaElement.
 - **Primitives:** 57 shadcn/ui (base-vega preset). NEVER modify directly. Blocks import only Composed, never Primitives.
 - **ParagraphResolver:** Async server component dispatching `paragraph--{type}` to Gen* or legacy Blocco*. Source of truth for migration status.
 
@@ -69,6 +69,7 @@ Next 16.1.7 | React 19.2.4 | Tailwind 4.2.2 | Storybook 10.3.1 | next-intl | nuq
 
 - `messages/{locale}.json` — 6 locales (IT, EN, FR, DE, ES, RU)
 - Sections: common, nav, projects, products, filters, sort, listing, errors, pagination
+- **132 dead nav keys removed** (22 per locale) — menu now fully CMS-driven; `sectionTitles` and `sectionDescriptions` come from Drupal, not hardcoded strings
 
 **Missing translations:** `resistant` and `absent` (under `products`) exist only in IT and EN — missing from DE, FR, ES, RU.
 
@@ -159,6 +160,9 @@ Source: `src/styles/globals.css`
 10. **Surface tokens** (1-5) for elevation instead of opacity hacks
 11. **Document filtering** — installation guides extracted from catalogs, linked in Maintenance card
 12. **`next/image` for content images > 100px** — All DS composed components use `<Image>` from `next/image` with `fill` + `sizes` for Drupal content images. Exceptions: logos, CSS swatches, decorative thumbnails < 80px, video posters, legacy templates. See `CHANGELOG.md` for migration details.
+13. **`resolveImageUrl()`** — single utility in `src/lib/drupal/client.ts` for unified image URL handling across all templates (replaces 4 ad-hoc patterns).
+14. **Security hardening** — texture proxy SSRF fixed via allowlist; contact/blog forms: HTML escape, email validation, length limits.
+15. **`getTitle(node)` / `getBody(node)`** — field access helpers in `field-helpers.ts`; used by 11 templates to standardise field extraction without optional-chaining repetition.
 
 ## Changelog
 
@@ -169,7 +173,7 @@ Project changelog is maintained in `CHANGELOG.md` at the repo root, organized by
 > Full details in [`docs/DATA_LAYER_ANALYSIS.md`](docs/DATA_LAYER_ANALYSIS.md)
 
 - **Uniform core:** All fetchers use `apiGet()`, same error handling (404→null), `React.cache()` + ISR, typed responses.
-- **5 heterogeneous problems:** image URL access (4 patterns), price field polymorphism (string vs {value}), link field polymorphism, chaotic secondary fetches, entity normalization delegated to templates.
+- **5 heterogeneous problems:** image URL access (unified via `resolveImageUrl()` — previously 4 patterns), price field polymorphism (string vs {value}), link field polymorphism, chaotic secondary fetches, entity normalization delegated to templates.
 - **Key gotchas:** Showroom/Documento have NO `field_blocchi` (Drupal returns 400). Field cardinality anomalies require defensive `Array.isArray()` checks.
 
 ## Drupal Schema Reference
@@ -208,16 +212,17 @@ Project changelog is maintained in `CHANGELOG.md` at the repo root, organized by
 
 ### Component Coverage
 
-- **Gen blocks built**: 12 (GenIntro, GenQuote, GenVideo, GenTestoImmagine, GenTestoImmagineBig, GenTestoImmagineBlog, GenGallery, GenGalleryIntro, GenDocumenti, GenA, GenB, GenC)
+- **Gen blocks built**: 13 (GenIntro, GenQuote, GenVideo, GenTestoImmagine, GenTestoImmagineBig, GenTestoImmagineBlog, GenGallery, GenGalleryIntro, GenDocumenti, GenA, GenB, GenC, GenE)
 - **Gen blocks remaining to build**: GenCorrelati, GenNewsletter, GenFormBlog, GenSliderHome, GenAnni, GenTutorial
 - **ParagraphResolver**: source of truth for Gen vs legacy wiring — check `LEGACY_MAP` in `src/components_legacy/blocks_legacy/ParagraphResolver.tsx`
 
 ### Layout
 
-| Component | Status                                                                                     |
-| --------- | ------------------------------------------------------------------------------------------ |
-| Navbar    | Migrated — glassmorphism bar, 4 mega-menus, mobile overlay, scroll hide, language switcher |
-| Footer    | Legacy                                                                                     |
+| Component   | Status                                                                                                                                                        |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Navbar      | Migrated — glassmorphism bar, 4 mega-menus, mobile overlay, scroll hide, language switcher. Fully CMS-driven: sectionTitles + sectionDescriptions from Drupal |
+| Footer      | Legacy                                                                                                                                                        |
+| Breadcrumbs | PageBreadcrumb renders on ALL pages except homepage. URL-based. Categoria pages: siblings dropdown                                                            |
 
 ### Storybook
 
@@ -226,7 +231,7 @@ Project changelog is maintained in `CHANGELOG.md` at the repo root, organized by
 ### Known Gaps
 
 - 2 i18n keys missing from DE, FR, ES, RU: `resistant`, `absent`
-- Several hardcoded labels not yet moved to `messages/*.json`
+- Several hardcoded labels not yet moved to `messages/*.json` (nav keys fully migrated; remaining: Mosaico spec labels, download labels)
 - Animations removed, to be reimplemented with proper approach
 
 ## Next Steps
@@ -239,11 +244,10 @@ Project changelog is maintained in `CHANGELOG.md` at the repo root, organized by
 
 - Product template DS migration: ProdottoVetrite → ProdottoArredo → ProdottoTessuto → ProdottoPixall → ProdottoIlluminazione
 - Footer migration to design system
-- Breadcrumb block (separate, above hero)
 - Contact form (Dialog/Sheet for CTA actions)
 - Alternative products carousel
 - Regional logic (EU vs US: pricing, CTAs, stock)
-- Translate hardcoded labels to `messages/*.json`
+- Translate remaining hardcoded labels to `messages/*.json` (Mosaico spec labels, download labels)
 - Sync missing i18n keys (`resistant`, `absent`) to all 6 locales
 
 ## Agent Teams

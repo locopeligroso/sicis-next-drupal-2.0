@@ -6,12 +6,12 @@
 
 Scan with: `node /Users/nicolagasco/.claude/skills/ds/scripts/inventory.js composed`
 
-**Full inventory (46 components):**
+**Full inventory (52 components):**
 
 | Component                  | Purpose                                                                                                                                                                            |
 | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ActiveFilters`            | Renders active filter chips (display only — no URL logic)                                                                                                                          |
-| `ActiveFiltersBar`         | Client wrapper around `ActiveFilters`; wires chip removal to `useFilterSync` URL updates                                                                                           |
+| `AddToSampleCartButton`    | Client button adding a product sample to the sample cart; manages pending state                                                                                                    |
 | `AiryHeader`               | Full-width section header with title, optional subtitle and decorative spacing                                                                                                     |
 | `ArrowLink`                | Styled link with trailing arrow icon; supports `external` flag and `textRole` sizing                                                                                               |
 | `AttributeGrid`            | Two-column grid for product attribute key/value pairs (e.g. dimensions, weight)                                                                                                    |
@@ -21,7 +21,10 @@ Scan with: `node /Users/nicolagasco/.claude/skills/ds/scripts/inventory.js compo
 | `CollectionPopoverContent` | Popover body listing alternative collection options; used inside `ContextBar`                                                                                                      |
 | `ColorSwatchFilter`        | Color swatch grid for a single filter group; single-select; dims zero-count options                                                                                                |
 | `ColorSwatchLink`          | Circular color swatch + label that navigates to a filtered listing URL                                                                                                             |
+| `ContactCta`               | CTA section with contact/inquiry call-to-action; used in product detail and editorial pages                                                                                        |
 | `ContextBar`               | Sticky bar shown when a P0 filter (collection or color) is active; shows thumbnail/swatch, title, subtitle, popover to switch, back link, and share button                         |
+| `DevBlockDebugProvider`    | Dev-only context provider; enables block overlay debugging in development builds                                                                                                   |
+| `DevBlockOverlay`          | Dev-only visual overlay rendered over DS blocks to display block name and props in development                                                                                     |
 | `DocumentCard`             | Auto-detects label and icon from href URL pattern (PDF/video/catalog/fallback). Supports `vertical` and `horizontal` layout variants                                               |
 | `FilterGroup`              | Collapsible accordion section wrapping a single filter group inside the sidebar                                                                                                    |
 | `FilterPanel`              | CSS `position: sticky` sidebar panel; scrolls independently when taller than viewport; no JS scroll listeners                                                                      |
@@ -30,8 +33,8 @@ Scan with: `node /Users/nicolagasco/.claude/skills/ds/scripts/inventory.js compo
 | `GenTestoImmagineBody`     | Shared text column used inside `GenTestoImmagine` and `GenTestoImmagineBig`                                                                                                        |
 | `HubSection`               | Section wrapper with heading and optional slot for a "view all" link; used on hub pages                                                                                            |
 | `ImageListFilter`          | Image-based single-select filter list (e.g. finishes with thumbnail previews)                                                                                                      |
-| `ListingBreadcrumb`        | Client breadcrumb for listing pages; reads active collection/color from URL and resolves locale-aware segment labels                                                               |
-| `ListingToolbar`           | Toolbar row above the product grid: result count, sort dropdown, and optional active-filter chips                                                                                  |
+| `InfoGeneraliForm`         | General inquiry form (non-product); POSTs to email API; handles pending/sent/error states                                                                                          |
+| `InfoProdottoForm`         | Product-specific inquiry form; pre-fills product name; POSTs to email API                                                                                                          |
 | `LoadMoreButton`           | Client button invoking the `loadMoreProducts` server action; shows a spinner during loading                                                                                        |
 | `MediaElement`             | Unified media renderer: dispatches to `next/image`, `VimeoPlayer`, or `<video>` based on field type                                                                                |
 | `MegaMenuExplore`          | Mega-menu panel for the "Explore" navigation section                                                                                                                               |
@@ -41,20 +44,23 @@ Scan with: `node /Users/nicolagasco/.claude/skills/ds/scripts/inventory.js compo
 | `MobileFilterTrigger`      | Fixed FAB (below `md`) opening Sheet drawer with filter tree. Shows active filter count and result count                                                                           |
 | `NavDarkModeToggle`        | Icon button toggling light/dark theme via `next-themes`                                                                                                                            |
 | `NavLanguageSwitcher`      | Locale picker in the navbar; resolves translated paths via `getTranslatedPath` server action                                                                                       |
-| `PixallHubCard`            | Hero card for Pixall, Outdoor, and Next Art hub sections: full-bleed image, title, color swatches, and explore CTA                                                                 |
+| `PageBreadcrumb`           | Async server component rendering a URL-based breadcrumb with sibling context; resolves segment labels via `resolvePath` and hub category data                                      |
 | `ProductCard`              | Product tile used in listing grids: image, name, collection tag, hover overlay                                                                                                     |
 | `ProductCarousel`          | Main product image carousel on detail pages. Accepts `image`, `video`, and `static` slide types; renders thumbnails strip; ratio prop controls aspect                              |
 | `ProductCta`               | Paired CTA buttons ("Request Sample" + "Get a Quote"); reads quote sheet context via `useQuoteSheet`                                                                               |
 | `ProductGrid`              | Responsive CSS grid wrapper for product cards; handles empty-state rendering                                                                                                       |
 | `ProductListingSkeleton`   | Loading skeleton matching the product grid layout; shown during server-action load-more                                                                                            |
 | `ProductPricingCard`       | US-market card showing price, stock status, warehouse, and shipping time                                                                                                           |
-| `QuoteFormSheet`           | Dialog form for "Get a Quote" submissions; POSTs to Resend email API; handles pending/sent/error states                                                                            |
 | `QuoteSheetProvider`       | Context provider wrapping product detail pages; exposes `useQuoteSheet()` hook to open `QuoteFormSheet` from any child                                                             |
 | `ResponsiveImage`          | Wrapper around `next/image` with `fill` mode; accepts `sizes` prop; enforces correct aspect ratio container                                                                        |
+| `SampleCartBadge`          | Badge displaying the current sample cart item count; used in the navbar                                                                                                            |
+| `SampleCartSheet`          | Sheet drawer listing sample cart items with remove and submit actions                                                                                                              |
 | `ShareButton`              | Client button that copies the current URL to clipboard; shows a tick confirmation                                                                                                  |
+| `SmartBreadcrumb`          | Presentational breadcrumb primitive; accepts a `BreadcrumbSegment[]` array and renders accessible markup via shadcn breadcrumb primitives                                          |
 | `SpecsTable`               | Tabular display for structured product specification data                                                                                                                          |
 | `SwatchList`               | Horizontal row of color/finish swatches; used in collection and product detail contexts                                                                                            |
 | `Typography`               | Design-system text primitive. `textRole` prop selects from: `h1`–`h4`, `subtitle-1`, `subtitle-2`, `body`, `body-sm`, `caption`, `label`. `as` prop controls rendered HTML element |
+| `VetriteSampleSection`     | Product detail section for vetrite sample ordering; integrates `AddToSampleCartButton` and sample cart context                                                                     |
 | `VimeoPlayer`              | Client component wrapping `@vimeo/player` SDK. Poster image overlay; on play, Vimeo iframe with custom controls. Native controls disabled (`controls=0`)                           |
 
 ---
@@ -68,7 +74,7 @@ Scan with: `node /Users/nicolagasco/.claude/skills/ds/scripts/inventory.js compo
 
 Scan with: `node /Users/nicolagasco/.claude/skills/ds/scripts/inventory.js blocks`
 
-### Gen blocks (12 built) — `blocco_*` → `Gen*` mapping
+### Gen blocks (13 built) — `blocco_*` → `Gen*` mapping
 
 | Drupal paragraph type                   | Gen block              |
 | --------------------------------------- | ---------------------- |
@@ -84,6 +90,7 @@ Scan with: `node /Users/nicolagasco/.claude/skills/ds/scripts/inventory.js block
 | `paragraph--blocco_a`                   | `GenA`                 |
 | `paragraph--blocco_b`                   | `GenB`                 |
 | `paragraph--blocco_c`                   | `GenC`                 |
+| `paragraph--blocco_e`                   | `GenE`                 |
 
 **Gen blocks remaining to build** (still using legacy `Blocco*` in LEGACY_MAP):
 
@@ -127,7 +134,7 @@ Async server component. Maps incoming `paragraph--{type}` data to either a DS `G
 **Templates using ParagraphResolver:**
 Page, LandingPage, Articolo, News, Tutorial, Ambiente, Progetto, CategoriaBlog, Tag, ProdottoArredo, Categoria
 
-**Current wiring status:** Gen adapters active for all 12 built Gen blocks; BloccoSliderHome, BloccoCorrelati, BloccoNewsletter, BloccoFormBlog, BloccoAnni, BloccoTutorial remain in `LEGACY_MAP`.
+**Current wiring status:** Gen adapters active for all 13 built Gen blocks; BloccoSliderHome, BloccoCorrelati, BloccoNewsletter, BloccoFormBlog, BloccoAnni, BloccoTutorial remain in `LEGACY_MAP`.
 
 ---
 
@@ -157,5 +164,7 @@ Notes:
 
 - Header, MegaMenu, LanguageSwitcher superseded by `src/components/layout/` — kept for reference only
 - Footer still actively used (not yet migrated)
-- DrupalImage still used in all legacy product templates
+- DrupalImage still used in all legacy product templates except where noted below
 - `blocks_legacy/`: `Blocco*` paragraph components + `ParagraphResolver`. Migration status tracked in ParagraphResolver's `LEGACY_MAP` — source of truth for what's still legacy
+- `Ambiente.tsx` — migrated to `resolveImageUrl` + `next/image`; legacy `DrupalImage` removed
+- Legacy breadcrumbs removed from 3 product templates (ProdottoVetrite, ProdottoArredo, ProdottoTessuto); replaced by `PageBreadcrumb` where applicable

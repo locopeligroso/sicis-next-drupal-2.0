@@ -4,30 +4,30 @@
 
 ## Node Templates (`src/templates/nodes/`)
 
-| Template               | Drupal Type                  | Status      | Uses ParagraphResolver | Notes                                                                                 |
-| ---------------------- | ---------------------------- | ----------- | ---------------------- | ------------------------------------------------------------------------------------- |
-| ProdottoMosaico        | node--prodotto_mosaico       | DS          | No                     | 5 blocks (Spec\*), 9 composed; collection-level fallback for body/specs               |
-| MosaicProductPreview   | (mosaic product — typed)     | DS          | No                     | Same 5 Spec\* blocks as ProdottoMosaico; accepts typed `MosaicProduct` (not raw node) |
-| ProductListingTemplate | (unified listing)            | DS          | No                     | Hub mode (SpecCategory) + Grid mode (SpecProductListing); accepts all 6 product types |
-| ProductsMasterPage     | (products index)             | DS          | No                     | Tailwind grid of 5 category cards; locale-aware hrefs via FILTER_REGISTRY             |
-| ProdottoArredoFiniture | (arredo finishes sub-page)   | Partial DS  | No                     | Tailwind layout + FinitureGallery composed; accepts typed `ArredoProduct`             |
-| Page                   | node--page                   | Minimal DS  | Yes                    | title + body + ParagraphResolver                                                      |
-| LandingPage            | node--landing_page           | Minimal DS  | Yes                    | ParagraphResolver only, no title/body                                                 |
-| ProdottoVetrite        | node--prodotto_vetrite       | Legacy      | No                     | DrupalImage + product.module.css; inline styles; VetriteCanvasLoader (WebGL)          |
-| ProdottoArredo         | node--prodotto_arredo        | Legacy      | Yes                    | DrupalImage + product.module.css; async tessuti secondary fetch                       |
-| ProdottoTessuto        | node--prodotto_tessuto       | Legacy      | No                     | DrupalImage + product.module.css                                                      |
-| ProdottoPixall         | node--prodotto_pixall        | Legacy      | No                     | DrupalImage + product.module.css                                                      |
-| ProdottoIlluminazione  | node--prodotto_illuminazione | Legacy      | No                     | DrupalImage + product.module.css; async secondary fetch                               |
-| Articolo               | node--articolo               | Legacy+Para | Yes                    | title + DrupalImage + body + ParagraphResolver                                        |
-| News                   | node--news                   | Legacy+Para | Yes                    | title + DrupalImage + body + ParagraphResolver                                        |
-| Tutorial               | node--tutorial               | Legacy+Para | Yes                    | title + DrupalImage + body + ParagraphResolver                                        |
-| Ambiente               | node--ambiente               | Legacy+Para | Yes                    | title + DrupalImage + body + ParagraphResolver                                        |
-| Progetto               | node--progetto               | Legacy+Para | Yes                    | + field_categoria_progetto link                                                       |
-| Showroom               | node--showroom               | Legacy      | No                     | NO field_blocchi — Drupal returns 400 if included                                     |
-| Documento              | node--documento              | Legacy      | No                     | NO field_blocchi — Drupal returns 400 if included                                     |
-| Categoria              | node--categoria              | Legacy      | Yes                    | 3-branch: products / subcategories / pages; getCategoriaProductType()                 |
-| CategoriaBlog          | node--categoria_blog         | Legacy+Para | Yes                    |                                                                                       |
-| Tag                    | node--tag                    | Legacy+Para | Yes                    |                                                                                       |
+| Template               | Drupal Type                  | Status      | Uses ParagraphResolver | Notes                                                                                                                                       |
+| ---------------------- | ---------------------------- | ----------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| ProdottoMosaico        | node--prodotto_mosaico       | DS          | No                     | 5 blocks (Spec\*), 9 composed; collection-level fallback for body/specs                                                                     |
+| MosaicProductPreview   | (mosaic product — typed)     | DS          | No                     | Same 5 Spec\* blocks as ProdottoMosaico; accepts typed `MosaicProduct` (not raw node)                                                       |
+| ProductListingTemplate | (unified listing)            | DS          | No                     | Hub mode (SpecCategory) + Grid mode (SpecProductListing); accepts all 6 product types                                                       |
+| ProductsMasterPage     | (products index)             | DS          | No                     | Tailwind grid of 5 category cards; locale-aware hrefs via FILTER_REGISTRY                                                                   |
+| ProdottoArredoFiniture | (arredo finishes sub-page)   | Partial DS  | No                     | Tailwind layout + FinitureGallery composed; accepts typed `ArredoProduct`; breadcrumb removed (now injected by page.tsx via PageBreadcrumb) |
+| Page                   | node--page                   | Minimal DS  | Yes                    | title + body + ParagraphResolver                                                                                                            |
+| LandingPage            | node--landing_page           | Minimal DS  | Yes                    | ParagraphResolver only, no title/body                                                                                                       |
+| ProdottoVetrite        | node--prodotto_vetrite       | Legacy      | No                     | DrupalImage + product.module.css; inline styles; VetriteCanvasLoader (WebGL)                                                                |
+| ProdottoArredo         | node--prodotto_arredo        | Legacy      | Yes                    | DrupalImage + product.module.css; async tessuti secondary fetch                                                                             |
+| ProdottoTessuto        | node--prodotto_tessuto       | Legacy      | No                     | DrupalImage + product.module.css; breadcrumb removed (now injected by page.tsx via PageBreadcrumb)                                          |
+| ProdottoPixall         | node--prodotto_pixall        | Legacy      | No                     | DrupalImage + product.module.css; `/mosaico/pixall` intercepted in page.tsx and rendered as product listing (not Categoria)                 |
+| ProdottoIlluminazione  | node--prodotto_illuminazione | Legacy      | No                     | DrupalImage + product.module.css; async secondary fetch; breadcrumb removed (now injected by page.tsx via PageBreadcrumb)                   |
+| Articolo               | node--articolo               | Legacy+Para | Yes                    | title + DrupalImage + body + ParagraphResolver; getTitle()/getBody() helpers                                                                |
+| News                   | node--news                   | Legacy+Para | Yes                    | title + DrupalImage + body + ParagraphResolver; getTitle()/getBody() helpers                                                                |
+| Tutorial               | node--tutorial               | Legacy+Para | Yes                    | title + DrupalImage + body + ParagraphResolver; getTitle()/getBody() helpers                                                                |
+| Ambiente               | node--ambiente               | Partial DS  | Yes                    | title + resolveImageUrl + next/image (fill) + body + ParagraphResolver; getTitle()/getBody() helpers; DrupalImage removed                   |
+| Progetto               | node--progetto               | Legacy+Para | Yes                    | field_categoria_progetto link; Tailwind flex layout (maxWidth inline style removed); getTitle()/getBody() helpers                           |
+| Showroom               | node--showroom               | Legacy      | No                     | NO field_blocchi — Drupal returns 400 if included; getTitle()/getBody() helpers                                                             |
+| Documento              | node--documento              | Legacy      | No                     | NO field_blocchi — Drupal returns 400 if included; getTitle()/getBody() helpers                                                             |
+| Categoria              | node--categoria              | Legacy      | Yes                    | 3-branch: products / subcategories / pages; getCategoriaProductType()                                                                       |
+| CategoriaBlog          | node--categoria_blog         | Legacy+Para | Yes                    | getTitle()/getBody() helpers                                                                                                                |
+| Tag                    | node--tag                    | Legacy+Para | Yes                    | getTitle()/getBody() helpers                                                                                                                |
 
 **Status key:** DS = design system blocks (Spec*/Gen* composed components, Tailwind only). Partial DS = Tailwind layout + at least one composed component, no Spec\* blocks. Legacy = DrupalImage + `product.module.css` + inline styles. Minimal DS = Tailwind layout, legacy ParagraphResolver inside. Legacy+Para = legacy render with ParagraphResolver for `field_blocchi`.
 
