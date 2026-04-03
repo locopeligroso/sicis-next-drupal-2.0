@@ -6,6 +6,16 @@ All notable changes to this project will be documented in this file.
 
 ### 2026-04-03
 
+#### Menu CMS-driven — rimozione hardcoded labels
+
+- **Titoli sezione navbar** (Explore, Filter&Find, Projects, Info): ora da `sectionTitles` CMS, non più da `messages/*.json`. Fallback su i18n se CMS vuoto.
+- **MegaMenuFilterFind**: descrizioni prodotti (Mosaico, Vetrite, Arredo, ecc.) da `item.description` CMS. Rimosso `DESC_KEY_PATTERNS` (30 keyword × 6 lingue) e `FILTER_FIND_SHORT_TITLES` (11 mapping).
+- **MegaMenuProjects**: titoli e descrizioni figli (Progetti, Ambienti, Inspiration, Interior Design) da `item.title` + `item.description` CMS. Rimossi `TITLE_KEYS` e `DESC_KEYS`.
+- **MegaMenuInfo**: descrizioni strategic links (Showroom, Contacts, Download) da `item.description` CMS. Rimosso `STRATEGIC_DESC_KEYS`.
+- **menu-mapper.ts**: aggiunto `sectionTitles` nel return di `mapMenuToNavbar()`. Rimosso `FILTER_FIND_SHORT_TITLES`.
+- **3 componenti** non importano più `useTranslations('nav')` per labels sottomenu.
+- Tutte le 6 lingue (IT/EN/FR/DE/ES/RU) servite da Drupal con traduzioni corrette.
+
 #### Infra & security hardening
 
 - **Texture proxy SSRF fix**: `/api/texture` ora accetta solo URL da `DRUPAL_BASE_URL` e domini sicis.com/sicis-stage.com. Blocca protocolli non-http e origini sconosciute con 403.

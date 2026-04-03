@@ -184,20 +184,7 @@ function buildExploreSection(
   return { items: groups };
 }
 
-/** Short display titles for Filter&Find categories */
-const FILTER_FIND_SHORT_TITLES: Record<string, string> = {
-  'prodotti tessili': 'Tessili',
-  textiles: 'Tessili',
-  'produits textiles': 'Tessili',
-  textilien: 'Tessili',
-  'текстильные изделия': 'Tessili',
-  'lastre vetro vetrite': 'Vetrite',
-  'vetrite glass slabs': 'Vetrite',
-  'plaque en verre vetrite': 'Vetrite',
-  'glasscheibe vetrite': 'Vetrite',
-  'láminas de vidrio vetrite': 'Vetrite',
-  'cтеклянные листы vetrite': 'Vetrite',
-};
+// FILTER_FIND_SHORT_TITLES removed — titles now come directly from CMS (Drupal menu title field)
 
 function buildFilterFindSection(
   sectionItem: MenuItem | undefined,
@@ -221,10 +208,7 @@ function buildFilterFindSection(
     }
 
     return {
-      item: {
-        ...child,
-        title: FILTER_FIND_SHORT_TITLES[lc(child.title)] ?? child.title,
-      },
+      item: child,
       secondaryLinks,
       crossLinks,
     };
@@ -288,6 +272,12 @@ export function mapMenuToNavbar(menuItems: MenuItem[]): NavbarMenu {
     filterFind: buildFilterFindSection(filterFindItem),
     projects: buildProjectsSection(projectsItem),
     info: buildInfoSection(infoItem),
+    sectionTitles: {
+      explore: exploreItem?.title ?? 'Explore',
+      filterFind: filterFindItem?.title ?? 'Filter&Find',
+      projects: projectsItem?.title ?? 'Projects',
+      info: infoItem?.title ?? 'Info',
+    },
     sectionDescriptions: {
       explore: cleanDescription(exploreItem?.description),
       filterFind: cleanDescription(filterFindItem?.description),

@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { useTranslations } from 'next-intl';
 import type { ProjectsSection } from '@/lib/navbar/types';
 import { cn } from '@/lib/utils';
 import { Typography } from '@/components/composed/Typography';
@@ -18,22 +17,7 @@ const HOVER_IMAGES = [
   '/images/nav/progetti/interior-design.jpg',
 ];
 
-const TITLE_KEYS = [
-  'projectsProgetti',
-  'projectsAmbienti',
-  'projectsInspiration',
-  'projectsInteriorDesign',
-] as const;
-
-const DESC_KEYS = [
-  'projectsProgettiDesc',
-  'projectsAmbientiDesc',
-  'projectsInspirationDesc',
-  'projectsInteriorDesignDesc',
-] as const;
-
 export function MegaMenuProjects({ menu }: MegaMenuProjectsProps) {
-  const t = useTranslations('nav');
   const [hoveredIndex, setHoveredIndex] = useState(0);
 
   return (
@@ -67,7 +51,7 @@ export function MegaMenuProjects({ menu }: MegaMenuProjectsProps) {
                     : 'font-semibold text-muted-foreground',
                 )}
               >
-                {t(TITLE_KEYS[index])}{' '}
+                {item.title}{' '}
                 <span
                   aria-hidden="true"
                   className="inline-block transition-transform duration-200 group-hover/link:translate-x-[3px]"
@@ -80,7 +64,7 @@ export function MegaMenuProjects({ menu }: MegaMenuProjectsProps) {
                 as="div"
                 className="text-xs text-muted-foreground leading-[1.5] mt-1"
               >
-                {t(DESC_KEYS[index])}
+                {item.description || ''}
               </Typography>
             </a>
           );
@@ -114,7 +98,7 @@ export function MegaMenuProjects({ menu }: MegaMenuProjectsProps) {
                 as="span"
                 className="absolute bottom-4 left-4 text-[10px] tracking-[3px] uppercase text-white/35"
               >
-                {t(TITLE_KEYS[index])}
+                {item.title}
               </Typography>
             </div>
           );

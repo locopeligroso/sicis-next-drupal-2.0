@@ -165,7 +165,7 @@ export function NavbarDesktop({
   // Get the label for the currently open menu (for aria-label)
   const getActiveLabel = useCallback(
     (key: NavItemKey) => {
-      return t(`${key}Label`);
+      return menu.sectionTitles[key] || t(`${key}Label`);
     },
     [t],
   );
@@ -210,7 +210,7 @@ export function NavbarDesktop({
                       : 'text-foreground',
                   )}
                 >
-                  {t(`${key}Label`)}
+                  {menu.sectionTitles[key] || t(`${key}Label`)}
                 </span>
                 {menu.sectionDescriptions[key] && (
                   <span className="text-[10px] text-muted-foreground mt-[3px]">

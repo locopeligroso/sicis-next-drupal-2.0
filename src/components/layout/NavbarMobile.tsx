@@ -134,7 +134,7 @@ export function NavbarMobile({
   const handleNavItemClick = useCallback(
     (key: SectionKey) => {
       if (hasChildren(menu, key)) {
-        const title = t(`${key}Label`);
+        const title = menu.sectionTitles[key] || t(`${key}Label`);
         setSubNav(buildSubNav(menu, key, title));
       } else {
         // Info: navigate to first strategic link or just close
@@ -215,7 +215,7 @@ export function NavbarMobile({
                     animationDuration: '300ms',
                   }}
                 >
-                  <span>{t(`${key}Label`)}</span>
+                  <span>{menu.sectionTitles[key] || t(`${key}Label`)}</span>
                   {withChildren && (
                     <ArrowRightIcon className="size-5 text-white/60" />
                   )}

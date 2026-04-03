@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef, useEffect, useState } from 'react';
-import { useTranslations } from 'next-intl';
 import type { FilterFindSection } from '@/lib/navbar/types';
 import { Separator } from '@/components/ui/separator';
 import { Typography } from '@/components/composed/Typography';
@@ -136,48 +135,7 @@ function HoverPlayVideo({
   );
 }
 
-/**
- * Resolve description translation key from category title (substring match).
- * Reuses the same keyword lists as THUMB_VIDEOS for consistency across all 6 locales.
- */
-const DESC_KEY_PATTERNS: [string[], string][] = [
-  [['mosaico', 'mosaic', 'mosaïque', 'mosaik', 'мозаика'], 'filterMosaicoDesc'],
-  [['vetrite'], 'filterVetriteDesc'],
-  [
-    [
-      'arredo',
-      'furniture',
-      'ameublement',
-      'einrichtung',
-      'mueble',
-      'обстановка',
-    ],
-    'filterArredoDesc',
-  ],
-  [
-    [
-      'illuminazione',
-      'lighting',
-      'éclairage',
-      'leuchten',
-      'iluminación',
-      'освещение',
-    ],
-    'filterIlluminazioneDesc',
-  ],
-  [
-    ['tessili', 'textiles', 'tessuto', 'textilien', 'текстильн'],
-    'filterTessiliDesc',
-  ],
-];
-
-function resolveDescKey(title: string): string | null {
-  const lower = title.toLowerCase().trim();
-  for (const [keys, key] of DESC_KEY_PATTERNS) {
-    if (keys.some((k) => lower.includes(k))) return key;
-  }
-  return null;
-}
+// DESC_KEY_PATTERNS removed — descriptions now come directly from CMS (Drupal menu description field)
 
 /**
  * Resolves the placeholder gradient for a category title (case-insensitive match).
@@ -193,14 +151,13 @@ function resolveThumbColor(title: string): string {
 }
 
 export function MegaMenuFilterFind({ menu }: MegaMenuFilterFindProps) {
-  const t = useTranslations('nav');
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   return (
     <div className="flex px-10 py-9 gap-7">
       {menu.items.map((category) => {
         const title = category.item.title;
-        const descKey = resolveDescKey(title);
+        const description = category.item.description;
         const background = resolveThumbColor(title);
         const videoSrc = resolveThumbVideo(title);
         const isHovered = hoveredId === category.item.id;
@@ -235,13 +192,13 @@ export function MegaMenuFilterFind({ menu }: MegaMenuFilterFindProps) {
                 </span>
               </Typography>
 
-              {descKey && (
+              {description && (
                 <Typography
                   textRole="body-sm"
                   as="p"
                   className="text-[10px] text-muted-foreground mt-1.5"
                 >
-                  {t(descKey)}
+                  {description}
                 </Typography>
               )}
             </a>
