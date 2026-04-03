@@ -494,22 +494,17 @@ export default async function SlugPage({
     registry?.listingSlugs.has(singleSlug!) ||
     (!registry && PRODUCT_LISTING_SLUGS.has(singleSlug!));
   if (singleSlug && isListingSlug) {
-    const resolvedListing = await resolvePath(drupalPath, locale);
-    // If Drupal says this is a "page" bundle, let it render as content page
-    // (e.g. info-tecniche-* children of product menus). Otherwise render listing.
-    if (resolvedListing?.bundle !== 'page') {
-      return (
-        <Suspense fallback={<ProductListingSkeleton />}>
-          <ListingContent
-            singleSlug={singleSlug}
-            slug={slug}
-            locale={locale}
-            searchParams={searchParams}
-            drupalPath={drupalPath}
-          />
-        </Suspense>
-      );
-    }
+    return (
+      <Suspense fallback={<ProductListingSkeleton />}>
+        <ListingContent
+          singleSlug={singleSlug}
+          slug={slug}
+          locale={locale}
+          searchParams={searchParams}
+          drupalPath={drupalPath}
+        />
+      </Suspense>
+    );
   }
 
   // ── Arredo descriptive categories — slug-based detection ────────────────

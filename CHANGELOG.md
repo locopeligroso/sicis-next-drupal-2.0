@@ -6,6 +6,11 @@ All notable changes to this project will be documented in this file.
 
 ### 2026-04-03
 
+#### Cross-link images + listing routing fix
+
+- **`SpecHubCrossLinks`**: ora risolve `resolvePath` → `content/{nid}` → `field_immagine` per ogni cross-link. Immagini mostrate con `next/image` (era placeholder grigio).
+- **Fix routing arredo/tessili/illuminazione**: rimosso check `bundle !== 'page'` che bloccava i listing hub con bundle `page` in Drupal (arredo NID 3522, tessili). Ora tutti i slug in `PRODUCT_LISTING_SLUGS` renderizzano sempre il listing.
+
 #### Contact forms system — Info Prodotto, Info Generali, Contattaci
 
 - **Info Prodotto form** (`InfoProdottoForm`): Sheet (right slide) on all product templates — Mosaico, Vetrite, Arredo, Tessuto, Pixall, Illuminazione. Triggered by "Get a Quote" (`ProductCta`) button via `QuoteSheetProvider` context. Fields: email, nome, cognome, nazione, professione, prodotto (pre-filled), richiesta, privacy. API: `/api/info-prodotto`.
