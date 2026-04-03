@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { apiGet, emptyToNull } from './client';
+import { apiGet, emptyToNull, resolveImageUrl } from './client';
 
 // ── Raw REST response shape ──────────────────────────────────────────────────
 // Expected to mirror illuminazione-product shape (same Drupal template family).
@@ -137,14 +137,14 @@ function normalizeArredoProduct(raw: ArredoProductRest): ArredoProduct {
   function normalizeFabric(
     fabric: ArredoFinituraTessutoRest,
   ): ArredoFinituraTessuto {
-    const ownImage = emptyToNull(fabric.field_immagine);
+    const ownImage = resolveImageUrl(fabric.field_immagine);
     const children = fabric.children ?? [];
     const variants: ArredoFinituraVariant[] =
       children.length > 0
         ? children.map((v) => ({
             tid: v.tid,
             name: v.name,
-            imageUrl: emptyToNull(v.field_immagine),
+            imageUrl: resolveImageUrl(v.field_immagine),
           }))
         : ownImage
           ? [{ tid: fabric.tid, name: fabric.name, imageUrl: ownImage }]
@@ -173,7 +173,7 @@ function normalizeArredoProduct(raw: ArredoProductRest): ArredoProduct {
     nid: Number(raw.nid),
     title: raw.field_titolo_main || '',
     body: emptyToNull(raw.field_testo_main),
-    imageUrl: emptyToNull(raw.field_immagine),
+    imageUrl: resolveImageUrl(raw.field_immagine),
     galleryIntro: raw.field_gallery_intro ?? [],
     gallery: raw.field_gallery ?? [],
     materialsHtml: emptyToNull(raw.field_materiali),
@@ -186,7 +186,7 @@ function normalizeArredoProduct(raw: ArredoProductRest): ArredoProduct {
     documents: (raw.field_documenti ?? []).map((d) => ({
       nid: Number(d.nid),
       title: d.field_titolo_main || '',
-      imageSrc: emptyToNull(d.field_immagine),
+      imageSrc: resolveImageUrl(d.field_immagine),
       href: d.field_collegamento_esterno || d.field_allegato || null,
       videoId: emptyToNull(d.field_id_video),
     })),

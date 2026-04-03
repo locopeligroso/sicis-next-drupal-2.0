@@ -1,5 +1,11 @@
 import { cache } from 'react';
-import { apiGet, stripDomain, stripLocalePrefix, emptyToNull } from './client';
+import {
+  apiGet,
+  stripDomain,
+  stripLocalePrefix,
+  emptyToNull,
+  resolveImageUrl,
+} from './client';
 
 // ── Raw response shape from Drupal views ─────────────────────────────────
 // Same shape as mosaic-hub: { name, field_immagine, view_taxonomy_term }
@@ -39,7 +45,7 @@ function normalize(
     const pathWithoutLocale = rawPath ? stripLocalePrefix(rawPath) : null;
     return {
       name: item.name,
-      imageUrl: emptyToNull(item.field_immagine),
+      imageUrl: resolveImageUrl(item.field_immagine),
       href: pathWithoutLocale ? `/${locale}${pathWithoutLocale}` : '#',
     };
   });

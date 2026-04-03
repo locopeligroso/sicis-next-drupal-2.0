@@ -1,5 +1,11 @@
 import { cache } from 'react';
-import { apiGet, stripDomain, stripLocalePrefix, emptyToNull } from './client';
+import {
+  apiGet,
+  stripDomain,
+  stripLocalePrefix,
+  emptyToNull,
+  resolveImageUrl,
+} from './client';
 
 // Re-export card types that match the old interface shapes (used by legacy listing components)
 export type { EnvironmentCard } from './types';
@@ -176,7 +182,7 @@ export const fetchEnvironments = cache(
       environments: paginated.map((item) => ({
         id: item.nid,
         title: item.field_titolo_main,
-        imageUrl: emptyToNull(item.field_immagine),
+        imageUrl: resolveImageUrl(item.field_immagine),
         path: stripLocalePrefix(stripDomain(item.view_node)),
       })),
       total,
@@ -232,7 +238,7 @@ const _fetchArticlesBlog = cache(async (locale = 'it'): Promise<BlogResult> => {
       (item): BlogCard => ({
         id: item.nid,
         title: item.field_titolo_main.replace(/&amp;/g, '&'),
-        imageUrl: emptyToNull(item.field_immagine_anteprima),
+        imageUrl: resolveImageUrl(item.field_immagine_anteprima),
         path: stripLocalePrefix(stripDomain(item.view_node)),
         type: 'articolo',
         created: item.field_data,
@@ -377,7 +383,7 @@ export const fetchArticles = cache(
         (item): BlogCard => ({
           id: item.nid,
           title: item.field_titolo_main.replace(/&amp;/g, '&'),
-          imageUrl: emptyToNull(item.field_immagine_anteprima),
+          imageUrl: resolveImageUrl(item.field_immagine_anteprima),
           path: stripLocalePrefix(stripDomain(item.view_node)),
           type: 'articolo',
           created: item.field_data,
@@ -404,7 +410,7 @@ export const fetchNews = cache(async (locale = 'it'): Promise<BlogResult> => {
       (item): BlogCard => ({
         id: item.nid,
         title: item.field_titolo_main,
-        imageUrl: emptyToNull(item.field_immagine_anteprima),
+        imageUrl: resolveImageUrl(item.field_immagine_anteprima),
         path: stripLocalePrefix(stripDomain(item.view_node)),
         type: 'news',
         created: item.field_data,
@@ -435,7 +441,7 @@ export const fetchNewsItems = cache(
         (item): BlogCard => ({
           id: item.nid,
           title: item.field_titolo_main,
-          imageUrl: emptyToNull(item.field_immagine_anteprima),
+          imageUrl: resolveImageUrl(item.field_immagine_anteprima),
           path: stripLocalePrefix(stripDomain(item.view_node)),
           type: 'news',
           created: item.field_data,
@@ -463,7 +469,7 @@ export const fetchTutorials = cache(
         (item): BlogCard => ({
           id: item.nid,
           title: item.field_titolo_main,
-          imageUrl: emptyToNull(item.field_immagine),
+          imageUrl: resolveImageUrl(item.field_immagine),
           path: stripLocalePrefix(stripDomain(item.view_node)),
           type: 'tutorial',
           // tutorials have no field_data — use empty string as fallback
@@ -549,7 +555,7 @@ export const fetchTutorialsByCategory = cache(
         (item): TutorialCard => ({
           id: item.nid,
           title: item.field_titolo_main.replace(/&amp;/g, '&'),
-          imageUrl: emptyToNull(item.field_immagine),
+          imageUrl: resolveImageUrl(item.field_immagine),
           videoId: emptyToNull(item.field_id_video),
           path: stripLocalePrefix(stripDomain(item.view_node)),
           category: item.field_categoria_video ?? null,
@@ -649,7 +655,7 @@ export const fetchProjects = cache(
         (item): ProgettoCard => ({
           id: item.nid,
           title: item.field_titolo_main.replace(/&amp;/g, '&'),
-          imageUrl: emptyToNull(item.field_immagine),
+          imageUrl: resolveImageUrl(item.field_immagine),
           path:
             emptyToNull(item.field_collegamento_esterno) ??
             stripLocalePrefix(stripDomain(item.view_node)),
@@ -682,9 +688,7 @@ export const fetchDocuments = cache(
         (item): DocumentCard => ({
           id: item.nid,
           title: (item.field_titolo_main ?? item.title ?? '') as string,
-          imageUrl: emptyToNull(
-            item.field_immagine as string | null | undefined,
-          ),
+          imageUrl: resolveImageUrl(item.field_immagine),
           path: item.view_node
             ? stripLocalePrefix(stripDomain(item.view_node as string))
             : null,

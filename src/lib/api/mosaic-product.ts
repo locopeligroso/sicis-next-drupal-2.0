@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { apiGet, emptyToNull } from './client';
+import { apiGet, emptyToNull, resolveImageUrl } from './client';
 import type {
   MosaicProductRest,
   MosaicProductDocumentRest,
@@ -88,7 +88,7 @@ function normalizeDocument(
   const titleLower = title.toLowerCase();
   return {
     title,
-    imageSrc: emptyToNull(raw.field_immagine),
+    imageSrc: resolveImageUrl(raw.field_immagine),
     href: raw.field_collegamento_esterno || raw.field_allegato || null,
     isGuide:
       titleLower.includes('install') ||
@@ -103,7 +103,7 @@ function normalizeGrout(raw: MosaicProductGroutRest): MosaicProductGrout {
   return {
     tid: raw.tid,
     name: raw.name,
-    imageSrc: emptyToNull(raw.field_immagine),
+    imageSrc: resolveImageUrl(raw.field_immagine),
     price2_5kg: raw.field_prezzo_2_5kg,
     price5kg: raw.field_prezzo_5kg,
   };
@@ -125,8 +125,8 @@ function normalizeMosaicProduct(raw: MosaicProductRest): MosaicProduct {
     hasSample: toBool(raw.field_campione),
     noUsaStock: toBool(raw.field_no_usa_stock),
     priceOnDemand: toBool(raw.field_prezzo_on_demand),
-    imageUrl: emptyToNull(raw.field_immagine),
-    imageSampleUrl: emptyToNull(raw.field_immagine_campione),
+    imageUrl: resolveImageUrl(raw.field_immagine),
+    imageSampleUrl: resolveImageUrl(raw.field_immagine_campione),
     gallery: raw.field_gallery ?? [],
     videoUrl: emptyToNull(raw.field_video),
     grouts: (raw.field_stucco ?? []).map(normalizeGrout),

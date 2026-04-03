@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { apiGet, emptyToNull } from './client';
+import { apiGet, emptyToNull, resolveImageUrl } from './client';
 
 // ── Tessuto types ─────────────────────────────────────────────────────────
 
@@ -66,7 +66,7 @@ function normalize(items: CategoryHubRawItem[]): CategoryHubItem[] {
     .map((item) => ({
       nid: item.nid,
       name: item.field_titolo_main,
-      imageUrl: emptyToNull(item.field_immagine),
+      imageUrl: resolveImageUrl(item.field_immagine),
     }));
 }
 

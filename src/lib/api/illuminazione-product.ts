@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { apiGet, emptyToNull } from './client';
+import { apiGet, emptyToNull, resolveImageUrl } from './client';
 
 // ── Raw REST response shape ──────────────────────────────────────────────────
 
@@ -59,7 +59,7 @@ function normalizeIlluminazioneProduct(
     nid: Number(raw.nid),
     title: raw.field_titolo_main || '',
     body: emptyToNull(raw.field_testo_main),
-    imageUrl: emptyToNull(raw.field_immagine),
+    imageUrl: resolveImageUrl(raw.field_immagine),
     galleryIntro: raw.field_gallery_intro ?? [],
     materialsHtml: emptyToNull(raw.field_materiali),
     techSpecsHtml: emptyToNull(raw.field_specifiche_tecniche),
@@ -69,7 +69,7 @@ function normalizeIlluminazioneProduct(
     documents: (raw.field_documenti ?? []).map((d) => ({
       nid: Number(d.nid),
       title: d.field_titolo_main || '',
-      imageSrc: emptyToNull(d.field_immagine),
+      imageSrc: resolveImageUrl(d.field_immagine),
       href: d.field_collegamento_esterno || d.field_allegato || null,
       videoId: emptyToNull(d.field_id_video),
     })),

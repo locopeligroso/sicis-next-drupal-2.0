@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { apiGet, emptyToNull } from './client';
+import { apiGet, emptyToNull, resolveImageUrl } from './client';
 import type { PixallProductRest } from './types';
 
 // ── Normalized domain model ─────────────────────────────────────────────────
@@ -64,8 +64,8 @@ function normalizePixallProduct(raw: PixallProductRest): PixallProduct {
     usesHtml: emptyToNull(raw.field_utilizzi),
     maintenanceHtml: emptyToNull(raw.field_manutenzione),
     meshType: emptyToNull(raw.field_retinatura),
-    imageUrl: emptyToNull(raw.field_immagine),
-    imageModulesUrl: emptyToNull(raw.field_immagine_moduli),
+    imageUrl: resolveImageUrl(raw.field_immagine),
+    imageModulesUrl: resolveImageUrl(raw.field_immagine_moduli),
     gallery: raw.field_gallery ?? [],
     galleryIntro: raw.field_gallery_intro ?? [],
     sheetSizeMm: emptyToNull(raw.field_dimensione_foglio_mm),
@@ -83,13 +83,13 @@ function normalizePixallProduct(raw: PixallProductRest): PixallProduct {
     grouts: (raw.field_stucco ?? []).map((g) => ({
       tid: g.tid,
       name: g.name,
-      imageSrc: emptyToNull(g.field_immagine),
+      imageSrc: resolveImageUrl(g.field_immagine),
       price2_5kg: g.field_prezzo_2_5kg,
       price5kg: g.field_prezzo_5kg,
     })),
     documents: (raw.field_documenti ?? []).map((d) => ({
       title: d.field_titolo_main || '',
-      imageSrc: emptyToNull(d.field_immagine),
+      imageSrc: resolveImageUrl(d.field_immagine),
       href: d.field_collegamento_esterno || d.field_allegato || null,
     })),
   };

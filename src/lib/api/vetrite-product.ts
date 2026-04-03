@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { apiGet, emptyToNull } from './client';
+import { apiGet, emptyToNull, resolveImageUrl } from './client';
 import type { VetriteProductRest, VetriteProductDocumentRest } from './types';
 
 // ── Normalized domain models ────────────────────────────────────────────────
@@ -62,7 +62,7 @@ function normalizeDocument(
 ): VetriteProductDocument {
   return {
     title: raw.field_titolo_main || '',
-    imageSrc: emptyToNull(raw.field_immagine),
+    imageSrc: resolveImageUrl(raw.field_immagine),
     href: raw.field_collegamento_esterno || raw.field_allegato || null,
   };
 }
@@ -78,7 +78,7 @@ function normalizeVetriteProduct(raw: VetriteProductRest): VetriteProduct {
     body:
       emptyToNull(raw.field_testo_main) ||
       (col ? emptyToNull(col.field_testo) : null),
-    imageUrl: emptyToNull(raw.field_immagine),
+    imageUrl: resolveImageUrl(raw.field_immagine),
     gallery: raw.field_gallery ?? [],
     dimensionsCm: emptyToNull(raw.field_dimensioni_cm),
     dimensionsInch: emptyToNull(raw.field_dimensioni_inch),
@@ -96,7 +96,7 @@ function normalizeVetriteProduct(raw: VetriteProductRest): VetriteProduct {
           tid: col.tid,
           name: col.name,
           body: emptyToNull(col.field_testo),
-          imageSrc: emptyToNull(col.field_immagine),
+          imageSrc: resolveImageUrl(col.field_immagine),
           dimensionsCm: col.field_dimensioni_cm,
           dimensionsInch: col.field_dimensioni_inch,
           dimensionsExtraCm: col.field_dimensioni_extra_cm,
