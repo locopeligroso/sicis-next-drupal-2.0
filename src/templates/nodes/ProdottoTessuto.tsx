@@ -117,60 +117,6 @@ export default async function ProdottoTessuto({
 
   return (
     <article>
-      {/* ── Breadcrumb ──────────────────────────────────────────────────────── */}
-      <nav aria-label="Breadcrumb" style={{ marginBottom: '1.5rem' }}>
-        <ol
-          style={{
-            listStyle: 'none',
-            padding: 0,
-            margin: 0,
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '0.25rem',
-            fontSize: '0.8125rem',
-            color: '#888',
-          }}
-        >
-          <li>
-            <Link
-              href={`/${locale}/tessile/tessuti`}
-              style={{ color: '#888', textDecoration: 'none' }}
-            >
-              {t('fabrics')}
-            </Link>
-          </li>
-          {categoriaName && (
-            <>
-              <li aria-hidden="true" style={{ userSelect: 'none' }}>
-                /
-              </li>
-              <li>
-                {categoriaPath ? (
-                  <Link
-                    href={`/${locale}${categoriaPath}`}
-                    style={{ color: '#888', textDecoration: 'none' }}
-                  >
-                    {categoriaName}
-                  </Link>
-                ) : (
-                  <span>{categoriaName}</span>
-                )}
-              </li>
-            </>
-          )}
-          {title && (
-            <>
-              <li aria-hidden="true" style={{ userSelect: 'none' }}>
-                /
-              </li>
-              <li aria-current="page" style={{ color: '#333' }}>
-                {title}
-              </li>
-            </>
-          )}
-        </ol>
-      </nav>
-
       {/* ── 1. Title + tipologia ─────────────────────────────────────────────── */}
       {title && (
         <h1

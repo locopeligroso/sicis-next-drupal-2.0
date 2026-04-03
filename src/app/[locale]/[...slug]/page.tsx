@@ -32,6 +32,7 @@ import {
 } from '@/lib/adapters/legacy-node-adapters';
 import { getComponentName } from '@/lib/node-resolver';
 import UnknownEntity from '@/components_legacy/UnknownEntity';
+import { resolveHubParentNid } from './_helpers';
 import { PageBreadcrumb } from '@/components/composed/PageBreadcrumb';
 import {
   getSectionConfigAsync,
@@ -243,6 +244,29 @@ const CATEGORY_LISTING_TYPES = new Set([
   'prodotto_illuminazione',
   'prodotto_tessuto',
 ]);
+
+/** Taxonomy term bundles that map to a product listing via renderProductListing */
+const TAXONOMY_LISTING_MAP: Record<
+  string,
+  { productType: string; tidKey: 'resolvedTid' | 'resolvedColorTid' }
+> = {
+  mosaico_collezioni: {
+    productType: 'prodotto_mosaico',
+    tidKey: 'resolvedTid',
+  },
+  mosaico_colori: {
+    productType: 'prodotto_mosaico',
+    tidKey: 'resolvedColorTid',
+  },
+  vetrite_collezioni: {
+    productType: 'prodotto_vetrite',
+    tidKey: 'resolvedTid',
+  },
+  vetrite_colori: {
+    productType: 'prodotto_vetrite',
+    tidKey: 'resolvedColorTid',
+  },
+};
 
 interface SlugPageProps {
   params: Promise<{ locale: string; slug: string[] }>;
@@ -736,49 +760,19 @@ export default async function SlugPage({
       // ── Taxonomy terms: mosaico_collezioni / mosaico_colori → mosaic-products endpoint ──
       // resolve-path gives us the TID directly — pass it to renderProductListing
       // so it uses the new endpoint without an extra taxonomy name→TID fetch.
-      if (resolved.bundle === 'mosaico_collezioni') {
+      // ── Taxonomy terms → product listing (mosaico/vetrite collections & colors) ──
+      const taxonomyConfig = TAXONOMY_LISTING_MAP[resolved.bundle];
+      if (taxonomyConfig) {
         const sp = await getSearchParams();
         return renderProductListing({
-          productType: 'prodotto_mosaico',
+          productType: taxonomyConfig.productType,
           title: deslugify(slug[slug.length - 1]),
           slug,
           searchParams: sp,
           locale,
-          resolvedTid: resolved.nid,
-        });
-      }
-      if (resolved.bundle === 'mosaico_colori') {
-        const sp = await getSearchParams();
-        return renderProductListing({
-          productType: 'prodotto_mosaico',
-          title: deslugify(slug[slug.length - 1]),
-          slug,
-          searchParams: sp,
-          locale,
-          resolvedColorTid: resolved.nid,
-        });
-      }
-      // ── Taxonomy terms: vetrite_collezioni / vetrite_colori → vetrite-products endpoint ──
-      if (resolved.bundle === 'vetrite_collezioni') {
-        const sp = await getSearchParams();
-        return renderProductListing({
-          productType: 'prodotto_vetrite',
-          title: deslugify(slug[slug.length - 1]),
-          slug,
-          searchParams: sp,
-          locale,
-          resolvedTid: resolved.nid,
-        });
-      }
-      if (resolved.bundle === 'vetrite_colori') {
-        const sp = await getSearchParams();
-        return renderProductListing({
-          productType: 'prodotto_vetrite',
-          title: deslugify(slug[slug.length - 1]),
-          slug,
-          searchParams: sp,
-          locale,
-          resolvedColorTid: resolved.nid,
+          ...(taxonomyConfig.tidKey === 'resolvedTid'
+            ? { resolvedTid: resolved.nid }
+            : { resolvedColorTid: resolved.nid }),
         });
       }
       // ── node--categoria → type-specific listing endpoint ──
@@ -808,19 +802,7 @@ export default async function SlugPage({
               if (matchesAnyLocale) {
                 // Arredo indoor: hardcoded NID 4261 so sidebar shows indoor subcategories.
                 // Other types (illuminazione, tessuto): resolve hub page NID from Drupal.
-                let hubParentNid: number | undefined;
-                if (pt === 'prodotto_arredo') {
-                  hubParentNid = ARREDO_INDOOR_PARENT_NID;
-                } else {
-                  const basePathSegment = (
-                    ptConfig.basePaths[locale] ?? ptConfig.basePaths['it']
-                  ).split('/')[0];
-                  const baseResolved = await resolvePath(
-                    `/${basePathSegment}`,
-                    locale,
-                  );
-                  hubParentNid = baseResolved?.nid;
-                }
+                const hubParentNid = await resolveHubParentNid(pt, locale);
 
                 const sp = await getSearchParams();
                 return renderProductListing({
@@ -906,22 +888,13 @@ export default async function SlugPage({
             );
             const listingTitle =
               activeP0?.label ?? deslugify(slug[slug.length - 1]);
-            let mlHubParentNid: number | undefined;
             let mlResolvedCategoryNid: number | undefined;
+            const mlHubParentNid = CATEGORY_LISTING_TYPES.has(
+              sectionConfig.productType,
+            )
+              ? await resolveHubParentNid(sectionConfig.productType, locale)
+              : undefined;
             if (CATEGORY_LISTING_TYPES.has(sectionConfig.productType)) {
-              const ptConfig = FILTER_REGISTRY[sectionConfig.productType];
-              if (sectionConfig.productType === 'prodotto_arredo') {
-                mlHubParentNid = ARREDO_INDOOR_PARENT_NID;
-              } else if (ptConfig) {
-                const basePathSegment = (
-                  ptConfig.basePaths[locale] ?? ptConfig.basePaths['it']
-                ).split('/')[0];
-                const baseResolved = await resolvePath(
-                  `/${basePathSegment}`,
-                  locale,
-                );
-                mlHubParentNid = baseResolved?.nid;
-              }
               // Use parent NID as resolvedCategoryNid so render-product-listing
               // fetches sibling subcategories for the sidebar
               if (mlHubParentNid) {

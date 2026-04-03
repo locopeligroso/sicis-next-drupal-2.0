@@ -148,10 +148,10 @@ describe('mapMenuToNavbar', () => {
       const titles = result.filterFind.items.map((c) => c.item.title);
       expect(titles).toEqual([
         'Mosaico',
-        'Vetrite',
+        'Lastre vetro Vetrite',
         'Arredo',
         'Illuminazione',
-        'Tessili',
+        'Prodotti Tessili',
       ]);
     });
 

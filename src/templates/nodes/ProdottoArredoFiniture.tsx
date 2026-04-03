@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import {
   FinitureGallery,
@@ -35,36 +34,6 @@ export default async function ProdottoArredoFiniture({
 
   return (
     <div className="pb-(--spacing-section)">
-      {/* Breadcrumb */}
-      <nav
-        aria-label="Breadcrumb"
-        className="mb-8 text-xs text-muted-foreground uppercase tracking-[0.12em]"
-      >
-        <ol className="flex flex-wrap items-center gap-1.5">
-          <li>
-            <Link
-              href={`/${locale}/arredo`}
-              className="hover:text-foreground transition-colors"
-            >
-              {t('furniture')}
-            </Link>
-          </li>
-          <li aria-hidden="true">/</li>
-          <li>
-            <Link
-              href={productPath}
-              className="hover:text-foreground transition-colors"
-            >
-              {product.title}
-            </Link>
-          </li>
-          <li aria-hidden="true">/</li>
-          <li aria-current="page" className="text-foreground">
-            {t('finishes')}
-          </li>
-        </ol>
-      </nav>
-
       {/* Page title — "ALBERT - FINITURE" style */}
       <h1 className="text-2xl font-semibold uppercase tracking-[0.1em] mb-(--spacing-section)">
         {product.title}

@@ -39,7 +39,6 @@ export default async function ProdottoIlluminazione({
   const typedNode = node as ProdottoIlluminazioneType;
   const t = await getTranslations('products');
   const tCommon = await getTranslations('common');
-  const tNav = await getTranslations('nav');
 
   const title = getTextValue(typedNode.field_titolo_main) || typedNode.title;
   const body = getProcessedText(typedNode.field_testo_main);
@@ -170,56 +169,6 @@ export default async function ProdottoIlluminazione({
 
   return (
     <article>
-      {/* ── Breadcrumb ──────────────────────────────────────────────────────── */}
-      <nav aria-label="Breadcrumb" style={{ marginBottom: '1.5rem' }}>
-        <ol
-          style={{
-            listStyle: 'none',
-            padding: 0,
-            margin: 0,
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '0.25rem',
-            fontSize: '0.8125rem',
-            color: '#888',
-          }}
-        >
-          <li>
-            <Link
-              href={`/${locale}/illuminazione`}
-              style={{ color: '#888', textDecoration: 'none' }}
-            >
-              {t('lighting')}
-            </Link>
-          </li>
-          {categoriaName && (
-            <>
-              <li aria-hidden="true">/</li>
-              <li>
-                {categoriaPath ? (
-                  <Link
-                    href={`/${locale}${categoriaPath}`}
-                    style={{ color: '#888', textDecoration: 'none' }}
-                  >
-                    {categoriaName}
-                  </Link>
-                ) : (
-                  <span>{categoriaName}</span>
-                )}
-              </li>
-            </>
-          )}
-          {title && (
-            <>
-              <li aria-hidden="true">/</li>
-              <li aria-current="page" style={{ color: '#333' }}>
-                {title}
-              </li>
-            </>
-          )}
-        </ol>
-      </nav>
-
       {/* ── 1. Title ─────────────────────────────────────────────────────────── */}
       {title && (
         <h1
