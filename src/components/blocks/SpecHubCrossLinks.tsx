@@ -19,8 +19,15 @@ async function getCrossLinkImage(
 ): Promise<string | null> {
   try {
     // Strip locale prefix to get Drupal path
-    const path = url.replace(new RegExp(`^/${locale}`), '') || '/';
-    const resolved = await resolvePath(path, locale);
+    let path = url.replace(new RegExp(`^/${locale}`), '') || '/';
+    // Strip special chars like ® that break resolve-path
+    const cleanPath = path.replace(/[®™©]/g, '');
+
+    // Try clean path first, then original
+    let resolved = await resolvePath(cleanPath, locale).catch(() => null);
+    if (!resolved?.nid && cleanPath !== path) {
+      resolved = await resolvePath(path, locale).catch(() => null);
+    }
     if (!resolved?.nid) return null;
     const content = await fetchContent(resolved.nid, locale);
     if (!content) return null;
