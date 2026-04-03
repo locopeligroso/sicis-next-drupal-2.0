@@ -477,6 +477,90 @@ export const fetchTutorials = cache(
   },
 );
 
+// ── tutorial card types ──────────────────────────────────────────────────────
+
+export interface TutorialCard {
+  id: string;
+  title: string;
+  imageUrl: string | null;
+  videoId: string | null;
+  path: string | null;
+  category: string | null; // "vetrite" or "mosaico"
+  tipologiaTid: number | null; // will be populated when Freddi adds the field
+}
+
+export interface TutorialTipologia {
+  tid: number;
+  name: string;
+}
+
+// ── tutorial-tipologie endpoint ──────────────────────────────────────────────
+
+export const fetchTutorialTipologie = cache(
+  async (locale = 'it'): Promise<TutorialTipologia[]> => {
+    const items = await apiGet<
+      { tid: string; name: string; view_taxonomy_term: string }[]
+    >(`/${locale}/tutorial-tipologie`, {}, 3600);
+    if (!items || !Array.isArray(items)) return [];
+    return items.map((item) => ({
+      tid: Number(item.tid),
+      name: item.name.replace(/&amp;/g, '&'),
+    }));
+  },
+);
+
+// ── tutorials by category ────────────────────────────────────────────────────
+
+/**
+ * Fetches tutorials filtered by category ("vetrite" or "mosaico"),
+ * with optional tipologia filter (ready for when Freddi adds field_tipologia).
+ */
+export const fetchTutorialsByCategory = cache(
+  async (
+    locale = 'it',
+    category: 'vetrite' | 'mosaico',
+    limit = 48,
+    offset = 0,
+    tipologiaTid?: number,
+  ): Promise<{ tutorials: TutorialCard[]; total: number }> => {
+    const items = await apiGet<RawTutorialItem[]>(
+      `/${locale}/tutorials`,
+      {},
+      1800,
+    );
+    if (!items || !Array.isArray(items)) return { tutorials: [], total: 0 };
+
+    let filtered = items.filter(
+      (item) => item.field_categoria_video === category,
+    );
+
+    // Tipologia filter — ready for when Freddi adds field_tipologia to tutorials API
+    // if (tipologiaTid !== undefined) {
+    //   filtered = filtered.filter(item => item.field_tipologia?.tid === tipologiaTid);
+    // }
+
+    // Suppress unused-variable warning until the filter is activated
+    void tipologiaTid;
+
+    const total = filtered.length;
+    const paginated = filtered.slice(offset, offset + limit);
+    return {
+      tutorials: paginated.map(
+        (item): TutorialCard => ({
+          id: item.nid,
+          title: item.field_titolo_main.replace(/&amp;/g, '&'),
+          imageUrl: emptyToNull(item.field_immagine),
+          videoId: emptyToNull(item.field_id_video),
+          path: stripLocalePrefix(stripDomain(item.view_node)),
+          category: item.field_categoria_video ?? null,
+          tipologiaTid: null, // placeholder until field_tipologia is added
+        }),
+      ),
+      total,
+    };
+  },
+);
+
 // ── blog aggregate (articles + news + tutorials) ─────────────────────────────
 
 export const fetchBlogPosts = cache(

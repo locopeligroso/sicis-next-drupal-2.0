@@ -47,6 +47,7 @@ import { MosaicProductPreview } from '@/templates/nodes/MosaicProductPreview';
 import { SpecProjectListing } from '@/components/blocks/SpecProjectListing';
 import { SpecInspirationListing } from '@/components/blocks/SpecInspirationListing';
 import { SpecNewsListing } from '@/components/blocks/SpecNewsListing';
+import { SpecTutorialListing } from '@/components/blocks/SpecTutorialListing';
 import EnvironmentListing from '@/components_legacy/EnvironmentListing';
 import ShowroomListing from '@/components_legacy/ShowroomListing';
 import DocumentListing from '@/components_legacy/DocumentListing';
@@ -58,6 +59,8 @@ import {
   fetchArticles,
   fetchBlogCategories,
   fetchNewsItems,
+  fetchTutorialsByCategory,
+  fetchTutorialTipologie,
   fetchDocuments,
 } from '@/lib/api/listings';
 
@@ -176,6 +179,10 @@ const CONTENT_LISTING_SLUGS: Record<string, string> = {
   environments: 'environments',
   // Newsroom
   newsroom: 'newsroom',
+  // Tutorial vetrite
+  'tutorial-vetrite': 'tutorial_vetrite',
+  // Tutorial mosaico
+  'tutorial-mosaico': 'tutorial_mosaico',
   // Showroom
   showroom: 'showroom',
   // Download cataloghi
@@ -472,6 +479,54 @@ export default async function SlugPage({
           <SpecNewsListing
             title={nodeTitle}
             news={news}
+            total={total}
+            locale={locale}
+            currentPage={currentPage}
+            pageSize={PAGE_SIZE}
+            basePath={basePath}
+          />
+        );
+      },
+      tutorial_vetrite: async () => {
+        const tipStr = Array.isArray(sp?.tip) ? sp.tip[0] : sp?.tip;
+        const tipologiaTid = tipStr ? parseInt(tipStr, 10) : undefined;
+        const [{ tutorials, total }, tipologie] = await Promise.all([
+          fetchTutorialsByCategory(
+            locale,
+            'vetrite',
+            PAGE_SIZE,
+            offset,
+            tipologiaTid,
+          ),
+          fetchTutorialTipologie(locale),
+        ]);
+        return (
+          <SpecTutorialListing
+            title={nodeTitle || 'Tutorial Vetrite'}
+            tutorials={tutorials}
+            tipologie={tipologie}
+            activeTipologia={tipologiaTid ?? null}
+            total={total}
+            locale={locale}
+            currentPage={currentPage}
+            pageSize={PAGE_SIZE}
+            basePath={basePath}
+          />
+        );
+      },
+      tutorial_mosaico: async () => {
+        const { tutorials, total } = await fetchTutorialsByCategory(
+          locale,
+          'mosaico',
+          PAGE_SIZE,
+          offset,
+        );
+        return (
+          <SpecTutorialListing
+            title={nodeTitle || 'Tutorial Mosaico'}
+            tutorials={tutorials}
+            tipologie={[]}
+            activeTipologia={null}
             total={total}
             locale={locale}
             currentPage={currentPage}

@@ -64,6 +64,7 @@ const nextConfig = {
       { protocol: 'https', hostname: 'sicis-stage.com' },
       { protocol: 'https', hostname: 'sicis.com' },
       { protocol: 'https', hostname: 'www.sicis.com' },
+      { protocol: 'https', hostname: 'img.youtube.com' },
     ],
     // next/image blocks private IPs (192.168.x.x) from the optimization proxy.
     // Custom loader bypasses this by serving the original Drupal URL directly.
