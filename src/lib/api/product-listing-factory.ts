@@ -1,5 +1,11 @@
 import { cache } from 'react';
-import { apiGet, stripDomain, stripLocalePrefix, emptyToNull } from './client';
+import {
+  apiGet,
+  stripDomain,
+  stripLocalePrefix,
+  emptyToNull,
+  resolveImageUrl,
+} from './client';
 import type { ProductCard } from './products';
 
 // ── Param shapes ──────────────────────────────────────────────────────────
@@ -162,7 +168,7 @@ function makeNormalizer(
     const rawPath = item.view_node ? stripDomain(item.view_node) : null;
     const path = rawPath ? stripLocalePrefix(rawPath) : null;
 
-    const imageUrl = emptyToNull(item[config.imageField] ?? '');
+    const imageUrl = resolveImageUrl(item[config.imageField]);
 
     const price =
       config.priceField !== null

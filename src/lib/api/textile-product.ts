@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { apiGet, emptyToNull } from './client';
+import { apiGet, emptyToNull, resolveImageUrl } from './client';
 import type {
   TextileProductRest,
   TextileProductDocumentRest,
@@ -100,7 +100,7 @@ function normalizeTextileProduct(raw: TextileProductRest): TextileProduct {
       : null,
     documents: (raw.field_documenti ?? []).map((doc) => ({
       title: doc.field_titolo_main || '',
-      imageSrc: emptyToNull(doc.field_immagine),
+      imageSrc: resolveImageUrl(doc.field_immagine),
       href: doc.field_collegamento_esterno || doc.field_allegato || null,
     })),
     finiture: toArray(raw.field_finiture_tessuto).map((f) => ({
@@ -111,7 +111,7 @@ function normalizeTextileProduct(raw: TextileProductRest): TextileProduct {
         name: c.name,
         colorCode: c.field_codice_colore,
         label: c.field_etichetta,
-        imageSrc: emptyToNull(c.field_immagine),
+        imageSrc: resolveImageUrl(c.field_immagine),
         text: c.field_testo,
         colorName:
           typeof c.field_colore === 'object' && c.field_colore
@@ -122,7 +122,7 @@ function normalizeTextileProduct(raw: TextileProductRest): TextileProduct {
     maintenance: (raw.field_indicazioni_manutenzione ?? []).map((m) => ({
       tid: m.tid,
       name: m.name,
-      imageSrc: emptyToNull(m.field_immagine),
+      imageSrc: resolveImageUrl(m.field_immagine),
     })),
     typologies: toArray(raw.field_tipologia_tessuto).map((t) => ({
       tid: t.tid,
