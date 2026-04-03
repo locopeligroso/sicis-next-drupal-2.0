@@ -525,7 +525,7 @@ export default async function ProdottoArredo({
 
       {/* ── Gallery (DS) ─────────────────────────────────────────────────── */}
       <DevBlockOverlay name="GenGallery" status="ds">
-        <GenGallery slides={galleryMainSlides} title={t('gallery')} />
+        <GenGallery slides={galleryMainSlides} />
       </DevBlockOverlay>
 
       {/* ── 10. Documenti download ───────────────────────────────────────────── */}

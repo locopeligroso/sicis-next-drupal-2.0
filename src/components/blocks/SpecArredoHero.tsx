@@ -83,21 +83,7 @@ export function SpecArredoHero({
             {categoryLabel}
           </div>
 
-          {/* Left: Image (7 cols) */}
-          {imageSrc && (
-            <div className="md:col-span-7 relative aspect-3/2 bg-background rounded-xl overflow-hidden">
-              <Image
-                src={imageSrc}
-                alt={imageAlt ?? title}
-                fill
-                sizes="(max-width: 768px) 100vw, 58vw"
-                className="object-contain object-bottom"
-                priority
-              />
-            </div>
-          )}
-
-          {/* Right: Content (5 cols) */}
+          {/* Left: Content (5 cols) */}
           <div className={cn('flex flex-col gap-(--spacing-element)', imageSrc ? 'md:col-span-5' : 'md:col-span-12')}>
             {/* Title + Category — shown on md+ */}
             <div className="hidden md:flex flex-col gap-1">
@@ -125,6 +111,20 @@ export function SpecArredoHero({
               <ProductCta />
             </div>
           </div>
+
+          {/* Right: Image (7 cols) */}
+          {imageSrc && (
+            <div className="md:col-span-7 relative aspect-square bg-background rounded-xl overflow-hidden">
+              <Image
+                src={imageSrc}
+                alt={imageAlt ?? title}
+                fill
+                sizes="(max-width: 768px) 100vw, 58vw"
+                className="object-contain object-center"
+                priority
+              />
+            </div>
+          )}
         </div>
       </section>
 

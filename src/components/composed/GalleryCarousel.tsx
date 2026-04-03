@@ -45,7 +45,13 @@ export function GalleryCarousel({
     if (!el) return;
     updateArrows();
     el.addEventListener('scroll', updateArrows, { passive: true });
-    return () => el.removeEventListener('scroll', updateArrows);
+    const track = el.firstElementChild as HTMLElement | null;
+    const ro = track ? new ResizeObserver(updateArrows) : null;
+    if (track && ro) ro.observe(track);
+    return () => {
+      el.removeEventListener('scroll', updateArrows);
+      ro?.disconnect();
+    };
   }, [updateArrows]);
 
   function scrollBySlide(direction: 1 | -1) {
@@ -125,7 +131,8 @@ export function GalleryCarousel({
             >
               <div
                 className={cn(
-                  'relative rounded-xl overflow-hidden border border-border',
+                  'relative rounded-xl overflow-hidden border border-border transition-opacity duration-300',
+                  slide.width && slide.height ? '' : 'md:opacity-0',
                   slideClassName,
                 )}
                 style={
@@ -151,6 +158,7 @@ export function GalleryCarousel({
                         const container = img.closest('[data-gallery-slide]')?.querySelector('[class*="rounded-xl"]') as HTMLElement | null;
                         if (container) {
                           container.style.setProperty('--slide-ratio', `${naturalWidth / naturalHeight}`);
+                          container.classList.remove('md:opacity-0');
                         }
                       }
                     }}
