@@ -18,12 +18,12 @@ All Drupal data comes exclusively from the REST endpoints below. No other data s
 
 **REST API client (`src/lib/api/`):**
 
-- `client.ts` — `apiGet` (base fetcher), `stripDomain`, `stripLocalePrefix`, `emptyToNull` (normalizers), `resolveImageUrl` (unified image URL resolver — handles 4 patterns: direct string, `{ uri: { url } }`, `{ url }`, null)
+- `client.ts` — `apiGet` (base fetcher), `stripDomain`, `stripLocalePrefix`, `emptyToNull` (normalizers), `resolveImageUrl` (unified image URL resolver — handles 4 patterns: direct string, `{ uri: { url } }`, `{ url }`, null), `resolveImage` (returns `ResolvedImage { url, width, height }` — handles both legacy string and new `{ url, width, height }` object format from Drupal), `resolveImageArray` (maps an array of raw image fields through `resolveImage`, filters nulls)
 - `types.ts` — Response interfaces for all endpoints (source of truth for REST response shapes)
 - `entity.ts` — `fetchEntity` (entity ❌ DEAD — do not call at runtime)
 - `products.ts` — `fetchProducts` (products ❌ DEAD), `fetchFilterCounts` (product-counts ❌ DEAD), `getCategoriaProductType`
 - `filters.ts` — `fetchFilterOptions` (taxonomy ❌ DEAD), `fetchCategoryOptions` (category-options ❌ DEAD), `fetchAllFilterOptions`
-- `listings.ts` — `fetchBlogPosts` (aggregate of articles+news+tutorials), `fetchArticles` (articles), `fetchNews` (news), `fetchTutorials` (tutorials), `fetchProjects` (projects), `fetchEnvironments` (environments), `fetchShowrooms` (showrooms), `fetchDocuments` (documents — confirmed dead 404, kept for forward compat)
+- `listings.ts` — `fetchBlogPosts` (aggregate of articles+news+tutorials, newest-first sort), `fetchArticles` (articles, optional `categoryNid` filter, client-side pagination), `fetchNewsItems` (news, client-side pagination), `fetchTutorials` (all tutorials — aggregate), `fetchTutorialsByCategory` (tutorials filtered by `'vetrite'` | `'mosaico'`, optional `tipologiaTid` filter — field pending from CMS), `fetchTutorialTipologie` (tutorial typology terms from `tutorial-tipologie` endpoint), `fetchProjects` (projects, optional `categoryTid` filter, client-side pagination), `fetchProjectCategories` (project taxonomy from `project-categories` endpoint), `fetchBlogCategories` (blog categories from `categories-blog` endpoint), `fetchBlogTags` (tags — tries `tags` endpoint, falls back to hardcoded NID list via `content/{nid}`), `fetchEnvironments` (environments, client-side pagination), `fetchShowrooms` (showrooms, client-side pagination), `fetchDocuments` (documents — confirmed dead 404, kept for forward compat)
 - `categories.ts` — `fetchSubcategories` (subcategories ❌ DEAD), `fetchPagesByCategory` (pages-by-category ❌ DEAD)
 - `translate-path.ts` — `getTranslatedPath` (translate-path ❌ DEAD)
 - `image-fallback.ts` — `enrichWithFallbackImages` (extracts images from entity endpoint for items missing imageUrl)
@@ -45,9 +45,15 @@ All Drupal data comes exclusively from the REST endpoints below. No other data s
 **Drupal utilities (`src/lib/drupal/`):**
 
 - `config.ts` — DRUPAL_BASE_URL (single source of truth)
-- `menu.ts` — `fetchMenu` (menu — ✅ still active), `transformMenuToNavItems` — uses `fetch()` directly (NOT `apiGet`), different URL pattern (`/api/menu/` without `v1`). `transformMenuToNavItems` extracts `sectionTitles` and `sectionDescriptions` directly from Drupal menu item title/description fields — `FILTER_FIND_SHORT_TITLES` has been removed; all navbar section labels are now fully CMS-driven.
+- `menu.ts` — `fetchMenu` (menu — ✅ still active), `mapMenuToNavbar` — uses `fetch()` directly (NOT `apiGet`), different URL pattern (`/api/menu/` without `v1`). Produces a `NavbarMenu` with typed `NavSection[]`. Zero title-matching: variant (`'product'` | `'list'`) inferred structurally from whether children have sub-children. `sectionTitles` and `sectionDescriptions` come from Drupal menu item title/description fields — no hardcoded strings.
 - `image.ts` — `getDrupalImageUrl` (extracts `uri.url` from entity endpoint image shape)
 - `index.ts` — barrel re-export
+
+**Navbar types (`src/lib/navbar/`):**
+
+- `types.ts` — `NavbarMenu`, `NavSection { title, description, url, variant, items }`, `NavSectionItem { item, secondaryLinks, crossLinks }`, `SecondaryLink`. `variant` is `'product'` (children have sub-children, renders `MegaMenuSection` product layout) or `'list'` (flat links, renders simple list layout).
+- `menu-mapper.ts` — `mapMenuToNavbar(menuItems)` — fully CMS-driven mapper. Skips top-level items without children (e.g. "Home"). Cross-links extracted from sub-children whose title is `"cross-link"` with grandchildren; all other leaf sub-children become `secondaryLinks`.
+- `hub-links.ts` — static hub image links (product category thumbnails injected into mega-menu cards)
 
 #### Drupal REST Endpoint Reference
 
@@ -95,9 +101,13 @@ The project has fully migrated away from generic Drupal Views endpoints to dedic
 | tessuto-product-counts | Tessuto faceted counts (cross-filtering)  | `tessuto-product-counts?tipologia=`                       |
 | categories/{parentNid} | Child node--categoria by parent NID       | `categories/{parentNid}`                                  |
 | articles               | Articles listing (replaces blog)          | `articles`                                                |
-| news                   | News listing (replaces blog)              | `news`                                                    |
-| tutorials              | Tutorials listing (replaces blog)         | `tutorials`                                               |
+| news                   | News listing                              | `news`                                                    |
+| tutorials              | Tutorials listing                         | `tutorials`                                               |
+| tutorial-tipologie     | Tutorial typology filter options          | `tutorial-tipologie`                                      |
 | projects               | Projects listing                          | `projects`                                                |
+| project-categories     | Project taxonomy filter options           | `project-categories`                                      |
+| categories-blog        | Blog category filter options              | `categories-blog`                                         |
+| tags                   | Blog/article tag nodes                    | `tags`                                                    |
 | environments           | Environments listing                      | `environments`                                            |
 | showrooms              | Showrooms listing                         | `showrooms`                                               |
 | content/{nid}          | Basic content fields by NID (replaces C1) | `content/{nid}`                                           |
@@ -105,21 +115,21 @@ The project has fully migrated away from generic Drupal Views endpoints to dedic
 
 **❌ DEAD — Old generic Views (confirmed 404 on current Drupal backend):**
 
-| Endpoint          | Former purpose          | Replaced by                                                                    |
-| ----------------- | ----------------------- | ------------------------------------------------------------------------------ |
-| entity            | Full entity by path     | `content/{nid}` + `blocks/{nid}` + type-specific fetchers                      |
-| translate-path    | Cross-locale path       | `resolve-path` (aliases map included in response)                              |
-| products          | Generic product listing | Type-specific `*-products` endpoints                                           |
-| product-counts    | Filter value counts     | No replacement yet                                                             |
-| taxonomy          | Taxonomy terms          | `mosaic-colors`, `mosaic-collections`, `vetrite-colors`, `vetrite-collections` |
-| category-options  | Category nodes          | `categories/{parentNid}`                                                       |
-| blog              | Blog posts              | No replacement yet                                                             |
-| projects          | Projects                | No replacement yet                                                             |
-| environments      | Environments            | No replacement yet                                                             |
-| showrooms         | Showrooms               | No replacement yet                                                             |
-| documents         | Documents               | No replacement yet                                                             |
-| subcategories     | Child categories        | `categories/{parentNid}`                                                       |
-| pages-by-category | Pages by category       | No replacement yet                                                             |
+| Endpoint          | Former purpose           | Replaced by                                                                    |
+| ----------------- | ------------------------ | ------------------------------------------------------------------------------ |
+| entity            | Full entity by path      | `content/{nid}` + `blocks/{nid}` + type-specific fetchers                      |
+| translate-path    | Cross-locale path        | `resolve-path` (aliases map included in response)                              |
+| products          | Generic product listing  | Type-specific `*-products` endpoints                                           |
+| product-counts    | Filter value counts      | No replacement yet                                                             |
+| taxonomy          | Taxonomy terms           | `mosaic-colors`, `mosaic-collections`, `vetrite-colors`, `vetrite-collections` |
+| category-options  | Category nodes           | `categories/{parentNid}`                                                       |
+| blog              | Blog posts               | `articles` + `news` + `tutorials` (aggregate via `fetchBlogPosts`)             |
+| projects          | Projects (paginated)     | `projects` (flat array, client-side pagination in `fetchProjects`)             |
+| environments      | Environments (paginated) | `environments` (flat array, client-side pagination in `fetchEnvironments`)     |
+| showrooms         | Showrooms (paginated)    | `showrooms` (flat array, client-side pagination in `fetchShowrooms`)           |
+| documents         | Documents                | No replacement yet                                                             |
+| subcategories     | Child categories         | `categories/{parentNid}`                                                       |
+| pages-by-category | Pages by category        | No replacement yet                                                             |
 
 **✅ ALIVE (legacy URL pattern, still active):**
 

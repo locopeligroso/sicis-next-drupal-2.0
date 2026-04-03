@@ -20,7 +20,7 @@ The system has a **uniform API client core** with a **heterogeneous template lay
 `src/lib/api/product-listing-factory.ts` consolidates all 6 product type listing fetchers into a single module.
 
 **Before:** 6 separate fetcher files with ad-hoc field access.  
-**After:** A `PRODUCT_LISTING_CONFIGS` registry (7 entries including `next_art`) drives a generic `fetchProductListing(productType, locale, params?)` function.
+**After:** A `PRODUCT_LISTING_CONFIGS` registry (7 entries including `next_art`) drives a generic `fetchProductListing(productType, locale, params?)` function. The `imageField` config key is resolved at fetch time via `resolveImageUrl()` — no `emptyToNull` fallback remains.
 
 ### Config registry keys
 
@@ -65,6 +65,30 @@ Each product type gets its own `React.cache()` identity via `createCachedFetcher
 
 Slug derivation: `hrefToSlug()` extracts the last path segment from the term's `view_taxonomy_term` href. `slugifyName()` falls back via reverse `SLUG_OVERRIDES` lookup then NFC+lowercase+hyphens.
 
+## Content Listing Fetchers — `listings.ts`
+
+`src/lib/api/listings.ts` consolidates all non-product listing fetchers (blog, news, tutorials, projects, environments, showrooms, documents). All use `resolveImageUrl()` for image normalization.
+
+### New fetchers added
+
+| Fetcher                                                                    | Endpoint                       | ISR TTL | Notes                                                                                                             |
+| -------------------------------------------------------------------------- | ------------------------------ | ------- | ----------------------------------------------------------------------------------------------------------------- |
+| `fetchArticles(locale, limit, offset, categoryNid?)`                       | `/{locale}/articles`           | 1800s   | Filters by categoryNid client-side; returns `{ articles, total }`                                                 |
+| `fetchNewsItems(locale, limit, offset)`                                    | `/{locale}/news`               | 1800s   | Returns `{ news, total }` (paginated); distinct from `fetchNews` which returns `BlogResult`                       |
+| `fetchBlogCategories(locale)`                                              | `/{locale}/categories-blog`    | 3600s   | Dedicated endpoint; returns `BlogCategory[]`                                                                      |
+| `fetchBlogTags(locale)`                                                    | `/{locale}/tags`               | 3600s   | Falls back to per-NID content fetch + path alias resolution via `resolvePath`                                     |
+| `fetchTutorialsByCategory(locale, category, limit, offset, tipologiaTid?)` | `/{locale}/tutorials`          | 1800s   | Filters by `field_categoria_video` (`"vetrite"` or `"mosaico"`); tipologia filter stubbed, ready for Drupal field |
+| `fetchTutorialTipologie(locale)`                                           | `/{locale}/tutorial-tipologie` | 3600s   | Returns `TutorialTipologia[]`; taxonomy terms for tutorial type filter                                            |
+| `fetchProjectCategories(locale)`                                           | `/{locale}/project-categories` | 3600s   | Returns `ProjectCategory[]`; no dedicated endpoint existed before                                                 |
+
+### Output types added
+
+- `BlogCategory { nid, name }` — blog category term
+- `BlogTag { nid, name, path? }` — blog tag with resolved path alias
+- `TutorialCard { id, title, imageUrl, videoId, path, category, tipologiaTid }` — richer than `BlogCard`; holds `videoId` and `category`
+- `TutorialTipologia { tid, name }` — tutorial type taxonomy term
+- `ProjectCategory { tid, name }` — project category taxonomy term
+
 ## Cross-Filtering Counts (mosaic)
 
 `mosaic-hub.ts` exposes `fetchMosaicProductCounts(locale, collectionTid?, colorTid?, shapeTid?, finishTid?)`.
@@ -84,16 +108,34 @@ ISR TTL is 600s (shorter than taxonomy terms — counts vary with active filter 
 
 ## Heterogeneous Dimensions (5 problem areas)
 
-### 1. Image URL Access — 4 patterns (3 legacy + 1 standard)
+### 1. Image URL Access — unified via `resolveImageUrl` (2 legacy + 1 standard)
 
-| Pattern                                  | Where                                                                                   | How                                                                                        |
-| ---------------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `next/image` `<Image>` with `fill`       | DS composed components (ProductCard, CategoryCard, GalleryCarousel, MediaElement, etc.) | Standard for content images > 100px. Uses `sizes` prop for responsive srcset.              |
-| `getDrupalImageUrl(field)`               | ProdottoMosaico, ParagraphResolver adapters                                             | Extracts `uri.url` from entity endpoint image shape `{ type: "file--file", uri: { url } }` |
-| `DrupalImage` component                  | ProdottoVetrite, Arredo, Tessuto, Pixall, Illuminazione, Articolo, News, Tutorial       | Legacy component wrapping entire image field — to be replaced during DS migration          |
-| Normalized `imageUrl` string → `<Image>` | ProductListingTemplate, all listing cards                                               | Pre-normalized by REST fetcher via `emptyToNull(item.imageUrl)`, rendered via `next/image` |
+All API fetchers now use `resolveImageUrl()` from `src/lib/api/client.ts` for image field normalization. The previous pattern of `emptyToNull(item.field_immagine)` has been replaced across all 11 API files.
 
-**Risk**: When Drupal image field structure changes, 3 legacy codepaths need updating. DS components use pre-normalized URLs and are immune.
+`resolveImageUrl(raw)` handles 4 input shapes transparently:
+
+| Input shape                        | Source                                             |
+| ---------------------------------- | -------------------------------------------------- |
+| Plain `string`                     | Most REST Views endpoints (legacy flat format)     |
+| `{ uri: { url: string } }`         | Drupal `file--file` relationship (entity endpoint) |
+| `{ url: string, width?, height? }` | New Drupal image format with dimensions            |
+| `null` / `undefined`               | Returns `null`                                     |
+
+Two additional helpers support the new `{ url, width, height }` format:
+
+- **`resolveImage(raw): ResolvedImage | null`** — returns `{ url, width, height }` (dimensions `null` when not present in source). Handles all 4 input shapes above.
+- **`resolveImageArray(raw): ResolvedImage[]`** — maps an array of image fields through `resolveImage`, filtering out nulls.
+
+`getDrupalImageUrl()` in the entity helper (used by ParagraphResolver adapters) now delegates to `resolveImageUrl()` internally.
+
+Remaining image access patterns (not yet migrated):
+
+| Pattern                            | Where                                                                             | How                                                                           |
+| ---------------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `next/image` `<Image>` with `fill` | DS composed components (ProductCard, CategoryCard, GalleryCarousel, MediaElement) | Standard for content images > 100px. Uses `sizes` prop for responsive srcset. |
+| `DrupalImage` component            | ProdottoVetrite, Arredo, Tessuto, Pixall, Illuminazione, Articolo, News, Tutorial | Legacy component — to be replaced during DS migration                         |
+
+**Risk**: `DrupalImage` usage in legacy templates remains the only unmitigated codepath. DS components and all API fetchers are now immune to Drupal image field structure changes.
 
 ### 2. Price Field Shape — Inconsistent across product types
 
