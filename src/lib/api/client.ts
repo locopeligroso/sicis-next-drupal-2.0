@@ -150,16 +150,8 @@ export function resolveImage(raw: unknown): ResolvedImage | null {
   if (typeof raw === 'object') {
     const obj = raw as Record<string, unknown>;
 
-    // New format: { url: string, width: number, height: number }
-    if (typeof obj.url === 'string') {
-      const url = emptyToNull(obj.url);
-      if (!url) return null;
-      const width = typeof obj.width === 'number' ? obj.width : null;
-      const height = typeof obj.height === 'number' ? obj.height : null;
-      return { url, width, height };
-    }
-
-    // Legacy object: { uri: { url: string } }  — Drupal file--file relationship
+    // Legacy object: { uri: { url: string } }  — check FIRST to avoid
+    // short-circuiting on empty obj.url when uri.url is valid
     const uri = obj.uri;
     if (uri != null && typeof uri === 'object') {
       const uriUrl = (uri as Record<string, unknown>).url;
@@ -167,6 +159,15 @@ export function resolveImage(raw: unknown): ResolvedImage | null {
         const url = emptyToNull(uriUrl);
         return url ? { url, width: null, height: null } : null;
       }
+    }
+
+    // New Freddi format: { url: string, width: number, height: number }
+    if (typeof obj.url === 'string') {
+      const url = emptyToNull(obj.url);
+      if (!url) return null;
+      const width = typeof obj.width === 'number' ? obj.width : null;
+      const height = typeof obj.height === 'number' ? obj.height : null;
+      return { url, width, height };
     }
   }
 
