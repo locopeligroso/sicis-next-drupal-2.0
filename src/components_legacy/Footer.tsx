@@ -282,6 +282,52 @@ export default function Footer({ locale, initialMenu }: FooterProps) {
             ))}
           </ul>
         </div>
+
+        {/* Newsletter placeholder */}
+        <div>
+          <p
+            style={{
+              fontSize: '0.875rem',
+              fontWeight: 700,
+              margin: '0 0 1rem',
+              color: '#fff',
+            }}
+          >
+            Subscribe to our newsletter
+          </p>
+          <form
+            action="#"
+            style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}
+          >
+            <input
+              type="email"
+              placeholder="Your email"
+              style={{
+                padding: '0.625rem 0.75rem',
+                fontSize: '0.875rem',
+                border: '0.0625rem solid #444',
+                background: 'transparent',
+                color: '#fff',
+                outline: 'none',
+              }}
+            />
+            <button
+              type="submit"
+              style={{
+                padding: '0.625rem 1.25rem',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                letterSpacing: '0.02em',
+                color: '#fff',
+                background: '#8fb8b0',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              subscribe to our newsletter
+            </button>
+          </form>
+        </div>
       </div>
 
       <div
