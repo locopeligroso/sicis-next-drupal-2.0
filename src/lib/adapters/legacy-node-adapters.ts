@@ -332,7 +332,8 @@ export function arredoToLegacyNode(
     field_gallery_intro: product.galleryIntro,
     field_scheda_tecnica: product.techSheetUrls,
     field_no_form_scheda_tecnica: product.noTechSheet ? '1' : '0',
-    field_path_file_ftp: product.hdImagePath,
+    field_path_file_ftp: product.file3dPaths,
+    field_collegamento_esterno: product.externalUrl,
     field_documenti: product.documents.map((doc) => ({
       field_titolo_main: doc.title,
       title: doc.title,
@@ -343,7 +344,6 @@ export function arredoToLegacyNode(
     })),
     // Fields not available from arredo-product endpoint
     field_finiture: [],
-    field_tessuti: [],
     field_categoria: null,
     field_blocchi: [],
     // New field from arredo-product REST endpoint

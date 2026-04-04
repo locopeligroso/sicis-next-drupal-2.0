@@ -58,7 +58,9 @@ interface ArredoProductRest {
   field_prezzo_usa: string;
   field_no_form_scheda_tecnica: '0' | '1';
   field_scheda_tecnica: string[];
+  field_path_file_ftp: string[];
   field_path_file_ftp_img_hd: string;
+  field_collegamento_esterno: string;
   field_documenti: ArredoDocumentRest[];
   field_finiture_arredo?: ArredoFinitureGroupRest | null;
   [key: string]: unknown;
@@ -115,6 +117,8 @@ export interface ArredoProduct {
   priceUsa: string | null;
   noTechSheet: boolean;
   techSheetUrls: string[];
+  file3dPaths: string[];
+  externalUrl: string | null;
   hdImagePath: string | null;
   documents: ArredoProductDocument[];
   /** Tessuto finish groups (3-level: category > fabric > variant) */
@@ -183,6 +187,8 @@ function normalizeArredoProduct(raw: ArredoProductRest): ArredoProduct {
     priceUsa: emptyToNull(raw.field_prezzo_usa),
     noTechSheet: raw.field_no_form_scheda_tecnica === '1',
     techSheetUrls: raw.field_scheda_tecnica ?? [],
+    file3dPaths: (raw.field_path_file_ftp ?? []).filter((p: string) => !!p),
+    externalUrl: emptyToNull(raw.field_collegamento_esterno),
     hdImagePath: emptyToNull(raw.field_path_file_ftp_img_hd),
     documents: (raw.field_documenti ?? []).map((d) => ({
       nid: Number(d.nid),
