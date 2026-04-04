@@ -2,17 +2,13 @@
 
 import * as React from 'react';
 import { Typography } from '@/components/composed/Typography';
-import {
-  SmartBreadcrumb,
-  type BreadcrumbSegment,
-} from '@/components/composed/SmartBreadcrumb';
 import Image from 'next/image';
 import { ProductCta } from '@/components/composed/ProductCta';
 import { cn } from '@/lib/utils';
 
 export interface SpecArredoHeroProps {
   title: string;
-  breadcrumbSegments?: BreadcrumbSegment[];
+  breadcrumb?: React.ReactNode;
   category?: string;
   categoryHref?: string;
   description?: string;
@@ -25,7 +21,7 @@ export interface SpecArredoHeroProps {
 
 export function SpecArredoHero({
   title,
-  breadcrumbSegments,
+  breadcrumb,
   category,
   categoryHref,
   description,
@@ -73,9 +69,7 @@ export function SpecArredoHero({
   return (
     <>
       <section className="max-w-main mx-auto px-(--spacing-page) pt-(--spacing-navbar) flex flex-col gap-2">
-        {breadcrumbSegments && breadcrumbSegments.length > 0 && (
-          <SmartBreadcrumb segments={breadcrumbSegments} />
-        )}
+        {breadcrumb}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-(--spacing-content) md:gap-(--spacing-section)">
           {/* Title + Category — first on mobile */}
           <div className="flex flex-col gap-1 md:hidden">

@@ -16,7 +16,7 @@ import {
   type TechnicalAreaFinituraSwatch,
 } from '@/components/blocks/SpecProductTechnicalArea';
 import type { DocumentCardItem } from '@/components/composed/DocumentCard';
-import type { BreadcrumbSegment } from '@/components/composed/SmartBreadcrumb';
+import { PageBreadcrumb } from '@/components/composed/PageBreadcrumb';
 import { QuoteSheetProvider } from '@/components/composed/QuoteSheetProvider';
 import type { ProdottoArredo as ProdottoArredoType } from '@/types/drupal/entities';
 
@@ -60,7 +60,6 @@ export default async function ProdottoArredo({
   // è sempre un ProdottoArredo deserializzato da Drupal JSON:API
   const typedNode = node as ProdottoArredoType;
   const t = await getTranslations('products');
-  const tNav = await getTranslations('nav');
 
   const title = getTextValue(typedNode.field_titolo_main) || typedNode.title;
   const body = getProcessedText(typedNode.field_testo_main);
@@ -222,15 +221,13 @@ export default async function ProdottoArredo({
   const heroImageSrc = getDrupalImageUrl(typedNode.field_immagine);
 
   // ── Breadcrumb ───────────────────────────────────────────────────────────
-  const breadcrumbSegments: BreadcrumbSegment[] = [
-    { label: tNav('arredo'), href: `/${locale}/${arredoBasePath}` },
-    ...(categoriaName
-      ? [{
-          label: categoriaName,
-          href: categoriaPath ? `/${locale}${categoriaPath}` : `/${locale}/${arredoBasePath}`,
-        }]
-      : []),
-  ];
+  const breadcrumb = slug && slug.length > 0 ? (
+    <PageBreadcrumb
+      slug={slug}
+      locale={locale}
+      lastLabel={typeof title === 'string' ? title : undefined}
+    />
+  ) : null;
 
   // ── Gallery intro slides (carousel subito dopo hero) ───────────────────────
   const galleryIntroSlides = galleryIntro
@@ -255,7 +252,7 @@ export default async function ProdottoArredo({
       <DevBlockOverlay name="SpecArredoHero" status="ds">
         <SpecArredoHero
           title={title ?? ''}
-          breadcrumbSegments={breadcrumbSegments}
+          breadcrumb={breadcrumb}
           category={categoriaName ?? undefined}
           categoryHref={categoriaPath ? `/${locale}${categoriaPath}` : undefined}
           description={body ? sanitizeHtml(body) : undefined}

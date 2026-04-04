@@ -717,14 +717,11 @@ export default async function SlugPage({
             notFound();
           }
           return (
-            <>
-              <PageBreadcrumb
-                slug={slug}
-                locale={locale}
-                lastLabel={product.title}
-              />
-              <MosaicProductPreview product={product} locale={locale} />
-            </>
+            <MosaicProductPreview
+              product={product}
+              locale={locale}
+              slug={slug}
+            />
           );
         }
       }
@@ -786,16 +783,7 @@ export default async function SlugPage({
           const legacyNode = arredoToLegacyNode(product, locale);
           // Inject finiture page href so ProdottoArredo can render the "Vedi finiture" link
           legacyNode._finitureHref = `/${locale}/${slug.join('/')}/finiture`;
-          return (
-            <>
-              <PageBreadcrumb
-                slug={slug}
-                locale={locale}
-                lastLabel={product.title}
-              />
-              <ProdottoArredo node={legacyNode} slug={slug} />
-            </>
-          );
+          return <ProdottoArredo node={legacyNode} slug={slug} />;
         }
       }
       if (resolved.bundle === 'prodotto_illuminazione') {
@@ -1012,14 +1000,11 @@ export default async function SlugPage({
       const product = await fetchMosaicProduct(resolved.nid, locale);
       if (product) {
         return (
-          <>
-            <PageBreadcrumb
-              slug={slug}
-              locale={locale}
-              lastLabel={product.title}
-            />
-            <MosaicProductPreview product={product} locale={locale} />
-          </>
+          <MosaicProductPreview
+            product={product}
+            locale={locale}
+            slug={slug}
+          />
         );
       }
     }

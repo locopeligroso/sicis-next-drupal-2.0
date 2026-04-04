@@ -3,7 +3,6 @@ import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { getColorSwatch, formatRetinatura } from '@/lib/product-helpers';
 import { getDrupalImageUrl } from '@/lib/drupal';
-import { getFilterConfig } from '@/domain/filters/registry';
 import { DevBlockOverlay } from '@/components/composed/DevBlockOverlay';
 import { SpecProductHero } from '@/components/blocks/SpecProductHero';
 import { SpecProductDetails } from '@/components/blocks/SpecProductDetails';
@@ -16,13 +15,15 @@ import type { AttributeItem } from '@/components/composed/AttributeGrid';
 import type { SpecsRow } from '@/components/composed/SpecsTable';
 import type { DocumentCardItem } from '@/components/composed/DocumentCard';
 import type { ProductGalleryImage } from '@/components/blocks/SpecProductGallery';
-import type { BreadcrumbSegment } from '@/components/composed/SmartBreadcrumb';
+import { PageBreadcrumb } from '@/components/composed/PageBreadcrumb';
 import type { ProdottoMosaico as ProdottoMosaicoType } from '@/types/drupal/entities';
 
 export default async function ProdottoMosaico({
   node,
+  slug,
 }: {
   node: Record<string, unknown>;
+  slug?: string[];
 }) {
   // Cast sicuro: il node-resolver passa Record<string,unknown>, ma il contenuto
   // è sempre un ProdottoMosaico deserializzato da Drupal JSON:API
@@ -300,16 +301,14 @@ export default async function ProdottoMosaico({
     }
   }
 
-  // ── Breadcrumb data ──
-  const tNav = await getTranslations('nav');
-  const mosaicoConfig = getFilterConfig('prodotto_mosaico');
-  const mosaicoBasePath = mosaicoConfig?.basePaths[locale] ?? mosaicoConfig?.basePaths.it ?? 'mosaico';
-  const breadcrumbSegments: BreadcrumbSegment[] = [
-    { label: tNav('mosaico'), href: `/${locale}/${mosaicoBasePath}` },
-    ...(collezione
-      ? [{ label: collezione, href: collectionHref ?? '#' }]
-      : []),
-  ];
+  // ── Breadcrumb ──
+  const breadcrumb = slug && slug.length > 0 ? (
+    <PageBreadcrumb
+      slug={slug}
+      locale={locale}
+      lastLabel={typeof title === 'string' ? title : undefined}
+    />
+  ) : null;
 
   // ── Gallery Block data ──
   const galleryImages: ProductGalleryImage[] = gallery
@@ -325,7 +324,7 @@ export default async function ProdottoMosaico({
       <DevBlockOverlay name="SpecProductHero" status="ds">
         <SpecProductHero
           title={title ?? typedNode.title ?? ''}
-          breadcrumbSegments={breadcrumbSegments}
+          breadcrumb={breadcrumb}
           collection={collezione}
           collectionHref={collectionHref}
           description={body ? sanitizeHtml(body) : undefined}

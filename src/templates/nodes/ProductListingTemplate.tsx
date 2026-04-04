@@ -276,7 +276,7 @@ export async function ProductListingTemplate(
           <SpecListingHeader
             title={title}
             description={description}
-            breadcrumbSegments={baseSegments}
+            breadcrumb={<SmartBreadcrumb segments={baseSegments} />}
           />
         </DevBlockOverlay>
         {isMosaicoOrVetrite ? (

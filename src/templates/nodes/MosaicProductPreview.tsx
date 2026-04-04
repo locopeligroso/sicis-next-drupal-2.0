@@ -5,10 +5,9 @@
 // when relations are not yet included in the endpoint response.
 
 import { getTranslations } from 'next-intl/server';
-import { getFilterConfig } from '@/domain/filters/registry';
 import { DevBlockOverlay } from '@/components/composed/DevBlockOverlay';
 import { SpecProductHero } from '@/components/blocks/SpecProductHero';
-import type { BreadcrumbSegment } from '@/components/composed/SmartBreadcrumb';
+import { PageBreadcrumb } from '@/components/composed/PageBreadcrumb';
 import { SpecProductDetails } from '@/components/blocks/SpecProductDetails';
 import { SpecProductSpecs } from '@/components/blocks/SpecProductSpecs';
 import { SpecProductResources } from '@/components/blocks/SpecProductResources';
@@ -21,9 +20,11 @@ import type { MosaicProduct } from '@/lib/api/mosaic-product';
 export async function MosaicProductPreview({
   product,
   locale,
+  slug,
 }: {
   product: MosaicProduct;
   locale: string;
+  slug?: string[];
 }) {
   const t = await getTranslations('products');
 
@@ -172,16 +173,10 @@ export async function MosaicProductPreview({
     }
   }
 
-  // ── Breadcrumb data ──
-  const tNav = await getTranslations('nav');
-  const mosaicoConfig = getFilterConfig('prodotto_mosaico');
-  const mosaicoBasePath = mosaicoConfig?.basePaths[locale] ?? mosaicoConfig?.basePaths.it ?? 'mosaico';
-  const breadcrumbSegments: BreadcrumbSegment[] = [
-    { label: tNav('mosaico'), href: `/${locale}/${mosaicoBasePath}` },
-    ...(col?.name
-      ? [{ label: col.name, href: `/${locale}/${mosaicoBasePath}/${col.name.toLowerCase().replace(/\s+/g, '-')}` }]
-      : []),
-  ];
+  // ── Breadcrumb ──
+  const breadcrumb = slug && slug.length > 0 ? (
+    <PageBreadcrumb slug={slug} locale={locale} lastLabel={product.title} />
+  ) : null;
 
   // ── Gallery block data ──
   const galleryImages: ProductGalleryImage[] = product.gallery.map(
@@ -198,7 +193,7 @@ export async function MosaicProductPreview({
       <DevBlockOverlay name="SpecProductHero" status="ds">
         <SpecProductHero
           title={product.title}
-          breadcrumbSegments={breadcrumbSegments}
+          breadcrumb={breadcrumb}
           collection={col?.name}
           description={product.body ? sanitizeHtml(product.body) : undefined}
           slides={heroSlides}
