@@ -387,7 +387,7 @@ export default async function ProdottoMosaico({
       {/* ── Resources Block ── */}
       <DevBlockOverlay name="SpecProductResources" status="ds">
         <SpecProductResources
-          title="Get inspired through catalogs"
+          title={t('exploreCatalogs')}
           documents={documentItems}
           downloadLabel="Scopri"
         />

@@ -1,18 +1,23 @@
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
-import DrupalImage from '@/components_legacy/DrupalImage';
 import ParagraphResolver from '@/components_legacy/blocks_legacy/ParagraphResolver';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { getDrupalImageUrl } from '@/lib/drupal/image';
 import { resolveImage } from '@/lib/api/client';
+import type { ResolvedImage } from '@/lib/api/client';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { getFilterConfig } from '@/domain/filters/registry';
 import { DevBlockOverlay } from '@/components/composed/DevBlockOverlay';
 import { SpecArredoHero } from '@/components/blocks/SpecArredoHero';
 import { GenGallery, type GenGallerySlide } from '@/components/blocks/GenGallery';
+import { SpecProductResources } from '@/components/blocks/SpecProductResources';
+import {
+  SpecProductTechnicalArea,
+  type TechnicalAreaResource,
+  type TechnicalAreaFinituraSwatch,
+} from '@/components/blocks/SpecProductTechnicalArea';
+import type { DocumentCardItem } from '@/components/composed/DocumentCard';
 import type { BreadcrumbSegment } from '@/components/composed/SmartBreadcrumb';
 import { QuoteSheetProvider } from '@/components/composed/QuoteSheetProvider';
-import styles from '@/styles/product.module.css';
 import type { ProdottoArredo as ProdottoArredoType } from '@/types/drupal/entities';
 
 // ── Document item type ────────────────────────────────────────────────────────
@@ -26,42 +31,21 @@ interface DocItem {
   field_allegato?: { entity?: { uri?: { value?: string } } };
 }
 
-// ── Finitura type ─────────────────────────────────────────────────────────────
-interface FinituraItem {
-  id?: string;
-  name?: string;
-  field_etichetta?: unknown;
-  field_testo?: unknown;
-  field_immagine?: unknown;
-}
-
-// ── REST finiture arredo types (from arredo-product endpoint) ─────────────────
-interface FinituraVariant {
+// ── REST finiture arredo shapes (from arredo-product endpoint) ────────────────
+interface FinituraFabricShape {
   tid: number;
   name: string;
-  imageUrl: string | null;
+  image: ResolvedImage | null;
+  variants: { tid: number; name: string; image: ResolvedImage | null }[];
 }
-interface FinituraTessuto {
+interface FinituraCategoryShape {
   tid: number;
   name: string;
-  imageUrl: string | null;
-  variants: FinituraVariant[];
-}
-interface FinituraCategory {
-  tid: number;
-  name: string;
-  items: FinituraTessuto[];
+  items: FinituraFabricShape[];
 }
 interface FinitureArredoField {
-  tessutoFiniture: FinituraCategory[];
-  arredoFiniture: FinituraCategory[];
-}
-
-// ── Scheda tecnica (file--file entity) ────────────────────────────────────────
-interface SchedaTecnicaItem {
-  id?: string;
-  filename?: string;
-  uri?: { url?: string; value?: string };
+  tessutoFiniture: FinituraCategoryShape[];
+  arredoFiniture: FinituraCategoryShape[];
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -76,7 +60,6 @@ export default async function ProdottoArredo({
   // è sempre un ProdottoArredo deserializzato da Drupal JSON:API
   const typedNode = node as ProdottoArredoType;
   const t = await getTranslations('products');
-  const tCommon = await getTranslations('common');
   const tNav = await getTranslations('nav');
 
   const title = getTextValue(typedNode.field_titolo_main) || typedNode.title;
@@ -126,7 +109,6 @@ export default async function ProdottoArredo({
     ? categoriaSlug.charAt(0).toUpperCase() + categoriaSlug.slice(1).replace(/-/g, ' ')
     : undefined;
   const categoriaName = categoriaNameFromEntity || categoriaNameFromSlug;
-  const categoriaBody = getProcessedText(categoriaData?.field_testo_main);
   const categoriaAlias = (categoriaData as Record<string, unknown> | undefined)
     ?.path as { alias?: string } | undefined;
   const categoriaPath = categoriaAlias?.alias
@@ -136,27 +118,105 @@ export default async function ProdottoArredo({
   const gallery = typedNode.field_gallery ?? [];
   const galleryIntro = typedNode.field_gallery_intro ?? [];
 
-  // ── Finiture ──────────────────────────────────────────────────────────────
-  const finiture = (typedNode.field_finiture ?? []) as FinituraItem[];
-
   // ── Documents ─────────────────────────────────────────────────────────────
   const documenti = (typedNode.field_documenti ?? []) as DocItem[];
 
-  // ── Scheda tecnica (file--file entities) ──────────────────────────────────
-  const schedeTecniche = (typedNode.field_scheda_tecnica ??
-    []) as SchedaTecnicaItem[];
+  // ── Document items for SpecProductResources ──
+  const documentItems: DocumentCardItem[] = documenti.map((doc) => {
+    const docTitle =
+      getTextValue(doc.field_titolo_main) || getTextValue(doc.title) || '';
+    const docType = getTextValue(doc.field_tipologia_documento);
+    const extLinkRawDoc = doc.field_collegamento_esterno;
+    const docLink =
+      typeof extLinkRawDoc === 'string'
+        ? extLinkRawDoc
+        : extLinkRawDoc && typeof extLinkRawDoc === 'object'
+          ? ((extLinkRawDoc as { uri?: string }).uri ?? null)
+          : null;
+    const allegato = doc.field_allegato?.entity?.uri?.value ?? null;
+    const href = docLink || allegato;
+    const image = resolveImage(doc.field_immagine);
+    return { title: docTitle, type: docType ?? undefined, image, href };
+  });
+
+  // ── Scheda tecnica URLs ──────────────────────────────────────────────────
+  const schedeTecniche = (typedNode.field_scheda_tecnica ?? []) as string[];
 
   // ── Finiture from REST endpoint (3-level: category > fabric > variant) ──────
   const finitureArredoField = (typedNode as Record<string, unknown>)
     .field_finiture_arredo as FinitureArredoField | undefined;
-  const tessutoFiniture: FinituraCategory[] =
+  const tessutoFiniture: FinituraCategoryShape[] =
     finitureArredoField?.tessutoFiniture ?? [];
-  const arredoFinitureList = finitureArredoField?.arredoFiniture ?? [];
+  const arredoFinitureList: FinituraCategoryShape[] =
+    finitureArredoField?.arredoFiniture ?? [];
   const finitureHref = (typedNode as Record<string, unknown>)._finitureHref as
     | string
     | undefined;
   const hasFiniture =
     tessutoFiniture.length > 0 || arredoFinitureList.length > 0;
+
+  // ── Technical area data ──────────────────────────────────────────────────
+  // Build up to 4 swatches: round-robin across categories for visual variety.
+  // Fabric-level field_immagine is often empty in 3-level data, so fall back
+  // to the first variant's image.
+  const allCategories = [...tessutoFiniture, ...arredoFinitureList];
+  const finitureSwatches: TechnicalAreaFinituraSwatch[] = [];
+  const maxItemsPerCat = Math.max(
+    0,
+    ...allCategories.map((c) => c.items.length),
+  );
+  outer: for (let i = 0; i < maxItemsPerCat; i++) {
+    for (const cat of allCategories) {
+      const fabric = cat.items[i];
+      if (fabric) {
+        finitureSwatches.push({
+          name: fabric.name,
+          image: fabric.image ?? fabric.variants[0]?.image ?? null,
+        });
+        if (finitureSwatches.length >= 4) break outer;
+      }
+    }
+  }
+
+  const finitureCount =
+    tessutoFiniture.reduce(
+      (sum, cat) =>
+        sum + cat.items.reduce((s, fabric) => s + fabric.variants.length, 0),
+      0,
+    ) +
+    arredoFinitureList.reduce(
+      (sum, cat) =>
+        sum + cat.items.reduce((s, fabric) => s + fabric.variants.length, 0),
+      0,
+    );
+
+  const resources: TechnicalAreaResource[] = [
+    ...schedeTecniche
+      .filter((url) => typeof url === 'string' && !!url)
+      .map<TechnicalAreaResource>((url) => ({
+        label: t('technicalSheet'),
+        href: url,
+        type: 'pdf',
+      })),
+    ...(file3d
+      ? [
+          {
+            label: t('download3dFile'),
+            href: `/sites/default/files/${file3d}`,
+            type: 'file3d' as const,
+          },
+        ]
+      : []),
+    ...(extLink
+      ? [
+          {
+            label: t('viewOn1stDibs'),
+            href: extLink,
+            type: 'external' as const,
+          },
+        ]
+      : []),
+  ];
 
   // ── Hero image ────────────────────────────────────────────────────────────
   const heroImageSrc = getDrupalImageUrl(typedNode.field_immagine);
@@ -211,296 +271,35 @@ export default async function ProdottoArredo({
         <GenGallery slides={galleryIntroSlides} />
       </DevBlockOverlay>
 
-      {/* ── 4. Materiali costruttivi ─────────────────────────────────────────── */}
-      {materiali && (
-        <section className={styles.section} aria-labelledby="materiali-heading">
-          <h2 id="materiali-heading" className={styles.sectionHeading}>
-            {t('materials')}
-          </h2>
-          <div
-            style={{ lineHeight: 1.7 }}
-            dangerouslySetInnerHTML={{ __html: sanitizeHtml(materiali) }}
-          />
-        </section>
-      )}
-
-      {/* ── 5. Finiture ──────────────────────────────────────────────────────── */}
-      {finiture.length > 0 && (
-        <section className={styles.section} aria-labelledby="finiture-heading">
-          <h2 id="finiture-heading" className={styles.sectionHeading}>
-            {t('colorsAndFinishes')}
-          </h2>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(12rem, 1fr))',
-              gap: '1rem',
-            }}
-          >
-            {finiture.map((f, i) => {
-              const etichetta = getTextValue(f.field_etichetta);
-              const testo = getTextValue(f.field_testo);
-              return (
-                <div
-                  key={f.id ?? i}
-                  style={{
-                    padding: '0.75rem',
-                    border: '0.0625rem solid #e0e0e0',
-                  }}
-                >
-                  {!!f.field_immagine && (
-                    <DrupalImage
-                      field={f.field_immagine}
-                      alt={etichetta || f.name || ''}
-                      aspectRatio="1"
-                      style={{ marginBottom: '0.5rem' }}
-                    />
-                  )}
-                  <p
-                    style={{
-                      margin: '0 0 0.125rem',
-                      fontWeight: 600,
-                      fontSize: '0.9375rem',
-                    }}
-                  >
-                    {etichetta || f.name}
-                  </p>
-                  {testo && (
-                    <p
-                      style={{
-                        margin: 0,
-                        fontSize: '0.8125rem',
-                        color: '#666',
-                      }}
-                    >
-                      {testo}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* ── 6.5. Finiture CTA — link alla pagina finiture dedicata ────────────── */}
-      {hasFiniture && finitureHref && (
-        <section
-          className={styles.section}
-          aria-labelledby="finiture-cta-heading"
-        >
-          <h2 id="finiture-cta-heading" className={styles.sectionHeading}>
-            {t('finishes')}
-          </h2>
-          <Link
-            href={finitureHref}
-            style={{
-              display: 'inline-block',
-              marginTop: '0.5rem',
-              padding: '0.625rem 1.25rem',
-              border: '0.0625rem solid #111',
-              fontSize: '0.875rem',
-              fontWeight: 500,
-              color: '#111',
-              textDecoration: 'none',
-              letterSpacing: '0.03em',
-            }}
-          >
-            {t('viewAllFinishes')} →
-          </Link>
-        </section>
-      )}
-
-      {/* ── 8. Categoria parent ──────────────────────────────────────────────── */}
-      {categoriaData && (
-        <section className={styles.section} aria-labelledby="categoria-heading">
-          <h2 id="categoria-heading" className={styles.sectionHeading}>
-            {t('category')}
-          </h2>
-          {categoriaName &&
-            (categoriaPath ? (
-              <Link
-                href={`/${locale}${categoriaPath}`}
-                style={{
-                  fontWeight: 600,
-                  fontSize: '1.125rem',
-                  color: '#111',
-                  textDecoration: 'none',
-                  display: 'block',
-                  marginBottom: '0.5rem',
-                }}
-              >
-                {categoriaName}
-              </Link>
-            ) : (
-              <p
-                style={{
-                  fontWeight: 600,
-                  fontSize: '1.125rem',
-                  margin: '0 0 0.5rem',
-                }}
-              >
-                {categoriaName}
-              </p>
-            ))}
-          <DrupalImage
-            field={(categoriaData as Record<string, unknown>).field_immagine}
-            alt={categoriaName ?? ''}
-            aspectRatio="16/9"
-            style={{ maxWidth: '20rem', marginBottom: '0.75rem' }}
-          />
-          {categoriaBody && (
-            <div
-              style={{ lineHeight: 1.7, color: '#555' }}
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(categoriaBody) }}
-            />
-          )}
-        </section>
-      )}
+      {/* ── Technical Area (DS) ───────────────────────────────────────────── */}
+      <DevBlockOverlay name="SpecProductTechnicalArea" status="ds">
+        <SpecProductTechnicalArea
+          title={t('technicalArea')}
+          materialsHtml={materiali ? sanitizeHtml(materiali) : undefined}
+          materialsLabel={t('materials')}
+          finitureSwatches={finitureSwatches}
+          finitureCountLabel={
+            finitureCount > 0
+              ? t('finishesAvailable', { count: finitureCount })
+              : undefined
+          }
+          finitureHref={hasFiniture ? finitureHref : undefined}
+          finitureLinkLabel={t('viewAllFinishes')}
+          finishesLabel={t('finishes')}
+          resources={resources}
+          resourcesLabel={t('resources')}
+        />
+      </DevBlockOverlay>
 
       {/* ── Gallery (DS) ─────────────────────────────────────────────────── */}
       <DevBlockOverlay name="GenGallery" status="ds">
         <GenGallery slides={galleryMainSlides} />
       </DevBlockOverlay>
 
-      {/* ── 10. Documenti download ───────────────────────────────────────────── */}
-      {documenti.length > 0 && (
-        <section className={styles.section} aria-labelledby="documenti-heading">
-          <h2 id="documenti-heading" className={styles.sectionHeading}>
-            {t('documents')}
-          </h2>
-          <ul className={styles.docList}>
-            {documenti.map((doc, i) => {
-              const docTitolo =
-                getTextValue(doc.field_titolo_main) || getTextValue(doc.title);
-              const docTipologia = getTextValue(doc.field_tipologia_documento);
-              const extLinkRaw2 = doc.field_collegamento_esterno;
-              const docLink =
-                typeof extLinkRaw2 === 'string'
-                  ? extLinkRaw2
-                  : extLinkRaw2 && typeof extLinkRaw2 === 'object'
-                    ? ((extLinkRaw2 as { uri?: string }).uri ?? null)
-                    : null;
-              const allegato = doc.field_allegato?.entity?.uri?.value ?? null;
-              const href = docLink || allegato;
-              return (
-                <li key={doc.id ?? i} className={styles.docItem}>
-                  {!!doc.field_immagine && (
-                    <DrupalImage
-                      field={doc.field_immagine}
-                      alt={docTitolo ?? ''}
-                      aspectRatio="1"
-                      style={{ width: '3rem', flexShrink: 0 }}
-                    />
-                  )}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    {docTipologia && (
-                      <p
-                        className={styles.label}
-                        style={{ margin: '0 0 0.125rem' }}
-                      >
-                        {docTipologia}
-                      </p>
-                    )}
-                    {docTitolo && (
-                      <p
-                        style={{
-                          margin: 0,
-                          fontWeight: 500,
-                          fontSize: '0.9375rem',
-                        }}
-                      >
-                        {docTitolo}
-                      </p>
-                    )}
-                  </div>
-                  {href && (
-                    <a
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`${tCommon('download')} ${docTitolo ?? 'documento'}`}
-                      style={{
-                        fontSize: '0.8125rem',
-                        color: '#333',
-                        textDecoration: 'underline',
-                        flexShrink: 0,
-                      }}
-                    >
-                      {tCommon('download')}
-                    </a>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
-
-      {/* ── 11. Scheda tecnica + File 3D + link esterno ──────────────────────── */}
-      {(schedeTecniche.length > 0 || file3d || extLink) && (
-        <section
-          className={styles.section}
-          style={{ marginBottom: 0 }}
-          aria-labelledby="extra-heading"
-        >
-          <h2 id="extra-heading" className={styles.sectionHeading}>
-            {t('linksAndResources')}
-          </h2>
-          <div
-            style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
-          >
-            {schedeTecniche.map((scheda, i) => {
-              const href = getDrupalImageUrl(scheda);
-              const label = scheda.filename || t('technicalSheet');
-              return href ? (
-                <a
-                  key={scheda.id ?? i}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`${tCommon('download')} ${label}`}
-                  style={{
-                    fontSize: '0.875rem',
-                    color: '#333',
-                    textDecoration: 'underline',
-                  }}
-                >
-                  {label}
-                </a>
-              ) : null;
-            })}
-            {file3d && (
-              <a
-                href={`/sites/default/files/${file3d}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  fontSize: '0.875rem',
-                  color: '#333',
-                  textDecoration: 'underline',
-                }}
-              >
-                {t('download3dFile')}
-              </a>
-            )}
-            {extLink && (
-              <a
-                href={extLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  fontSize: '0.875rem',
-                  color: '#333',
-                  textDecoration: 'underline',
-                }}
-              >
-                {t('viewOn1stDibs')}
-              </a>
-            )}
-          </div>
-        </section>
-      )}
+      {/* ── Documenti (DS) ─────────────────────────────────────────────────── */}
+      <DevBlockOverlay name="SpecProductResources" status="ds">
+        <SpecProductResources title={t('exploreCatalogs')} documents={documentItems} />
+      </DevBlockOverlay>
 
       {/* ── Paragraph blocks (Gen) ─────────────────────────────────────────── */}
       {(
