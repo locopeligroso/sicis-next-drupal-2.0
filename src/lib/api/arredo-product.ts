@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { apiGet, emptyToNull, resolveImage } from './client';
+import { apiGet, emptyToNull, resolveImage, resolveImageArray } from './client';
 import type { ResolvedImage } from './client';
 
 // ── Raw REST response shape ──────────────────────────────────────────────────
@@ -50,8 +50,8 @@ interface ArredoProductRest {
   field_titolo_main: string;
   field_testo_main: string;
   field_immagine: string;
-  field_gallery_intro: string[];
-  field_gallery: string[];
+  field_gallery_intro: unknown[];
+  field_gallery: unknown[];
   field_materiali: string;
   field_specifiche_tecniche: string;
   field_prezzo_eu: string;
@@ -107,8 +107,8 @@ export interface ArredoProduct {
   title: string;
   body: string | null;
   image: ResolvedImage | null;
-  galleryIntro: string[];
-  gallery: string[];
+  galleryIntro: ResolvedImage[];
+  gallery: ResolvedImage[];
   materialsHtml: string | null;
   techSpecsHtml: string | null;
   priceEu: string | null;
@@ -175,8 +175,8 @@ function normalizeArredoProduct(raw: ArredoProductRest): ArredoProduct {
     title: raw.field_titolo_main || '',
     body: emptyToNull(raw.field_testo_main),
     image: resolveImage(raw.field_immagine),
-    galleryIntro: raw.field_gallery_intro ?? [],
-    gallery: raw.field_gallery ?? [],
+    galleryIntro: resolveImageArray(raw.field_gallery_intro),
+    gallery: resolveImageArray(raw.field_gallery),
     materialsHtml: emptyToNull(raw.field_materiali),
     techSpecsHtml: emptyToNull(raw.field_specifiche_tecniche),
     priceEu: emptyToNull(raw.field_prezzo_eu),

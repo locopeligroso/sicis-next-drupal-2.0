@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { apiGet, emptyToNull, resolveImage } from './client';
+import { apiGet, emptyToNull, resolveImage, resolveImageArray } from './client';
 import type { ResolvedImage } from './client';
 import type { PixallProductRest } from './types';
 
@@ -29,8 +29,8 @@ export interface PixallProduct {
   meshType: string | null;
   image: ResolvedImage | null;
   imageModules: ResolvedImage | null;
-  gallery: string[];
-  galleryIntro: string[];
+  gallery: ResolvedImage[];
+  galleryIntro: ResolvedImage[];
   sheetSizeMm: string | null;
   sheetSizeInch: string | null;
   chipSizeMm: string | null;
@@ -67,8 +67,8 @@ function normalizePixallProduct(raw: PixallProductRest): PixallProduct {
     meshType: emptyToNull(raw.field_retinatura),
     image: resolveImage(raw.field_immagine),
     imageModules: resolveImage(raw.field_immagine_moduli),
-    gallery: raw.field_gallery ?? [],
-    galleryIntro: raw.field_gallery_intro ?? [],
+    gallery: resolveImageArray(raw.field_gallery),
+    galleryIntro: resolveImageArray(raw.field_gallery_intro),
     sheetSizeMm: emptyToNull(raw.field_dimensione_foglio_mm),
     sheetSizeInch: decodeHtmlEntities(
       emptyToNull(raw.field_dimensione_foglio_inch),

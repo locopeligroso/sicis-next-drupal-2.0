@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { apiGet, emptyToNull, resolveImage } from './client';
+import { apiGet, emptyToNull, resolveImage, resolveImageArray } from './client';
 import type { ResolvedImage } from './client';
 
 // ── Raw REST response shape ──────────────────────────────────────────────────
@@ -18,7 +18,7 @@ interface IlluminazioneProductRest {
   field_titolo_main: string;
   field_testo_main: string;
   field_immagine: string;
-  field_gallery_intro: string[];
+  field_gallery_intro: unknown[];
   field_materiali: string;
   field_specifiche_tecniche: string;
   field_no_form_scheda_tecnica: '0' | '1';
@@ -42,7 +42,7 @@ export interface IlluminazioneProduct {
   title: string;
   body: string | null;
   image: ResolvedImage | null;
-  galleryIntro: string[];
+  galleryIntro: ResolvedImage[];
   materialsHtml: string | null;
   techSpecsHtml: string | null;
   noTechSheet: boolean;
@@ -61,7 +61,7 @@ function normalizeIlluminazioneProduct(
     title: raw.field_titolo_main || '',
     body: emptyToNull(raw.field_testo_main),
     image: resolveImage(raw.field_immagine),
-    galleryIntro: raw.field_gallery_intro ?? [],
+    galleryIntro: resolveImageArray(raw.field_gallery_intro),
     materialsHtml: emptyToNull(raw.field_materiali),
     techSpecsHtml: emptyToNull(raw.field_specifiche_tecniche),
     noTechSheet: raw.field_no_form_scheda_tecnica === '1',

@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { apiGet, emptyToNull, resolveImage } from './client';
+import { apiGet, emptyToNull, resolveImage, resolveImageArray } from './client';
 import type { ResolvedImage } from './client';
 import type {
   TextileProductRest,
@@ -59,8 +59,8 @@ export interface TextileProduct {
   priceEu: string | null;
   priceUsa: string | null;
   usage: string | null;
-  gallery: string[];
-  galleryIntro: string[];
+  gallery: ResolvedImage[];
+  galleryIntro: ResolvedImage[];
   category: { nid: number; title: string } | null;
   documents: TextileProductDocument[];
   finiture: TextileProductFinitura[];
@@ -91,8 +91,8 @@ function normalizeTextileProduct(raw: TextileProductRest): TextileProduct {
     priceEu: emptyToNull(raw.field_prezzo_eu),
     priceUsa: emptyToNull(raw.field_prezzo_usa),
     usage: emptyToNull(raw.field_utilizzo),
-    gallery: raw.field_gallery ?? [],
-    galleryIntro: raw.field_gallery_intro ?? [],
+    gallery: resolveImageArray(raw.field_gallery),
+    galleryIntro: resolveImageArray(raw.field_gallery_intro),
     category: raw.field_categoria
       ? {
           nid: raw.field_categoria.nid,

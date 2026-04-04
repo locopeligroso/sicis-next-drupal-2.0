@@ -44,7 +44,7 @@ export function vetriteToLegacyNode(
       ? { value: product.body, processed: product.body }
       : null,
     field_immagine: toImageField(product.image?.url ?? null),
-    field_gallery: product.gallery.map((url) => toImageField(url)),
+    field_gallery: product.gallery,
     field_dimensioni_cm: product.dimensionsCm,
     field_dimensioni_inch: product.dimensionsInch,
     field_dimensione_pattern_cm: product.patternCm,
@@ -146,10 +146,10 @@ export function textileToLegacyNode(
     field_prezzo_usa: product.priceUsa,
     field_immagine_anteprima:
       product.galleryIntro.length > 0
-        ? toImageField(product.galleryIntro[0])
+        ? product.galleryIntro[0]
         : null,
-    field_gallery: product.gallery.map((url) => toImageField(url)),
-    field_gallery_intro: product.galleryIntro.map((url) => toImageField(url)),
+    field_gallery: product.gallery,
+    field_gallery_intro: product.galleryIntro,
     field_categoria: product.category
       ? {
           field_titolo_main: product.category.title,
@@ -234,8 +234,8 @@ export function pixallToLegacyNode(
     field_retinatura: product.meshType,
     field_immagine: toImageField(product.image?.url ?? null),
     field_immagine_moduli: toImageField(product.imageModules?.url ?? null),
-    field_gallery: product.gallery.map((url) => toImageField(url)),
-    field_gallery_intro: product.galleryIntro.map((url) => toImageField(url)),
+    field_gallery: product.gallery,
+    field_gallery_intro: product.galleryIntro,
     field_dimensione_foglio_mm: product.sheetSizeMm,
     field_dimensione_foglio_inch: product.sheetSizeInch,
     field_dimensione_tessera_mm: product.chipSizeMm,
@@ -283,7 +283,7 @@ export function illuminazioneToLegacyNode(
       ? { value: product.techSpecsHtml, processed: product.techSpecsHtml }
       : null,
     field_immagine: toImageField(product.image?.url ?? null),
-    field_gallery_intro: product.galleryIntro.map((url) => toImageField(url)),
+    field_gallery_intro: product.galleryIntro,
     field_scheda_tecnica: product.techSheetUrls,
     field_no_form_scheda_tecnica: product.noTechSheet ? '1' : '0',
     field_path_file_ftp: product.hdImagePath,
@@ -328,8 +328,8 @@ export function arredoToLegacyNode(
     field_prezzo_eu: product.priceEu ? { value: product.priceEu } : null,
     field_prezzo_usa: product.priceUsa ? { value: product.priceUsa } : null,
     field_immagine: toImageField(product.image?.url ?? null),
-    field_gallery: product.gallery.map((url) => toImageField(url)),
-    field_gallery_intro: product.galleryIntro.map((url) => toImageField(url)),
+    field_gallery: product.gallery,
+    field_gallery_intro: product.galleryIntro,
     field_scheda_tecnica: product.techSheetUrls,
     field_no_form_scheda_tecnica: product.noTechSheet ? '1' : '0',
     field_path_file_ftp: product.hdImagePath,

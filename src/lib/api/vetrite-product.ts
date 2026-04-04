@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { apiGet, emptyToNull, resolveImage } from './client';
+import { apiGet, emptyToNull, resolveImage, resolveImageArray } from './client';
 import type { ResolvedImage } from './client';
 import type { VetriteProductRest, VetriteProductDocumentRest } from './types';
 
@@ -40,7 +40,7 @@ export interface VetriteProduct {
   title: string;
   body: string | null;
   image: ResolvedImage | null;
-  gallery: string[];
+  gallery: ResolvedImage[];
   dimensionsCm: string | null;
   dimensionsInch: string | null;
   patternCm: string | null;
@@ -80,7 +80,7 @@ function normalizeVetriteProduct(raw: VetriteProductRest): VetriteProduct {
       emptyToNull(raw.field_testo_main) ||
       (col ? emptyToNull(col.field_testo) : null),
     image: resolveImage(raw.field_immagine),
-    gallery: raw.field_gallery ?? [],
+    gallery: resolveImageArray(raw.field_gallery),
     dimensionsCm: emptyToNull(raw.field_dimensioni_cm),
     dimensionsInch: emptyToNull(raw.field_dimensioni_inch),
     patternCm: emptyToNull(raw.field_dimensione_pattern_cm),
