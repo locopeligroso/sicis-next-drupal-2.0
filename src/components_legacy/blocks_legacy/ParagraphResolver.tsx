@@ -145,9 +145,8 @@ function adaptGenGallery(p: Record<string, unknown>) {
       const img = slide.field_immagine as Record<string, unknown> | undefined;
       const meta = img?.meta as Record<string, unknown> | undefined;
       const alt = (meta?.alt as string) ?? '';
-      // Prefer dimensions from new format; fall back to meta dimensions
-      const width = resolved.width ?? (meta?.width as number | undefined);
-      const height = resolved.height ?? (meta?.height as number | undefined);
+      const width = resolved.width ?? 1200;
+      const height = resolved.height ?? 800;
       // Use alt text as caption when available; skip filename fallback
       // (blocks/{nid} returns images without alt — filename makes ugly captions)
       const caption = alt || null;
@@ -249,8 +248,8 @@ function adaptGenGalleryIntro(p: Record<string, unknown>) {
       const img = slide.field_immagine as Record<string, unknown> | undefined;
       const meta = img?.meta as Record<string, unknown> | undefined;
       const alt = (meta?.alt as string) ?? '';
-      const width = resolved.width ?? (meta?.width as number | undefined);
-      const height = resolved.height ?? (meta?.height as number | undefined);
+      const width = resolved.width ?? 1200;
+      const height = resolved.height ?? 800;
       return { src: resolved.url, alt, width, height };
     })
     .filter((s) => s !== null) as GenGalleryIntroSlide[];
