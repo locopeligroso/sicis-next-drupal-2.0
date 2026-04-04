@@ -4,6 +4,7 @@ import DrupalImage from '@/components_legacy/DrupalImage';
 import ParagraphResolver from '@/components_legacy/blocks_legacy/ParagraphResolver';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { getDrupalImageUrl } from '@/lib/drupal/image';
+import { resolveImage } from '@/lib/api/client';
 import { DRUPAL_BASE_URL } from '@/lib/drupal/config';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { getFilterConfig } from '@/domain/filters/registry';
@@ -186,16 +187,16 @@ export default async function ProdottoArredo({
   // ── Gallery intro slides (carousel subito dopo hero) ───────────────────────
   const galleryIntroSlides = galleryIntro
     .map((img) => {
-      const src = getDrupalImageUrl(img);
-      return src ? ({ src, alt: `${title ?? ''} gallery` } satisfies GenGallerySlide) : null;
+      const resolved = resolveImage(img);
+      return resolved ? ({ src: resolved.url, alt: `${title ?? ''} gallery`, width: resolved.width ?? 1200, height: resolved.height ?? 800 } satisfies GenGallerySlide) : null;
     })
     .filter((s) => s !== null);
 
   // ── Gallery slides ────────────────────────────────────────────────────────
   const galleryMainSlides = gallery
     .map((img) => {
-      const src = getDrupalImageUrl(img);
-      return src ? ({ src, alt: `${title ?? ''} gallery` } satisfies GenGallerySlide) : null;
+      const resolved = resolveImage(img);
+      return resolved ? ({ src: resolved.url, alt: `${title ?? ''} gallery`, width: resolved.width ?? 1200, height: resolved.height ?? 800 } satisfies GenGallerySlide) : null;
     })
     .filter((s) => s !== null);
 
