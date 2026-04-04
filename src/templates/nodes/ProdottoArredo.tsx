@@ -82,7 +82,6 @@ export default async function ProdottoArredo({
   const title = getTextValue(typedNode.field_titolo_main) || typedNode.title;
   const body = getProcessedText(typedNode.field_testo_main);
   const materiali = getProcessedText(typedNode.field_materiali);
-  const specifiche = getProcessedText(typedNode.field_specifiche_tecniche);
   const locale = typedNode.langcode ?? 'it';
 
   // ── Arredo base path (needed early for category path fallback) ────────────
@@ -225,23 +224,7 @@ export default async function ProdottoArredo({
         </section>
       )}
 
-      {/* ── 5. Specifiche tecniche / Dimensioni ──────────────────────────────── */}
-      {specifiche && (
-        <section
-          className={styles.section}
-          aria-labelledby="specifiche-heading"
-        >
-          <h2 id="specifiche-heading" className={styles.sectionHeading}>
-            {t('dimensionsAndSpecs')}
-          </h2>
-          <div
-            style={{ lineHeight: 1.7 }}
-            dangerouslySetInnerHTML={{ __html: sanitizeHtml(specifiche) }}
-          />
-        </section>
-      )}
-
-      {/* ── 6. Finiture ──────────────────────────────────────────────────────── */}
+      {/* ── 5. Finiture ──────────────────────────────────────────────────────── */}
       {finiture.length > 0 && (
         <section className={styles.section} aria-labelledby="finiture-heading">
           <h2 id="finiture-heading" className={styles.sectionHeading}>
