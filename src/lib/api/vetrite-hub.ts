@@ -4,7 +4,8 @@ import {
   stripDomain,
   stripLocalePrefix,
   emptyToNull,
-  resolveImageUrl,
+  resolveImage,
+  type ResolvedImage,
 } from './client';
 
 // ── Raw response shape from Drupal views ─────────────────────────────────
@@ -28,7 +29,7 @@ interface VetriteTaxonomyItem {
 
 export interface VetriteTermItem {
   name: string;
-  imageUrl: string | null;
+  image: ResolvedImage | null;
   href: string;
   /** Taxonomy term ID — available for finishes, undefined for colors/collections */
   tid?: string;
@@ -45,7 +46,7 @@ function normalize(
     const pathWithoutLocale = rawPath ? stripLocalePrefix(rawPath) : null;
     return {
       name: item.name,
-      imageUrl: resolveImageUrl(item.field_immagine),
+      image: resolveImage(item.field_immagine),
       href: pathWithoutLocale ? `/${locale}${pathWithoutLocale}` : '#',
     };
   });
@@ -88,7 +89,7 @@ export const fetchVetriteFinishes = cache(
       const pathWithoutLocale = rawPath ? stripLocalePrefix(rawPath) : null;
       return {
         name: item.name,
-        imageUrl: null,
+        image: null,
         href: pathWithoutLocale ? `/${locale}${pathWithoutLocale}` : '#',
         tid: String(item.tid),
       };

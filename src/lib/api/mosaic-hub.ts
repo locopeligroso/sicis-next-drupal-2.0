@@ -4,7 +4,8 @@ import {
   stripDomain,
   stripLocalePrefix,
   emptyToNull,
-  resolveImageUrl,
+  resolveImage,
+  type ResolvedImage,
 } from './client';
 
 // ── Raw response shape from Drupal views ─────────────────────────────────
@@ -27,7 +28,7 @@ interface MosaicTaxonomyItem {
 
 export interface MosaicTermItem {
   name: string;
-  imageUrl: string | null;
+  image: ResolvedImage | null;
   href: string;
   /** Taxonomy term ID — available for shapes/finishes, undefined for colors/collections */
   tid?: string;
@@ -41,7 +42,7 @@ function normalize(items: MosaicViewItem[], locale: string): MosaicTermItem[] {
     const pathWithoutLocale = rawPath ? stripLocalePrefix(rawPath) : null;
     return {
       name: item.name,
-      imageUrl: resolveImageUrl(item.field_immagine),
+      image: resolveImage(item.field_immagine),
       href: pathWithoutLocale ? `/${locale}${pathWithoutLocale}` : '#',
     };
   });
@@ -84,7 +85,7 @@ export const fetchMosaicShapes = cache(
       const pathWithoutLocale = rawPath ? stripLocalePrefix(rawPath) : null;
       return {
         name: item.name,
-        imageUrl: null,
+        image: null,
         href: pathWithoutLocale ? `/${locale}${pathWithoutLocale}` : '#',
         tid: String(item.tid),
       };
@@ -169,7 +170,7 @@ export const fetchMosaicFinishes = cache(
       const pathWithoutLocale = rawPath ? stripLocalePrefix(rawPath) : null;
       return {
         name: item.name,
-        imageUrl: null,
+        image: null,
         href: pathWithoutLocale ? `/${locale}${pathWithoutLocale}` : '#',
         tid: String(item.tid),
       };
@@ -198,7 +199,7 @@ interface MosaicCategoryPageItem {
 export interface MosaicCategoryPage {
   nid: string;
   title: string;
-  imageUrl: string | null;
+  image: ResolvedImage | null;
   href: string | null;
 }
 
@@ -219,7 +220,7 @@ export const fetchMosaicCategoryPages = cache(
       return {
         nid: item.nid,
         title: item.field_titolo_main,
-        imageUrl: resolveImageUrl(item.field_immagine),
+        image: resolveImage(item.field_immagine),
         href: hrefWithoutLocale ? `/${locale}${hrefWithoutLocale}` : null,
       };
     });
