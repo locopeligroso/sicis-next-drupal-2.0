@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { apiGet, stripDomain, stripLocalePrefix, emptyToNull } from './client';
+import { apiGet, stripDomain, stripLocalePrefix, emptyToNull, resolveImage, type ResolvedImage } from './client';
 import type {
   PaginatedResponse,
   ProductCard as RestProductCard,
@@ -17,7 +17,7 @@ export interface ProductCard {
   type: string;
   title: string;
   subtitle: string | null;
-  imageUrl: string | null; // field_immagine_anteprima (preview for cards)
+  image: ResolvedImage | null; // field_immagine_anteprima (preview for cards)
   price: string | null;
   priceOnDemand: boolean;
   noUsaStock: boolean;
@@ -104,7 +104,7 @@ function normalizeProduct(item: RestProductCard): ProductCard {
     type: item.type.startsWith('node--') ? item.type : `node--${item.type}`,
     title: item.title,
     subtitle: item.subtitle ?? null,
-    imageUrl: emptyToNull(item.imageUrl),
+    image: resolveImage(item.imageUrl),
     price: item.price ?? null,
     // REST returns priceOnDemand as string "0"/"1" — cast to boolean
     priceOnDemand:

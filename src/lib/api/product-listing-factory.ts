@@ -4,7 +4,7 @@ import {
   stripDomain,
   stripLocalePrefix,
   emptyToNull,
-  resolveImageUrl,
+  resolveImage,
 } from './client';
 import type { ProductCard } from './products';
 
@@ -168,7 +168,7 @@ function makeNormalizer(
     const rawPath = item.view_node ? stripDomain(item.view_node) : null;
     const path = rawPath ? stripLocalePrefix(rawPath) : null;
 
-    const imageUrl = resolveImageUrl(item[config.imageField]);
+    const image = resolveImage(item[config.imageField]);
 
     const price =
       config.priceField !== null
@@ -192,7 +192,7 @@ function makeNormalizer(
       type: config.productType,
       title: item.field_titolo_main,
       subtitle: null,
-      imageUrl,
+      image,
       price,
       priceOnDemand,
       noUsaStock,

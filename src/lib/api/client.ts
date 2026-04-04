@@ -90,39 +90,6 @@ export function stripLocalePrefix(path: string | null): string | null {
 }
 
 /**
- * Unified image URL resolver — handles the 4 patterns present in the Drupal data layer:
- *
- *   1. Direct string  — emptyToNull(field_immagine)                  (most fetchers)
- *   2. uri.url object — getDrupalImageUrl() shape from entity endpoint (ProdottoVetrite)
- *   3. url object     — { url: "..." } flat shape                     (edge cases)
- *   4. Anything else  — returns null
- *
- * This is additive. Existing callers are not changed yet.
- */
-export function resolveImageUrl(raw: unknown): string | null {
-  if (raw == null) return null;
-
-  // Pattern 1: direct string
-  if (typeof raw === 'string') return emptyToNull(raw);
-
-  if (typeof raw === 'object') {
-    const obj = raw as Record<string, unknown>;
-
-    // Pattern 2: { uri: { url: "..." } }  — Drupal file--file relationship
-    const uri = obj.uri;
-    if (uri != null && typeof uri === 'object') {
-      const uriUrl = (uri as Record<string, unknown>).url;
-      if (typeof uriUrl === 'string') return emptyToNull(uriUrl);
-    }
-
-    // Pattern 3: { url: "..." }  — flat object variant (also covers new { url, width, height })
-    if (typeof obj.url === 'string') return emptyToNull(obj.url);
-  }
-
-  return null;
-}
-
-/**
  * Resolved image with optional dimensions.
  * When Drupal returns the new { url, width, height } format, all three are populated.
  * When it returns the legacy string format, width and height are null.
