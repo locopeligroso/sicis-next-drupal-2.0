@@ -34,10 +34,10 @@ function ShowroomCardItem({
           overflow: 'hidden',
         }}
       >
-        {showroom.imageUrl ? (
+        {showroom.image?.url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={showroom.imageUrl}
+            src={showroom.image.url}
             alt={showroom.title}
             style={{
               width: '100%',

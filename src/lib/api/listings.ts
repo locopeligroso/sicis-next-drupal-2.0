@@ -8,9 +8,16 @@ import {
   type ResolvedImage,
 } from './client';
 
-// Re-export card types that match the old interface shapes (used by legacy listing components)
-export type { EnvironmentCard } from './types';
-export type { EnvironmentCard as AmbienteCard } from './types';
+// ── EnvironmentCard / AmbienteCard ───────────────────────────────────────────
+
+export interface EnvironmentCard {
+  id: string;
+  title: string;
+  image: ResolvedImage | null;
+  path: string | null;
+}
+
+export type AmbienteCard = EnvironmentCard;
 
 // ── Raw REST response interfaces (Drupal field names) ────────────────────────
 

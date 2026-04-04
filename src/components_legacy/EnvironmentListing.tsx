@@ -34,10 +34,10 @@ function EnvironmentCardItem({
           overflow: 'hidden',
         }}
       >
-        {environment.imageUrl ? (
+        {environment.image?.url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={environment.imageUrl}
+            src={environment.image.url}
             alt={environment.title}
             style={{
               width: '100%',

@@ -53,10 +53,10 @@ function BlogCardItem({
           position: 'relative',
         }}
       >
-        {post.imageUrl ? (
+        {post.image?.url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={post.imageUrl}
+            src={post.image.url}
             alt={post.title}
             style={{
               width: '100%',

@@ -276,7 +276,8 @@ export default async function ProdottoMosaico({
           : null;
     const allegato = doc.field_allegato?.entity?.uri?.value ?? null;
     const href = docLink || allegato;
-    const imageSrc = getDrupalImageUrl(doc.field_immagine);
+    const docImageUrl = getDrupalImageUrl(doc.field_immagine);
+    const docImage = docImageUrl ? { url: docImageUrl, width: null, height: null } : null;
 
     // Installation/maintenance guides go to the maintenance card
     const isGuide =
@@ -293,9 +294,9 @@ export default async function ProdottoMosaico({
     } else if (isDiscover && href) {
       discoverHref = href;
       discoverTitle = docTitle;
-      documentItems.push({ title: docTitle, type: docType, imageSrc, href });
+      documentItems.push({ title: docTitle, type: docType, image: docImage, href });
     } else {
-      documentItems.push({ title: docTitle, type: docType, imageSrc, href });
+      documentItems.push({ title: docTitle, type: docType, image: docImage, href });
     }
   }
 

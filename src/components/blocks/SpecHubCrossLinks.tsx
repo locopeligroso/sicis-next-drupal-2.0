@@ -6,7 +6,7 @@ import { Typography } from '@/components/composed/Typography';
 import type { SecondaryLink } from '@/lib/navbar/types';
 import { resolvePath } from '@/lib/api/resolve-path';
 import { fetchContent } from '@/lib/api/content';
-import { resolveImageUrl } from '@/lib/api/client';
+import { resolveImage } from '@/lib/api/client';
 
 interface SpecHubCrossLinksProps {
   links: SecondaryLink[];
@@ -31,7 +31,7 @@ async function getCrossLinkImage(
     if (!resolved?.nid) return null;
     const content = await fetchContent(resolved.nid, locale);
     if (!content) return null;
-    return resolveImageUrl(content.field_immagine);
+    return resolveImage(content.field_immagine)?.url ?? null;
   } catch {
     return null;
   }

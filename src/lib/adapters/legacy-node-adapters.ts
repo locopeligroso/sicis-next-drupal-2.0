@@ -43,7 +43,7 @@ export function vetriteToLegacyNode(
     field_testo_main: product.body
       ? { value: product.body, processed: product.body }
       : null,
-    field_immagine: toImageField(product.imageUrl),
+    field_immagine: toImageField(product.image?.url ?? null),
     field_gallery: product.gallery.map((url) => toImageField(url)),
     field_dimensioni_cm: product.dimensionsCm,
     field_dimensioni_inch: product.dimensionsInch,
@@ -61,7 +61,7 @@ export function vetriteToLegacyNode(
           field_testo: col.body
             ? { value: col.body, processed: col.body }
             : null,
-          field_immagine: toImageField(col.imageSrc),
+          field_immagine: toImageField(col.image?.url ?? null),
           field_dimensioni_cm: col.dimensionsCm,
           field_dimensioni_inch: col.dimensionsInch,
           field_dimensioni_extra_cm: col.dimensionsExtraCm,
@@ -95,7 +95,7 @@ export function vetriteToLegacyNode(
             field_titolo_main: doc.title,
             field_tipologia_documento: null,
             field_collegamento_esterno: doc.href,
-            field_immagine: toImageField(doc.imageSrc),
+            field_immagine: toImageField(doc.image?.url ?? null),
             field_allegato: null,
           })),
         }
@@ -169,7 +169,7 @@ export function textileToLegacyNode(
               name: c.name,
               field_codice_colore: c.colorCode,
               field_etichetta: c.label,
-              field_immagine: toImageField(c.imageSrc),
+              field_immagine: toImageField(c.image?.url ?? null),
               field_testo: c.text,
             }))
           : [
@@ -195,14 +195,14 @@ export function textileToLegacyNode(
     field_indicazioni_manutenzione: product.maintenance.map((m) => ({
       tid: m.tid,
       name: m.name,
-      field_immagine: toImageField(m.imageSrc),
+      field_immagine: toImageField(m.image?.url ?? null),
     })),
     field_documenti: product.documents.map((doc) => ({
       field_titolo_main: doc.title,
       title: doc.title,
       field_tipologia_documento: null,
       field_collegamento_esterno: doc.href,
-      field_immagine: toImageField(doc.imageSrc),
+      field_immagine: toImageField(doc.image?.url ?? null),
       field_allegato: null,
     })),
   };
@@ -232,8 +232,8 @@ export function pixallToLegacyNode(
       ? { value: product.maintenanceHtml, processed: product.maintenanceHtml }
       : null,
     field_retinatura: product.meshType,
-    field_immagine: toImageField(product.imageUrl),
-    field_immagine_moduli: toImageField(product.imageModulesUrl),
+    field_immagine: toImageField(product.image?.url ?? null),
+    field_immagine_moduli: toImageField(product.imageModules?.url ?? null),
     field_gallery: product.gallery.map((url) => toImageField(url)),
     field_gallery_intro: product.galleryIntro.map((url) => toImageField(url)),
     field_dimensione_foglio_mm: product.sheetSizeMm,
@@ -246,14 +246,14 @@ export function pixallToLegacyNode(
     field_consumo_stucco_sqft: product.groutConsumptionSqft,
     field_stucco: product.grouts.map((g) => ({
       name: g.name,
-      field_immagine: toImageField(g.imageSrc),
+      field_immagine: toImageField(g.image?.url ?? null),
     })),
     field_documenti: product.documents.map((doc) => ({
       field_titolo_main: doc.title,
       title: doc.title,
       field_tipologia_documento: null,
       field_collegamento_esterno: doc.href,
-      field_immagine: toImageField(doc.imageSrc),
+      field_immagine: toImageField(doc.image?.url ?? null),
       field_allegato: null,
     })),
     // Fields not yet available from pixall-product
@@ -282,7 +282,7 @@ export function illuminazioneToLegacyNode(
     field_specifiche_tecniche: product.techSpecsHtml
       ? { value: product.techSpecsHtml, processed: product.techSpecsHtml }
       : null,
-    field_immagine: toImageField(product.imageUrl),
+    field_immagine: toImageField(product.image?.url ?? null),
     field_gallery_intro: product.galleryIntro.map((url) => toImageField(url)),
     field_scheda_tecnica: product.techSheetUrls,
     field_no_form_scheda_tecnica: product.noTechSheet ? '1' : '0',
@@ -292,7 +292,7 @@ export function illuminazioneToLegacyNode(
       title: doc.title,
       field_tipologia_documento: null,
       field_collegamento_esterno: doc.href,
-      field_immagine: toImageField(doc.imageSrc),
+      field_immagine: toImageField(doc.image?.url ?? null),
       field_allegato: null,
     })),
     // Fields not available from illuminazione-product endpoint
@@ -327,7 +327,7 @@ export function arredoToLegacyNode(
       : null,
     field_prezzo_eu: product.priceEu ? { value: product.priceEu } : null,
     field_prezzo_usa: product.priceUsa ? { value: product.priceUsa } : null,
-    field_immagine: toImageField(product.imageUrl),
+    field_immagine: toImageField(product.image?.url ?? null),
     field_gallery: product.gallery.map((url) => toImageField(url)),
     field_gallery_intro: product.galleryIntro.map((url) => toImageField(url)),
     field_scheda_tecnica: product.techSheetUrls,
@@ -338,7 +338,7 @@ export function arredoToLegacyNode(
       title: doc.title,
       field_tipologia_documento: null,
       field_collegamento_esterno: doc.href,
-      field_immagine: toImageField(doc.imageSrc),
+      field_immagine: toImageField(doc.image?.url ?? null),
       field_allegato: null,
     })),
     // Fields not available from arredo-product endpoint

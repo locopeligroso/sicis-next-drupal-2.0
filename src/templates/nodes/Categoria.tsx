@@ -51,10 +51,10 @@ function ProductCardItem({
           position: 'relative',
         }}
       >
-        {product.imageUrl ? (
+        {product.image?.url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={product.imageUrl}
+            src={product.image.url}
             alt={product.title}
             style={{
               width: '100%',
@@ -135,10 +135,10 @@ function PageCardItem({ page, locale }: { page: PageCard; locale: string }) {
           overflow: 'hidden',
         }}
       >
-        {page.imageUrl ? (
+        {page.image?.url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={page.imageUrl}
+            src={page.image.url}
             alt={page.title}
             style={{
               width: '100%',

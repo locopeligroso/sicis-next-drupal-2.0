@@ -20,7 +20,7 @@ export const Playground: Story = {
   args: {
     title: "Crackle Azure",
     subtitle: "Waterglass Collection",
-    imageUrl: "https://placehold.co/400x400/c7d2e3/333?text=Mosaic+Tile",
+    image: { url: "https://placehold.co/400x400/c7d2e3/333?text=Mosaic+Tile", width: null, height: null },
     href: "#",
     aspectRatio: "1/1",
   },

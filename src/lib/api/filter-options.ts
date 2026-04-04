@@ -103,7 +103,7 @@ function hubTermsToFilterOptions(
     return {
       slug,
       label: term.name,
-      imageUrl: term.imageUrl ?? undefined,
+      imageUrl: term.image?.url ?? undefined,
       id: 'tid' in term && term.tid ? String(term.tid) : undefined,
     };
   });
@@ -122,7 +122,7 @@ function categoryItemsToFilterOptions(
     slug: slugifyName(item.name),
     label: item.name,
     id: item.nid,
-    imageUrl: item.imageUrl ?? undefined,
+    imageUrl: item.image?.url ?? undefined,
   }));
 }
 

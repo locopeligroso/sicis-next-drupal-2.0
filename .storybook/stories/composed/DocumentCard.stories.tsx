@@ -19,7 +19,7 @@ export const Playground: Story = {
         item={{
           title: "SICIS Colorpedia",
           type: "Catalogue",
-          imageSrc: "https://placehold.co/400x400/e2e2e2/666?text=Colorpedia",
+          image: { url: "https://placehold.co/400x400/e2e2e2/666?text=Colorpedia", width: null, height: null },
           href: "#",
         }}
       />

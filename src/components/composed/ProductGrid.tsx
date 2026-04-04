@@ -29,7 +29,7 @@ export function ProductGrid({
           key={product.id}
           title={product.title}
           subtitle={product.subtitle}
-          imageUrl={product.imageUrl}
+          image={product.image}
           href={product.path ? `/${locale}${product.path}` : '#'}
           aspectRatio={productCardRatio}
           imageFit={imageFit}

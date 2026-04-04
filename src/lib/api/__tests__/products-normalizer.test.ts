@@ -163,20 +163,20 @@ describe('normalizeProduct — priceOnDemand casting', () => {
   });
 });
 
-// ── normalizeProduct: emptyToNull for imageUrl ────────────────────────────────
+// ── normalizeProduct: emptyToNull for image ────────────────────────────────
 
-describe('normalizeProduct — emptyToNull for imageUrl', () => {
-  it('maps empty string imageUrl to null', async () => {
+describe('normalizeProduct — emptyToNull for image', () => {
+  it('maps empty string imageUrl to null image', async () => {
     mockApiGet.mockResolvedValue(
       makePaginatedResponse([makeRestCard({ imageUrl: '' })]),
     );
     const { products } = await fetchProductsPaginated({
       productType: 'prodotto_mosaico',
     });
-    expect(products[0].imageUrl).toBeNull();
+    expect(products[0].image).toBeNull();
   });
 
-  it('uses imageUrl when non-empty', async () => {
+  it('sets image.url when imageUrl is non-empty', async () => {
     const previewUrl = 'https://drupal.example.com/preview.jpg';
     mockApiGet.mockResolvedValue(
       makePaginatedResponse([makeRestCard({ imageUrl: previewUrl })]),
@@ -184,7 +184,7 @@ describe('normalizeProduct — emptyToNull for imageUrl', () => {
     const { products } = await fetchProductsPaginated({
       productType: 'prodotto_mosaico',
     });
-    expect(products[0].imageUrl).toBe(previewUrl);
+    expect(products[0].image?.url).toBe(previewUrl);
   });
 });
 

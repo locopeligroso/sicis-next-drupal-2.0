@@ -57,9 +57,9 @@ export async function SpecHubSurfaces({
           href={collection.href}
           className="flex items-center gap-3 rounded-lg border border-border p-2 transition-colors hover:bg-muted"
         >
-          {collection.imageUrl ? (
+          {collection.image?.url ? (
             <Image
-              src={collection.imageUrl}
+              src={collection.image.url}
               alt={collection.name}
               width={48}
               height={48}
@@ -88,7 +88,7 @@ export async function SpecHubSurfaces({
                 <ColorSwatchLink
                   key={color.name}
                   label={color.name}
-                  imageUrl={color.imageUrl}
+                  imageUrl={color.image?.url ?? null}
                   href={color.href}
                 />
               ))}
@@ -114,7 +114,7 @@ export async function SpecHubSurfaces({
                 <ColorSwatchLink
                   key={color.name}
                   label={color.name}
-                  imageUrl={color.imageUrl}
+                  imageUrl={color.image?.url ?? null}
                   href={color.href}
                 />
               ))}

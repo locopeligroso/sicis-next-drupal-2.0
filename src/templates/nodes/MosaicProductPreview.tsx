@@ -42,17 +42,17 @@ export async function MosaicProductPreview({
 
   // ── Build carousel slides (same pattern as ProdottoMosaico) ──
   const heroSlides: ProductCarouselSlide[] = [];
-  if (product.imageUrl) {
+  if (product.image?.url) {
     heroSlides.push({
       type: 'image',
-      src: product.imageUrl,
+      src: product.image.url,
       alt: product.title,
     });
   }
-  if (isUs && product.imageSampleUrl) {
+  if (isUs && product.imageSample?.url) {
     heroSlides.push({
       type: 'image',
-      src: product.imageSampleUrl,
+      src: product.imageSample.url,
       alt: `${product.title} – campione`,
     });
   }
@@ -159,13 +159,13 @@ export async function MosaicProductPreview({
         discoverHref = doc.href;
         documentItems.push({
           title: doc.title,
-          imageSrc: doc.imageSrc,
+          image: doc.image,
           href: doc.href,
         });
       } else {
         documentItems.push({
           title: doc.title,
-          imageSrc: doc.imageSrc,
+          image: doc.image,
           href: doc.href,
         });
       }
@@ -185,8 +185,8 @@ export async function MosaicProductPreview({
 
   // ── Gallery block data ──
   const galleryImages: ProductGalleryImage[] = product.gallery.map(
-    (url, i) => ({
-      src: url,
+    (img, i) => ({
+      src: img.url,
       alt: `${product.title} gallery ${i + 1}`,
     }),
   );
@@ -239,7 +239,7 @@ export async function MosaicProductPreview({
               product.grouts.length > 0 ? product.grouts[0].name : undefined
             }
             groutingImageSrc={
-              product.grouts.length > 0 ? product.grouts[0].imageSrc : undefined
+              product.grouts.length > 0 ? product.grouts[0].image?.url ?? null : undefined
             }
             groutConsumption={
               isUs

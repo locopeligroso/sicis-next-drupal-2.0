@@ -109,7 +109,7 @@ describe('fetchMosaicCollections', () => {
     expect(result).toHaveLength(1);
     expect(result[0]).toEqual({
       name: 'Murano Smalto',
-      imageUrl: 'https://drupal.example.com/it/img.jpg',
+      image: { url: 'https://drupal.example.com/it/img.jpg', width: null, height: null },
       href: '/it/mosaico/murano-smalto',
     });
   });
@@ -131,7 +131,7 @@ describe('fetchMosaicCollections', () => {
 
     const result = await fetchMosaicCollections('it');
 
-    expect(result[0].imageUrl).toBeNull();
+    expect(result[0].image).toBeNull();
   });
 
   it('preserves null field_immagine as null', async () => {
@@ -141,7 +141,7 @@ describe('fetchMosaicCollections', () => {
 
     const result = await fetchMosaicCollections('it');
 
-    expect(result[0].imageUrl).toBeNull();
+    expect(result[0].image).toBeNull();
   });
 
   it('returns empty array when apiGet returns null', async () => {
@@ -254,7 +254,7 @@ describe('fetchVetriteCollections', () => {
     expect(result).toHaveLength(1);
     expect(result[0]).toEqual({
       name: 'Vetrite A',
-      imageUrl: 'https://drupal.example.com/img.jpg',
+      image: { url: 'https://drupal.example.com/img.jpg', width: null, height: null },
       href: '/it/vetrite/collez-a',
     });
   });
@@ -276,7 +276,7 @@ describe('fetchVetriteCollections', () => {
 
     const result = await fetchVetriteCollections('it');
 
-    expect(result[0].imageUrl).toBeNull();
+    expect(result[0].image).toBeNull();
   });
 
   it('returns empty array when apiGet returns null', async () => {
@@ -345,7 +345,7 @@ describe('fetchHubCategories', () => {
     expect(result[0]).toEqual({
       nid: '10',
       name: 'Arredo',
-      imageUrl: 'https://drupal.example.com/arredo.jpg',
+      image: { url: 'https://drupal.example.com/arredo.jpg', width: null, height: null },
     });
   });
 
@@ -382,7 +382,7 @@ describe('fetchHubCategories', () => {
 
     const result = await fetchHubCategories(1, 'it');
 
-    expect(result[0].imageUrl).toBeNull();
+    expect(result[0].image).toBeNull();
   });
 
   it('returns empty array when apiGet returns null', async () => {

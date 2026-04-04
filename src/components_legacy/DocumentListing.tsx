@@ -39,10 +39,10 @@ function DocumentCardItem({
           overflow: 'hidden',
         }}
       >
-        {document.imageUrl ? (
+        {document.image?.url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={document.imageUrl}
+            src={document.image.url}
             alt={document.title}
             style={{
               width: '100%',

@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 export interface DocumentCardItem {
   title: string;
   type?: string;
-  imageSrc?: string | null;
+  image?: { url: string; width: number | null; height: number | null } | null;
   href?: string | null;
   downloadLabel?: string;
 }
@@ -84,7 +84,7 @@ export async function DocumentCard({
         className={cn(isHorizontal ? 'flex flex-row' : 'block')}
       >
         {/* Cover image */}
-        {item.imageSrc ? (
+        {item.image?.url ? (
           <div
             className={cn(
               'relative overflow-hidden bg-surface-2',
@@ -94,7 +94,7 @@ export async function DocumentCard({
             )}
           >
             <Image
-              src={item.imageSrc}
+              src={item.image.url}
               alt={item.title}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"

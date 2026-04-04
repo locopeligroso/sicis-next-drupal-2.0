@@ -1,11 +1,12 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Typography } from '@/components/composed/Typography';
+import type { ResolvedImage } from '@/lib/api/client';
 
 interface CategoryGridItem {
   nid: string;
   title: string;
-  imageUrl: string | null;
+  image: ResolvedImage | null;
   href: string | null;
 }
 
@@ -48,9 +49,9 @@ export function SpecMosaicCategoryGrid({
 function CardItem({ item }: { item: CategoryGridItem }) {
   const inner = (
     <div className="group relative aspect-4/3 overflow-hidden rounded-lg bg-muted">
-      {item.imageUrl ? (
+      {item.image?.url ? (
         <Image
-          src={item.imageUrl}
+          src={item.image.url}
           alt={item.title}
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"

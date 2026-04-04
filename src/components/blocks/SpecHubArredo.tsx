@@ -51,9 +51,9 @@ export async function SpecHubArredo({
           className="relative overflow-hidden rounded-md transition-opacity hover:opacity-80"
         >
           <div className="relative aspect-square">
-            {cat.imageUrl ? (
+            {cat.image?.url ? (
               <Image
-                src={cat.imageUrl}
+                src={cat.image.url}
                 alt={cat.name}
                 fill
                 sizes="(min-width: 1024px) 8vw, 15vw"

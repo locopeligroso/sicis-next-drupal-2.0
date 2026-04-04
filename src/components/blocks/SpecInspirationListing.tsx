@@ -89,9 +89,9 @@ function ArticleCardItem({
   const inner = (
     <article>
       <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-muted">
-        {article.imageUrl ? (
+        {article.image?.url ? (
           <Image
-            src={article.imageUrl}
+            src={article.image.url}
             alt={article.title}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

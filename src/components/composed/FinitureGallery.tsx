@@ -3,19 +3,20 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import type { ResolvedImage } from '@/lib/api/client';
 
 // ── Local interfaces (mirror arredo-product.ts exports without importing from server module) ──
 
 export interface FinituraVariant {
   tid: number;
   name: string;
-  imageUrl: string | null;
+  image: ResolvedImage | null;
 }
 
 export interface FinituraTessuto {
   tid: number;
   name: string;
-  imageUrl: string | null;
+  image: ResolvedImage | null;
   variants: FinituraVariant[];
 }
 
@@ -64,9 +65,9 @@ function Swatch({ variant, label }: SwatchProps) {
   return (
     <div className="flex flex-col gap-1.5">
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-surface-2">
-        {variant.imageUrl ? (
+        {variant.image?.url ? (
           <Image
-            src={variant.imageUrl}
+            src={variant.image.url}
             alt={variant.name}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 20vw"

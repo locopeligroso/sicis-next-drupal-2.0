@@ -292,7 +292,7 @@ describe('normalizer — emptyToNull for image and price', () => {
   it('maps empty string image to null', async () => {
     mockApiGet.mockResolvedValue([makeItem({ field_immagine: '' })]);
     const { products } = await fetchProductListing('prodotto_mosaico', 'it');
-    expect(products[0].imageUrl).toBeNull();
+    expect(products[0].image).toBeNull();
   });
 
   it('maps empty string price to null', async () => {
@@ -311,13 +311,13 @@ describe('normalizer — emptyToNull for image and price', () => {
     const imageUrl = 'https://drupal.example.com/sites/default/files/img.jpg';
     mockApiGet.mockResolvedValue([makeItem({ field_immagine: imageUrl })]);
     const { products } = await fetchProductListing('prodotto_mosaico', 'it');
-    expect(products[0].imageUrl).toBe(imageUrl);
+    expect(products[0].image?.url).toBe(imageUrl);
   });
 
   it('missing image field (undefined) maps to null', async () => {
     mockApiGet.mockResolvedValue([makeItem({ field_immagine: undefined })]);
     const { products } = await fetchProductListing('prodotto_mosaico', 'it');
-    expect(products[0].imageUrl).toBeNull();
+    expect(products[0].image).toBeNull();
   });
 });
 
@@ -386,12 +386,12 @@ describe('normalizer — ProductCard shape', () => {
     expect(products[0].subtitle).toBeNull();
   });
 
-  it('imageUrl derives from the configured imageField', async () => {
+  it('image derives from the configured imageField', async () => {
     // prodotto_mosaico uses field_immagine
     const img = 'https://drupal.example.com/img.jpg';
     mockApiGet.mockResolvedValue([makeItem({ field_immagine: img })]);
     const { products } = await fetchProductListing('prodotto_mosaico', 'it');
-    expect(products[0].imageUrl).toBe(img);
+    expect(products[0].image?.url).toBe(img);
   });
 
   it('total matches items array length', async () => {
@@ -419,6 +419,6 @@ describe('normalizer — vetrite imageField is field_immagine', () => {
     ]);
     const { products } = await fetchProductListing('prodotto_vetrite', 'it');
     // Config says imageField: 'field_immagine' for vetrite
-    expect(products[0].imageUrl).toBe(mainImg);
+    expect(products[0].image?.url).toBe(mainImg);
   });
 });

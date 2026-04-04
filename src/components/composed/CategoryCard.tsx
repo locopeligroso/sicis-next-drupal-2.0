@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 
 interface CategoryCardProps {
   title: string;
-  imageUrl?: string | null;
+  image?: { url: string; width: number | null; height: number | null } | null;
   cssColor?: string | null;
   href: string;
   aspectRatio: string;
@@ -23,7 +23,7 @@ function parseAspectRatio(ratio: string): number {
 
 export function CategoryCard({
   title,
-  imageUrl,
+  image,
   cssColor,
   href,
   aspectRatio,
@@ -45,10 +45,10 @@ export function CategoryCard({
       >
         {hasColorSwatch ? (
           <div className="flex size-full items-center justify-center">
-            {imageUrl ? (
+            {image?.url ? (
               // Fixed 64px swatch — not fill, explicit dimensions to avoid oversized srcset
               <Image
-                src={imageUrl}
+                src={image.url}
                 alt={title}
                 width={64}
                 height={64}
@@ -62,9 +62,9 @@ export function CategoryCard({
               />
             ) : null}
           </div>
-        ) : imageUrl ? (
+        ) : image?.url ? (
           <Image
-            src={imageUrl}
+            src={image.url}
             alt={title}
             fill
             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"

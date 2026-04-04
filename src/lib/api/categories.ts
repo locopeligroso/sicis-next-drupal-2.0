@@ -1,5 +1,6 @@
 import { cache } from 'react';
-import { apiGet, stripDomain, stripLocalePrefix, emptyToNull } from './client';
+import { apiGet, stripDomain, stripLocalePrefix, resolveImage } from './client';
+import type { ResolvedImage } from './client';
 import type {
   PaginatedResponse,
   CategoryCard as RestCategoryCard,
@@ -15,7 +16,7 @@ import type {
 export interface SubcategoryCard {
   id: string;
   title: string;
-  imageUrl: string | null;
+  image: ResolvedImage | null;
   path: string | null;
 }
 
@@ -31,7 +32,7 @@ export interface SubcategoriesResult {
 export interface PageCard {
   id: string;
   title: string;
-  imageUrl: string | null;
+  image: ResolvedImage | null;
   path: string | null;
 }
 
@@ -69,7 +70,7 @@ export const fetchSubcategories = cache(
         (item): SubcategoryCard => ({
           id: item.id,
           title: item.title,
-          imageUrl: emptyToNull(item.imageUrl),
+          image: resolveImage(item.imageUrl),
           path: stripLocalePrefix(stripDomain(item.path)),
         }),
       ),
@@ -115,7 +116,7 @@ export const fetchPagesByCategory = cache(
         (item): PageCard => ({
           id: item.id,
           title: item.title,
-          imageUrl: emptyToNull(item.imageUrl),
+          image: resolveImage(item.imageUrl),
           path: stripLocalePrefix(stripDomain(item.path)),
         }),
       ),

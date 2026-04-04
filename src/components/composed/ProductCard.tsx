@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 interface ProductCardProps {
   title: string;
   subtitle?: string | null;
-  imageUrl?: string | null;
+  image?: { url: string; width: number | null; height: number | null } | null;
   href: string;
   aspectRatio?: string; // e.g. "1/1", "3/4" — defaults to "1/1"
   imageFit?: 'cover' | 'contain';
@@ -16,7 +16,7 @@ interface ProductCardProps {
 export function ProductCard({
   title,
   subtitle,
-  imageUrl,
+  image,
   href,
   aspectRatio = '1/1',
   imageFit = 'cover',
@@ -32,9 +32,9 @@ export function ProductCard({
         className="relative overflow-hidden rounded-md bg-muted"
         style={{ aspectRatio }}
       >
-        {imageUrl ? (
+        {image?.url ? (
           <Image
-            src={imageUrl}
+            src={image.url}
             alt={title}
             fill
             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"

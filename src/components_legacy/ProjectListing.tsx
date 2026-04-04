@@ -36,10 +36,10 @@ function ProjectCardItem({
           overflow: 'hidden',
         }}
       >
-        {project.imageUrl ? (
+        {project.image?.url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={project.imageUrl}
+            src={project.image.url}
             alt={project.title}
             style={{
               width: '100%',

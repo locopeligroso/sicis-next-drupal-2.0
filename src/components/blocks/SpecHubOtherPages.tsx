@@ -87,9 +87,9 @@ export async function SpecHubOtherPages({
               {page.name}
             </Typography>
             <div className="relative aspect-4/3 overflow-hidden rounded-lg border border-border">
-              {page.imageUrl ? (
+              {page.image?.url ? (
                 <Image
-                  src={page.imageUrl}
+                  src={page.image.url}
                   alt={page.name}
                   fill
                   sizes="(min-width: 1024px) 20vw, 30vw"

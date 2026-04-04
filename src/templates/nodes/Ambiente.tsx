@@ -2,7 +2,7 @@ import Image from 'next/image';
 import ParagraphResolver from '@/components_legacy/blocks_legacy/ParagraphResolver';
 import { getTitle, getBody } from '@/lib/field-helpers';
 import { sanitizeHtml } from '@/lib/sanitize';
-import { resolveImageUrl } from '@/lib/api/client';
+import { resolveImage } from '@/lib/api/client';
 
 export default function Ambiente({ node }: { node: Record<string, unknown> }) {
   const title =
@@ -10,7 +10,7 @@ export default function Ambiente({ node }: { node: Record<string, unknown> }) {
   const body = getBody(node);
   const paragraphs =
     (node.field_blocchi as Record<string, unknown>[] | undefined) ?? [];
-  const imageUrl = resolveImageUrl(node.field_immagine);
+  const imageUrl = resolveImage(node.field_immagine)?.url ?? null;
 
   return (
     <article className="flex flex-col gap-(--spacing-section) pb-(--spacing-section)">

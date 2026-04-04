@@ -38,7 +38,7 @@ export function CategoryCardGrid({
           <CategoryCard
             key={card.slug}
             title={card.label}
-            imageUrl={card.imageUrl}
+            image={card.imageUrl ? { url: card.imageUrl, width: null, height: null } : null}
             cssColor={card.cssColor}
             href={buildHref(card.slug)}
             aspectRatio={aspectRatio}

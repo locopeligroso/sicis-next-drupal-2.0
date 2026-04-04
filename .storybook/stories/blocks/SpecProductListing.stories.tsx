@@ -35,11 +35,11 @@ const MOCK_PRODUCTS: ProductCard[] = Array.from({ length: 12 }, (_, i) => ({
     "Waterglass",
     "Iridium",
   ][i],
-  imageUrl: `https://placehold.co/400x400/${
+  image: { url: `https://placehold.co/400x400/${
     ["e2cda8", "d4c4b0", "b8c6d4", "c6d4b8", "aab8c6", "c6b8aa", "d4d4d4", "e8d8c8", "b8d4c6", "d4b8b8", "f0f0f0", "c8c0b0"][i]
   }/333?text=${encodeURIComponent(
     ["Azzurro", "Oro", "Perla", "Rubino", "Blu", "Smeraldo", "Argento", "Ambra", "Zaffiro", "Rosso", "Bianco", "Bronzo"][i]
-  )}`,
+  )}`, width: null, height: null },
   price: i % 3 === 0 ? `$${(120 + i * 15).toFixed(2)}` : null,
   priceOnDemand: i % 3 !== 0,
   path: `/en/mosaico/product-${i + 1}`,

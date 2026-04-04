@@ -20,7 +20,7 @@ type Story = StoryObj<typeof meta>
 export const Playground: Story = {
   args: {
     title: "Waterglass",
-    imageUrl: "https://placehold.co/400x400/d4c5a9/333?text=Waterglass",
+    image: { url: "https://placehold.co/400x400/d4c5a9/333?text=Waterglass", width: null, height: null },
     href: "#",
     aspectRatio: "1/1",
     hasColorSwatch: false,

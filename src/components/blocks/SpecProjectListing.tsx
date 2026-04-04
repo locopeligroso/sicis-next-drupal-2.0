@@ -86,9 +86,9 @@ function ProjectCard({
   const inner = (
     <article>
       <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-muted">
-        {project.imageUrl ? (
+        {project.image?.url ? (
           <Image
-            src={project.imageUrl}
+            src={project.image.url}
             alt={project.title}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

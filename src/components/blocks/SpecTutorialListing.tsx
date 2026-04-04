@@ -79,7 +79,7 @@ function TutorialCardItem({
 
   // Resolve thumbnail: Drupal image > YouTube hqdefault > null
   const thumbnailSrc =
-    tutorial.imageUrl ??
+    tutorial.image?.url ??
     (tutorial.videoId
       ? `https://img.youtube.com/vi/${tutorial.videoId}/hqdefault.jpg`
       : null);
