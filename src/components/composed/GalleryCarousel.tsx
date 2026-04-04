@@ -11,8 +11,8 @@ export interface GalleryCarouselSlide {
   src: string;
   alt: string;
   caption?: string | null;
-  width?: number;
-  height?: number;
+  width: number;
+  height: number;
 }
 
 interface GalleryCarouselProps {
@@ -131,17 +131,12 @@ export function GalleryCarousel({
             >
               <div
                 className={cn(
-                  'relative rounded-xl overflow-hidden border border-border transition-opacity duration-300',
-                  slide.width && slide.height ? '' : 'md:opacity-0',
+                  'relative rounded-xl overflow-hidden border border-border',
                   slideClassName,
                 )}
-                style={
-                  slide.width && slide.height
-                    ? ({
-                        '--slide-ratio': `${slide.width / slide.height}`,
-                      } as React.CSSProperties)
-                    : undefined
-                }
+                style={{
+                  '--slide-ratio': `${slide.width / slide.height}`,
+                } as React.CSSProperties}
               >
                 {slide.src && (
                   <Image
@@ -150,18 +145,6 @@ export function GalleryCarousel({
                     fill
                     className="object-cover"
                     sizes="(max-width: 768px) 100vw, 50vw"
-                    onLoad={(e) => {
-                      if (slide.width && slide.height) return;
-                      const img = e.currentTarget;
-                      const { naturalWidth, naturalHeight } = img;
-                      if (naturalWidth && naturalHeight) {
-                        const container = img.closest('[data-gallery-slide]')?.querySelector('[class*="rounded-xl"]') as HTMLElement | null;
-                        if (container) {
-                          container.style.setProperty('--slide-ratio', `${naturalWidth / naturalHeight}`);
-                          container.classList.remove('md:opacity-0');
-                        }
-                      }
-                    }}
                   />
                 )}
               </div>
