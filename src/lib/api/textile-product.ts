@@ -1,5 +1,6 @@
 import { cache } from 'react';
-import { apiGet, emptyToNull, resolveImageUrl } from './client';
+import { apiGet, emptyToNull, resolveImage } from './client';
+import type { ResolvedImage } from './client';
 import type {
   TextileProductRest,
   TextileProductDocumentRest,
@@ -12,7 +13,7 @@ import type {
 
 export interface TextileProductDocument {
   title: string;
-  imageSrc: string | null;
+  image: ResolvedImage | null;
   href: string | null;
 }
 
@@ -21,7 +22,7 @@ export interface TextileProductFinituraChild {
   name: string;
   colorCode: string | null;
   label: string | null;
-  imageSrc: string | null;
+  image: ResolvedImage | null;
   text: string | null;
   colorName: string | null;
 }
@@ -35,7 +36,7 @@ export interface TextileProductFinitura {
 export interface TextileProductMaintenance {
   tid: number;
   name: string;
-  imageSrc: string | null;
+  image: ResolvedImage | null;
 }
 
 export interface TextileProductTypology {
@@ -100,7 +101,7 @@ function normalizeTextileProduct(raw: TextileProductRest): TextileProduct {
       : null,
     documents: (raw.field_documenti ?? []).map((doc) => ({
       title: doc.field_titolo_main || '',
-      imageSrc: resolveImageUrl(doc.field_immagine),
+      image: resolveImage(doc.field_immagine),
       href: doc.field_collegamento_esterno || doc.field_allegato || null,
     })),
     finiture: toArray(raw.field_finiture_tessuto).map((f) => ({
@@ -111,7 +112,7 @@ function normalizeTextileProduct(raw: TextileProductRest): TextileProduct {
         name: c.name,
         colorCode: c.field_codice_colore,
         label: c.field_etichetta,
-        imageSrc: resolveImageUrl(c.field_immagine),
+        image: resolveImage(c.field_immagine),
         text: c.field_testo,
         colorName:
           typeof c.field_colore === 'object' && c.field_colore
@@ -122,7 +123,7 @@ function normalizeTextileProduct(raw: TextileProductRest): TextileProduct {
     maintenance: (raw.field_indicazioni_manutenzione ?? []).map((m) => ({
       tid: m.tid,
       name: m.name,
-      imageSrc: resolveImageUrl(m.field_immagine),
+      image: resolveImage(m.field_immagine),
     })),
     typologies: toArray(raw.field_tipologia_tessuto).map((t) => ({
       tid: t.tid,

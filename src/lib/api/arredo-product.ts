@@ -1,5 +1,6 @@
 import { cache } from 'react';
-import { apiGet, emptyToNull, resolveImageUrl } from './client';
+import { apiGet, emptyToNull, resolveImage } from './client';
+import type { ResolvedImage } from './client';
 
 // ── Raw REST response shape ──────────────────────────────────────────────────
 // Expected to mirror illuminazione-product shape (same Drupal template family).
@@ -68,7 +69,7 @@ interface ArredoProductRest {
 export interface ArredoProductDocument {
   nid: number;
   title: string;
-  imageSrc: string | null;
+  image: ResolvedImage | null;
   href: string | null;
   videoId: string | null;
 }
@@ -77,14 +78,14 @@ export interface ArredoProductDocument {
 export interface ArredoFinituraVariant {
   tid: number;
   name: string;
-  imageUrl: string | null;
+  image: ResolvedImage | null;
 }
 
 /** A fabric/finish family (mid level: e.g. "Ares", "Elios") */
 export interface ArredoFinituraTessuto {
   tid: number;
   name: string;
-  imageUrl: string | null;
+  image: ResolvedImage | null;
   variants: ArredoFinituraVariant[];
 }
 
@@ -105,7 +106,7 @@ export interface ArredoProduct {
   nid: number;
   title: string;
   body: string | null;
-  imageUrl: string | null;
+  image: ResolvedImage | null;
   galleryIntro: string[];
   gallery: string[];
   materialsHtml: string | null;
@@ -137,19 +138,19 @@ function normalizeArredoProduct(raw: ArredoProductRest): ArredoProduct {
   function normalizeFabric(
     fabric: ArredoFinituraTessutoRest,
   ): ArredoFinituraTessuto {
-    const ownImage = resolveImageUrl(fabric.field_immagine);
+    const ownImage = resolveImage(fabric.field_immagine);
     const children = fabric.children ?? [];
     const variants: ArredoFinituraVariant[] =
       children.length > 0
         ? children.map((v) => ({
             tid: v.tid,
             name: v.name,
-            imageUrl: resolveImageUrl(v.field_immagine),
+            image: resolveImage(v.field_immagine),
           }))
         : ownImage
-          ? [{ tid: fabric.tid, name: fabric.name, imageUrl: ownImage }]
+          ? [{ tid: fabric.tid, name: fabric.name, image: ownImage }]
           : [];
-    return { tid: fabric.tid, name: fabric.name, imageUrl: ownImage, variants };
+    return { tid: fabric.tid, name: fabric.name, image: ownImage, variants };
   }
 
   const tessutoFiniture: ArredoFinituraCategory[] = (
@@ -173,7 +174,7 @@ function normalizeArredoProduct(raw: ArredoProductRest): ArredoProduct {
     nid: Number(raw.nid),
     title: raw.field_titolo_main || '',
     body: emptyToNull(raw.field_testo_main),
-    imageUrl: resolveImageUrl(raw.field_immagine),
+    image: resolveImage(raw.field_immagine),
     galleryIntro: raw.field_gallery_intro ?? [],
     gallery: raw.field_gallery ?? [],
     materialsHtml: emptyToNull(raw.field_materiali),
@@ -186,7 +187,7 @@ function normalizeArredoProduct(raw: ArredoProductRest): ArredoProduct {
     documents: (raw.field_documenti ?? []).map((d) => ({
       nid: Number(d.nid),
       title: d.field_titolo_main || '',
-      imageSrc: resolveImageUrl(d.field_immagine),
+      image: resolveImage(d.field_immagine),
       href: d.field_collegamento_esterno || d.field_allegato || null,
       videoId: emptyToNull(d.field_id_video),
     })),

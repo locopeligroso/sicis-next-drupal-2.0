@@ -1,12 +1,13 @@
 import { cache } from 'react';
-import { apiGet, emptyToNull, resolveImageUrl } from './client';
+import { apiGet, emptyToNull, resolveImage } from './client';
+import type { ResolvedImage } from './client';
 import type { VetriteProductRest, VetriteProductDocumentRest } from './types';
 
 // ── Normalized domain models ────────────────────────────────────────────────
 
 export interface VetriteProductDocument {
   title: string;
-  imageSrc: string | null;
+  image: ResolvedImage | null;
   href: string | null;
 }
 
@@ -14,7 +15,7 @@ export interface VetriteProductCollection {
   tid: number;
   name: string;
   body: string | null;
-  imageSrc: string | null;
+  image: ResolvedImage | null;
   dimensionsCm: string | null;
   dimensionsInch: string | null;
   dimensionsExtraCm: string | null;
@@ -38,7 +39,7 @@ export interface VetriteProduct {
   nid: number;
   title: string;
   body: string | null;
-  imageUrl: string | null;
+  image: ResolvedImage | null;
   gallery: string[];
   dimensionsCm: string | null;
   dimensionsInch: string | null;
@@ -62,7 +63,7 @@ function normalizeDocument(
 ): VetriteProductDocument {
   return {
     title: raw.field_titolo_main || '',
-    imageSrc: resolveImageUrl(raw.field_immagine),
+    image: resolveImage(raw.field_immagine),
     href: raw.field_collegamento_esterno || raw.field_allegato || null,
   };
 }
@@ -78,7 +79,7 @@ function normalizeVetriteProduct(raw: VetriteProductRest): VetriteProduct {
     body:
       emptyToNull(raw.field_testo_main) ||
       (col ? emptyToNull(col.field_testo) : null),
-    imageUrl: resolveImageUrl(raw.field_immagine),
+    image: resolveImage(raw.field_immagine),
     gallery: raw.field_gallery ?? [],
     dimensionsCm: emptyToNull(raw.field_dimensioni_cm),
     dimensionsInch: emptyToNull(raw.field_dimensioni_inch),
@@ -96,7 +97,7 @@ function normalizeVetriteProduct(raw: VetriteProductRest): VetriteProduct {
           tid: col.tid,
           name: col.name,
           body: emptyToNull(col.field_testo),
-          imageSrc: resolveImageUrl(col.field_immagine),
+          image: resolveImage(col.field_immagine),
           dimensionsCm: col.field_dimensioni_cm,
           dimensionsInch: col.field_dimensioni_inch,
           dimensionsExtraCm: col.field_dimensioni_extra_cm,

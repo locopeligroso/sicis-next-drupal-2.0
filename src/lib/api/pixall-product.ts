@@ -1,5 +1,6 @@
 import { cache } from 'react';
-import { apiGet, emptyToNull, resolveImageUrl } from './client';
+import { apiGet, emptyToNull, resolveImage } from './client';
+import type { ResolvedImage } from './client';
 import type { PixallProductRest } from './types';
 
 // ── Normalized domain model ─────────────────────────────────────────────────
@@ -7,14 +8,14 @@ import type { PixallProductRest } from './types';
 export interface PixallProductGrout {
   tid: number;
   name: string;
-  imageSrc: string | null;
+  image: ResolvedImage | null;
   price2_5kg: string | null;
   price5kg: string | null;
 }
 
 export interface PixallProductDocument {
   title: string;
-  imageSrc: string | null;
+  image: ResolvedImage | null;
   href: string | null;
 }
 
@@ -26,8 +27,8 @@ export interface PixallProduct {
   usesHtml: string | null;
   maintenanceHtml: string | null;
   meshType: string | null;
-  imageUrl: string | null;
-  imageModulesUrl: string | null;
+  image: ResolvedImage | null;
+  imageModules: ResolvedImage | null;
   gallery: string[];
   galleryIntro: string[];
   sheetSizeMm: string | null;
@@ -64,8 +65,8 @@ function normalizePixallProduct(raw: PixallProductRest): PixallProduct {
     usesHtml: emptyToNull(raw.field_utilizzi),
     maintenanceHtml: emptyToNull(raw.field_manutenzione),
     meshType: emptyToNull(raw.field_retinatura),
-    imageUrl: resolveImageUrl(raw.field_immagine),
-    imageModulesUrl: resolveImageUrl(raw.field_immagine_moduli),
+    image: resolveImage(raw.field_immagine),
+    imageModules: resolveImage(raw.field_immagine_moduli),
     gallery: raw.field_gallery ?? [],
     galleryIntro: raw.field_gallery_intro ?? [],
     sheetSizeMm: emptyToNull(raw.field_dimensione_foglio_mm),
@@ -83,13 +84,13 @@ function normalizePixallProduct(raw: PixallProductRest): PixallProduct {
     grouts: (raw.field_stucco ?? []).map((g) => ({
       tid: g.tid,
       name: g.name,
-      imageSrc: resolveImageUrl(g.field_immagine),
+      image: resolveImage(g.field_immagine),
       price2_5kg: g.field_prezzo_2_5kg,
       price5kg: g.field_prezzo_5kg,
     })),
     documents: (raw.field_documenti ?? []).map((d) => ({
       title: d.field_titolo_main || '',
-      imageSrc: resolveImageUrl(d.field_immagine),
+      image: resolveImage(d.field_immagine),
       href: d.field_collegamento_esterno || d.field_allegato || null,
     })),
   };

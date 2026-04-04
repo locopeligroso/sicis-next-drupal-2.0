@@ -1,5 +1,6 @@
 import { cache } from 'react';
-import { apiGet, emptyToNull, resolveImageUrl } from './client';
+import { apiGet, emptyToNull, resolveImage } from './client';
+import type { ResolvedImage } from './client';
 
 // ── Raw REST response shape ──────────────────────────────────────────────────
 
@@ -31,7 +32,7 @@ interface IlluminazioneProductRest {
 export interface IlluminazioneProductDocument {
   nid: number;
   title: string;
-  imageSrc: string | null;
+  image: ResolvedImage | null;
   href: string | null;
   videoId: string | null;
 }
@@ -40,7 +41,7 @@ export interface IlluminazioneProduct {
   nid: number;
   title: string;
   body: string | null;
-  imageUrl: string | null;
+  image: ResolvedImage | null;
   galleryIntro: string[];
   materialsHtml: string | null;
   techSpecsHtml: string | null;
@@ -59,7 +60,7 @@ function normalizeIlluminazioneProduct(
     nid: Number(raw.nid),
     title: raw.field_titolo_main || '',
     body: emptyToNull(raw.field_testo_main),
-    imageUrl: resolveImageUrl(raw.field_immagine),
+    image: resolveImage(raw.field_immagine),
     galleryIntro: raw.field_gallery_intro ?? [],
     materialsHtml: emptyToNull(raw.field_materiali),
     techSpecsHtml: emptyToNull(raw.field_specifiche_tecniche),
@@ -69,7 +70,7 @@ function normalizeIlluminazioneProduct(
     documents: (raw.field_documenti ?? []).map((d) => ({
       nid: Number(d.nid),
       title: d.field_titolo_main || '',
-      imageSrc: resolveImageUrl(d.field_immagine),
+      image: resolveImage(d.field_immagine),
       href: d.field_collegamento_esterno || d.field_allegato || null,
       videoId: emptyToNull(d.field_id_video),
     })),

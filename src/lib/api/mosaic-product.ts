@@ -1,5 +1,6 @@
 import { cache } from 'react';
-import { apiGet, emptyToNull, resolveImageUrl } from './client';
+import { apiGet, emptyToNull, resolveImage, resolveImageArray } from './client';
+import type { ResolvedImage } from './client';
 import type {
   MosaicProductRest,
   MosaicProductDocumentRest,
@@ -10,7 +11,7 @@ import type {
 
 export interface MosaicProductDocument {
   title: string;
-  imageSrc: string | null;
+  image: ResolvedImage | null;
   href: string | null;
   isGuide: boolean;
   isDiscover: boolean;
@@ -50,7 +51,7 @@ export interface MosaicProductCollection {
 export interface MosaicProductGrout {
   tid: number;
   name: string;
-  imageSrc: string | null;
+  image: ResolvedImage | null;
   price2_5kg: string | null;
   price5kg: string | null;
 }
@@ -66,9 +67,9 @@ export interface MosaicProduct {
   hasSample: boolean;
   noUsaStock: boolean;
   priceOnDemand: boolean;
-  imageUrl: string | null;
-  imageSampleUrl: string | null;
-  gallery: string[];
+  image: ResolvedImage | null;
+  imageSample: ResolvedImage | null;
+  gallery: ResolvedImage[];
   videoUrl: string | null;
   grouts: MosaicProductGrout[];
   collection: MosaicProductCollection | null;
@@ -88,7 +89,7 @@ function normalizeDocument(
   const titleLower = title.toLowerCase();
   return {
     title,
-    imageSrc: resolveImageUrl(raw.field_immagine),
+    image: resolveImage(raw.field_immagine),
     href: raw.field_collegamento_esterno || raw.field_allegato || null,
     isGuide:
       titleLower.includes('install') ||
@@ -103,7 +104,7 @@ function normalizeGrout(raw: MosaicProductGroutRest): MosaicProductGrout {
   return {
     tid: raw.tid,
     name: raw.name,
-    imageSrc: resolveImageUrl(raw.field_immagine),
+    image: resolveImage(raw.field_immagine),
     price2_5kg: raw.field_prezzo_2_5kg,
     price5kg: raw.field_prezzo_5kg,
   };
@@ -125,9 +126,9 @@ function normalizeMosaicProduct(raw: MosaicProductRest): MosaicProduct {
     hasSample: toBool(raw.field_campione),
     noUsaStock: toBool(raw.field_no_usa_stock),
     priceOnDemand: toBool(raw.field_prezzo_on_demand),
-    imageUrl: resolveImageUrl(raw.field_immagine),
-    imageSampleUrl: resolveImageUrl(raw.field_immagine_campione),
-    gallery: raw.field_gallery ?? [],
+    image: resolveImage(raw.field_immagine),
+    imageSample: resolveImage(raw.field_immagine_campione),
+    gallery: resolveImageArray(raw.field_gallery),
     videoUrl: emptyToNull(raw.field_video),
     grouts: (raw.field_stucco ?? []).map(normalizeGrout),
     collection: col
