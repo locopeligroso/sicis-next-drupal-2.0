@@ -18,7 +18,6 @@ Decoupled Next.js frontend for Sicis luxury mosaic brand, powered by Drupal 10 h
 - **nuqs** (URL state management)
 - **embla-carousel** (carousels)
 - **Vitest** (unit testing)
-- **Storybook 10.3.1** (not actively maintained)
 
 ## Getting Started
 
@@ -57,7 +56,6 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 |---------|-------------|
 | `npm run dev` | Start development server (localhost:3000) |
 | `npm run build` | Build production bundle |
-| `npm run storybook` | Storybook dev (localhost:6006) |
 | `npx tsc --noEmit` | TypeScript check |
 | `npx vitest run` | Run tests |
 

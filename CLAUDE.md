@@ -15,13 +15,12 @@ Decoupled Next.js 16 frontend for Sicis (luxury mosaic brand) backed by headless
 
 - `npm run dev` — Start dev server (localhost:3000)
 - `npm run build` — Production build
-- `npm run storybook` — Storybook dev (localhost:6006)
 - `npx tsc --noEmit` — TypeScript check
 - `npx vitest run` — Run tests
 
 ## Tech Stack
 
-Next 16.1.7 | React 19.2.4 | Tailwind 4.2.2 | Storybook 10.3.1 | next-intl | nuqs | embla-carousel
+Next 16.1.7 | React 19.2.4 | Tailwind 4.2.2 | next-intl | nuqs | embla-carousel
 
 ## Architecture
 
@@ -115,14 +114,6 @@ Zero React/Next.js dependencies — 100% unit-testable.
 - `ListingConfig` — `categoryCardRatio`, `productCardRatio`, `categoryGroups`, `sortOptions`, `pageSize`
 
 **nuqs integration:** `src/domain/filters/search-params.ts` — `parseAsString`, `parseAsArrayOf`; `FilterDefinition` type used by `ProductListingTemplate` for active filter state.
-
----
-
-## Storybook
-
-**Status: not actively maintained.** Decision pending on whether to dismiss or resume.
-
-Framework: `@storybook/nextjs-vite`. Stories in `.storybook/stories/` organized by layer (primitives, composed, blocks, design-tokens).
 
 ---
 
@@ -223,10 +214,6 @@ Project changelog is maintained in `CHANGELOG.md` at the repo root, organized by
 | Navbar      | Migrated — glassmorphism bar, 4 mega-menus, mobile overlay, scroll hide, language switcher. Fully CMS-driven: sectionTitles + sectionDescriptions from Drupal |
 | Footer      | Legacy                                                                                                                                                        |
 | Breadcrumbs | PageBreadcrumb renders on ALL pages except homepage. URL-based. Categoria pages: siblings dropdown                                                            |
-
-### Storybook
-
-- Not actively maintained (see Storybook section above)
 
 ### Known Gaps
 

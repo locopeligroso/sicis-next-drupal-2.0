@@ -120,11 +120,7 @@
 
 - **Effort:** Low (1-2 hours)
 
-### P3-7. Storybook: decide keep or dismiss
-
-- **Owner:** Giuseppe (decision)
-
-### P3-8. Legacy component cleanup (target: delete `components_legacy/`)
+### P3-7. Legacy component cleanup (target: delete `components_legacy/`)
 
 - **Dependencies:** All template migrations
 
