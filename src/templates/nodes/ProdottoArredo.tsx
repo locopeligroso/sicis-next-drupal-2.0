@@ -5,7 +5,6 @@ import ParagraphResolver from '@/components_legacy/blocks_legacy/ParagraphResolv
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
 import { getDrupalImageUrl } from '@/lib/drupal/image';
 import { resolveImage } from '@/lib/api/client';
-import { DRUPAL_BASE_URL } from '@/lib/drupal/config';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { getFilterConfig } from '@/domain/filters/registry';
 import { DevBlockOverlay } from '@/components/composed/DevBlockOverlay';
@@ -63,16 +62,6 @@ interface SchedaTecnicaItem {
   id?: string;
   filename?: string;
   uri?: { url?: string; value?: string };
-}
-
-// ── Tessuto term ──────────────────────────────────────────────────────────────
-interface TessutoItem {
-  id?: string;
-  name?: string;
-  field_immagine?: {
-    uri?: { url?: string; value?: string };
-    meta?: { alt?: string; width?: number; height?: number };
-  };
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -200,65 +189,6 @@ export default async function ProdottoArredo({
     })
     .filter((s) => s !== null);
 
-  // ── Tessuti (taxonomy terms) — fallback to English if not translated ──────
-  const tessutiRaw = (typedNode.field_tessuti ?? []) as TessutoItem[];
-  let tessuti = tessutiRaw.filter((t) => t.name);
-  if (tessuti.length === 0 && tessutiRaw.length > 0) {
-    const stubs = tessutiRaw as Array<{ type?: string; id?: string }>;
-    const fetches = stubs
-      .filter((s) => s.type && s.id)
-      .map(async (s) => {
-        const bundle = s.type!.replace('taxonomy_term--', '');
-        try {
-          const res = await fetch(
-            `${DRUPAL_BASE_URL}/en/jsonapi/taxonomy_term/${bundle}/${s.id}?include=field_immagine`,
-            {
-              headers: { Accept: 'application/vnd.api+json' },
-              next: { revalidate: 3600 },
-            } as RequestInit,
-          );
-          if (!res.ok) return null;
-          const json = await res.json();
-          const name = json?.data?.attributes?.name;
-          if (!name) return null;
-          // Extract image from included
-          const imgRel = json?.data?.relationships?.field_immagine?.data;
-          let field_immagine: TessutoItem['field_immagine'] = undefined;
-          if (imgRel?.id) {
-            const included = (json?.included ?? []) as Array<
-              Record<string, unknown>
-            >;
-            const fileEntity = included.find(
-              (inc: Record<string, unknown>) => inc.id === imgRel.id,
-            );
-            if (fileEntity) {
-              const attrs = fileEntity.attributes as
-                | Record<string, unknown>
-                | undefined;
-              field_immagine = {
-                uri: attrs?.uri as TessutoItem['field_immagine'] extends {
-                  uri?: infer U;
-                }
-                  ? U
-                  : never,
-                meta: imgRel.meta as TessutoItem['field_immagine'] extends {
-                  meta?: infer M;
-                }
-                  ? M
-                  : never,
-              };
-            }
-          }
-          return { id: s.id, name, field_immagine } as TessutoItem;
-        } catch {
-          return null;
-        }
-      });
-    tessuti = (await Promise.all(fetches)).filter(
-      (t): t is TessutoItem => t !== null,
-    );
-  }
-
   return (
     <QuoteSheetProvider productName={title ?? undefined}>
     <article className="flex flex-col gap-(--spacing-section) pb-(--spacing-section)">
@@ -370,88 +300,7 @@ export default async function ProdottoArredo({
         </section>
       )}
 
-      {/* ── 6.5. Tessuti (raggruppati per famiglia) ────────────────────────── */}
-      {tessuti.length > 0 &&
-        (() => {
-          // Raggruppa per famiglia: "Oregon – Ash" → famiglia "Oregon", variante "Ash"
-          const grouped = new Map<
-            string,
-            { id?: string; variant: string; imgUrl?: string | null }[]
-          >();
-          for (const tessuto of tessuti) {
-            if (!tessuto.name) continue;
-            const sepIdx = tessuto.name.indexOf('–');
-            const family =
-              sepIdx > 0
-                ? tessuto.name.slice(0, sepIdx).trim()
-                : tessuto.name.trim();
-            const variant =
-              sepIdx > 0 ? tessuto.name.slice(sepIdx + 1).trim() : '';
-            const imgUrl = tessuto.field_immagine
-              ? getDrupalImageUrl(tessuto.field_immagine)
-              : null;
-            if (!grouped.has(family)) grouped.set(family, []);
-            grouped.get(family)!.push({ id: tessuto.id, variant, imgUrl });
-          }
-          if (grouped.size === 0) return null;
-          return (
-            <section
-              className={styles.section}
-              aria-labelledby="tessuti-heading"
-            >
-              <h2 id="tessuti-heading" className={styles.sectionHeading}>
-                {t('fabrics')}
-              </h2>
-              <div>
-                {[...grouped.entries()].map(([family, variants]) => (
-                  <div
-                    key={family}
-                    style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: '0.375rem',
-                      marginBottom: '0.5rem',
-                    }}
-                  >
-                    {variants.map((v, i) => (
-                      <span
-                        key={v.id ?? i}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.375rem',
-                          padding: '0.25rem 0.75rem 0.25rem 0.25rem',
-                          border: '0.0625rem solid #ccc',
-                          fontSize: '0.8125rem',
-                          color: '#333',
-                        }}
-                      >
-                        {v.imgUrl && (
-                          <img
-                            src={v.imgUrl}
-                            alt={
-                              v.variant ? `${family} – ${v.variant}` : family
-                            }
-                            width={28}
-                            height={28}
-                            style={{
-                              borderRadius: '0.125rem',
-                              objectFit: 'cover',
-                              flexShrink: 0,
-                            }}
-                          />
-                        )}
-                        {v.variant ? `${family} – ${v.variant}` : family}
-                      </span>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </section>
-          );
-        })()}
-
-      {/* ── 6.6. Finiture CTA — link alla pagina finiture dedicata ────────────── */}
+      {/* ── 6.5. Finiture CTA — link alla pagina finiture dedicata ────────────── */}
       {hasFiniture && finitureHref && (
         <section
           className={styles.section}
