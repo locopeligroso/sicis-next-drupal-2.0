@@ -197,15 +197,90 @@ function CardHead({
   );
 }
 
+/**
+ * Parse HTML content into optional label/value lines.
+ * Detects patterns:
+ *  - `<strong>LABEL</strong>: value` (colon outside strong, e.g. Chardin)
+ *  - `<strong>LABEL:</strong> value` (colon inside strong, e.g. Tiger/Blanchard)
+ *  - `LABEL: value` (plain text, capitalized, e.g. Acaram override)
+ * Lines without detected label keep value only (label=null).
+ * Filters out empty/whitespace-only lines.
+ */
+function parseLabeledLines(
+  html: string,
+): Array<{ label: string | null; value: string }> {
+  const normalized = html
+    .replace(/\r?\n+/g, ' ')
+    .replace(/&nbsp;/gi, ' ');
+  const lines = normalized
+    .split(/<br\s*\/?>/gi)
+    .flatMap((l) => l.split(/<\/p>\s*<p[^>]*>/gi))
+    .map((l) => l.replace(/<\/?p[^>]*>/gi, '').trim())
+    .filter((l) => l.length > 0);
+
+  return lines.map((line) => {
+    // Pattern A: <strong>LABEL</strong>: value (colon outside)
+    let m = line.match(/^<strong>([^<:]{1,30})<\/strong>\s*:\s*(.+)$/i);
+    if (m) {
+      return {
+        label: m[1].trim(),
+        value: m[2].replace(/<[^>]*>/g, '').trim(),
+      };
+    }
+    // Pattern B: <strong>LABEL:</strong> value (colon inside strong)
+    m = line.match(/^<strong>([^<:]{1,30}):\s*<\/strong>\s*(.+)$/i);
+    if (m) {
+      return {
+        label: m[1].trim(),
+        value: m[2].replace(/<[^>]*>/g, '').trim(),
+      };
+    }
+    // Pattern C: LABEL: value (plain, capitalized, short)
+    m = line.match(/^([A-Z][A-Za-z\s]{0,25}):\s*(.+)$/);
+    if (m) {
+      return {
+        label: m[1].trim(),
+        value: m[2].replace(/<[^>]*>/g, '').trim(),
+      };
+    }
+    return { label: null, value: line.replace(/<[^>]*>/g, '').trim() };
+  });
+}
+
 function MaterialsCard({ label, html }: { label: string; html: string }) {
+  const items = parseLabeledLines(html);
+  const hasLabels = items.some((i) => i.label !== null);
+
   return (
     <Card>
       <CardContent className="flex flex-col gap-3">
         <CardHead icon={LayersIcon} label={label} />
-        <div
-          className="text-sm text-muted-foreground leading-relaxed text-pretty [&_p]:m-0 [&_p+p]:mt-2"
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
+        {hasLabels ? (
+          <dl className="flex flex-col gap-1.5 text-sm">
+            {items.map((item, i) => (
+              <div
+                key={i}
+                className="flex items-baseline justify-between gap-3 border-b border-border/40 pb-1.5 last:border-0 last:pb-0"
+              >
+                {item.label ? (
+                  <dt className="text-xs uppercase tracking-wide text-muted-foreground shrink-0">
+                    {item.label}
+                  </dt>
+                ) : (
+                  <dt className="sr-only">—</dt>
+                )}
+                <dd className="text-right font-medium text-foreground">
+                  {item.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        ) : (
+          <div
+            className="text-sm text-muted-foreground leading-relaxed text-pretty [&_p]:m-0 [&_p+p]:mt-2"
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+        )}
       </CardContent>
     </Card>
   );
