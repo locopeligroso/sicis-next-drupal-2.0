@@ -159,8 +159,8 @@ export function SpecTextileHero({
             {variants.length > 1 && currentVariant && (
               <div className="flex flex-col gap-2">
                 <Typography
-                  textRole="subtitle-2"
-                  className="text-foreground"
+                  textRole="overline"
+                  className="text-muted-foreground"
                   {...{ 'aria-live': 'polite' }}
                 >
                   {currentVariant.name}
