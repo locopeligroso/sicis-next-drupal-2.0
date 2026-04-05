@@ -2,24 +2,28 @@
  * ProdottoTessuto — HYBRID DS + INSPECTOR (DS migration in progress)
  *
  * TOP SECTION (DS blocks — migrated):
- *  - SpecArredoHero: title, category, body description, breadcrumb
+ *  - Hero: SpecTextileHero (variant picker carousel + swatches) if variants
+ *    are present (Tessuti + Arazzi = 81/150), else SpecArredoHero fallback
  *    (no hero image — field_immagine_anteprima not exposed by REST yet)
- *    (no price — field_prezzo_* always null for tessuto)
  *  - GenGallery intro (conditional)
  *  - SpecProductTechnicalArea: cards = Composizione + Specifiche fisiche +
  *    Manutenzione (conditional per card)
  *  - GenGallery main (conditional)
  *  - SpecProductResources: documents (conditional)
  *
- * BOTTOM SECTION (Inspector — to be migrated):
+ * BOTTOM SECTION (Inspector — debug only):
  *  Hardcoded labels highlighted fluo yellow to distinguish from API data.
- *  Remaining sections: finiture 2-level, JSON dump (+ debug NID/category/prices).
+ *  Debug sections: NID/category/prices (always-null) + JSON dump.
  *  Note: field_tipologia_tessuto is filter-only (listing), not shown in detail.
  */
 import { getTranslations } from 'next-intl/server';
 import { getFilterConfig } from '@/domain/filters/registry';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { SpecArredoHero } from '@/components/blocks/SpecArredoHero';
+import {
+  SpecTextileHero,
+  type TextileHeroVariant,
+} from '@/components/blocks/SpecTextileHero';
 import { GenGallery, type GenGallerySlide } from '@/components/blocks/GenGallery';
 import { SpecProductResources } from '@/components/blocks/SpecProductResources';
 import {
@@ -91,16 +95,6 @@ function Html({ name, html }: { name: string; html: string | null }) {
           <div className="mt-2 text-sm [&_p]:m-0 [&_p+p]:mt-2" dangerouslySetInnerHTML={{ __html: html }} />
         </>
       )}
-    </div>
-  );
-}
-
-function Thumb({ url, width, height, alt }: { url: string; width?: number | null; height?: number | null; alt?: string }) {
-  return (
-    <div className="flex flex-col gap-1 text-xs font-mono">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={url} alt={alt ?? ''} className="size-24 object-cover rounded border border-border" loading="lazy" />
-      <span className="text-[0.625rem]">{width ?? <Hc>?</Hc>}<Hc>×</Hc>{height ?? <Hc>?</Hc>}</span>
     </div>
   );
 }
@@ -214,21 +208,46 @@ export default async function ProdottoTessuto({
     image: m.image,
   }));
 
+  // ── Textile variants (from finiture 2-level: flatten children of first category) ──
+  // Verified: 81/150 products have finiture (Tessuti + Arazzi), each with 1 category.
+  // All variants within a product share same image aspect ratio.
+  const variants: TextileHeroVariant[] =
+    product.finiture[0]?.children.map((v) => ({
+      name: v.name,
+      colorCode: v.colorCode,
+      colorName: v.colorName,
+      image: v.image,
+      composition: v.text,
+    })) ?? [];
+
   return (
     <QuoteSheetProvider productName={product.title}>
       <article className="flex flex-col gap-(--spacing-section) pb-(--spacing-section)">
         {/* ── Hero Block (DS) ─────────────────────────────────────────────── */}
-        <DevBlockOverlay name="SpecArredoHero" status="ds">
-          <SpecArredoHero
-            title={product.title}
-            breadcrumb={breadcrumb}
-            category={product.category?.title}
-            categoryHref={categoryHref}
-            description={product.body ? sanitizeHtml(product.body) : undefined}
-            // no imageSrc: field_immagine_anteprima not in REST yet (TODO Freddi)
-            // no priceEu/Usa: always null for tessuto (TODO clarify with Freddi)
-          />
-        </DevBlockOverlay>
+        {variants.length > 0 ? (
+          <DevBlockOverlay name="SpecTextileHero" status="ds">
+            <SpecTextileHero
+              title={product.title}
+              breadcrumb={breadcrumb}
+              category={product.category?.title}
+              categoryHref={categoryHref}
+              description={product.body ? sanitizeHtml(product.body) : undefined}
+              variants={variants}
+            />
+          </DevBlockOverlay>
+        ) : (
+          <DevBlockOverlay name="SpecArredoHero" status="ds">
+            <SpecArredoHero
+              title={product.title}
+              breadcrumb={breadcrumb}
+              category={product.category?.title}
+              categoryHref={categoryHref}
+              description={product.body ? sanitizeHtml(product.body) : undefined}
+              // no imageSrc: tessuti senza varianti non hanno hero image (TODO Freddi)
+              // no priceEu/Usa: always null for tessuto
+            />
+          </DevBlockOverlay>
+        )}
 
         {/* ── Gallery Intro (DS) ──────────────────────────────────────────── */}
         {galleryIntroSlides.length > 0 && (
@@ -286,55 +305,6 @@ export default async function ProdottoTessuto({
             <Section title="Prezzi (sempre null, bloccato da Freddi)">
               <Field name="priceEu" type="string|null" value={product.priceEu} />
               <Field name="priceUsa" type="string|null" value={product.priceUsa} />
-            </Section>
-
-            {/* ── Finiture (2-level) ── */}
-            <Section title="Finiture tessuto" count={product.finiture.length}>
-              {product.finiture.length === 0 ? (
-                <div className="text-xs font-mono"><Hc>NESSUNA FINITURA</Hc></div>
-              ) : (
-                <div className="flex flex-col gap-4">
-                  {product.finiture.map((cat) => (
-                    <div key={cat.tid} className="border border-border rounded p-3">
-                      <div className="text-xs font-mono mb-2">
-                        <Hc>Categoria:</Hc> {cat.name}{' '}
-                        <Hc>(tid {cat.tid})</Hc>{' '}
-                        <Hc>— {cat.children.length} varianti</Hc>
-                      </div>
-                      {cat.children.length === 0 ? (
-                        <div className="text-xs font-mono"><Hc>NESSUNA VARIANTE</Hc></div>
-                      ) : (
-                        <div className="flex flex-wrap gap-3">
-                          {cat.children.map((v) => (
-                            <div key={v.tid} className="flex flex-col gap-1 text-xs font-mono border border-border/40 rounded p-2">
-                              <div className="flex items-center gap-2">
-                                {v.colorCode && (
-                                  <span
-                                    className="size-6 rounded border border-border shrink-0"
-                                    style={{ backgroundColor: v.colorCode }}
-                                    title={v.colorCode}
-                                  />
-                                )}
-                                <span className="font-bold">{v.name}</span>
-                              </div>
-                              {v.image && (
-                                <Thumb url={v.image.url} width={v.image.width} height={v.image.height} alt={v.name} />
-                              )}
-                              <div className="text-[0.625rem] flex flex-col gap-0.5">
-                                <span><Hc>tid:</Hc> {v.tid}</span>
-                                {v.colorCode && <span><Hc>hex:</Hc> {v.colorCode}</span>}
-                                {v.colorName && <span><Hc>colore ref:</Hc> {v.colorName}</span>}
-                                {v.label && <span><Hc>etichetta:</Hc> {v.label}</span>}
-                                {v.text && <span className="truncate max-w-40"><Hc>text:</Hc> {v.text.slice(0, 50)}...</span>}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
             </Section>
 
             {/* ── JSON Dump ── */}
