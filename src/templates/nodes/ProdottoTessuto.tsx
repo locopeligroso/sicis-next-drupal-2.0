@@ -6,14 +6,14 @@
  *    (no hero image — field_immagine_anteprima not exposed by REST yet)
  *    (no price — field_prezzo_* always null for tessuto)
  *  - GenGallery intro (conditional)
- *  - SpecProductTechnicalArea: composizione HTML (conditional, card = composition)
+ *  - SpecProductTechnicalArea: cards = Composizione + Specifiche fisiche +
+ *    Manutenzione (conditional per card)
  *  - GenGallery main (conditional)
  *  - SpecProductResources: documents (conditional)
  *
  * BOTTOM SECTION (Inspector — to be migrated):
  *  Hardcoded labels highlighted fluo yellow to distinguish from API data.
- *  Remaining sections: tipologie, specifiche fisiche,
- *  finiture 2-level, manutenzione, JSON dump.
+ *  Remaining sections: tipologie, finiture 2-level, JSON dump.
  */
 import { getTranslations } from 'next-intl/server';
 import { getFilterConfig } from '@/domain/filters/registry';
@@ -21,7 +21,11 @@ import { sanitizeHtml } from '@/lib/sanitize';
 import { SpecArredoHero } from '@/components/blocks/SpecArredoHero';
 import { GenGallery, type GenGallerySlide } from '@/components/blocks/GenGallery';
 import { SpecProductResources } from '@/components/blocks/SpecProductResources';
-import { SpecProductTechnicalArea } from '@/components/blocks/SpecProductTechnicalArea';
+import {
+  SpecProductTechnicalArea,
+  type TechnicalAreaSpecsItem,
+  type TechnicalAreaMaintenanceItem,
+} from '@/components/blocks/SpecProductTechnicalArea';
 import type { DocumentCardItem } from '@/components/composed/DocumentCard';
 import { PageBreadcrumb } from '@/components/composed/PageBreadcrumb';
 import { DevBlockOverlay } from '@/components/composed/DevBlockOverlay';
@@ -171,6 +175,44 @@ export default async function ProdottoTessuto({
     href: doc.href,
   }));
 
+  // ── Physical specs key-value items (strip HTML, combine cm/inch pairs) ───
+  const stripHtml = (v: string | null) =>
+    v
+      ? v
+          .replace(/<[^>]*>/g, '')
+          .replace(/&quot;/g, '"')
+          .replace(/&nbsp;/g, ' ')
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&#39;/g, "'")
+          .trim()
+      : null;
+
+  const joinUnits = (cm: string | null, inch: string | null) => {
+    const a = stripHtml(cm);
+    const b = stripHtml(inch);
+    if (a && b) return `${a} cm · ${b}″`;
+    if (a) return `${a} cm`;
+    if (b) return `${b}″`;
+    return null;
+  };
+
+  const specsItems: TechnicalAreaSpecsItem[] = [
+    { label: t('dimensions'), value: joinUnits(product.dimensionsCm, product.dimensionsInch) },
+    { label: t('height'), value: joinUnits(product.heightCm, product.heightInch) },
+    { label: t('weight'), value: stripHtml(product.weight) },
+    { label: t('thickness'), value: stripHtml(product.thickness) },
+    { label: t('knottingDensity'), value: stripHtml(product.knottingDensity) },
+    { label: t('usage'), value: product.usage },
+  ].filter((x): x is TechnicalAreaSpecsItem => !!x.value);
+
+  // ── Maintenance items (taxonomy icons) ───────────────────────────────────
+  const maintenanceItems: TechnicalAreaMaintenanceItem[] = product.maintenance.map((m) => ({
+    name: m.name,
+    image: m.image,
+  }));
+
   return (
     <QuoteSheetProvider productName={product.title}>
       <article className="flex flex-col gap-(--spacing-section) pb-(--spacing-section)">
@@ -194,13 +236,17 @@ export default async function ProdottoTessuto({
           </DevBlockOverlay>
         )}
 
-        {/* ── Technical Area: Composizione (DS) ──────────────────────────── */}
-        {product.composition && (
+        {/* ── Technical Area (DS) — Composizione + Specs + Manutenzione ── */}
+        {(product.composition || specsItems.length > 0 || maintenanceItems.length > 0) && (
           <DevBlockOverlay name="SpecProductTechnicalArea" status="ds">
             <SpecProductTechnicalArea
               title={t('technicalArea')}
-              materialsHtml={sanitizeHtml(product.composition)}
+              materialsHtml={product.composition ? sanitizeHtml(product.composition) : undefined}
               materialsLabel={t('composition')}
+              specsItems={specsItems}
+              specsItemsLabel={t('dimensionsAndSpecs')}
+              maintenanceItems={maintenanceItems}
+              maintenanceLabel={t('maintenance')}
               finitureLinkLabel={t('viewAllFinishes')}
               finishesLabel={t('finishes')}
               resourcesLabel={t('resources')}
@@ -239,18 +285,6 @@ export default async function ProdottoTessuto({
             <Section title="Prezzi (sempre null, bloccato da Freddi)">
               <Field name="priceEu" type="string|null" value={product.priceEu} />
               <Field name="priceUsa" type="string|null" value={product.priceUsa} />
-            </Section>
-
-            {/* ── Physical specs ── */}
-            <Section title="Specifiche fisiche">
-              <Field name="dimensionsCm" type="string|null" value={product.dimensionsCm} />
-              <Field name="dimensionsInch" type="string|null" value={product.dimensionsInch} />
-              <Field name="heightCm" type="string|null" value={product.heightCm} />
-              <Field name="heightInch" type="string|null" value={product.heightInch} />
-              <Field name="weight" type="string|null" value={product.weight} />
-              <Field name="thickness" type="string|null" value={product.thickness} />
-              <Field name="knottingDensity" type="string|null" value={product.knottingDensity} />
-              <Field name="usage" type="string|null" value={product.usage} />
             </Section>
 
             {/* ── Typologies ── */}
@@ -311,29 +345,6 @@ export default async function ProdottoTessuto({
                           ))}
                         </div>
                       )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Section>
-
-            {/* ── Maintenance ── */}
-            <Section title="Indicazioni manutenzione" count={product.maintenance.length}>
-              {product.maintenance.length === 0 ? (
-                <div className="text-xs font-mono"><Hc>NESSUNA INDICAZIONE</Hc></div>
-              ) : (
-                <div className="flex flex-wrap gap-4">
-                  {product.maintenance.map((m) => (
-                    <div key={m.tid} className="flex flex-col items-center gap-1 text-xs font-mono max-w-32">
-                      {m.image ? (
-                        <Thumb url={m.image.url} width={m.image.width} height={m.image.height} alt={m.name} />
-                      ) : (
-                        <div className="size-24 bg-muted rounded border border-border flex items-center justify-center text-[0.625rem]">
-                          <Hc>NO IMG</Hc>
-                        </div>
-                      )}
-                      <span className="text-center text-[0.6875rem]">{m.name}</span>
-                      <span className="text-[0.625rem]"><Hc>tid {m.tid}</Hc></span>
                     </div>
                   ))}
                 </div>

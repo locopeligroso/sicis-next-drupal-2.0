@@ -9,6 +9,8 @@ import {
   ExternalLinkIcon,
   ArrowRightIcon,
   SettingsIcon,
+  RulerIcon,
+  SparklesIcon,
 } from 'lucide-react';
 import { Typography } from '@/components/composed/Typography';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
@@ -34,6 +36,16 @@ export interface TechnicalAreaFinituraSwatch {
   image: ResolvedImage | null;
 }
 
+export interface TechnicalAreaSpecsItem {
+  label: string;
+  value: string;
+}
+
+export interface TechnicalAreaMaintenanceItem {
+  name: string;
+  image: ResolvedImage | null;
+}
+
 export interface SpecProductTechnicalAreaProps {
   title: string;
   /** Materials HTML (must already be sanitized) */
@@ -42,6 +54,12 @@ export interface SpecProductTechnicalAreaProps {
   /** Technical specifications HTML (must already be sanitized) */
   specsHtml?: string | null;
   specsLabel?: string;
+  /** Physical specs as key-value list (dimensions, weight, thickness, etc.) */
+  specsItems?: TechnicalAreaSpecsItem[];
+  specsItemsLabel?: string;
+  /** Care instructions: icons + labels from taxonomy (tessuto maintenance) */
+  maintenanceItems?: TechnicalAreaMaintenanceItem[];
+  maintenanceLabel?: string;
   /** Up to 4 swatches shown as preview */
   finitureSwatches?: TechnicalAreaFinituraSwatch[];
   /** Pre-rendered localised count label (e.g. "57 finiture disponibili") */
@@ -76,6 +94,10 @@ export function SpecProductTechnicalArea({
   materialsLabel,
   specsHtml,
   specsLabel,
+  specsItems,
+  specsItemsLabel,
+  maintenanceItems,
+  maintenanceLabel,
   finitureSwatches,
   finitureCountLabel,
   finitureHref,
@@ -86,13 +108,20 @@ export function SpecProductTechnicalArea({
 }: SpecProductTechnicalAreaProps) {
   const hasMaterials = !!materialsHtml;
   const hasSpecs = !!specsHtml;
+  const hasSpecsItems = !!specsItems && specsItems.length > 0;
+  const hasMaintenance = !!maintenanceItems && maintenanceItems.length > 0;
   const hasFinitureData =
     !!finitureCountLabel || (!!finitureSwatches && finitureSwatches.length > 0);
   const showFiniture = !!finitureHref && hasFinitureData;
   const showResources = !!resources && resources.length > 0;
-  const cardCount = [hasMaterials, hasSpecs, showFiniture, showResources].filter(
-    Boolean,
-  ).length;
+  const cardCount = [
+    hasMaterials,
+    hasSpecs,
+    hasSpecsItems,
+    showFiniture,
+    hasMaintenance,
+    showResources,
+  ].filter(Boolean).length;
 
   if (cardCount === 0) return null;
 
@@ -108,6 +137,7 @@ export function SpecProductTechnicalArea({
             cardCount === 2 && 'grid-cols-1 md:grid-cols-2',
             cardCount === 3 && 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
             cardCount === 4 && 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4',
+            cardCount >= 5 && 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
           )}
         >
           {materialsHtml && (
@@ -116,6 +146,12 @@ export function SpecProductTechnicalArea({
           {specsHtml && (
             <SpecsCard label={specsLabel ?? 'Specifications'} html={specsHtml} />
           )}
+          {hasSpecsItems && (
+            <PhysicalSpecsCard
+              label={specsItemsLabel ?? 'Dimensions'}
+              items={specsItems}
+            />
+          )}
           {finitureHref && hasFinitureData && (
             <FinitureCard
               label={finishesLabel}
@@ -123,6 +159,12 @@ export function SpecProductTechnicalArea({
               countLabel={finitureCountLabel}
               href={finitureHref}
               linkLabel={finitureLinkLabel}
+            />
+          )}
+          {hasMaintenance && (
+            <MaintenanceCard
+              label={maintenanceLabel ?? 'Maintenance'}
+              items={maintenanceItems}
             />
           )}
           {resources && resources.length > 0 && (
@@ -178,6 +220,75 @@ function SpecsCard({ label, html }: { label: string; html: string }) {
           className="text-sm text-muted-foreground leading-relaxed text-pretty [&_p]:m-0 [&_p+p]:mt-2 [&_strong]:text-foreground [&_strong]:font-semibold"
           dangerouslySetInnerHTML={{ __html: html }}
         />
+      </CardContent>
+    </Card>
+  );
+}
+
+function PhysicalSpecsCard({
+  label,
+  items,
+}: {
+  label: string;
+  items: TechnicalAreaSpecsItem[];
+}) {
+  return (
+    <Card>
+      <CardContent className="flex flex-col gap-3">
+        <CardHead icon={RulerIcon} label={label} />
+        <dl className="flex flex-col gap-1.5 text-sm">
+          {items.map((item, i) => (
+            <div
+              key={i}
+              className="flex items-baseline justify-between gap-3 border-b border-border/40 pb-1.5 last:border-0 last:pb-0"
+            >
+              <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+                {item.label}
+              </dt>
+              <dd className="text-right font-medium text-foreground">
+                {item.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </CardContent>
+    </Card>
+  );
+}
+
+function MaintenanceCard({
+  label,
+  items,
+}: {
+  label: string;
+  items: TechnicalAreaMaintenanceItem[];
+}) {
+  return (
+    <Card>
+      <CardContent className="flex flex-col gap-3">
+        <CardHead icon={SparklesIcon} label={label} />
+        <ul className="grid grid-cols-3 gap-3">
+          {items.map((item, i) => (
+            <li key={i} className="flex flex-col items-center gap-1.5 text-center">
+              {item.image?.url ? (
+                <div className="relative size-10 shrink-0">
+                  <Image
+                    src={item.image.url}
+                    alt={item.name}
+                    fill
+                    sizes="40px"
+                    className="object-contain"
+                  />
+                </div>
+              ) : (
+                <div className="size-10 shrink-0 rounded bg-surface-2" />
+              )}
+              <span className="text-[0.6875rem] leading-tight text-muted-foreground">
+                {item.name}
+              </span>
+            </li>
+          ))}
+        </ul>
       </CardContent>
     </Card>
   );
