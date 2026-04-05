@@ -6,12 +6,13 @@
  *    (no hero image — field_immagine_anteprima not exposed by REST yet)
  *    (no price — field_prezzo_* always null for tessuto)
  *  - GenGallery intro (conditional)
+ *  - SpecProductTechnicalArea: composizione HTML (conditional, card = composition)
  *  - GenGallery main (conditional)
  *  - SpecProductResources: documents (conditional)
  *
  * BOTTOM SECTION (Inspector — to be migrated):
  *  Hardcoded labels highlighted fluo yellow to distinguish from API data.
- *  Remaining sections: tipologie, specifiche fisiche, composizione,
+ *  Remaining sections: tipologie, specifiche fisiche,
  *  finiture 2-level, manutenzione, JSON dump.
  */
 import { getTranslations } from 'next-intl/server';
@@ -20,6 +21,7 @@ import { sanitizeHtml } from '@/lib/sanitize';
 import { SpecArredoHero } from '@/components/blocks/SpecArredoHero';
 import { GenGallery, type GenGallerySlide } from '@/components/blocks/GenGallery';
 import { SpecProductResources } from '@/components/blocks/SpecProductResources';
+import { SpecProductTechnicalArea } from '@/components/blocks/SpecProductTechnicalArea';
 import type { DocumentCardItem } from '@/components/composed/DocumentCard';
 import { PageBreadcrumb } from '@/components/composed/PageBreadcrumb';
 import { DevBlockOverlay } from '@/components/composed/DevBlockOverlay';
@@ -192,6 +194,20 @@ export default async function ProdottoTessuto({
           </DevBlockOverlay>
         )}
 
+        {/* ── Technical Area: Composizione (DS) ──────────────────────────── */}
+        {product.composition && (
+          <DevBlockOverlay name="SpecProductTechnicalArea" status="ds">
+            <SpecProductTechnicalArea
+              title={t('technicalArea')}
+              materialsHtml={sanitizeHtml(product.composition)}
+              materialsLabel={t('composition')}
+              finitureLinkLabel={t('viewAllFinishes')}
+              finishesLabel={t('finishes')}
+              resourcesLabel={t('resources')}
+            />
+          </DevBlockOverlay>
+        )}
+
         {/* ── Gallery Main (DS) ───────────────────────────────────────────── */}
         {galleryMainSlides.length > 0 && (
           <DevBlockOverlay name="GenGallery" status="ds">
@@ -250,11 +266,6 @@ export default async function ProdottoTessuto({
                   ))}
                 </ul>
               )}
-            </Section>
-
-            {/* ── Composition HTML ── */}
-            <Section title="Composizione">
-              <Html name="composition (field_composizione)" html={product.composition} />
             </Section>
 
             {/* ── Finiture (2-level) ── */}
