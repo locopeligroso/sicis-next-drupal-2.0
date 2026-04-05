@@ -118,81 +118,36 @@ export function SpecTextileHero({
             {categoryLabel}
           </div>
 
-          {/* Left: Swatches + Carousel */}
-          <div className="flex flex-col gap-(--spacing-element)">
-            {/* Swatches row (only if >1 variant) */}
-            {variants.length > 1 && (
-              <ul className="flex flex-wrap gap-2">
-                {variants.map((v, i) => (
-                  <li key={i}>
-                    <Tooltip>
-                      <TooltipTrigger
-                        render={
-                          <button
-                            type="button"
-                            onClick={() => api?.scrollTo(i)}
-                            aria-label={v.name}
-                            aria-current={i === current ? 'true' : undefined}
-                            className={cn(
-                              'size-8 shrink-0 rounded-md ring-2 ring-offset-2 ring-offset-background transition-all focus-visible:outline-none',
-                              i === current
-                                ? 'ring-primary'
-                                : 'ring-border/50 opacity-60 hover:opacity-100 focus-visible:ring-primary focus-visible:opacity-100',
-                            )}
-                            style={{
-                              backgroundColor: v.colorCode ?? 'var(--color-surface-2)',
-                            }}
-                          />
-                        }
+          {/* Left: Carousel only (image per variant, dynamic aspect-ratio) */}
+          <Carousel
+            setApi={setApi}
+            opts={{ loop: variants.length > 1 }}
+            className="w-full"
+          >
+            <CarouselContent>
+              {variants.map((v, i) => (
+                <CarouselItem key={i}>
+                  <div
+                    className="relative w-full overflow-hidden rounded-xl bg-surface-2"
+                    style={aspectStyle}
+                  >
+                    {v.image?.url && (
+                      <Image
+                        src={v.image.url}
+                        alt={v.name}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 50vw"
+                        className="object-cover"
+                        priority={i === 0}
                       />
-                      <TooltipContent>
-                        <div className="flex flex-col gap-0.5">
-                          <span className="font-semibold">{v.name}</span>
-                          {v.composition && (
-                            <span
-                              className="text-xs opacity-80 [&_p]:m-0"
-                              dangerouslySetInnerHTML={{ __html: v.composition }}
-                            />
-                          )}
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  </li>
-                ))}
-              </ul>
-            )}
+                    )}
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+          </Carousel>
 
-            {/* Carousel */}
-            <Carousel
-              setApi={setApi}
-              opts={{ loop: variants.length > 1 }}
-              className="w-full"
-            >
-              <CarouselContent>
-                {variants.map((v, i) => (
-                  <CarouselItem key={i}>
-                    <div
-                      className="relative w-full overflow-hidden rounded-xl bg-surface-2"
-                      style={aspectStyle}
-                    >
-                      {v.image?.url && (
-                        <Image
-                          src={v.image.url}
-                          alt={v.name}
-                          fill
-                          sizes="(max-width: 768px) 100vw, 50vw"
-                          className="object-cover"
-                          priority={i === 0}
-                        />
-                      )}
-                    </div>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-            </Carousel>
-          </div>
-
-          {/* Right: Content */}
+          {/* Right: Content (incl. variant name + swatches) */}
           <div className="flex flex-col gap-(--spacing-element)">
             {/* Title + Category — shown on md+ */}
             <div className="hidden md:flex flex-col gap-1">
@@ -200,16 +155,55 @@ export function SpecTextileHero({
               {categoryLabel}
             </div>
 
-            {/* Current variant label (dynamic, aria-live for SR) */}
-            {currentVariant && variants.length > 1 && (
-              <Typography
-                textRole="subtitle-2"
-                className="text-foreground"
-                // aria-live announces variant change to screen readers
-                {...{ 'aria-live': 'polite' }}
-              >
-                {currentVariant.name}
-              </Typography>
+            {/* Variant picker: current name + swatches (only if >1 variant) */}
+            {variants.length > 1 && currentVariant && (
+              <div className="flex flex-col gap-2">
+                <Typography
+                  textRole="subtitle-2"
+                  className="text-foreground"
+                  {...{ 'aria-live': 'polite' }}
+                >
+                  {currentVariant.name}
+                </Typography>
+                <ul className="flex flex-wrap gap-2">
+                  {variants.map((v, i) => (
+                    <li key={i}>
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <button
+                              type="button"
+                              onClick={() => api?.scrollTo(i)}
+                              aria-label={v.name}
+                              aria-current={i === current ? 'true' : undefined}
+                              className={cn(
+                                'size-8 shrink-0 rounded-md ring-2 ring-offset-2 ring-offset-background transition-all focus-visible:outline-none',
+                                i === current
+                                  ? 'ring-primary'
+                                  : 'ring-border/50 opacity-60 hover:opacity-100 focus-visible:ring-primary focus-visible:opacity-100',
+                              )}
+                              style={{
+                                backgroundColor: v.colorCode ?? 'var(--color-surface-2)',
+                              }}
+                            />
+                          }
+                        />
+                        <TooltipContent>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="font-semibold">{v.name}</span>
+                            {v.composition && (
+                              <span
+                                className="text-xs opacity-80 [&_p]:m-0"
+                                dangerouslySetInnerHTML={{ __html: v.composition }}
+                              />
+                            )}
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
 
             {/* Description */}
