@@ -267,25 +267,30 @@ function MaintenanceCard({
     <Card>
       <CardContent className="flex flex-col gap-3">
         <CardHead icon={SparklesIcon} label={label} />
-        <ul className="grid grid-cols-3 gap-3">
+        <ul className="flex flex-wrap gap-2">
           {items.map((item, i) => (
-            <li key={i} className="flex flex-col items-center gap-1.5 text-center">
-              {item.image?.url ? (
-                <div className="relative size-10 shrink-0">
-                  <Image
-                    src={item.image.url}
-                    alt={item.name}
-                    fill
-                    sizes="40px"
-                    className="object-contain"
-                  />
-                </div>
-              ) : (
-                <div className="size-10 shrink-0 rounded bg-surface-2" />
-              )}
-              <span className="text-[0.6875rem] leading-tight text-muted-foreground">
-                {item.name}
-              </span>
+            <li key={i}>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <div
+                      tabIndex={0}
+                      className="relative size-12 shrink-0 rounded-md bg-surface-2 ring-1 ring-border/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+                    />
+                  }
+                >
+                  {item.image?.url && (
+                    <Image
+                      src={item.image.url}
+                      alt={item.name}
+                      fill
+                      sizes="48px"
+                      className="object-contain p-1.5"
+                    />
+                  )}
+                </TooltipTrigger>
+                <TooltipContent>{item.name}</TooltipContent>
+              </Tooltip>
             </li>
           ))}
         </ul>
