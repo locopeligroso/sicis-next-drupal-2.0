@@ -21,22 +21,27 @@
 > - **Siblings dropdown styling** (PageBreadcrumb): verificare UX quando la categoria parent ha molti siblings.
 > - **Migrazione slot pattern** ai template ancora legacy (vetrite, tessuto, pixall, showroom, entity fallback) — vedi punti sopra.
 >
-> **📋 Altro lavoro**: (1) Collegare i 6 Gen block rimanenti a ParagraphResolver (GenCorrelati, GenNewsletter, GenFormBlog, GenSliderHome, GenAnni, GenTutorial). (2) Template prodotto **vetrite**, **tessuto**, **pixall** usano ancora rendering legacy — migrarli ai blocchi DS come mosaico/arredo/illuminazione. (3) Ambiente, Progetto, Articolo, News, Tutorial, Showroom, Documento, Categoria, CategoriaBlog, Tag sono tutti legacy.
+> **📋 Altro lavoro**: (1) Collegare i 6 Gen block rimanenti a ParagraphResolver (GenCorrelati, GenNewsletter, GenFormBlog, GenSliderHome, GenAnni, GenTutorial). (2) Template prodotto **vetrite** e **pixall** usano ancora rendering legacy — migrarli ai blocchi DS come mosaico/arredo/illuminazione/tessuto. (3) Ambiente, Progetto, Articolo, News, Tutorial, Showroom, Documento, Categoria, CategoriaBlog, Tag sono tutti legacy.
 >
 > **🗺️ Stato ProdottoArredo** (2026-04-05, 322 righe): 100% DS. Hero (`SpecArredoHero` + breadcrumb slot), Gallery Intro + Gallery (`GenGallery` x2), TechnicalArea (`SpecProductTechnicalArea` — Materiali/Finiture/Risorse), Documenti (`SpecProductResources`), Paragraph blocks. Zero legacy remaining, zero CSS modules, zero inline styles. **Data flow**: `page.tsx:783` → `fetchArredoProduct` → `arredoToLegacyNode` → `ProdottoArredo(node, slug)`.
 >
-> **🗺️ Stato ProdottoIlluminazione** (2026-04-05, 248 righe): 100% DS. Clone ridotto di ProdottoArredo. Hero (`SpecArredoHero` + breadcrumb slot, prezzo €/$), Gallery Intro + Gallery (`GenGallery` x2), TechnicalArea (`SpecProductTechnicalArea` — Materiali + **Specifiche tecniche** + Risorse — no Finiture), Documenti (`SpecProductResources`), ParagraphResolver forward-compat. Rispetto ad Arredo aggiunge card Specs (`SpecProductTechnicalArea` prop `specsHtml` + i18n `technicalSpecs`), rimuove logica `field_finiture_arredo` (endpoint illuminazione non espone finiture). **Data flow**: `page.tsx:789` → `fetchIlluminazioneProduct` → `illuminazioneToLegacyNode` → `ProdottoIlluminazione(node, slug)`. Verificato live su Ballet Chandelier (con tutti i dati) + Amalasonte (graceful degradation senza prezzo/gallery).
+> **🗺️ Stato ProdottoIlluminazione** (2026-04-05, 248 righe): 100% DS. Clone ridotto di ProdottoArredo. Hero (`SpecArredoHero` + breadcrumb slot, prezzo €/$), Gallery Intro + Gallery (`GenGallery` x2), TechnicalArea (`SpecProductTechnicalArea` — Materiali + **Specifiche tecniche** + Risorse — no Finiture), Documenti (`SpecProductResources`), ParagraphResolver forward-compat. **Data flow**: `page.tsx:789` → `fetchIlluminazioneProduct` → `illuminazioneToLegacyNode` → `ProdottoIlluminazione(node, slug)`.
 >
-> **📋 TODO — ProdottoTessuto DS migration (bloccato, serve Freddi)**: analisi completata 2026-04-05 su 150 prodotti. Endpoint `/textile-product/{nid}` espone 21 campi, ma **mancano conferme da Freddi** prima di procedere:
-> - **🚨 `field_immagine_anteprima` assente dal REST**: presente in Drupal (verificato via JSON:API su Chardin), è il vero hero image del tessuto. Senza, il template DS deve fallback a `galleryIntro[0]`. → **chiedere a Freddi di esporla**
-> - **🚨 Prezzi sempre null** (0/150 EU, 0/150 USA): capire se è volontà business (tessuto non a catalogo con prezzo) o dato non ancora popolato. Template deve comunque gestire null graceful.
-> - **`field_finiture_tessuto` è 2-level** (Categoria → Varianti colore direttamente), diverso da arredo (3-level). Ogni variante ha: name, hex, field_immagine, reference taxonomy colore. Normalizer dedicato necessario (no reuse da arredo).
-> - **13 campi tessuto-specifici** non presenti in arredo/illuminazione: composizione, dimensioni cm/inch, altezza cm/inch, peso, spessore, densità annodatura, utilizzo, tipologia tessuto, indicazioni manutenzione (con icone), field_categoria (100% popolato, 5 categorie: Tessuti/Tappeti/Cuscini/Arazzi/Coperte).
-> - **8 campi arredo/illuminazione mancanti** in tessuto: no `field_immagine` (schema diverso!), no `field_materiali`, no `field_specifiche_tecniche`, no `field_scheda_tecnica`, no `field_path_file_ftp`, no `field_collegamento_esterno`, no `field_no_form_scheda_tecnica`, no `field_path_file_ftp_img_hd`.
-> - **`field_colori` (JSON:API)**: è ridondante rispetto a `field_finiture_tessuto.children[].field_colore` (stessi taxonomy terms) — **NON serve** esporre separatamente nel REST.
-> - **Frontend già pronto**: `textile-product.ts` fetcher legge tutti i 21 campi REST. `textileToLegacyNode` adapter funziona. Manca solo il template DS.
-> - **Block DS riusabili**: `SpecArredoHero`, `GenGallery`, `SpecProductResources`, ParagraphResolver. Da creare: block/card per Dimensioni+Peso+Spessore+Densità, Composizione (riuso card Materiali), Manutenzione (nuovo block con icone), Finiture 2-level (variante SpecProductTechnicalArea o block dedicato).
-> - **Report analisi completo**: generato da 4 agenti paralleli su 150 prodotti — salvato nella conversazione 2026-04-05.
+> **🗺️ Stato ProdottoTessuto** (2026-04-06, 221 righe): 100% DS. Bypass legacy adapter — riceve `TextileProduct` normalizzato direttamente. Hero condizionale: `SpecTextileHero` (carousel variant picker + swatch tooltips, 81/150 prodotti con finiture: Tessuti+Arazzi) / `SpecArredoHero` fallback (Tappeti/Cuscini/Coperte senza varianti). Gallery Intro + Gallery (`GenGallery` x2). `SpecProductTechnicalArea` con 3 card: Composizione (smart label/value parsing per pattern `KEY: value` in HTML), Specifiche fisiche (key-value list: dimensioni cm/inch, altezza, peso, spessore, densità annodatura, utilizzo), Manutenzione (tooltip icons from taxonomy). Documenti (`SpecProductResources`). **Data flow**: `page.tsx:748` → `fetchTextileProduct` → `ProdottoTessuto({ product, slug, locale })`.
+>
+> **📋 TODO — Tessuto pending Freddi**:
+> - **🚨 `field_immagine_anteprima`** assente dal REST custom: hero image del tessuto, presente in Drupal. Senza, prodotti senza finiture (69/150) non hanno hero image. Chiedere a Freddi.
+> - **Prezzi sempre null** (0/150): chiarire se volontà business o dato mancante.
+> - **`field_blocchi`** non esposto dal REST: ParagraphResolver non incluso in template, da aggiungere quando Freddi estende l'endpoint.
+>
+> **📋 Prossimi passi attesi**:
+> - **Product templates legacy**: ProdottoVetrite → ProdottoPixall. Stessa metodologia: analisi endpoint REST, verifica dati su tutti i prodotti, migrazione block-by-block con DS esistenti + eventuale nuovo block dedicato.
+> - **Tech debt block names**: rinominare `SpecArredoHero` → `SpecCatalogProductHero` (usato genericamente da arredo/illuminazione/tessuto fallback).
+> - **SpecProductTechnicalArea consolidamento**: ora supporta 6 card (Materials, SpecsHTML, SpecsList, Finiture swatches, Maintenance icons, Resources). Block generico e riutilizzabile per tutti i template prodotto catalog family.
+> - **6 Gen blocks rimanenti** per ParagraphResolver: GenCorrelati → GenNewsletter → GenFormBlog → GenSliderHome → GenAnni → GenTutorial.
+> - **Breadcrumb fine-tuning**: vedi TODO dedicato sopra (inline prop, vertical spacing, entity fallback path).
+> - **Footer migration** to design system.
+> - **Template editoriali legacy**: Articolo, News, Tutorial, Progetto, Ambiente, Showroom, Documento, Categoria, CategoriaBlog, Tag.
 
 ## Project Overview
 
@@ -78,7 +83,7 @@ Next 16.1.7 | React 19.2.4 | Tailwind 4.2.2 | next-intl | nuqs | embla-carousel
 > Full details in [`docs/TEMPLATES_MIGRATION.md`](docs/TEMPLATES_MIGRATION.md)
 
 - **DS complete:** ProdottoMosaico (5 Spec\* blocks), ProductListingTemplate, ProductsMasterPage.
-- **DS complete:** ProdottoMosaico, ProdottoArredo, ProdottoIlluminazione, ProductListingTemplate, ProductsMasterPage. **Legacy:** ProdottoVetrite, Tessuto, Pixall + all editorial templates (DrupalImage + product.module.css).
+- **DS complete:** ProdottoMosaico, ProdottoArredo, ProdottoIlluminazione, ProdottoTessuto, ProductListingTemplate, ProductsMasterPage. **Legacy:** ProdottoVetrite, ProdottoPixall + all editorial templates (DrupalImage + product.module.css).
 - **All templates receive** `node: Record<string, unknown>`, cast to typed interfaces from `src/types/drupal/entities.ts`.
 - **Taxonomy templates:** 4 specialized (Mosaico/Vetrite Collezione/Colore) + 1 generic fallback (TaxonomyTerm wireframe).
 
@@ -228,10 +233,10 @@ Project changelog is maintained in `CHANGELOG.md` at the repo root, organized by
 
 | Status      | Templates                                                                                                                                                             |
 | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| DS complete | ProdottoMosaico (5 Spec blocks), ProdottoArredo, ProdottoIlluminazione, ProductListingTemplate (filters + grid), ProductsMasterPage                                   |
+| DS complete | ProdottoMosaico (5 Spec blocks), ProdottoArredo, ProdottoIlluminazione, ProdottoTessuto (SpecTextileHero), ProductListingTemplate (filters + grid), ProductsMasterPage |
 | Minimal DS  | Page, LandingPage (ParagraphResolver only)                                                                                                                            |
 | Hybrid      | VetriteCollezione (legacy listing + Tailwind documents)                                                                                                               |
-| Legacy      | ProdottoVetrite, ProdottoTessuto, ProdottoPixall, Articolo, News, Tutorial, Showroom, Documento, Ambiente, Progetto, Categoria                                        |
+| Legacy      | ProdottoVetrite, ProdottoPixall, Articolo, News, Tutorial, Showroom, Documento, Ambiente, Progetto, Categoria                                                         |
 
 ### Component Coverage
 
@@ -261,7 +266,7 @@ Project changelog is maintained in `CHANGELOG.md` at the repo root, organized by
 
 ### Backlog
 
-- Product template DS migration: ProdottoVetrite → ProdottoTessuto → ProdottoPixall (ProdottoArredo + ProdottoIlluminazione ✓ done 2026-04-05)
+- Product template DS migration: ProdottoVetrite → ProdottoPixall (ProdottoArredo + ProdottoIlluminazione ✓ 2026-04-05, ProdottoTessuto ✓ 2026-04-06)
 - Footer migration to design system
 - Contact form (Dialog/Sheet for CTA actions)
 - Alternative products carousel

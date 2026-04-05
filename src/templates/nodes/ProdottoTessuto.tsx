@@ -1,20 +1,26 @@
 /**
- * ProdottoTessuto — HYBRID DS + INSPECTOR (DS migration in progress)
+ * ProdottoTessuto — DS template (100% migrated 2026-04-06)
  *
- * TOP SECTION (DS blocks — migrated):
- *  - Hero: SpecTextileHero (variant picker carousel + swatches) if variants
- *    are present (Tessuti + Arazzi = 81/150), else SpecArredoHero fallback
- *    (no hero image — field_immagine_anteprima not exposed by REST yet)
- *  - GenGallery intro (conditional)
- *  - SpecProductTechnicalArea: cards = Composizione + Specifiche fisiche +
- *    Manutenzione (conditional per card)
- *  - GenGallery main (conditional)
+ * DS blocks:
+ *  - Hero: SpecTextileHero (variant picker carousel + swatches) when variants
+ *    present (Tessuti 69 + Arazzi 12 = 81/150), else SpecArredoHero fallback
+ *    (Tappeti/Cuscini/Coperte: no hero image until Freddi exposes
+ *    field_immagine_anteprima in REST)
+ *  - GenGallery intro + main (conditional)
+ *  - SpecProductTechnicalArea: cards = Composizione (auto-detects label/value
+ *    pattern in HTML) + Specifiche fisiche (key-value list) + Manutenzione
+ *    (tooltip icons)
  *  - SpecProductResources: documents (conditional)
  *
- * BOTTOM SECTION (Inspector — debug only):
- *  Hardcoded labels highlighted fluo yellow to distinguish from API data.
- *  Debug sections: NID/category/prices (always-null) + JSON dump.
- *  Note: field_tipologia_tessuto is filter-only (listing), not shown in detail.
+ * Notes:
+ *  - field_tipologia_tessuto is filter-only (listing), not shown in detail
+ *  - field_prezzo_eu/usa always null for tessuto (not rendered)
+ *  - field_immagine_anteprima not in REST (TODO Freddi)
+ *  - ParagraphResolver not included (field_blocchi not in REST endpoint yet,
+ *    will be added when Freddi enriches the endpoint)
+ *
+ * Data flow: page.tsx → fetchTextileProduct → TextileProduct (normalized)
+ *   → ProdottoTessuto({ product, slug, locale }) (no legacy adapter)
  */
 import { getTranslations } from 'next-intl/server';
 import { getFilterConfig } from '@/domain/filters/registry';
@@ -36,82 +42,6 @@ import { PageBreadcrumb } from '@/components/composed/PageBreadcrumb';
 import { DevBlockOverlay } from '@/components/composed/DevBlockOverlay';
 import { QuoteSheetProvider } from '@/components/composed/QuoteSheetProvider';
 import type { TextileProduct } from '@/lib/api/textile-product';
-
-// ── Inspector helpers ────────────────────────────────────────────────────────
-
-/** Hardcoded label highlight — fluorescent yellow to distinguish from API data */
-function Hc({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="bg-yellow-300 text-black px-0.5 rounded-sm">{children}</span>
-  );
-}
-
-function isEmpty(v: unknown): boolean {
-  if (v === null || v === undefined || v === '') return true;
-  if (Array.isArray(v) && v.length === 0) return true;
-  return false;
-}
-
-function Field({
-  name,
-  value,
-  type,
-}: {
-  name: string;
-  value: unknown;
-  type?: string;
-}) {
-  const empty = isEmpty(value);
-  return (
-    <div className="py-2 border-b border-border/40">
-      <div className="flex items-baseline gap-3 text-xs font-mono">
-        <Hc>{name}</Hc>
-        {type && <Hc>[{type}]</Hc>}
-        {empty && <span className="text-[0.6875rem] ml-auto"><Hc>NULL / EMPTY</Hc></span>}
-      </div>
-      {!empty && (
-        <div className="mt-1 text-sm font-mono text-foreground break-words">
-          {typeof value === 'string' || typeof value === 'number'
-            ? String(value)
-            : <pre className="text-xs whitespace-pre-wrap bg-muted/30 p-2 rounded">{JSON.stringify(value, null, 2)}</pre>}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function Html({ name, html }: { name: string; html: string | null }) {
-  const empty = isEmpty(html);
-  return (
-    <div className="py-2 border-b border-border/40">
-      <div className="flex items-baseline gap-3 text-xs font-mono">
-        <Hc>{name}</Hc>
-        <Hc>[html]</Hc>
-        {empty && <span className="text-[0.6875rem] ml-auto"><Hc>NULL / EMPTY</Hc></span>}
-      </div>
-      {!empty && html && (
-        <>
-          <pre className="mt-1 text-xs font-mono text-muted-foreground whitespace-pre-wrap bg-muted/30 p-2 rounded max-h-32 overflow-auto">{html}</pre>
-          <div className="mt-2 text-sm [&_p]:m-0 [&_p+p]:mt-2" dangerouslySetInnerHTML={{ __html: html }} />
-        </>
-      )}
-    </div>
-  );
-}
-
-function Section({ title, count, children }: { title: string; count?: number | string; children: React.ReactNode }) {
-  return (
-    <section className="flex flex-col gap-2 py-4 border-t-2 border-border">
-      <h2 className="text-sm font-mono font-bold uppercase tracking-wider flex items-center gap-2">
-        <Hc>{title}</Hc>
-        {count !== undefined && (
-          <span className="text-xs font-normal"><Hc>({count})</Hc></span>
-        )}
-      </h2>
-      {children}
-    </section>
-  );
-}
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -243,8 +173,6 @@ export default async function ProdottoTessuto({
               category={product.category?.title}
               categoryHref={categoryHref}
               description={product.body ? sanitizeHtml(product.body) : undefined}
-              // no imageSrc: tessuti senza varianti non hanno hero image (TODO Freddi)
-              // no priceEu/Usa: always null for tessuto
             />
           </DevBlockOverlay>
         )}
@@ -287,39 +215,6 @@ export default async function ProdottoTessuto({
             <SpecProductResources title={t('exploreCatalogs')} documents={documentItems} />
           </DevBlockOverlay>
         )}
-
-        {/* ── 🚧 INSPECTOR MODE — remaining sections to be migrated ───────── */}
-        <section className="max-w-main mx-auto w-full px-(--spacing-page) flex flex-col gap-2">
-          <div className="border-2 border-dashed border-yellow-500 rounded p-4 bg-yellow-500/5">
-            <div className="text-sm font-mono font-bold uppercase tracking-wider mb-4">
-              <Hc>🚧 TO BE MIGRATED — Inspector mode</Hc>
-            </div>
-
-            {/* ── Identità debug ── */}
-            <Section title="Identità (debug)">
-              <Field name="nid" type="number" value={product.nid} />
-              <Field name="category" type="object" value={product.category} />
-            </Section>
-
-            {/* ── Prezzi (always null) ── */}
-            <Section title="Prezzi (sempre null, bloccato da Freddi)">
-              <Field name="priceEu" type="string|null" value={product.priceEu} />
-              <Field name="priceUsa" type="string|null" value={product.priceUsa} />
-            </Section>
-
-            {/* ── JSON Dump ── */}
-            <Section title="JSON completo (TextileProduct normalizzato)">
-              <details>
-                <summary className="text-xs font-mono cursor-pointer">
-                  <Hc>Espandi</Hc>
-                </summary>
-                <pre className="mt-2 text-[0.6875rem] font-mono bg-muted/30 p-3 rounded max-h-96 overflow-auto">
-                  {JSON.stringify(product, null, 2)}
-                </pre>
-              </details>
-            </Section>
-          </div>
-        </section>
       </article>
     </QuoteSheetProvider>
   );
