@@ -13,7 +13,8 @@
  *
  * BOTTOM SECTION (Inspector — to be migrated):
  *  Hardcoded labels highlighted fluo yellow to distinguish from API data.
- *  Remaining sections: tipologie, finiture 2-level, JSON dump.
+ *  Remaining sections: finiture 2-level, JSON dump (+ debug NID/category/prices).
+ *  Note: field_tipologia_tessuto is filter-only (listing), not shown in detail.
  */
 import { getTranslations } from 'next-intl/server';
 import { getFilterConfig } from '@/domain/filters/registry';
@@ -285,21 +286,6 @@ export default async function ProdottoTessuto({
             <Section title="Prezzi (sempre null, bloccato da Freddi)">
               <Field name="priceEu" type="string|null" value={product.priceEu} />
               <Field name="priceUsa" type="string|null" value={product.priceUsa} />
-            </Section>
-
-            {/* ── Typologies ── */}
-            <Section title="Tipologie" count={product.typologies.length}>
-              {product.typologies.length === 0 ? (
-                <div className="text-xs font-mono"><Hc>NESSUNA TIPOLOGIA</Hc></div>
-              ) : (
-                <ul className="flex flex-wrap gap-2">
-                  {product.typologies.map((typ) => (
-                    <li key={typ.tid} className="text-xs font-mono bg-muted px-2 py-1 rounded">
-                      <Hc>tid {typ.tid}:</Hc> {typ.name}
-                    </li>
-                  ))}
-                </ul>
-              )}
             </Section>
 
             {/* ── Finiture (2-level) ── */}
