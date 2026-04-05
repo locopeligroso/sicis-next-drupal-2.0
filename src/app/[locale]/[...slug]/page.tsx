@@ -27,7 +27,6 @@ import { fetchArredoProduct } from '@/lib/api/arredo-product';
 import type { ArredoProduct } from '@/lib/api/arredo-product';
 import {
   vetriteToLegacyNode,
-  textileToLegacyNode,
   pixallToLegacyNode,
   illuminazioneToLegacyNode,
   arredoToLegacyNode,
@@ -213,7 +212,6 @@ const COMPONENT_MAP: Record<
   ProdottoArredo,
   ProdottoIlluminazione,
   ProdottoPixall,
-  ProdottoTessuto,
   ProdottoVetrite,
   Articolo,
   News,
@@ -748,7 +746,8 @@ export default async function SlugPage({
       if (resolved.bundle === 'prodotto_tessuto') {
         const product = await fetchTextileProduct(resolved.nid, locale);
         if (product) {
-          const legacyNode = textileToLegacyNode(product, locale);
+          // Inspector mode: template receives normalized TextileProduct directly
+          // (no adapter), prints all API fields as a data dump for DS migration prep
           return (
             <>
               <PageBreadcrumb
@@ -756,7 +755,7 @@ export default async function SlugPage({
                 locale={locale}
                 lastLabel={product.title}
               />
-              <ProdottoTessuto node={legacyNode} />
+              <ProdottoTessuto product={product} slug={slug} locale={locale} />
             </>
           );
         }
