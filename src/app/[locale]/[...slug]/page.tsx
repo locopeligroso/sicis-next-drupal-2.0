@@ -746,18 +746,9 @@ export default async function SlugPage({
       if (resolved.bundle === 'prodotto_tessuto') {
         const product = await fetchTextileProduct(resolved.nid, locale);
         if (product) {
-          // Inspector mode: template receives normalized TextileProduct directly
-          // (no adapter), prints all API fields as a data dump for DS migration prep
-          return (
-            <>
-              <PageBreadcrumb
-                slug={slug}
-                locale={locale}
-                lastLabel={product.title}
-              />
-              <ProdottoTessuto product={product} slug={slug} locale={locale} />
-            </>
-          );
+          // Hybrid DS + inspector: template owns breadcrumb via hero slot,
+          // migrates block-by-block from inspector dump to DS blocks
+          return <ProdottoTessuto product={product} slug={slug} locale={locale} />;
         }
       }
       if (resolved.bundle === 'prodotto_pixall') {
