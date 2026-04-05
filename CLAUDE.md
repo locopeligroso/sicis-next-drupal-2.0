@@ -26,6 +26,17 @@
 > **🗺️ Stato ProdottoArredo** (2026-04-05, 322 righe): 100% DS. Hero (`SpecArredoHero` + breadcrumb slot), Gallery Intro + Gallery (`GenGallery` x2), TechnicalArea (`SpecProductTechnicalArea` — Materiali/Finiture/Risorse), Documenti (`SpecProductResources`), Paragraph blocks. Zero legacy remaining, zero CSS modules, zero inline styles. **Data flow**: `page.tsx:783` → `fetchArredoProduct` → `arredoToLegacyNode` → `ProdottoArredo(node, slug)`.
 >
 > **🗺️ Stato ProdottoIlluminazione** (2026-04-05, 248 righe): 100% DS. Clone ridotto di ProdottoArredo. Hero (`SpecArredoHero` + breadcrumb slot, prezzo €/$), Gallery Intro + Gallery (`GenGallery` x2), TechnicalArea (`SpecProductTechnicalArea` — Materiali + **Specifiche tecniche** + Risorse — no Finiture), Documenti (`SpecProductResources`), ParagraphResolver forward-compat. Rispetto ad Arredo aggiunge card Specs (`SpecProductTechnicalArea` prop `specsHtml` + i18n `technicalSpecs`), rimuove logica `field_finiture_arredo` (endpoint illuminazione non espone finiture). **Data flow**: `page.tsx:789` → `fetchIlluminazioneProduct` → `illuminazioneToLegacyNode` → `ProdottoIlluminazione(node, slug)`. Verificato live su Ballet Chandelier (con tutti i dati) + Amalasonte (graceful degradation senza prezzo/gallery).
+>
+> **📋 TODO — ProdottoTessuto DS migration (bloccato, serve Freddi)**: analisi completata 2026-04-05 su 150 prodotti. Endpoint `/textile-product/{nid}` espone 21 campi, ma **mancano conferme da Freddi** prima di procedere:
+> - **🚨 `field_immagine_anteprima` assente dal REST**: presente in Drupal (verificato via JSON:API su Chardin), è il vero hero image del tessuto. Senza, il template DS deve fallback a `galleryIntro[0]`. → **chiedere a Freddi di esporla**
+> - **🚨 Prezzi sempre null** (0/150 EU, 0/150 USA): capire se è volontà business (tessuto non a catalogo con prezzo) o dato non ancora popolato. Template deve comunque gestire null graceful.
+> - **`field_finiture_tessuto` è 2-level** (Categoria → Varianti colore direttamente), diverso da arredo (3-level). Ogni variante ha: name, hex, field_immagine, reference taxonomy colore. Normalizer dedicato necessario (no reuse da arredo).
+> - **13 campi tessuto-specifici** non presenti in arredo/illuminazione: composizione, dimensioni cm/inch, altezza cm/inch, peso, spessore, densità annodatura, utilizzo, tipologia tessuto, indicazioni manutenzione (con icone), field_categoria (100% popolato, 5 categorie: Tessuti/Tappeti/Cuscini/Arazzi/Coperte).
+> - **8 campi arredo/illuminazione mancanti** in tessuto: no `field_immagine` (schema diverso!), no `field_materiali`, no `field_specifiche_tecniche`, no `field_scheda_tecnica`, no `field_path_file_ftp`, no `field_collegamento_esterno`, no `field_no_form_scheda_tecnica`, no `field_path_file_ftp_img_hd`.
+> - **`field_colori` (JSON:API)**: è ridondante rispetto a `field_finiture_tessuto.children[].field_colore` (stessi taxonomy terms) — **NON serve** esporre separatamente nel REST.
+> - **Frontend già pronto**: `textile-product.ts` fetcher legge tutti i 21 campi REST. `textileToLegacyNode` adapter funziona. Manca solo il template DS.
+> - **Block DS riusabili**: `SpecArredoHero`, `GenGallery`, `SpecProductResources`, ParagraphResolver. Da creare: block/card per Dimensioni+Peso+Spessore+Densità, Composizione (riuso card Materiali), Manutenzione (nuovo block con icone), Finiture 2-level (variante SpecProductTechnicalArea o block dedicato).
+> - **Report analisi completo**: generato da 4 agenti paralleli su 150 prodotti — salvato nella conversazione 2026-04-05.
 
 ## Project Overview
 
