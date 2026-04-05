@@ -8,6 +8,7 @@ import {
   BoxIcon,
   ExternalLinkIcon,
   ArrowRightIcon,
+  SettingsIcon,
 } from 'lucide-react';
 import { Typography } from '@/components/composed/Typography';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
@@ -38,6 +39,9 @@ export interface SpecProductTechnicalAreaProps {
   /** Materials HTML (must already be sanitized) */
   materialsHtml?: string | null;
   materialsLabel: string;
+  /** Technical specifications HTML (must already be sanitized) */
+  specsHtml?: string | null;
+  specsLabel?: string;
   /** Up to 4 swatches shown as preview */
   finitureSwatches?: TechnicalAreaFinituraSwatch[];
   /** Pre-rendered localised count label (e.g. "57 finiture disponibili") */
@@ -70,6 +74,8 @@ export function SpecProductTechnicalArea({
   title,
   materialsHtml,
   materialsLabel,
+  specsHtml,
+  specsLabel,
   finitureSwatches,
   finitureCountLabel,
   finitureHref,
@@ -79,11 +85,14 @@ export function SpecProductTechnicalArea({
   resourcesLabel,
 }: SpecProductTechnicalAreaProps) {
   const hasMaterials = !!materialsHtml;
+  const hasSpecs = !!specsHtml;
   const hasFinitureData =
     !!finitureCountLabel || (!!finitureSwatches && finitureSwatches.length > 0);
   const showFiniture = !!finitureHref && hasFinitureData;
   const showResources = !!resources && resources.length > 0;
-  const cardCount = [hasMaterials, showFiniture, showResources].filter(Boolean).length;
+  const cardCount = [hasMaterials, hasSpecs, showFiniture, showResources].filter(
+    Boolean,
+  ).length;
 
   if (cardCount === 0) return null;
 
@@ -98,10 +107,14 @@ export function SpecProductTechnicalArea({
             cardCount === 1 && 'grid-cols-1 md:max-w-lg',
             cardCount === 2 && 'grid-cols-1 md:grid-cols-2',
             cardCount === 3 && 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
+            cardCount === 4 && 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4',
           )}
         >
           {materialsHtml && (
             <MaterialsCard label={materialsLabel} html={materialsHtml} />
+          )}
+          {specsHtml && (
+            <SpecsCard label={specsLabel ?? 'Specifications'} html={specsHtml} />
           )}
           {finitureHref && hasFinitureData && (
             <FinitureCard
@@ -149,6 +162,20 @@ function MaterialsCard({ label, html }: { label: string; html: string }) {
         <CardHead icon={LayersIcon} label={label} />
         <div
           className="text-sm text-muted-foreground leading-relaxed text-pretty [&_p]:m-0 [&_p+p]:mt-2"
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      </CardContent>
+    </Card>
+  );
+}
+
+function SpecsCard({ label, html }: { label: string; html: string }) {
+  return (
+    <Card>
+      <CardContent className="flex flex-col gap-3">
+        <CardHead icon={SettingsIcon} label={label} />
+        <div
+          className="text-sm text-muted-foreground leading-relaxed text-pretty [&_p]:m-0 [&_p+p]:mt-2 [&_strong]:text-foreground [&_strong]:font-semibold"
           dangerouslySetInnerHTML={{ __html: html }}
         />
       </CardContent>

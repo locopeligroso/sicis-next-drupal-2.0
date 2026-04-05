@@ -69,7 +69,13 @@ export function SpecArredoHero({
   return (
     <>
       <section className="max-w-main mx-auto px-(--spacing-page) pt-(--spacing-navbar) flex flex-col gap-2">
-        {breadcrumb}
+        {/* Breadcrumb — neutralize PageBreadcrumb's internal max-w container to
+            avoid double padding/mx-auto nesting inside the already-constrained section. */}
+        {breadcrumb && (
+          <div className="[&>div]:m-0! [&>div]:p-0! [&>div]:max-w-none!">
+            {breadcrumb}
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-(--spacing-content) md:gap-(--spacing-section)">
           {/* Title + Category — first on mobile */}
           <div className="flex flex-col gap-1 md:hidden">

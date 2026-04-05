@@ -117,6 +117,7 @@
     "colorsAndFinishes": "Цвета и отделки",
     "linksAndResources": "Ссылки и ресурсы",
     "technicalArea": "Техническая информация",
+    "technicalSpecs": "Технические характеристики",
     "resources": "Ресурсы",
     "finishesAvailable": "{count, plural, one {# отделка доступна} few {# отделки доступны} many {# отделок доступно} other {# отделок доступно}}",
     "download3dFile": "Скачать 3D-файл",

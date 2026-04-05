@@ -264,39 +264,47 @@ export default async function ProdottoArredo({
       </DevBlockOverlay>
 
       {/* ── Gallery Intro (DS) ─────────────────────────────────────────────── */}
-      <DevBlockOverlay name="GenGallery" status="ds">
-        <GenGallery slides={galleryIntroSlides} />
-      </DevBlockOverlay>
+      {galleryIntroSlides.length > 0 && (
+        <DevBlockOverlay name="GenGallery" status="ds">
+          <GenGallery slides={galleryIntroSlides} />
+        </DevBlockOverlay>
+      )}
 
       {/* ── Technical Area (DS) ───────────────────────────────────────────── */}
-      <DevBlockOverlay name="SpecProductTechnicalArea" status="ds">
-        <SpecProductTechnicalArea
-          title={t('technicalArea')}
-          materialsHtml={materiali ? sanitizeHtml(materiali) : undefined}
-          materialsLabel={t('materials')}
-          finitureSwatches={finitureSwatches}
-          finitureCountLabel={
-            finitureCount > 0
-              ? t('finishesAvailable', { count: finitureCount })
-              : undefined
-          }
-          finitureHref={hasFiniture ? finitureHref : undefined}
-          finitureLinkLabel={t('viewAllFinishes')}
-          finishesLabel={t('finishes')}
-          resources={resources}
-          resourcesLabel={t('resources')}
-        />
-      </DevBlockOverlay>
+      {(!!materiali || (hasFiniture && !!finitureHref) || resources.length > 0) && (
+        <DevBlockOverlay name="SpecProductTechnicalArea" status="ds">
+          <SpecProductTechnicalArea
+            title={t('technicalArea')}
+            materialsHtml={materiali ? sanitizeHtml(materiali) : undefined}
+            materialsLabel={t('materials')}
+            finitureSwatches={finitureSwatches}
+            finitureCountLabel={
+              finitureCount > 0
+                ? t('finishesAvailable', { count: finitureCount })
+                : undefined
+            }
+            finitureHref={hasFiniture ? finitureHref : undefined}
+            finitureLinkLabel={t('viewAllFinishes')}
+            finishesLabel={t('finishes')}
+            resources={resources}
+            resourcesLabel={t('resources')}
+          />
+        </DevBlockOverlay>
+      )}
 
       {/* ── Gallery (DS) ─────────────────────────────────────────────────── */}
-      <DevBlockOverlay name="GenGallery" status="ds">
-        <GenGallery slides={galleryMainSlides} />
-      </DevBlockOverlay>
+      {galleryMainSlides.length > 0 && (
+        <DevBlockOverlay name="GenGallery" status="ds">
+          <GenGallery slides={galleryMainSlides} />
+        </DevBlockOverlay>
+      )}
 
       {/* ── Documenti (DS) ─────────────────────────────────────────────────── */}
-      <DevBlockOverlay name="SpecProductResources" status="ds">
-        <SpecProductResources title={t('exploreCatalogs')} documents={documentItems} />
-      </DevBlockOverlay>
+      {documentItems.length > 0 && (
+        <DevBlockOverlay name="SpecProductResources" status="ds">
+          <SpecProductResources title={t('exploreCatalogs')} documents={documentItems} />
+        </DevBlockOverlay>
+      )}
 
       {/* ── Paragraph blocks (Gen) ─────────────────────────────────────────── */}
       {(

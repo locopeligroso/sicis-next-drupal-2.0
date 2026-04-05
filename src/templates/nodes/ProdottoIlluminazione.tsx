@@ -1,13 +1,19 @@
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
-import DrupalImage from '@/components_legacy/DrupalImage';
-import { getDrupalImageUrl } from '@/lib/drupal';
-import { DRUPAL_BASE_URL } from '@/lib/drupal/config';
+import ParagraphResolver from '@/components_legacy/blocks_legacy/ParagraphResolver';
 import { getTextValue, getProcessedText } from '@/lib/field-helpers';
+import { getDrupalImageUrl } from '@/lib/drupal/image';
+import { resolveImage } from '@/lib/api/client';
 import { sanitizeHtml } from '@/lib/sanitize';
-import styles from '@/styles/product.module.css';
+import { getFilterConfig } from '@/domain/filters/registry';
+import { DevBlockOverlay } from '@/components/composed/DevBlockOverlay';
+import { SpecArredoHero } from '@/components/blocks/SpecArredoHero';
+import { GenGallery, type GenGallerySlide } from '@/components/blocks/GenGallery';
+import { SpecProductResources } from '@/components/blocks/SpecProductResources';
+import { SpecProductTechnicalArea } from '@/components/blocks/SpecProductTechnicalArea';
+import type { TechnicalAreaResource } from '@/components/blocks/SpecProductTechnicalArea';
+import type { DocumentCardItem } from '@/components/composed/DocumentCard';
+import { PageBreadcrumb } from '@/components/composed/PageBreadcrumb';
 import { QuoteSheetProvider } from '@/components/composed/QuoteSheetProvider';
-import { ProductCta } from '@/components/composed/ProductCta';
 import type { ProdottoIlluminazione as ProdottoIlluminazioneType } from '@/types/drupal/entities';
 
 // ── Document item type ────────────────────────────────────────────────────────
@@ -21,26 +27,18 @@ interface DocItem {
   field_allegato?: { entity?: { uri?: { value?: string } } };
 }
 
-// ── Finitura type ─────────────────────────────────────────────────────────────
-interface FinituraItem {
-  id?: string;
-  name?: string;
-  field_etichetta?: unknown;
-  field_testo?: unknown;
-  field_immagine?: unknown;
-}
-
 // ── Component ─────────────────────────────────────────────────────────────────
 export default async function ProdottoIlluminazione({
   node,
+  slug,
 }: {
   node: Record<string, unknown>;
+  slug?: string[];
 }) {
   // Cast sicuro: il node-resolver passa Record<string,unknown>, ma il contenuto
-  // è sempre un ProdottoIlluminazione deserializzato da Drupal JSON:API
+  // è sempre un ProdottoIlluminazione deserializzato dall'adapter legacy
   const typedNode = node as ProdottoIlluminazioneType;
   const t = await getTranslations('products');
-  const tCommon = await getTranslations('common');
 
   const title = getTextValue(typedNode.field_titolo_main) || typedNode.title;
   const body = getProcessedText(typedNode.field_testo_main);
@@ -48,11 +46,14 @@ export default async function ProdottoIlluminazione({
   const specifiche = getProcessedText(typedNode.field_specifiche_tecniche);
   const locale = typedNode.langcode ?? 'it';
 
+  // ── Illuminazione base path (needed early for category path fallback) ─────
+  const illumConfig = getFilterConfig('prodotto_illuminazione');
+  const illumBasePath =
+    illumConfig?.basePaths[locale] ?? illumConfig?.basePaths.it ?? 'illuminazione';
+
   // ── Pricing ───────────────────────────────────────────────────────────────
-  // field_prezzo_eu/usa in Arredo è { value: string } | null | undefined
   const prezzoEu = typedNode.field_prezzo_eu?.value ?? null;
   const prezzoUsa = typedNode.field_prezzo_usa?.value ?? null;
-  const prezzoOnDemand = false; // Arredo non ha field_prezzo_on_demand nel schema
 
   // ── External link ─────────────────────────────────────────────────────────
   const extLinkRaw = typedNode.field_collegamento_esterno;
@@ -64,551 +65,183 @@ export default async function ProdottoIlluminazione({
         : null;
 
   // ── 3D file ───────────────────────────────────────────────────────────────
-  // field_path_file_ftp non è nel schema Arredo — accesso sicuro via cast
   const ftpFiles = (typedNode as Record<string, unknown>)
     .field_path_file_ftp as string[] | string | undefined;
   const file3d = Array.isArray(ftpFiles) ? ftpFiles[0] : (ftpFiles ?? null);
 
   // ── Categoria parent ──────────────────────────────────────────────────────
   const categoriaData = typedNode.field_categoria;
-  const categoriaName =
+  // Category name: from entity fields, or derive from URL slug as fallback
+  const categoriaNameFromEntity =
     getTextValue(categoriaData?.field_titolo_main) ||
     ((categoriaData as Record<string, unknown> | undefined)?.title as
       | string
+      | undefined) ||
+    ((categoriaData as Record<string, unknown> | undefined)?.name as
+      | string
       | undefined);
-  const categoriaBody = getProcessedText(categoriaData?.field_testo_main);
+  // slug = ['illuminazione', 'lampadari', 'ballet-chandelier'] → slug[1] = 'lampadari'
+  const categoriaSlug = slug && slug.length >= 3 ? slug[1] : undefined;
+  const categoriaNameFromSlug = categoriaSlug
+    ? categoriaSlug.charAt(0).toUpperCase() + categoriaSlug.slice(1).replace(/-/g, ' ')
+    : undefined;
+  const categoriaName = categoriaNameFromEntity || categoriaNameFromSlug;
   const categoriaAlias = (categoriaData as Record<string, unknown> | undefined)
     ?.path as { alias?: string } | undefined;
-  const categoriaPath = categoriaAlias?.alias;
+  const categoriaPath = categoriaAlias?.alias
+    ?? (categoriaSlug ? `/${illumBasePath}/${categoriaSlug}` : undefined);
 
   // ── Media ─────────────────────────────────────────────────────────────────
   const gallery = typedNode.field_gallery ?? [];
   const galleryIntro = typedNode.field_gallery_intro ?? [];
 
-  // ── Finiture ──────────────────────────────────────────────────────────────
-  const finiture = (typedNode.field_finiture ?? []) as FinituraItem[];
-
   // ── Documents ─────────────────────────────────────────────────────────────
   const documenti = (typedNode.field_documenti ?? []) as DocItem[];
 
-  // ── Scheda tecnica (file entity) ──────────────────────────────────────────
-  interface SchedaItem {
-    uri?: { value?: string };
-    filename?: string;
-  }
-  const schedaTecnicaRaw = (typedNode.field_scheda_tecnica ??
-    []) as SchedaItem[];
-  const schedaTecnica =
-    schedaTecnicaRaw.length > 0 ? schedaTecnicaRaw[0] : null;
-  const schedaUri = schedaTecnica ? getDrupalImageUrl(schedaTecnica) : null;
+  // ── Document items for SpecProductResources ──
+  const documentItems: DocumentCardItem[] = documenti.map((doc) => {
+    const docTitle =
+      getTextValue(doc.field_titolo_main) || getTextValue(doc.title) || '';
+    const docType = getTextValue(doc.field_tipologia_documento);
+    const extLinkRawDoc = doc.field_collegamento_esterno;
+    const docLink =
+      typeof extLinkRawDoc === 'string'
+        ? extLinkRawDoc
+        : extLinkRawDoc && typeof extLinkRawDoc === 'object'
+          ? ((extLinkRawDoc as { uri?: string }).uri ?? null)
+          : null;
+    const allegato = doc.field_allegato?.entity?.uri?.value ?? null;
+    const href = docLink || allegato;
+    const image = resolveImage(doc.field_immagine);
+    return { title: docTitle, type: docType ?? undefined, image, href };
+  });
 
-  // ── Tessuti (taxonomy terms) ───────────────────────────────────────────────
-  interface TessutoItem {
-    id?: string;
-    name?: string;
-    field_immagine?: {
-      uri?: { url?: string; value?: string };
-      meta?: { alt?: string; width?: number; height?: number };
-    };
-  }
-  const tessutiRaw = (typedNode.field_tessuti ?? []) as TessutoItem[];
-  let tessuti = tessutiRaw.filter((t) => t.name);
-  if (tessuti.length === 0 && tessutiRaw.length > 0) {
-    const stubs = tessutiRaw as Array<{ type?: string; id?: string }>;
-    const fetches = stubs
-      .filter((s) => s.type && s.id)
-      .map(async (s) => {
-        const bundle = s.type!.replace('taxonomy_term--', '');
-        try {
-          const res = await fetch(
-            `${DRUPAL_BASE_URL}/en/jsonapi/taxonomy_term/${bundle}/${s.id}?include=field_immagine`,
-            {
-              headers: { Accept: 'application/vnd.api+json' },
-              next: { revalidate: 3600 },
-            } as RequestInit,
-          );
-          if (!res.ok) return null;
-          const json = await res.json();
-          const name = json?.data?.attributes?.name;
-          if (!name) return null;
-          // Extract image from included
-          const imgRel = json?.data?.relationships?.field_immagine?.data;
-          let field_immagine: TessutoItem['field_immagine'] = undefined;
-          if (imgRel?.id) {
-            const included = (json?.included ?? []) as Array<
-              Record<string, unknown>
-            >;
-            const fileEntity = included.find(
-              (inc: Record<string, unknown>) => inc.id === imgRel.id,
-            );
-            if (fileEntity) {
-              const attrs = fileEntity.attributes as
-                | Record<string, unknown>
-                | undefined;
-              field_immagine = {
-                uri: attrs?.uri as TessutoItem['field_immagine'] extends {
-                  uri?: infer U;
-                }
-                  ? U
-                  : never,
-                meta: imgRel.meta as TessutoItem['field_immagine'] extends {
-                  meta?: infer M;
-                }
-                  ? M
-                  : never,
-              };
-            }
-          }
-          return { id: s.id, name, field_immagine } as TessutoItem;
-        } catch {
-          return null;
-        }
-      });
-    tessuti = (await Promise.all(fetches)).filter(
-      (t): t is TessutoItem => t !== null,
-    );
-  }
+  // ── Scheda tecnica URLs ──────────────────────────────────────────────────
+  const schedeTecniche = (typedNode.field_scheda_tecnica ?? []) as string[];
+
+  // ── Technical area resources (scheda tecnica + 3D + external link) ───────
+  const resources: TechnicalAreaResource[] = [
+    ...schedeTecniche
+      .filter((url) => typeof url === 'string' && !!url)
+      .map<TechnicalAreaResource>((url) => ({
+        label: t('technicalSheet'),
+        href: url,
+        type: 'pdf',
+      })),
+    ...(file3d
+      ? [
+          {
+            label: t('download3dFile'),
+            href: `/sites/default/files/${file3d}`,
+            type: 'file3d' as const,
+          },
+        ]
+      : []),
+    ...(extLink
+      ? [
+          {
+            label: t('viewOn1stDibs'),
+            href: extLink,
+            type: 'external' as const,
+          },
+        ]
+      : []),
+  ];
+
+  // ── Hero image ────────────────────────────────────────────────────────────
+  const heroImageSrc = getDrupalImageUrl(typedNode.field_immagine);
+
+  // ── Breadcrumb ───────────────────────────────────────────────────────────
+  const breadcrumb = slug && slug.length > 0 ? (
+    <PageBreadcrumb
+      slug={slug}
+      locale={locale}
+      lastLabel={typeof title === 'string' ? title : undefined}
+    />
+  ) : null;
+
+  // ── Gallery intro slides (carousel subito dopo hero) ───────────────────────
+  const galleryIntroSlides = galleryIntro
+    .map((img) => {
+      const resolved = resolveImage(img);
+      return resolved ? ({ src: resolved.url, alt: `${title ?? ''} gallery`, width: resolved.width ?? 1200, height: resolved.height ?? 800 } satisfies GenGallerySlide) : null;
+    })
+    .filter((s) => s !== null);
+
+  // ── Gallery slides ────────────────────────────────────────────────────────
+  const galleryMainSlides = gallery
+    .map((img) => {
+      const resolved = resolveImage(img);
+      return resolved ? ({ src: resolved.url, alt: `${title ?? ''} gallery`, width: resolved.width ?? 1200, height: resolved.height ?? 800 } satisfies GenGallerySlide) : null;
+    })
+    .filter((s) => s !== null);
 
   return (
     <QuoteSheetProvider productName={title ?? undefined}>
-    <article>
-      {/* ── 1. Title ─────────────────────────────────────────────────────────── */}
-      {title && (
-        <h1
-          style={{
-            fontSize: '2rem',
-            fontWeight: 700,
-            marginBottom: '1.5rem',
-            lineHeight: 1.2,
-          }}
-        >
-          {title}
-        </h1>
-      )}
-
-      {/* ── 2. Main image ────────────────────────────────────────────────────── */}
-      <DrupalImage
-        field={typedNode.field_immagine}
-        alt={title ?? ''}
-        aspectRatio="4/3"
-        style={{ marginBottom: '2rem' }}
-      />
-
-      {/* ── CTA ── */}
-      <ProductCta />
-
-      {/* ── 3. Testo descrittivo ─────────────────────────────────────────────── */}
-      {body && (
-        <div
-          style={{ lineHeight: 1.7, marginBottom: '2rem' }}
-          dangerouslySetInnerHTML={{ __html: sanitizeHtml(body) }}
+    <article className="flex flex-col gap-(--spacing-section) pb-(--spacing-section)">
+      {/* ── Hero Block (DS) ─────────────────────────────────────────────────── */}
+      <DevBlockOverlay name="SpecArredoHero" status="ds">
+        <SpecArredoHero
+          title={title ?? ''}
+          breadcrumb={breadcrumb}
+          category={categoriaName ?? undefined}
+          categoryHref={categoriaPath ? `/${locale}${categoriaPath}` : undefined}
+          description={body ? sanitizeHtml(body) : undefined}
+          imageSrc={heroImageSrc}
+          priceEu={prezzoEu ?? undefined}
+          priceUsa={prezzoUsa ?? undefined}
+          isUs={locale === 'us'}
         />
+      </DevBlockOverlay>
+
+      {/* ── Gallery Intro (DS) ─────────────────────────────────────────────── */}
+      {galleryIntroSlides.length > 0 && (
+        <DevBlockOverlay name="GenGallery" status="ds">
+          <GenGallery slides={galleryIntroSlides} />
+        </DevBlockOverlay>
       )}
 
-      {/* ── 4. Materiali costruttivi ─────────────────────────────────────────── */}
-      {materiali && (
-        <section className={styles.section} aria-labelledby="materiali-heading">
-          <h2 id="materiali-heading" className={styles.sectionHeading}>
-            {t('materials')}
-          </h2>
-          <div
-            style={{ lineHeight: 1.7 }}
-            dangerouslySetInnerHTML={{ __html: sanitizeHtml(materiali) }}
+      {/* ── Technical Area (DS) ───────────────────────────────────────────── */}
+      {(!!materiali || !!specifiche || resources.length > 0) && (
+        <DevBlockOverlay name="SpecProductTechnicalArea" status="ds">
+          <SpecProductTechnicalArea
+            title={t('technicalArea')}
+            materialsHtml={materiali ? sanitizeHtml(materiali) : undefined}
+            materialsLabel={t('materials')}
+            specsHtml={specifiche ? sanitizeHtml(specifiche) : undefined}
+            specsLabel={t('technicalSpecs')}
+            finitureLinkLabel={t('viewAllFinishes')}
+            finishesLabel={t('finishes')}
+            resources={resources}
+            resourcesLabel={t('resources')}
           />
-        </section>
+        </DevBlockOverlay>
       )}
 
-      {/* ── 5. Specifiche tecniche / Dimensioni ──────────────────────────────── */}
-      {specifiche && (
-        <section
-          className={styles.section}
-          aria-labelledby="specifiche-heading"
-        >
-          <h2 id="specifiche-heading" className={styles.sectionHeading}>
-            {t('dimensionsAndSpecs')}
-          </h2>
-          <div
-            style={{ lineHeight: 1.7 }}
-            dangerouslySetInnerHTML={{ __html: sanitizeHtml(specifiche) }}
-          />
-        </section>
+      {/* ── Gallery (DS) ─────────────────────────────────────────────────── */}
+      {galleryMainSlides.length > 0 && (
+        <DevBlockOverlay name="GenGallery" status="ds">
+          <GenGallery slides={galleryMainSlides} />
+        </DevBlockOverlay>
       )}
 
-      {/* ── 6. Finiture ──────────────────────────────────────────────────────── */}
-      {finiture.length > 0 && (
-        <section className={styles.section} aria-labelledby="finiture-heading">
-          <h2 id="finiture-heading" className={styles.sectionHeading}>
-            {t('colorsAndFinishes')}
-          </h2>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(12rem, 1fr))',
-              gap: '1rem',
-            }}
-          >
-            {finiture.map((f, i) => {
-              const etichetta = getTextValue(f.field_etichetta);
-              const testo = getTextValue(f.field_testo);
-              return (
-                <div
-                  key={f.id ?? i}
-                  style={{
-                    padding: '0.75rem',
-                    border: '0.0625rem solid #e0e0e0',
-                  }}
-                >
-                  {!!f.field_immagine && (
-                    <DrupalImage
-                      field={f.field_immagine}
-                      alt={etichetta || f.name || ''}
-                      aspectRatio="1"
-                      style={{ marginBottom: '0.5rem' }}
-                    />
-                  )}
-                  <p
-                    style={{
-                      margin: '0 0 0.125rem',
-                      fontWeight: 600,
-                      fontSize: '0.9375rem',
-                    }}
-                  >
-                    {etichetta || f.name}
-                  </p>
-                  {testo && (
-                    <p
-                      style={{
-                        margin: 0,
-                        fontSize: '0.8125rem',
-                        color: '#666',
-                      }}
-                    >
-                      {testo}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
+      {/* ── Documenti (DS) ─────────────────────────────────────────────────── */}
+      {documentItems.length > 0 && (
+        <DevBlockOverlay name="SpecProductResources" status="ds">
+          <SpecProductResources title={t('exploreCatalogs')} documents={documentItems} />
+        </DevBlockOverlay>
       )}
 
-      {/* ── 6b. Tessuti (raggruppati per famiglia) ──────────────────────────── */}
-      {tessuti.length > 0 &&
-        (() => {
-          // Raggruppa per famiglia: "Oregon – Ash" → famiglia "Oregon", variante "Ash"
-          const grouped = new Map<
-            string,
-            { id?: string; variant: string; imgUrl?: string | null }[]
-          >();
-          for (const tessuto of tessuti) {
-            if (!tessuto.name) continue;
-            const sepIdx = tessuto.name.indexOf('–');
-            const family =
-              sepIdx > 0
-                ? tessuto.name.slice(0, sepIdx).trim()
-                : tessuto.name.trim();
-            const variant =
-              sepIdx > 0 ? tessuto.name.slice(sepIdx + 1).trim() : '';
-            const imgUrl = tessuto.field_immagine
-              ? getDrupalImageUrl(tessuto.field_immagine)
-              : null;
-            if (!grouped.has(family)) grouped.set(family, []);
-            grouped.get(family)!.push({ id: tessuto.id, variant, imgUrl });
-          }
-          if (grouped.size === 0) return null;
-          return (
-            <section
-              className={styles.section}
-              aria-labelledby="tessuti-heading"
-            >
-              <h2 id="tessuti-heading" className={styles.sectionHeading}>
-                {t('fabrics')}
-              </h2>
-              <div>
-                {[...grouped.entries()].map(([family, variants]) => (
-                  <div
-                    key={family}
-                    style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: '0.375rem',
-                      marginBottom: '0.5rem',
-                    }}
-                  >
-                    {variants.map((v, i) => (
-                      <span
-                        key={v.id ?? i}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.375rem',
-                          padding: '0.25rem 0.75rem 0.25rem 0.25rem',
-                          border: '0.0625rem solid #e0e0e0',
-                          fontSize: '0.8125rem',
-                          color: '#333',
-                        }}
-                      >
-                        {v.imgUrl && (
-                          <img
-                            src={v.imgUrl}
-                            alt={
-                              v.variant ? `${family} – ${v.variant}` : family
-                            }
-                            width={28}
-                            height={28}
-                            style={{
-                              borderRadius: '0.125rem',
-                              objectFit: 'cover',
-                              flexShrink: 0,
-                            }}
-                          />
-                        )}
-                        {v.variant ? `${family} – ${v.variant}` : family}
-                      </span>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </section>
-          );
-        })()}
-
-      {/* ── 7. Prezzi ────────────────────────────────────────────────────────── */}
-      {(prezzoEu || prezzoUsa || prezzoOnDemand) && (
-        <section className={styles.section} aria-labelledby="prezzo-heading">
-          <h2 id="prezzo-heading" className={styles.sectionHeading}>
-            {t('price')}
-          </h2>
-          {prezzoOnDemand ? (
-            <p style={{ fontStyle: 'italic', color: '#666', margin: 0 }}>
-              {t('priceOnDemand')}
-            </p>
-          ) : (
-            <div
-              style={{ display: 'flex', gap: '2rem', alignItems: 'baseline' }}
-            >
-              {prezzoEu && (
-                <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>
-                  {Number(prezzoEu).toLocaleString('it-IT')}€
-                </p>
-              )}
-              {prezzoUsa && (
-                <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>
-                  {Number(prezzoUsa).toLocaleString('en-US')}$
-                </p>
-              )}
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* ── 8. Categoria parent ──────────────────────────────────────────────── */}
-      {categoriaData && (
-        <section className={styles.section} aria-labelledby="categoria-heading">
-          <h2 id="categoria-heading" className={styles.sectionHeading}>
-            {t('category')}
-          </h2>
-          {categoriaName &&
-            (categoriaPath ? (
-              <Link
-                href={`/${locale}${categoriaPath}`}
-                style={{
-                  fontWeight: 600,
-                  fontSize: '1.125rem',
-                  color: '#111',
-                  textDecoration: 'none',
-                  display: 'block',
-                  marginBottom: '0.5rem',
-                }}
-              >
-                {categoriaName}
-              </Link>
-            ) : (
-              <p
-                style={{
-                  fontWeight: 600,
-                  fontSize: '1.125rem',
-                  margin: '0 0 0.5rem',
-                }}
-              >
-                {categoriaName}
-              </p>
-            ))}
-          <DrupalImage
-            field={(categoriaData as Record<string, unknown>).field_immagine}
-            alt={categoriaName ?? ''}
-            aspectRatio="16/9"
-            style={{ maxWidth: '20rem', marginBottom: '0.75rem' }}
-          />
-          {categoriaBody && (
-            <div
-              style={{ lineHeight: 1.7, color: '#555' }}
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(categoriaBody) }}
-            />
-          )}
-        </section>
-      )}
-
-      {/* ── 9. Gallery ───────────────────────────────────────────────────────── */}
-      {(gallery.length > 0 || galleryIntro.length > 0) && (
-        <section className={styles.section} aria-labelledby="gallery-heading">
-          <h2 id="gallery-heading" className={styles.sectionHeading}>
-            {t('gallery')}
-          </h2>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(10rem, 1fr))',
-              gap: '1rem',
-            }}
-          >
-            {[...galleryIntro, ...gallery].map((img, i) => (
-              <DrupalImage
-                key={i}
-                field={img}
-                alt={`${title ?? ''} ${i + 1}`}
-                aspectRatio="1"
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* ── 10. Documenti download ───────────────────────────────────────────── */}
-      {documenti.length > 0 && (
-        <section className={styles.section} aria-labelledby="documenti-heading">
-          <h2 id="documenti-heading" className={styles.sectionHeading}>
-            {t('documents')}
-          </h2>
-          <ul className={styles.docList}>
-            {documenti.map((doc, i) => {
-              const docTitolo =
-                getTextValue(doc.field_titolo_main) || getTextValue(doc.title);
-              const docTipologia = getTextValue(doc.field_tipologia_documento);
-              const extLinkRaw2 = doc.field_collegamento_esterno;
-              const docLink =
-                typeof extLinkRaw2 === 'string'
-                  ? extLinkRaw2
-                  : extLinkRaw2 && typeof extLinkRaw2 === 'object'
-                    ? ((extLinkRaw2 as { uri?: string }).uri ?? null)
-                    : null;
-              const allegato = doc.field_allegato?.entity?.uri?.value ?? null;
-              const href = docLink || allegato;
-              return (
-                <li key={doc.id ?? i} className={styles.docItem}>
-                  {!!doc.field_immagine && (
-                    <DrupalImage
-                      field={doc.field_immagine}
-                      alt={docTitolo ?? ''}
-                      aspectRatio="1"
-                      style={{ width: '3rem', flexShrink: 0 }}
-                    />
-                  )}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    {docTipologia && (
-                      <p
-                        className={styles.label}
-                        style={{ margin: '0 0 0.125rem' }}
-                      >
-                        {docTipologia}
-                      </p>
-                    )}
-                    {docTitolo && (
-                      <p
-                        style={{
-                          margin: 0,
-                          fontWeight: 500,
-                          fontSize: '0.9375rem',
-                        }}
-                      >
-                        {docTitolo}
-                      </p>
-                    )}
-                  </div>
-                  {href && (
-                    <a
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`${tCommon('download')} ${docTitolo ?? 'documento'}`}
-                      style={{
-                        fontSize: '0.8125rem',
-                        color: '#333',
-                        textDecoration: 'underline',
-                        flexShrink: 0,
-                      }}
-                    >
-                      {tCommon('download')}
-                    </a>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
-
-      {/* ── 11. Scheda tecnica + File 3D + link esterno ─────────────────────── */}
-      {(schedaUri || file3d || extLink) && (
-        <section
-          className={styles.section}
-          style={{ marginBottom: 0 }}
-          aria-labelledby="extra-heading"
-        >
-          <h2 id="extra-heading" className={styles.sectionHeading}>
-            {t('linksAndResources')}
-          </h2>
-          <div
-            style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
-          >
-            {schedaUri && (
-              <a
-                href={schedaUri}
-                target="_blank"
-                rel="noopener noreferrer"
-                download
-                aria-label={`${tCommon('download')} ${t('technicalSheet')}`}
-                style={{
-                  fontSize: '0.875rem',
-                  color: '#333',
-                  textDecoration: 'underline',
-                }}
-              >
-                {t('technicalSheet')}
-              </a>
-            )}
-            {file3d && (
-              <a
-                href={`/sites/default/files/${file3d}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  fontSize: '0.875rem',
-                  color: '#333',
-                  textDecoration: 'underline',
-                }}
-              >
-                {t('download3dFile')}
-              </a>
-            )}
-            {extLink && (
-              <a
-                href={extLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  fontSize: '0.875rem',
-                  color: '#333',
-                  textDecoration: 'underline',
-                }}
-              >
-                {t('viewOn1stDibs')}
-              </a>
-            )}
-          </div>
-        </section>
-      )}
+      {/* ── Paragraph blocks (Gen) — forward-compat, empty until Freddi enriches endpoint ── */}
+      {(
+        (typedNode.field_blocchi as Record<string, unknown>[] | undefined) ?? []
+      ).map((p, i) => (
+        <ParagraphResolver
+          key={(p.id as string) ?? i}
+          paragraph={p}
+          pageTitle={title ?? undefined}
+        />
+      ))}
     </article>
     </QuoteSheetProvider>
   );

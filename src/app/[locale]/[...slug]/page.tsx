@@ -789,18 +789,8 @@ export default async function SlugPage({
       if (resolved.bundle === 'prodotto_illuminazione') {
         const product = await fetchIlluminazioneProduct(resolved.nid, locale);
         if (product) {
-          // TODO: migrate to DS template — for now use legacy with adapter
           const legacyNode = illuminazioneToLegacyNode(product, locale);
-          return (
-            <>
-              <PageBreadcrumb
-                slug={slug}
-                locale={locale}
-                lastLabel={product.title}
-              />
-              <ProdottoIlluminazione node={legacyNode} />
-            </>
-          );
+          return <ProdottoIlluminazione node={legacyNode} slug={slug} />;
         }
       }
       // ── Showroom detail — uses showroom/{nid} endpoint ──

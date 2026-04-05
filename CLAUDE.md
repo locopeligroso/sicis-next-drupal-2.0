@@ -14,9 +14,18 @@
 > - **ProductListingTemplate non-hub variants** (`context-bar`, `airy-header`) hanno `<SmartBreadcrumb>` inline in `<main>` (line ~366) invece che dentro un hero block. Pattern da uniformare se si estrae un nuovo block es. `SpecListingContextHeader` che incapsuli breadcrumb + ContextBar/AiryHeader.
 > - **API uniforme raggiunta**: tutti gli hero block DS hanno `breadcrumb?: ReactNode`. Quando si migra un nuovo template a DS, basta passare `<PageBreadcrumb slug={slug} locale={locale} lastLabel={title} />` come slot.
 >
-> **📋 Altro lavoro**: (1) Collegare i 6 Gen block rimanenti a ParagraphResolver (GenCorrelati, GenNewsletter, GenFormBlog, GenSliderHome, GenAnni, GenTutorial). (2) Template prodotto **vetrite** e **tessuto** usano ancora rendering legacy — migrarli ai blocchi DS come mosaico/arredo. (3) Ambiente, Progetto, Articolo, News, Tutorial, Showroom, Documento, Categoria, CategoriaBlog, Tag sono tutti legacy.
+> **📋 TODO — breadcrumb fine-tuning & revisione (futuro)**: rivedere il comportamento dei breadcrumb end-to-end. Punti noti da affrontare:
+> - **Double-wrapping**: `PageBreadcrumb` output wrappa `SmartBreadcrumb` in `<div className="max-w-main mx-auto px-(--spacing-page) pt-4">`. Quando usato come slot nei DS hero (già `max-w-main mx-auto px-(--spacing-page)`) causa double-padding. Workaround attuale in `SpecArredoHero`: override con `[&>div]:m-0! [&>div]:p-0! [&>div]:max-w-none!`. Soluzione pulita: aggiungere prop `inline` a `PageBreadcrumb` che salta il wrapper, usato da tutti gli hero slot.
+> - **Spacing verticale inconsistente** tra slot heroes e rendering legacy in page.tsx (pt-4 vs pt-(--spacing-navbar)).
+> - **Allineamento col titolo**: su desktop il breadcrumb occupa full-width sopra la griglia, mentre il titolo è in col-span-5. Valutare se incolonnare il breadcrumb con il titolo.
+> - **Siblings dropdown styling** (PageBreadcrumb): verificare UX quando la categoria parent ha molti siblings.
+> - **Migrazione slot pattern** ai template ancora legacy (vetrite, tessuto, pixall, showroom, entity fallback) — vedi punti sopra.
 >
-> **🗺️ Stato ProdottoArredo** (2026-04-05, 303 righe): 100% DS. Hero (`SpecArredoHero` + breadcrumb slot), Gallery Intro + Gallery (`GenGallery` x2), TechnicalArea (`SpecProductTechnicalArea` — Materiali/Finiture/Risorse), Documenti (`SpecProductResources`), Paragraph blocks. Zero legacy remaining, zero CSS modules, zero inline styles. **Data flow**: `page.tsx:783` → `fetchArredoProduct` → `arredoToLegacyNode` → `ProdottoArredo(node, slug)`.
+> **📋 Altro lavoro**: (1) Collegare i 6 Gen block rimanenti a ParagraphResolver (GenCorrelati, GenNewsletter, GenFormBlog, GenSliderHome, GenAnni, GenTutorial). (2) Template prodotto **vetrite**, **tessuto**, **pixall** usano ancora rendering legacy — migrarli ai blocchi DS come mosaico/arredo/illuminazione. (3) Ambiente, Progetto, Articolo, News, Tutorial, Showroom, Documento, Categoria, CategoriaBlog, Tag sono tutti legacy.
+>
+> **🗺️ Stato ProdottoArredo** (2026-04-05, 322 righe): 100% DS. Hero (`SpecArredoHero` + breadcrumb slot), Gallery Intro + Gallery (`GenGallery` x2), TechnicalArea (`SpecProductTechnicalArea` — Materiali/Finiture/Risorse), Documenti (`SpecProductResources`), Paragraph blocks. Zero legacy remaining, zero CSS modules, zero inline styles. **Data flow**: `page.tsx:783` → `fetchArredoProduct` → `arredoToLegacyNode` → `ProdottoArredo(node, slug)`.
+>
+> **🗺️ Stato ProdottoIlluminazione** (2026-04-05, 248 righe): 100% DS. Clone ridotto di ProdottoArredo. Hero (`SpecArredoHero` + breadcrumb slot, prezzo €/$), Gallery Intro + Gallery (`GenGallery` x2), TechnicalArea (`SpecProductTechnicalArea` — Materiali + **Specifiche tecniche** + Risorse — no Finiture), Documenti (`SpecProductResources`), ParagraphResolver forward-compat. Rispetto ad Arredo aggiunge card Specs (`SpecProductTechnicalArea` prop `specsHtml` + i18n `technicalSpecs`), rimuove logica `field_finiture_arredo` (endpoint illuminazione non espone finiture). **Data flow**: `page.tsx:789` → `fetchIlluminazioneProduct` → `illuminazioneToLegacyNode` → `ProdottoIlluminazione(node, slug)`. Verificato live su Ballet Chandelier (con tutti i dati) + Amalasonte (graceful degradation senza prezzo/gallery).
 
 ## Project Overview
 
@@ -58,7 +67,7 @@ Next 16.1.7 | React 19.2.4 | Tailwind 4.2.2 | next-intl | nuqs | embla-carousel
 > Full details in [`docs/TEMPLATES_MIGRATION.md`](docs/TEMPLATES_MIGRATION.md)
 
 - **DS complete:** ProdottoMosaico (5 Spec\* blocks), ProductListingTemplate, ProductsMasterPage.
-- **Legacy:** ProdottoVetrite, Arredo, Tessuto, Pixall, Illuminazione + all editorial templates (DrupalImage + product.module.css).
+- **DS complete:** ProdottoMosaico, ProdottoArredo, ProdottoIlluminazione, ProductListingTemplate, ProductsMasterPage. **Legacy:** ProdottoVetrite, Tessuto, Pixall + all editorial templates (DrupalImage + product.module.css).
 - **All templates receive** `node: Record<string, unknown>`, cast to typed interfaces from `src/types/drupal/entities.ts`.
 - **Taxonomy templates:** 4 specialized (Mosaico/Vetrite Collezione/Colore) + 1 generic fallback (TaxonomyTerm wireframe).
 
@@ -208,10 +217,10 @@ Project changelog is maintained in `CHANGELOG.md` at the repo root, organized by
 
 | Status      | Templates                                                                                                                                                             |
 | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| DS complete | ProdottoMosaico (5 Spec blocks), ProductListingTemplate (filters + grid)                                                                                              |
+| DS complete | ProdottoMosaico (5 Spec blocks), ProdottoArredo, ProdottoIlluminazione, ProductListingTemplate (filters + grid), ProductsMasterPage                                   |
 | Minimal DS  | Page, LandingPage (ParagraphResolver only)                                                                                                                            |
 | Hybrid      | VetriteCollezione (legacy listing + Tailwind documents)                                                                                                               |
-| Legacy      | ProdottoVetrite, ProdottoArredo, ProdottoTessuto, ProdottoPixall, ProdottoIlluminazione, Articolo, News, Tutorial, Showroom, Documento, Ambiente, Progetto, Categoria |
+| Legacy      | ProdottoVetrite, ProdottoTessuto, ProdottoPixall, Articolo, News, Tutorial, Showroom, Documento, Ambiente, Progetto, Categoria                                        |
 
 ### Component Coverage
 
@@ -241,7 +250,7 @@ Project changelog is maintained in `CHANGELOG.md` at the repo root, organized by
 
 ### Backlog
 
-- Product template DS migration: ProdottoVetrite → ProdottoArredo → ProdottoTessuto → ProdottoPixall → ProdottoIlluminazione
+- Product template DS migration: ProdottoVetrite → ProdottoTessuto → ProdottoPixall (ProdottoArredo + ProdottoIlluminazione ✓ done 2026-04-05)
 - Footer migration to design system
 - Contact form (Dialog/Sheet for CTA actions)
 - Alternative products carousel

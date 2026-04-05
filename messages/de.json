@@ -117,6 +117,7 @@
     "colorsAndFinishes": "Farben und Oberflächen",
     "linksAndResources": "Links und Ressourcen",
     "technicalArea": "Technischer Bereich",
+    "technicalSpecs": "Technische Spezifikationen",
     "resources": "Ressourcen",
     "finishesAvailable": "{count, plural, =1 {# verfügbare Ausführung} other {# verfügbare Ausführungen}}",
     "download3dFile": "3D-Datei herunterladen",

@@ -282,11 +282,16 @@ export function illuminazioneToLegacyNode(
     field_specifiche_tecniche: product.techSpecsHtml
       ? { value: product.techSpecsHtml, processed: product.techSpecsHtml }
       : null,
+    field_prezzo_eu: product.priceEu ? { value: product.priceEu } : null,
+    field_prezzo_usa: product.priceUsa ? { value: product.priceUsa } : null,
     field_immagine: toImageField(product.image?.url ?? null),
+    field_gallery: product.gallery,
     field_gallery_intro: product.galleryIntro,
     field_scheda_tecnica: product.techSheetUrls,
     field_no_form_scheda_tecnica: product.noTechSheet ? '1' : '0',
-    field_path_file_ftp: product.hdImagePath,
+    field_path_file_ftp: product.file3dPaths,
+    field_path_file_ftp_img_hd: product.hdImagePath,
+    field_collegamento_esterno: product.externalUrl,
     field_documenti: product.documents.map((doc) => ({
       field_titolo_main: doc.title,
       title: doc.title,
@@ -295,13 +300,12 @@ export function illuminazioneToLegacyNode(
       field_immagine: toImageField(doc.image?.url ?? null),
       field_allegato: null,
     })),
-    // Fields not available from illuminazione-product endpoint
-    field_prezzo_eu: null,
-    field_prezzo_usa: null,
-    field_gallery: [],
+    // Fields not exposed by illuminazione-product REST endpoint yet
     field_finiture: [],
     field_tessuti: [],
     field_categoria: null,
+    // Forward-compat: will be populated when Freddi enriches endpoint with paragraph blocks
+    field_blocchi: [],
   };
 }
 
